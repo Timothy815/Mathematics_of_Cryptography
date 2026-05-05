@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binary, Hexadecimal, and Bases | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 {
+      line-height: 1.2;
+      margin: 0 0 0.75em;
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      color: #283f68;
+      margin-top: 1.2em;
+    }
+
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .lead {
+      font-size: 1.14rem;
+      color: #333333;
+    }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title {
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #1f3763;
+    }
+
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .math-display {
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title {
+      font-weight: 800;
+      color: #1f3763;
+      margin-bottom: 12px;
+    }
+
+    .place-value-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(72px, 1fr));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 16px 0;
+      min-width: 680px;
+    }
+
+    .place-cell {
+      border-right: 1px solid var(--border);
+      text-align: center;
+      background: #ffffff;
+    }
+
+    .place-cell:last-child { border-right: none; }
+
+    .place-label {
+      display: block;
+      background: #eef3ff;
+      color: #1f3763;
+      font-weight: 800;
+      padding: 8px 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .place-power,
+    .place-value,
+    .place-bit {
+      display: block;
+      padding: 7px 4px;
+      border-bottom: 1px solid var(--border);
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .place-bit {
+      border-bottom: none;
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .nibble-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      align-items: stretch;
+      margin: 18px 0;
+    }
+
+    .nibble-card {
+      flex: 1 1 240px;
+      border: 1px solid #cfd7e6;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .nibble-bits {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: #16243d;
+    }
+
+    .hex-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 12px;
+      background: #eef3ff;
+      color: #1f3763;
+      border: 1px solid #c7d2ea;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-weight: 900;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 1.4rem;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    .page-break { break-before: page; }
+
+    @media (max-width: 700px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 11pt;
+        line-height: 1.45;
+      }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 {
+        font-size: 16pt;
+        border-bottom: 1px solid #999999;
+        break-after: avoid;
+      }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details { break-inside: avoid; }
+      .box, .diagram, details.solution {
+        background: #ffffff !important;
+        border: 1px solid #999999;
+      }
+      .symbol-table th, .data-table th, .place-label { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 1</div>
+      <h1>Binary, Hexadecimal, and Bases</h1>
+      <p class="subtitle">
+        Learning to read the machine’s handwriting: bits, bytes, hex values, place value, and fixed-width numbers.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Cryptography constantly talks in bits, bytes, hexadecimal values, and fixed-width chunks of data.
+            If those representations feel slippery, the rest of cryptography becomes harder than it needs to be.
+            This tutorial builds fluency with the number systems that modern ciphers use every day.
+          </p>
+        </div>
+
+        <p class="lead">
+          The goal is not to memorize conversion tricks. The goal is to see that binary, decimal, and hexadecimal
+          are different written languages for the same underlying quantities. A value can wear many outfits.
+          The value is the person underneath.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          This tutorial assumes only ordinary counting and basic arithmetic. You do not need algebra, programming,
+          or prior cryptography knowledge.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Every symbol below will be used later. Read this table as the legend on the map before entering the terrain.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\( b \)</td>
+              <td>The base, or the number of symbols a counting system uses before it needs another place.</td>
+              <td>An integer greater than 1 used as the radix of a positional numeral system.</td>
+            </tr>
+            <tr>
+              <td>\( b^k \)</td>
+              <td>The place value at position \( k \). It tells how much that position is worth.</td>
+              <td>The base \( b \) raised to the nonnegative integer exponent \( k \).</td>
+            </tr>
+            <tr>
+              <td>\( k \)</td>
+              <td>A position number. In this tutorial, position 0 is the rightmost place.</td>
+              <td>A nonnegative integer index used to label place-value positions.</td>
+            </tr>
+            <tr>
+              <td>\( 101101_2 \)</td>
+              <td>The small 2 means “this number is written in base 2.”</td>
+              <td>A numeral written in base 2, also called binary notation.</td>
+            </tr>
+            <tr>
+              <td>\( 45_{10} \)</td>
+              <td>The small 10 means “this number is written in ordinary decimal.”</td>
+              <td>A numeral written in base 10, also called decimal notation.</td>
+            </tr>
+            <tr>
+              <td><code>0x2D</code></td>
+              <td>The <code>0x</code> prefix means “the following number is written in hexadecimal.”</td>
+              <td>A common programming notation for a base-16 numeral.</td>
+            </tr>
+            <tr>
+              <td>bit</td>
+              <td>A single binary digit: either 0 or 1.</td>
+              <td>A binary digit, the smallest unit of digital information.</td>
+            </tr>
+            <tr>
+              <td>nibble</td>
+              <td>A group of 4 bits.</td>
+              <td>A 4-bit unit, able to represent one hexadecimal digit.</td>
+            </tr>
+            <tr>
+              <td>byte</td>
+              <td>A group of 8 bits.</td>
+              <td>An 8-bit unit, able to represent values from 0 through 255.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            A base is a counting rhythm. Base 10 counts with ten symbols before carrying into the next place.
+            Base 2 counts with two symbols. Base 16 counts with sixteen symbols. The rhythm changes, but the
+            idea of place value stays the same.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Flow showing one quantity represented in decimal, binary, and hexadecimal">
+          <div class="diagram-title">One quantity, three written forms</div>
+          <div class="flow-row">
+            <div class="flow-node">\(45_{10}\)<br>decimal</div>
+            <div class="flow-arrow">⇄</div>
+            <div class="flow-node">\(101101_2\)<br>binary</div>
+            <div class="flow-arrow">⇄</div>
+            <div class="flow-node"><code>0x2D</code><br>hexadecimal</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="place-value">
+        <h2>Place value: the shared skeleton</h2>
+        <p>
+          A positional number system uses positions. Each position has a value based on a power of the base.
+          The rightmost position is position 0. Moving left increases the position number by 1.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: positional notation</div>
+          <p>
+            In base \( b \), the digit in position \( k \) is multiplied by \( b^k \). The total value is found by
+            adding all of those digit-times-place-value contributions.
+          </p>
+          <div class="math-display">
+            \[
+              \text{value} = d_m b^m + d_{m-1}b^{m-1} + \cdots + d_2b^2 + d_1b^1 + d_0b^0
+            \]
+          </div>
+          <p>
+            Here, each \( d_i \) is a digit, and the subscript tells which position that digit occupies.
+          </p>
+        </div>
+
+        <h3>Decimal example</h3>
+        <p>
+          The decimal number \(345_{10}\) means:
+        </p>
+        <div class="math-display">
+          \[
+            345_{10} = 3\cdot 10^2 + 4\cdot 10^1 + 5\cdot 10^0
+          \]
+          \[
+            345_{10} = 3\cdot 100 + 4\cdot 10 + 5\cdot 1
+          \]
+        </div>
+
+        <p>
+          Binary and hexadecimal use the same structure. Only the base changes.
+        </p>
+      </section>
+
+      <section id="binary">
+        <h2>Binary: base 2</h2>
+        <p>
+          Binary uses only two digits: <code>0</code> and <code>1</code>. Because there are only two symbols, each position
+          is a power of 2.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Technical definition</div>
+          <p>
+            Binary is a base-2 positional numeral system. Its allowed digits are \(0\) and \(1\). In position \(k\),
+            a binary digit contributes either \(0\cdot 2^k\) or \(1\cdot 2^k\).
+          </p>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">Eight binary positions in one byte</div>
+          <div class="place-value-row">
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">7</span><span class="place-value">\(2^7=128\)</span><span class="place-bit">0</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">6</span><span class="place-value">\(2^6=64\)</span><span class="place-bit">0</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">5</span><span class="place-value">\(2^5=32\)</span><span class="place-bit">1</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">4</span><span class="place-value">\(2^4=16\)</span><span class="place-bit">0</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">3</span><span class="place-value">\(2^3=8\)</span><span class="place-bit">1</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">2</span><span class="place-value">\(2^2=4\)</span><span class="place-bit">1</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">1</span><span class="place-value">\(2^1=2\)</span><span class="place-bit">0</span></div>
+            <div class="place-cell"><span class="place-label">Position</span><span class="place-power">0</span><span class="place-value">\(2^0=1\)</span><span class="place-bit">1</span></div>
+          </div>
+        </div>
+
+        <p>
+          The byte shown above is <code>00101101</code>. The 1 bits are in positions 5, 3, 2, and 0.
+        </p>
+        <div class="math-display">
+          \[
+            00101101_2 = 2^5 + 2^3 + 2^2 + 2^0
+          \]
+          \[
+            00101101_2 = 32 + 8 + 4 + 1 = 45_{10}
+          \]
+        </div>
+      </section>
+
+      <section id="hexadecimal">
+        <h2>Hexadecimal: base 16</h2>
+        <p>
+          Hexadecimal, usually called hex, uses sixteen symbols. The first ten are familiar decimal digits.
+          The remaining six are letters.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Decimal value</th>
+              <th>Hex digit</th>
+              <th>Binary nibble</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td><code>0</code></td><td><code>0000</code></td></tr>
+            <tr><td>1</td><td><code>1</code></td><td><code>0001</code></td></tr>
+            <tr><td>2</td><td><code>2</code></td><td><code>0010</code></td></tr>
+            <tr><td>3</td><td><code>3</code></td><td><code>0011</code></td></tr>
+            <tr><td>4</td><td><code>4</code></td><td><code>0100</code></td></tr>
+            <tr><td>5</td><td><code>5</code></td><td><code>0101</code></td></tr>
+            <tr><td>6</td><td><code>6</code></td><td><code>0110</code></td></tr>
+            <tr><td>7</td><td><code>7</code></td><td><code>0111</code></td></tr>
+            <tr><td>8</td><td><code>8</code></td><td><code>1000</code></td></tr>
+            <tr><td>9</td><td><code>9</code></td><td><code>1001</code></td></tr>
+            <tr><td>10</td><td><code>A</code></td><td><code>1010</code></td></tr>
+            <tr><td>11</td><td><code>B</code></td><td><code>1011</code></td></tr>
+            <tr><td>12</td><td><code>C</code></td><td><code>1100</code></td></tr>
+            <tr><td>13</td><td><code>D</code></td><td><code>1101</code></td></tr>
+            <tr><td>14</td><td><code>E</code></td><td><code>1110</code></td></tr>
+            <tr><td>15</td><td><code>F</code></td><td><code>1111</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why hex is so useful</div>
+          <p>
+            One hex digit exactly matches one nibble, which is 4 bits. Two hex digits exactly match one byte,
+            which is 8 bits. Hex is compact, but it still lines up cleanly with binary. It is a tidy translation,
+            not a mysterious new kind of number.
+          </p>
+        </div>
+      </section>
+
+      <section id="nibbles-and-bytes">
+        <h2>Nibbles and bytes</h2>
+        <p>
+          A byte has 8 bits. Since a nibble has 4 bits, a byte can be split into two nibbles.
+          Each nibble becomes one hexadecimal digit.
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title">Converting <code>00101101</code> into hex</div>
+          <div class="nibble-row">
+            <div class="nibble-card">
+              <div class="nibble-bits">0010</div>
+              <div>left nibble</div>
+              <div class="hex-badge">2</div>
+            </div>
+            <div class="nibble-card">
+              <div class="nibble-bits">1101</div>
+              <div>right nibble</div>
+              <div class="hex-badge">D</div>
+            </div>
+          </div>
+          <p>
+            Therefore:
+          </p>
+          <div class="math-display">
+            \[
+              00101101_2 = \texttt{0x2D}
+            \]
+          </div>
+        </div>
+
+        <p>
+          This is why cryptography examples often write byte values in hex. The byte <code>00101101</code> is much
+          easier to read as <code>0x2D</code>.
+        </p>
+      </section>
+
+      <section id="worked-example-1">
+        <h2>Worked example 1: binary to decimal</h2>
+        <p>
+          Convert the binary number <code>101101</code> into decimal.
+        </p>
+
+        <h3>Step 1: Write the place values</h3>
+        <p>
+          The number has six bits, so its positions are 5 through 0.
+        </p>
+        <div class="math-display">
+          \[
+            101101_2 = 1\cdot 2^5 + 0\cdot 2^4 + 1\cdot 2^3 + 1\cdot 2^2 + 0\cdot 2^1 + 1\cdot 2^0
+          \]
+        </div>
+
+        <h3>Step 2: Keep only the positions with a 1</h3>
+        <div class="math-display">
+          \[
+            101101_2 = 2^5 + 2^3 + 2^2 + 2^0
+          \]
+        </div>
+
+        <h3>Step 3: Substitute the values</h3>
+        <div class="math-display">
+          \[
+            101101_2 = 32 + 8 + 4 + 1 = 45_{10}
+          \]
+        </div>
+
+        <h3>Answer</h3>
+        <p>
+          The binary number <code>101101</code> represents the decimal value \(45\).
+        </p>
+      </section>
+
+      <section id="worked-example-2">
+        <h2>Worked example 2: decimal to binary</h2>
+        <p>
+          Convert \(45_{10}\) into binary.
+        </p>
+
+        <h3>Step 1: Find the largest power of 2 that fits</h3>
+        <p>
+          The largest power of 2 less than or equal to 45 is 32.
+        </p>
+        <div class="math-display">
+          \[
+            2^5 = 32
+          \]
+        </div>
+
+        <h3>Step 2: Subtract powers of 2</h3>
+        <div class="math-display">
+          \[
+            45 - 32 = 13
+          \]
+          \[
+            13 - 8 = 5
+          \]
+          \[
+            5 - 4 = 1
+          \]
+          \[
+            1 - 1 = 0
+          \]
+        </div>
+
+        <h3>Step 3: Mark the powers used</h3>
+        <p>
+          We used \(2^5\), \(2^3\), \(2^2\), and \(2^0\). We did not use \(2^4\) or \(2^1\).
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Power</th>
+              <th>\(2^5\)</th>
+              <th>\(2^4\)</th>
+              <th>\(2^3\)</th>
+              <th>\(2^2\)</th>
+              <th>\(2^1\)</th>
+              <th>\(2^0\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Value</td>
+              <td>32</td>
+              <td>16</td>
+              <td>8</td>
+              <td>4</td>
+              <td>2</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>Used?</td>
+              <td>1</td>
+              <td>0</td>
+              <td>1</td>
+              <td>1</td>
+              <td>0</td>
+              <td>1</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Answer</h3>
+        <div class="math-display">
+          \[
+            45_{10} = 101101_2
+          \]
+        </div>
+      </section>
+
+      <section id="worked-example-3">
+        <h2>Worked example 3: binary to hexadecimal</h2>
+        <p>
+          Convert <code>01010111</code> into hexadecimal.
+        </p>
+
+        <h3>Step 1: Split the byte into two nibbles</h3>
+        <div class="math-display">
+          \[
+            01010111_2 = 0101\;0111_2
+          \]
+        </div>
+
+        <h3>Step 2: Convert each nibble</h3>
+        <p>
+          The left nibble <code>0101</code> is 5. The right nibble <code>0111</code> is 7.
+        </p>
+
+        <h3>Answer</h3>
+        <div class="math-display">
+          \[
+            01010111_2 = \texttt{0x57}
+          \]
+        </div>
+
+        <p>
+          This value, <code>0x57</code>, appears often in AES finite-field examples. Later, when we say
+          <code>0x57</code>, you should be able to see the byte hiding inside it: <code>01010111</code>.
+        </p>
+      </section>
+
+      <section id="fixed-width">
+        <h2>Fixed-width values and overflow</h2>
+        <p>
+          Computers often work with fixed-size containers. A byte has exactly 8 bits. That means a byte can store
+          exactly \(2^8\) different patterns.
+        </p>
+
+        <div class="math-display">
+          \[
+            2^8 = 256
+          \]
+        </div>
+
+        <p>
+          Since counting starts at 0, the unsigned values of one byte are:
+        </p>
+        <div class="math-display">
+          \[
+            0 \text{ through } 255
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: overflow</div>
+          <p>
+            Overflow happens when a calculation produces a value too large for the fixed-width container.
+            In an 8-bit byte, anything beyond <code>11111111</code> cannot fit unless the system uses a special rule
+            for wrapping, truncating, or reducing the result.
+          </p>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Mental picture</div>
+          <p>
+            Think of a byte as an eight-slot display. You can flip the slots on or off, but you cannot grow a ninth
+            slot unless you move to a larger container. Cryptography often cares deeply about what happens when
+            the ninth slot tries to appear.
+          </p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating hex as a different value</div>
+          <p>
+            <code>0x2D</code>, <code>00101101</code>, and \(45_{10}\) are not three different quantities. They are three
+            different representations of the same quantity.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting that position 0 is worth 1</div>
+          <p>
+            The rightmost binary position is \(2^0\), and \(2^0 = 1\). This is not a special exception. Any nonzero
+            number to the zero power is 1.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: forgetting leading zeros</div>
+          <p>
+            The value <code>101101</code> and the byte <code>00101101</code> have the same numeric value, but the byte form
+            explicitly shows all 8 positions. In cryptography, width matters.
+          </p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Convert <code>1101</code> to decimal.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>1101</code> has 1 bits in positions 3, 2, and 0.</p>
+              <div class="math-display">
+                \[
+                  1101_2 = 2^3 + 2^2 + 2^0 = 8 + 4 + 1 = 13_{10}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert \(27_{10}\) to binary.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Break 27 into powers of 2:</p>
+              <div class="math-display">
+                \[
+                  27 = 16 + 8 + 2 + 1
+                \]
+                \[
+                  27_{10} = 11011_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert <code>10101110</code> to hexadecimal.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Split the byte into nibbles:</p>
+              <div class="math-display">
+                \[
+                  10101110_2 = 1010\;1110_2
+                \]
+              </div>
+              <p><code>1010</code> is <code>A</code>. <code>1110</code> is <code>E</code>.</p>
+              <div class="math-display">
+                \[
+                  10101110_2 = \texttt{0xAE}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert <code>0xC1</code> to binary.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>C</code> is <code>1100</code>. <code>1</code> is <code>0001</code>.</p>
+              <div class="math-display">
+                \[
+                  \texttt{0xC1} = 11000001_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            What is the largest unsigned decimal value that fits in one byte?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A byte has 8 bits, so it has \(2^8 = 256\) possible patterns. Since counting begins at 0, the largest value is:</p>
+              <div class="math-display">
+                \[
+                  256 - 1 = 255
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Cryptographic algorithms usually operate on fixed-size pieces of data. AES, for example, works heavily
+          with bytes. Those bytes are often written in hexadecimal because hex is compact and maps cleanly to binary.
+        </p>
+        <ul>
+          <li>Binary shows the actual bits that bitwise operations manipulate.</li>
+          <li>Hexadecimal gives a readable shorthand for bytes and larger blocks.</li>
+          <li>Fixed-width thinking prepares you for overflow, modular arithmetic, and finite-field reduction.</li>
+          <li>Byte fluency makes AES examples such as <code>0x57 · 0x83</code> much easier to follow later.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A base is the counting rhythm of a number system.</li>
+            <li>Binary is base 2 and uses only <code>0</code> and <code>1</code>.</li>
+            <li>Decimal is base 10 and uses digits <code>0</code> through <code>9</code>.</li>
+            <li>Hexadecimal is base 16 and uses <code>0</code> through <code>9</code>, then <code>A</code> through <code>F</code>.</li>
+            <li>One nibble is 4 bits.</li>
+            <li>One byte is 8 bits.</li>
+            <li>One hex digit matches one nibble.</li>
+            <li>Two hex digits match one byte.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Meaning</th>
+              <th>Cryptography connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bit</td>
+              <td>A single 0 or 1</td>
+              <td>The raw material of modern cryptography</td>
+            </tr>
+            <tr>
+              <td>Nibble</td>
+              <td>4 bits</td>
+              <td>Matches exactly one hex digit</td>
+            </tr>
+            <tr>
+              <td>Byte</td>
+              <td>8 bits</td>
+              <td>Common unit in block ciphers such as AES</td>
+            </tr>
+            <tr>
+              <td>Hexadecimal</td>
+              <td>Base 16 shorthand</td>
+              <td>Readable way to write bytes and keys</td>
+            </tr>
+            <tr>
+              <td>Fixed width</td>
+              <td>A container with a set number of bits</td>
+              <td>Leads to overflow, wrapping, and reduction rules</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              \text{In base } b,\text{ position } k \text{ is worth } b^k.
+            \]
+            \[
+              1\text{ byte} = 8\text{ bits} = 2\text{ hex digits}
+            \]
+            \[
+              2^8 = 256 \text{ possible byte patterns}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Bitwise Operations as Algebra</strong>. Now that bits and bytes are visible,
+          we can learn how operations such as exclusive OR, AND, shifts, and rotations transform them.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES Decryption Flow: Walking the Cipher Backward | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .decrypt-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .flow-table,
+    .round-table,
+    .compare-table,
+    .key-table,
+    .inverse-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .flow-table th,
+    .flow-table td,
+    .round-table th,
+    .round-table td,
+    .compare-table th,
+    .compare-table td,
+    .key-table th,
+    .key-table td,
+    .inverse-table th,
+    .inverse-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .flow-table th,
+    .round-table th,
+    .compare-table th,
+    .key-table th,
+    .inverse-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .flow-table td,
+    .flow-table th,
+    .round-table td,
+    .round-table th,
+    .compare-table td,
+    .compare-table th,
+    .key-table td,
+    .key-table th,
+    .inverse-table td,
+    .inverse-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .initial-node { background: #fdeaea; border-color: #efb5b5; }
+    .main-node { background: #f0eafe; border-color: #d8c8f5; }
+    .final-node { background: #fff4d8; border-color: #ead399; }
+    .plain-node { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .timeline-step {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .timeline-label {
+      font-weight: 900;
+      color: #1f3763;
+      text-align: center;
+      background: #eef3ff;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .timeline-body { font-weight: 650; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .timeline-step { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .timeline-step, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, .timeline-step, .timeline-label, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .flow-table th, .round-table th, .compare-table th, .key-table th, .inverse-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 23</div>
+      <h1>AES Decryption Flow: Walking the Cipher Backward</h1>
+      <p class="subtitle">
+        How AES-128 decryption starts from ciphertext, uses round keys in reverse order, applies inverse layers, and recovers the plaintext block.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="22-aes-encryption-flow-initial-round-main-rounds-and-final-round.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 22 mapped AES-128 encryption from plaintext to ciphertext. This tutorial walks that same machine backward. Decryption is not a new unrelated cipher. It is the carefully ordered reversal of encryption, using inverse layers and round keys in reverse order.
+          </p>
+        </div>
+
+        <p class="lead">
+          AES decryption is the return journey through the maze. You do not undo the first door first. You undo the last door first, then step backward through the path until the original plaintext is recovered.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know the AES encryption flow, the normal round structure, the final round difference, and the inverse operations: InvSubBytes, InvShiftRows, InvMixColumns, and AddRoundKey. Remember that AddRoundKey is its own inverse because XOR undoes itself.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Decryption uses the same state and round-key language as encryption, but the direction is reversed.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>ciphertext</td><td>The encrypted 16-byte block we begin with during decryption.</td><td>The output of encryption and input to decryption.</td></tr>
+            <tr><td>plaintext</td><td>The original 16-byte message block recovered at the end.</td><td>The output of successful decryption.</td></tr>
+            <tr><td>\(K_{10}\)</td><td>The first key used during AES-128 decryption.</td><td>The final encryption round key, applied first in decryption.</td></tr>
+            <tr><td>\(K_9,\ldots,K_1\)</td><td>The keys used while walking through the main rounds backward.</td><td>Round keys applied in descending order.</td></tr>
+            <tr><td>\(K_0\)</td><td>The last key removed during AES-128 decryption.</td><td>The initial encryption key addition, undone last.</td></tr>
+            <tr><td>InvSubBytes</td><td>Undo the S-box replacement.</td><td>The inverse AES S-box layer.</td></tr>
+            <tr><td>InvShiftRows</td><td>Move rows back to their original positions.</td><td>The inverse AES row permutation.</td></tr>
+            <tr><td>InvMixColumns</td><td>Undo column mixing.</td><td>The inverse AES column linear transformation over \(\mathrm{GF}(2^8)\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The full AES-128 decryption flow</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Encryption ends with AddRoundKey using \(K_{10}\). Therefore decryption begins by applying AddRoundKey with \(K_{10}\). From there, decryption uses inverse layers and round keys in reverse order until \(K_0\) is removed at the end.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="AES-128 decryption flow overview">
+          <div class="diagram-title">AES-128 decryption overview</div>
+          <div class="flow-row">
+            <div class="flow-node">Ciphertext block</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node final-node">Undo final round<br>AddRoundKey \(K_{10}\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node main-node">Undo rounds 9-1<br>inverse main rounds</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node initial-node">Undo initial<br>AddRoundKey \(K_0\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node plain-node">Plaintext block</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="encryption-reversal">
+        <h2>Encryption flow reversed</h2>
+        <p>
+          AES-128 encryption flow is:</p>
+        <div class="math-display">
+          \[
+            K_0\ \text{initial add}\rightarrow\text{rounds }1\text{-}9\rightarrow\text{round }10\rightarrow\text{ciphertext}
+          \]
+        </div>
+        <p>
+          AES-128 decryption walks backward:</p>
+        <div class="math-display">
+          \[
+            K_{10}\ \text{first}\rightarrow\text{rounds }9\text{-}1\rightarrow K_0\ \text{last}\rightarrow\text{plaintext}
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Reverse-order rule</div>
+          <p>
+            If encryption applies A, then B, then C, decryption must undo C first, then B, then A. This rule drives the entire AES decryption flow.</p>
+        </div>
+      </section>
+
+      <section id="undo-final-round">
+        <h2>Step 1: Undo the final encryption round</h2>
+        <p>
+          The final encryption round was:</p>
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{AddRoundKey}(K_{10})
+          \]
+        </div>
+        <p>
+          To undo it, decryption applies the inverse steps in reverse order:</p>
+        <div class="math-display">
+          \[
+            \text{AddRoundKey}(K_{10})\rightarrow\text{InvShiftRows}\rightarrow\text{InvSubBytes}
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Why no InvMixColumns here?</div>
+          <p>
+            The final encryption round did not include MixColumns. Since there was no MixColumns in the final round, there is no InvMixColumns needed when undoing that final round.</p>
+        </div>
+      </section>
+
+      <section id="undo-main-rounds">
+        <h2>Step 2: Undo rounds 9 through 1</h2>
+        <p>
+          A normal encryption round applies:</p>
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{MixColumns}\rightarrow\text{AddRoundKey}(K_r)
+          \]
+        </div>
+        <p>
+          The matching inverse round applies:</p>
+        <div class="math-display">
+          \[
+            \text{AddRoundKey}(K_r)\rightarrow\text{InvMixColumns}\rightarrow\text{InvShiftRows}\rightarrow\text{InvSubBytes}
+          \]
+        </div>
+
+        <p>
+          Decryption performs this for \(r=9,8,7,\ldots,1\).</p>
+
+        <table class="round-table">
+          <thead><tr><th>Decryption phase</th><th>Round key</th><th>Inverse layers</th></tr></thead>
+          <tbody>
+            <tr><td>Undo round 9</td><td>\(K_9\)</td><td>AddRoundKey, InvMixColumns, InvShiftRows, InvSubBytes</td></tr>
+            <tr><td>Undo round 8</td><td>\(K_8\)</td><td>AddRoundKey, InvMixColumns, InvShiftRows, InvSubBytes</td></tr>
+            <tr><td>⋮</td><td>⋮</td><td>Same inverse main-round structure</td></tr>
+            <tr><td>Undo round 1</td><td>\(K_1\)</td><td>AddRoundKey, InvMixColumns, InvShiftRows, InvSubBytes</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="undo-initial">
+        <h2>Step 3: Undo the initial AddRoundKey</h2>
+        <p>
+          Encryption began with:</p>
+        <div class="math-display">
+          \[
+            \text{State}_0=\text{Plaintext}\oplus K_0
+          \]
+        </div>
+        <p>
+          Decryption ends by applying AddRoundKey with \(K_0\) again:</p>
+        <div class="math-display">
+          \[
+            \text{Plaintext}=\text{State}_0\oplus K_0
+          \]
+        </div>
+
+        <div class="box decrypt-box">
+          <div class="box-title">Why the same operation works</div>
+          <p>
+            XOR is its own inverse. If \(x\oplus k=y\), then \(y\oplus k=x\). This is why AddRoundKey is used both for encryption key addition and decryption key removal.</p>
+        </div>
+      </section>
+
+      <section id="timeline">
+        <h2>AES-128 decryption timeline</h2>
+        <p>
+          Here is AES-128 decryption as a timeline.</p>
+
+        <div class="timeline">
+          <div class="timeline-step">
+            <div class="timeline-label">Input</div>
+            <div class="timeline-body">Load the 16-byte ciphertext block into the AES state.</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Undo final</div>
+            <div class="timeline-body">Apply AddRoundKey with \(K_{10}\), then InvShiftRows, then InvSubBytes.</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Undo 9-1</div>
+            <div class="timeline-body">For \(r=9\) down to \(1\), apply AddRoundKey with \(K_r\), InvMixColumns, InvShiftRows, and InvSubBytes.</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Undo initial</div>
+            <div class="timeline-body">Apply AddRoundKey with \(K_0\).</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Output</div>
+            <div class="timeline-body">Read the resulting state as the plaintext block.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pseudocode">
+        <h2>AES-128 decryption pseudocode</h2>
+        <p>
+          In readable pseudocode, AES-128 decryption looks like this:</p>
+
+        <div class="box technical-box">
+          <pre><code>state = ciphertext
+state = AddRoundKey(state, K10)
+state = InvShiftRows(state)
+state = InvSubBytes(state)
+
+for round = 9 down to 1:
+    state = AddRoundKey(state, K_round)
+    state = InvMixColumns(state)
+    state = InvShiftRows(state)
+    state = InvSubBytes(state)
+
+state = AddRoundKey(state, K0)
+
+plaintext = state</code></pre>
+        </div>
+
+        <p>
+          This pseudocode matches the conceptual reversal of the encryption flow. Some optimized implementations rearrange equivalent steps, but this is the clearest learning version.</p>
+      </section>
+
+      <section id="layer-inverses">
+        <h2>Layer inverses</h2>
+        <p>
+          Each encryption layer has a matching undo operation.</p>
+
+        <table class="inverse-table">
+          <thead><tr><th>Encryption layer</th><th>Decryption inverse</th><th>Why it works</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>InvSubBytes</td><td>The AES S-box is bijective.</td></tr>
+            <tr><td>ShiftRows</td><td>InvShiftRows</td><td>ShiftRows is a reversible byte permutation.</td></tr>
+            <tr><td>MixColumns</td><td>InvMixColumns</td><td>The MixColumns matrix is invertible over \(\mathrm{GF}(2^8)\).</td></tr>
+            <tr><td>AddRoundKey</td><td>AddRoundKey</td><td>XOR undoes itself.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="key-order">
+        <h2>Round keys are used backward</h2>
+        <p>
+          Encryption uses round keys in increasing order:</p>
+        <div class="math-display">
+          \[
+            K_0,K_1,K_2,\ldots,K_9,K_{10}
+          \]
+        </div>
+        <p>
+          Decryption uses them in decreasing order:</p>
+        <div class="math-display">
+          \[
+            K_{10},K_9,K_8,\ldots,K_1,K_0
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            The last key used in encryption is the first key used in decryption. The first key used in encryption is the last key used in decryption.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: starting decryption with \(K_0\)</div>
+          <p>
+            Decryption starts with \(K_{10}\), because \(K_{10}\) was the final key applied during encryption.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: applying inverse layers in the forward order</div>
+          <p>
+            Decryption must reverse the order of encryption layers. The last operation applied is the first one undone.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using InvMixColumns when undoing the final round</div>
+          <p>
+            The final encryption round omitted MixColumns, so the first decryption phase does not use InvMixColumns.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking AddRoundKey needs a special inverse</div>
+          <p>
+            AddRoundKey is XOR. Applying the same round key again undoes it.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Which round key is used first during AES-128 decryption?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(K_{10}\).</p>
+            </details>
+          </li>
+          <li>
+            Which round key is used last during AES-128 decryption?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(K_0\).</p>
+            </details>
+          </li>
+          <li>
+            Why is there no InvMixColumns immediately after the first AddRoundKey in decryption?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because the final encryption round did not include MixColumns.</p>
+            </details>
+          </li>
+          <li>
+            What inverse operation undoes ShiftRows?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>InvShiftRows.</p>
+            </details>
+          </li>
+          <li>
+            Why does AddRoundKey undo itself?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because XOR undoes itself: \(x\oplus k\oplus k=x\).</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          AES decryption demonstrates a major principle of block-cipher design: secure scrambling can still be reversible. Each encryption layer is designed to be undone with the correct inverse operation and the correct round key.</p>
+        <ul>
+          <li>Decryption begins with ciphertext, not plaintext.</li>
+          <li>Round keys are used from \(K_{10}\) down to \(K_0\).</li>
+          <li>The final encryption round is undone first.</li>
+          <li>Main encryption rounds are undone from round 9 down to round 1.</li>
+          <li>The original plaintext appears only after \(K_0\) is removed.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AES-128 decryption starts from the ciphertext block.</li>
+            <li>The first decryption key used is \(K_{10}\).</li>
+            <li>The last decryption key used is \(K_0\).</li>
+            <li>Decryption uses round keys in reverse order.</li>
+            <li>The final encryption round is undone first.</li>
+            <li>Undoing the final round uses AddRoundKey, InvShiftRows, InvSubBytes.</li>
+            <li>No InvMixColumns is used in that first decryption phase because final encryption omitted MixColumns.</li>
+            <li>Main rounds are undone from round 9 down to round 1.</li>
+            <li>Each inverse main round uses AddRoundKey, InvMixColumns, InvShiftRows, InvSubBytes.</li>
+            <li>The final decryption step is AddRoundKey with \(K_0\), producing plaintext.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Decryption stage</th><th>Operation</th><th>Round key</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>Load ciphertext</td><td>None</td></tr>
+            <tr><td>Undo final round</td><td>AddRoundKey, InvShiftRows, InvSubBytes</td><td>\(K_{10}\)</td></tr>
+            <tr><td>Undo rounds 9-1</td><td>AddRoundKey, InvMixColumns, InvShiftRows, InvSubBytes</td><td>\(K_9\) through \(K_1\)</td></tr>
+            <tr><td>Undo initial key addition</td><td>AddRoundKey</td><td>\(K_0\)</td></tr>
+            <tr><td>End</td><td>Read plaintext</td><td>None</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">AES-128 decryption pseudocode map</div>
+          <pre><code>state = ciphertext
+state = AddRoundKey(state, K10)
+state = InvShiftRows(state)
+state = InvSubBytes(state)
+
+for round = 9 down to 1:
+    state = AddRoundKey(state, K_round)
+    state = InvMixColumns(state)
+    state = InvShiftRows(state)
+    state = InvSubBytes(state)
+
+state = AddRoundKey(state, K0)
+
+plaintext = state</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Key Expansion I: Round Keys, Words, RotWord, and SubWord</strong>. We will finally open the key schedule box and see how AES turns one key into many round keys.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

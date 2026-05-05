@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 6: The Euclidean Algorithm | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .division-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .division-table th, .division-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .division-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .division-table th,
+    .division-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .division-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 6</div>
+      <h1>The Euclidean Algorithm</h1>
+      <p class="subtitle">
+        Printable practice for division with remainders, greatest common divisors, coprime checks, and inverse-existence decisions.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="06-euclidean-algorithm.html">Tutorial 6</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            The Euclidean algorithm is a repeated division process. At each step, divide the larger number by the smaller number, record the remainder, then replace the pair with the divisor and the remainder. Stop when the remainder becomes 0. The answer is the last nonzero remainder.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core ideas</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Idea</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>\(\gcd(a,b)\)</td><td>The greatest common divisor of \(a\) and \(b\).</td></tr>
+                <tr><td>Division form</td><td>\(a=qb+r\), where \(r\) is the remainder.</td></tr>
+                <tr><td>Euclidean step</td><td>Replace \((a,b)\) with \((b,r)\).</td></tr>
+                <tr><td>Stopping rule</td><td>Stop when the remainder is 0.</td></tr>
+                <tr><td>Answer</td><td>The last nonzero remainder.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Core formulas</div>
+            <div class="math-display">
+              \[
+                a=qb+r,\qquad 0\le r<b
+              \]
+              \[
+                \gcd(a,b)=\gcd(b,r)
+              \]
+              \[
+                a^{-1}\pmod n\text{ exists when }\gcd(a,n)=1
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. Define \(\gcd(a,b)\) in friendly language.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. In the equation \(a=qb+r\), what do \(q\) and \(r\) mean?</div>
+          <p>\(q\):</p>
+          <span class="blank-line"></span>
+          <p>\(r\):</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. What is the next pair after writing \(a=qb+r\)?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. Why does \(\gcd(a,n)=1\) matter for modular inverses?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="division-with-remainder">
+        <h2>Part B: Division with remainder</h2>
+        <p>Write each equation in the form \(a=qb+r\).</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Divide</th>
+              <th>Division form \(a=qb+r\)</th>
+              <th>Remainder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td>84 divided by 30</td><td></td><td></td></tr>
+            <tr><td>B2</td><td>99 divided by 78</td><td></td><td></td></tr>
+            <tr><td>B3</td><td>252 divided by 105</td><td></td><td></td></tr>
+            <tr><td>B4</td><td>151 divided by 25</td><td></td><td></td></tr>
+            <tr><td>B5</td><td>391 divided by 299</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="basic-gcd">
+        <h2>Part C: Find the greatest common divisor</h2>
+        <p>Use the Euclidean algorithm. Show every division step.</p>
+
+        <div class="problem">
+          <div class="problem-title">C1. Find \(\gcd(84,30)\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Find \(\gcd(252,105)\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. Find \(\gcd(151,25)\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="table-format">
+        <h2>Part D: Euclidean algorithm table format</h2>
+        <p>Complete each table, then identify the greatest common divisor.</p>
+
+        <div class="problem">
+          <div class="problem-title">D1. Find \(\gcd(391,299)\).</div>
+          <table class="division-table">
+            <thead>
+              <tr><th>Step</th><th>Division</th><th>Remainder</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td></td><td></td></tr>
+              <tr><td>2</td><td></td><td></td></tr>
+              <tr><td>3</td><td></td><td></td></tr>
+            </tbody>
+          </table>
+          <p>Greatest common divisor:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. Find \(\gcd(99,78)\).</div>
+          <table class="division-table">
+            <thead>
+              <tr><th>Step</th><th>Division</th><th>Remainder</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td></td><td></td></tr>
+              <tr><td>2</td><td></td><td></td></tr>
+              <tr><td>3</td><td></td><td></td></tr>
+              <tr><td>4</td><td></td><td></td></tr>
+              <tr><td>5</td><td></td><td></td></tr>
+            </tbody>
+          </table>
+          <p>Greatest common divisor:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="coprime-checks">
+        <h2>Part E: Coprime checks</h2>
+        <p>Use the Euclidean algorithm to decide whether each pair is coprime.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Pair</th>
+              <th>\(\gcd\)</th>
+              <th>Coprime?</th>
+              <th>Reason/work</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>E1</td><td>35 and 64</td><td></td><td></td><td></td></tr>
+            <tr><td>E2</td><td>26 and 15</td><td></td><td></td><td></td></tr>
+            <tr><td>E3</td><td>26 and 13</td><td></td><td></td><td></td></tr>
+            <tr><td>E4</td><td>144 and 89</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="inverse-existence">
+        <h2>Part F: Modular inverse existence</h2>
+        <p>Decide whether the inverse exists. You do not need to find the inverse yet.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Question</th>
+              <th>Relevant \(\gcd\)</th>
+              <th>Inverse exists?</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>F1</td><td>Does 35 have an inverse modulo 64?</td><td></td><td></td><td></td></tr>
+            <tr><td>F2</td><td>Does 15 have an inverse modulo 26?</td><td></td><td></td><td></td></tr>
+            <tr><td>F3</td><td>Does 13 have an inverse modulo 26?</td><td></td><td></td><td></td></tr>
+            <tr><td>F4</td><td>Does 25 have an inverse modulo 151?</td><td></td><td></td><td></td></tr>
+            <tr><td>F5</td><td>Does 299 have an inverse modulo 391?</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="explain-the-process">
+        <h2>Part G: Explain the process</h2>
+
+        <div class="problem">
+          <div class="problem-title">G1. Explain why the Euclidean algorithm replaces \((a,b)\) with \((b,r)\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Explain why the last nonzero remainder is the greatest common divisor.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. Explain the difference between the Euclidean algorithm and the extended Euclidean algorithm.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="challenge">
+        <h2>Part H: Challenge problems</h2>
+        <div class="box challenge-box">
+          <div class="box-title">Stretch the concept</div>
+          <p>
+            These problems are here to build confidence with longer chains.
+          </p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. Find \(\gcd(987,610)\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. Find \(\gcd(4096,255)\). Then decide whether 255 has an inverse modulo 4096.</div>
+          <div class="work-space large-work-space"></div>
+          <p>Greatest common divisor:</p>
+          <span class="blank-line"></span>
+          <p>Inverse exists?</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead>
+            <tr><th>Statement</th><th>True or False?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>The Euclidean algorithm repeatedly uses division with remainder.</td><td></td></tr>
+            <tr><td>When the remainder becomes 0, the greatest common divisor is 0.</td><td></td></tr>
+            <tr><td>After \(a=qb+r\), the next pair is \((b,r)\).</td><td></td></tr>
+            <tr><td>If \(\gcd(a,n)=1\), then \(a\) has an inverse modulo \(n\).</td><td></td></tr>
+            <tr><td>The Euclidean algorithm directly gives the modular inverse.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            Always check that each remainder is smaller than the previous divisor. The answer is the last nonzero remainder, not the zero remainder.
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> \(\gcd(a,b)\) is the largest number that divides both \(a\) and \(b\) evenly.</p>
+          <p><strong>A2.</strong> \(q\) is the quotient, or how many full copies fit. \(r\) is the remainder, or what is left over.</p>
+          <p><strong>A3.</strong> The next pair is \((b,r)\).</p>
+          <p><strong>A4.</strong> \(\gcd(a,n)=1\) means \(a\) and \(n\) are coprime. That is exactly when \(a\) has a multiplicative inverse modulo \(n\).</p>
+        </div>
+
+        <h3>Part B: Division with remainder</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Division form</th><th>Remainder</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\(84=2\cdot30+24\)</td><td>24</td></tr>
+            <tr><td>B2</td><td>\(99=1\cdot78+21\)</td><td>21</td></tr>
+            <tr><td>B3</td><td>\(252=2\cdot105+42\)</td><td>42</td></tr>
+            <tr><td>B4</td><td>\(151=6\cdot25+1\)</td><td>1</td></tr>
+            <tr><td>B5</td><td>\(391=1\cdot299+92\)</td><td>92</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Find the greatest common divisor</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong></p>
+          <div class="math-display">
+            \[
+              84=2\cdot30+24
+            \]
+            \[
+              30=1\cdot24+6
+            \]
+            \[
+              24=4\cdot6+0
+            \]
+          </div>
+          <p>\(\gcd(84,30)=6\).</p>
+
+          <p><strong>C2.</strong></p>
+          <div class="math-display">
+            \[
+              252=2\cdot105+42
+            \]
+            \[
+              105=2\cdot42+21
+            \]
+            \[
+              42=2\cdot21+0
+            \]
+          </div>
+          <p>\(\gcd(252,105)=21\).</p>
+
+          <p><strong>C3.</strong></p>
+          <div class="math-display">
+            \[
+              151=6\cdot25+1
+            \]
+            \[
+              25=25\cdot1+0
+            \]
+          </div>
+          <p>\(\gcd(151,25)=1\).</p>
+        </div>
+
+        <h3>Part D: Table format</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong></p>
+          <div class="math-display">
+            \[
+              391=1\cdot299+92
+            \]
+            \[
+              299=3\cdot92+23
+            \]
+            \[
+              92=4\cdot23+0
+            \]
+          </div>
+          <p>\(\gcd(391,299)=23\).</p>
+
+          <p><strong>D2.</strong></p>
+          <div class="math-display">
+            \[
+              99=1\cdot78+21
+            \]
+            \[
+              78=3\cdot21+15
+            \]
+            \[
+              21=1\cdot15+6
+            \]
+            \[
+              15=2\cdot6+3
+            \]
+            \[
+              6=2\cdot3+0
+            \]
+          </div>
+          <p>\(\gcd(99,78)=3\).</p>
+        </div>
+
+        <h3>Part E: Coprime checks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>\(\gcd\)</th><th>Coprime?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td>1</td><td>Yes</td><td>\(64=1\cdot35+29\), \(35=1\cdot29+6\), \(29=4\cdot6+5\), \(6=1\cdot5+1\).</td></tr>
+            <tr><td>E2</td><td>1</td><td>Yes</td><td>\(26=1\cdot15+11\), \(15=1\cdot11+4\), \(11=2\cdot4+3\), \(4=1\cdot3+1\).</td></tr>
+            <tr><td>E3</td><td>13</td><td>No</td><td>\(26=2\cdot13+0\).</td></tr>
+            <tr><td>E4</td><td>1</td><td>Yes</td><td>\(144=1\cdot89+55\), \(89=1\cdot55+34\), \(55=1\cdot34+21\), \(34=1\cdot21+13\), \(21=1\cdot13+8\), \(13=1\cdot8+5\), \(8=1\cdot5+3\), \(5=1\cdot3+2\), \(3=1\cdot2+1\).</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Modular inverse existence</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Relevant \(\gcd\)</th><th>Inverse exists?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>F1</td><td>\(\gcd(35,64)=1\)</td><td>Yes</td><td>Coprime.</td></tr>
+            <tr><td>F2</td><td>\(\gcd(15,26)=1\)</td><td>Yes</td><td>Coprime.</td></tr>
+            <tr><td>F3</td><td>\(\gcd(13,26)=13\)</td><td>No</td><td>Not coprime.</td></tr>
+            <tr><td>F4</td><td>\(\gcd(25,151)=1\)</td><td>Yes</td><td>Coprime.</td></tr>
+            <tr><td>F5</td><td>\(\gcd(299,391)=23\)</td><td>No</td><td>Not coprime.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: Explain the process</h3>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> If \(a=qb+r\), then \(r=a-qb\). Any number that divides both \(a\) and \(b\) also divides the remainder \(r\). So the common divisor problem does not change when we replace \((a,b)\) with \((b,r)\).</p>
+          <p><strong>G2 sample answer.</strong> The algorithm stops when the remainder is 0, meaning the previous divisor divides evenly. The last nonzero remainder is the largest value that divides the original pair.</p>
+          <p><strong>G3 sample answer.</strong> The Euclidean algorithm finds the greatest common divisor. The extended Euclidean algorithm also finds coefficients that express the greatest common divisor as a combination of the original two numbers, which lets us calculate modular inverses.</p>
+        </div>
+
+        <h3>Part H: Challenge problems</h3>
+        <div class="answer-step">
+          <p><strong>H1.</strong></p>
+          <div class="math-display">
+            \[
+              987=1\cdot610+377
+            \]
+            \[
+              610=1\cdot377+233
+            \]
+            \[
+              377=1\cdot233+144
+            \]
+            \[
+              233=1\cdot144+89
+            \]
+            \[
+              144=1\cdot89+55
+            \]
+            \[
+              89=1\cdot55+34
+            \]
+            \[
+              55=1\cdot34+21
+            \]
+            \[
+              34=1\cdot21+13
+            \]
+            \[
+              21=1\cdot13+8
+            \]
+            \[
+              13=1\cdot8+5
+            \]
+            \[
+              8=1\cdot5+3
+            \]
+            \[
+              5=1\cdot3+2
+            \]
+            \[
+              3=1\cdot2+1
+            \]
+            \[
+              2=2\cdot1+0
+            \]
+          </div>
+          <p>\(\gcd(987,610)=1\).</p>
+
+          <p><strong>H2.</strong></p>
+          <div class="math-display">
+            \[
+              4096=16\cdot255+16
+            \]
+            \[
+              255=15\cdot16+15
+            \]
+            \[
+              16=1\cdot15+1
+            \]
+            \[
+              15=15\cdot1+0
+            \]
+          </div>
+          <p>\(\gcd(4096,255)=1\). Therefore 255 has an inverse modulo 4096.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>The Euclidean algorithm repeatedly uses division with remainder.</td><td>True</td><td>That is the core process.</td></tr>
+            <tr><td>When the remainder becomes 0, the greatest common divisor is 0.</td><td>False</td><td>The answer is the last nonzero remainder.</td></tr>
+            <tr><td>After \(a=qb+r\), the next pair is \((b,r)\).</td><td>True</td><td>The old divisor and the remainder become the next pair.</td></tr>
+            <tr><td>If \(\gcd(a,n)=1\), then \(a\) has an inverse modulo \(n\).</td><td>True</td><td>This is the inverse-existence rule.</td></tr>
+            <tr><td>The Euclidean algorithm directly gives the modular inverse.</td><td>False</td><td>The extended Euclidean algorithm gives the inverse.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 6: The Euclidean Algorithm.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

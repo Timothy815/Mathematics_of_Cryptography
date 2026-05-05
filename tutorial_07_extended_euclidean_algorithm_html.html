@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Extended Euclidean Algorithm | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .division-table,
+    .back-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .division-table th,
+    .division-table td,
+    .back-table th,
+    .back-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .division-table th,
+    .back-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .division-table td,
+    .division-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .step-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .step-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .step-card.forward { border-left: 6px solid #334e7d; }
+    .step-card.backward { border-left: 6px solid #ead399; background: #fffdf6; }
+    .step-card.final { background: #eaf7ef; border-color: #b8dfc5; font-weight: 800; }
+
+    .coefficient-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      background: #ffffff;
+      padding: 16px;
+      margin: 16px 0;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .two-column { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .step-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .step-card, .coefficient-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .division-table th, .back-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 7</div>
+      <h1>The Extended Euclidean Algorithm</h1>
+      <p class="subtitle">
+        Finding the hidden coefficients inside the greatest common divisor, then using them to compute modular inverses.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="06-euclidean-algorithm.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            The Euclidean algorithm tells us the greatest common divisor. That is enough to decide whether a modular inverse exists. But cryptography often needs the inverse itself, not merely permission to have one. The extended Euclidean algorithm gives us that missing machinery.
+          </p>
+        </div>
+
+        <p class="lead">
+          The ordinary Euclidean algorithm walks forward until it finds the greatest common divisor. The extended version then walks backward, rewriting that greatest common divisor in terms of the original two numbers. Those hidden coefficients are the treasure map to modular inverses.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand division with remainder, the Euclidean algorithm, greatest common divisors, congruence, and the rule that \(a^{-1}\pmod n\) exists exactly when \(\gcd(a,n)=1\).
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This lesson introduces coefficients. They are not decorative algebra confetti; they are the numbers that let us reverse modular multiplication.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(a\), \(b\)</td>
+              <td>The two starting numbers.</td>
+              <td>Integers, usually positive in this tutorial.</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(a,b)\)</td>
+              <td>The largest number that divides both starting numbers.</td>
+              <td>The greatest common divisor of \(a\) and \(b\).</td>
+            </tr>
+            <tr>
+              <td>\(q\)</td>
+              <td>How many full copies fit in a division step.</td>
+              <td>The quotient in division with remainder.</td>
+            </tr>
+            <tr>
+              <td>\(r\)</td>
+              <td>The leftover amount in a division step.</td>
+              <td>The remainder in division with remainder.</td>
+            </tr>
+            <tr>
+              <td>\(s\), \(t\)</td>
+              <td>The hidden multipliers attached to the original numbers.</td>
+              <td>Integer coefficients in Bézout's identity.</td>
+            </tr>
+            <tr>
+              <td>\(sa+tb\)</td>
+              <td>A mixture made from copies of \(a\) and copies of \(b\).</td>
+              <td>An integer linear combination of \(a\) and \(b\).</td>
+            </tr>
+            <tr>
+              <td>Bézout's identity</td>
+              <td>The statement that the greatest common divisor can be made from the two original numbers.</td>
+              <td>There exist integers \(s\) and \(t\) such that \(\gcd(a,b)=sa+tb\).</td>
+            </tr>
+            <tr>
+              <td>\(a^{-1}\pmod n\)</td>
+              <td>The number that undoes multiplication by \(a\) modulo \(n\).</td>
+              <td>A residue \(x\) such that \(ax\equiv1\pmod n\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            The ordinary Euclidean algorithm says, “Here is the greatest common divisor.” The extended Euclidean algorithm says, “Here is how to build that divisor using the original numbers.” When the divisor is 1, that recipe becomes a modular inverse.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Extended Euclidean algorithm flow">
+          <div class="diagram-title">Forward to the gcd, backward to the inverse</div>
+          <div class="flow-row">
+            <div class="flow-node">Start<br>\((a,b)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Euclidean<br>Algorithm</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Find<br>\(\gcd(a,b)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Back-substitute</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">\(\gcd(a,b)=sa+tb\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bezout">
+        <h2>Bézout's identity</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Bézout's identity</div>
+          <p>
+            For integers \(a\) and \(b\), there exist integers \(s\) and \(t\) such that the greatest common divisor of \(a\) and \(b\) can be written as a linear combination of \(a\) and \(b\).
+          </p>
+          <div class="math-display">
+            \[
+              \gcd(a,b)=sa+tb
+            \]
+          </div>
+        </div>
+
+        <p>
+          The numbers \(s\) and \(t\) are called Bézout coefficients. They can be positive, negative, or zero. The extended Euclidean algorithm finds them.
+        </p>
+      </section>
+
+      <section id="why-inverses">
+        <h2>Why this finds modular inverses</h2>
+        <p>
+          Suppose we want the inverse of \(a\) modulo \(n\). If \(a\) and \(n\) are coprime, then:
+        </p>
+        <div class="math-display">
+          \[
+            \gcd(a,n)=1
+          \]
+        </div>
+        <p>
+          Bézout's identity says there are integers \(s\) and \(t\) such that:
+        </p>
+        <div class="math-display">
+          \[
+            1=sa+tn
+          \]
+        </div>
+        <p>
+          Now reduce both sides modulo \(n\). The term \(tn\) disappears because it is a multiple of \(n\):
+        </p>
+        <div class="math-display">
+          \[
+            1\equiv sa\pmod n
+          \]
+        </div>
+        <p>
+          That means \(s\) is the inverse of \(a\) modulo \(n\).
+        </p>
+        <div class="math-display">
+          \[
+            a^{-1}\equiv s\pmod n
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The treasure-map sentence</div>
+          <p>
+            If you can rewrite 1 as “some copies of \(a\) plus some copies of \(n\),” then the coefficient on \(a\) is the modular inverse of \(a\) modulo \(n\).
+          </p>
+        </div>
+      </section>
+
+      <section id="worked-example-small">
+        <h2>Worked example 1: find \(25^{-1}\pmod{151}\)</h2>
+        <p>
+          We want a number \(x\) such that:
+        </p>
+        <div class="math-display">
+          \[
+            25x\equiv1\pmod{151}
+          \]
+        </div>
+
+        <h3>Step 1: Run the Euclidean algorithm</h3>
+        <div class="step-stack">
+          <div class="step-card forward">
+            \[
+              151=6\cdot25+1
+            \]
+          </div>
+          <div class="step-card forward">
+            \[
+              25=25\cdot1+0
+            \]
+          </div>
+        </div>
+        <p>
+          The greatest common divisor is 1, so an inverse exists.
+        </p>
+
+        <h3>Step 2: Solve the nonzero remainder equation for 1</h3>
+        <p>
+          From the first equation:
+        </p>
+        <div class="math-display">
+          \[
+            151=6\cdot25+1
+          \]
+        </div>
+        <p>
+          Rearrange it to isolate 1:
+        </p>
+        <div class="math-display">
+          \[
+            1=151-6\cdot25
+          \]
+        </div>
+
+        <h3>Step 3: Read the coefficient of 25</h3>
+        <p>
+          The coefficient of 25 is \(-6\). Therefore:
+        </p>
+        <div class="math-display">
+          \[
+            25^{-1}\equiv -6\pmod{151}
+          \]
+        </div>
+        <p>
+          Convert \(-6\) to a standard positive residue by adding 151:
+        </p>
+        <div class="math-display">
+          \[
+            -6+151=145
+          \]
+        </div>
+        <p>
+          So:
+        </p>
+        <div class="math-display">
+          \[
+            25^{-1}\equiv145\pmod{151}
+          \]
+        </div>
+
+        <h3>Step 4: Check</h3>
+        <div class="math-display">
+          \[
+            25\cdot145=3625
+          \]
+          \[
+            3625\bmod151=1
+          \]
+        </div>
+      </section>
+
+      <section id="worked-example-medium">
+        <h2>Worked example 2: find \(15^{-1}\pmod{26}\)</h2>
+        <p>
+          This example takes several back-substitution steps, so we will move slowly.
+        </p>
+
+        <h3>Step 1: Run the Euclidean algorithm</h3>
+        <table class="division-table">
+          <thead>
+            <tr><th>Step</th><th>Division</th><th>Remainder</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>\(26=1\cdot15+11\)</td><td>11</td></tr>
+            <tr><td>2</td><td>\(15=1\cdot11+4\)</td><td>4</td></tr>
+            <tr><td>3</td><td>\(11=2\cdot4+3\)</td><td>3</td></tr>
+            <tr><td>4</td><td>\(4=1\cdot3+1\)</td><td>1</td></tr>
+            <tr><td>5</td><td>\(3=3\cdot1+0\)</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Since the last nonzero remainder is 1, the inverse exists.
+        </p>
+
+        <h3>Step 2: Write each useful remainder equation</h3>
+        <div class="step-stack">
+          <div class="step-card forward">\[11=26-1\cdot15\]</div>
+          <div class="step-card forward">\[4=15-1\cdot11\]</div>
+          <div class="step-card forward">\[3=11-2\cdot4\]</div>
+          <div class="step-card forward">\[1=4-1\cdot3\]</div>
+        </div>
+
+        <h3>Step 3: Back-substitute</h3>
+        <p>
+          Start with the equation for 1:
+        </p>
+        <div class="step-stack">
+          <div class="step-card backward">
+            \[
+              1=4-3
+            \]
+          </div>
+          <div class="step-card backward">
+            Substitute \(3=11-2\cdot4\):
+            \[
+              1=4-(11-2\cdot4)
+            \]
+            \[
+              1=3\cdot4-11
+            \]
+          </div>
+          <div class="step-card backward">
+            Substitute \(4=15-11\):
+            \[
+              1=3(15-11)-11
+            \]
+            \[
+              1=3\cdot15-4\cdot11
+            \]
+          </div>
+          <div class="step-card backward">
+            Substitute \(11=26-15\):
+            \[
+              1=3\cdot15-4(26-15)
+            \]
+            \[
+              1=7\cdot15-4\cdot26
+            \]
+          </div>
+          <div class="step-card final">
+            We have written \(1\) as a combination of 15 and 26:
+            \[
+              1=7\cdot15-4\cdot26
+            \]
+          </div>
+        </div>
+
+        <h3>Step 4: Read the inverse</h3>
+        <p>
+          The coefficient of 15 is 7, so:
+        </p>
+        <div class="math-display">
+          \[
+            15^{-1}\equiv7\pmod{26}
+          \]
+        </div>
+
+        <h3>Step 5: Check</h3>
+        <div class="math-display">
+          \[
+            15\cdot7=105
+          \]
+          \[
+            105\bmod26=1
+          \]
+        </div>
+      </section>
+
+      <section id="negative-coefficients">
+        <h2>Negative coefficients are normal</h2>
+        <p>
+          During back-substitution, coefficients often become negative. That is not a mistake. Modular arithmetic can convert a negative coefficient into its standard positive residue.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Converting a negative inverse</div>
+          <p>
+            If the coefficient is negative, add the modulus until it lands in the standard range \(0\) through \(n-1\).
+          </p>
+        </div>
+
+        <h3>Example</h3>
+        <p>
+          If the coefficient of \(a\) is \(-6\) modulo 151, then:
+        </p>
+        <div class="math-display">
+          \[
+            -6\equiv145\pmod{151}
+          \]
+        </div>
+        <p>
+          So \(-6\) and 145 represent the same residue modulo 151.
+        </p>
+      </section>
+
+      <section id="table-method">
+        <h2>A table method for coefficients</h2>
+        <p>
+          Back-substitution is conceptually clear, but it can get messy. A table can track coefficients more mechanically.
+          The goal is still the same: express each remainder as a combination of the two original numbers.
+        </p>
+
+        <h3>Example: \(\gcd(26,15)\)</h3>
+        <table class="back-table">
+          <thead>
+            <tr>
+              <th>Remainder</th>
+              <th>As a combination of 26 and 15</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>26</td><td>\(1\cdot26+0\cdot15\)</td></tr>
+            <tr><td>15</td><td>\(0\cdot26+1\cdot15\)</td></tr>
+            <tr><td>11</td><td>\(1\cdot26-1\cdot15\)</td></tr>
+            <tr><td>4</td><td>\(-1\cdot26+2\cdot15\)</td></tr>
+            <tr><td>3</td><td>\(3\cdot26-5\cdot15\)</td></tr>
+            <tr><td>1</td><td>\(-4\cdot26+7\cdot15\)</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          The final row says:
+        </p>
+        <div class="math-display">
+          \[
+            1=-4\cdot26+7\cdot15
+          \]
+        </div>
+        <p>
+          Again, the coefficient of 15 is 7, so \(15^{-1}\equiv7\pmod{26}\).
+        </p>
+      </section>
+
+      <section id="non-invertible-case">
+        <h2>What happens when the gcd is not 1?</h2>
+        <p>
+          If \(\gcd(a,n)\neq1\), then \(a\) has no inverse modulo \(n\). The extended Euclidean algorithm can still express the greatest common divisor as a combination of \(a\) and \(n\), but it will not produce an inverse.
+        </p>
+
+        <h3>Example: 13 modulo 26</h3>
+        <div class="math-display">
+          \[
+            26=2\cdot13+0
+          \]
+        </div>
+        <p>
+          The greatest common divisor is 13, not 1. Since we cannot write 1 as a combination of 13 and 26, there is no inverse of 13 modulo 26.
+        </p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important boundary</div>
+          <p>
+            The extended Euclidean algorithm does not magically make non-invertible numbers invertible. It reveals whether the door exists, and if the door exists, it gives you the key.
+          </p>
+        </div>
+      </section>
+
+      <section id="affine-cipher">
+        <h2>Cryptography example: affine cipher decryption</h2>
+        <p>
+          The affine cipher encrypts with:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv aP+b\pmod{26}
+          \]
+        </div>
+        <p>
+          To decrypt, we use:
+        </p>
+        <div class="math-display">
+          \[
+            P\equiv a^{-1}(C-b)\pmod{26}
+          \]
+        </div>
+
+        <h3>Example</h3>
+        <p>
+          Suppose:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv15P+8\pmod{26}
+          \]
+        </div>
+        <p>
+          We found:
+        </p>
+        <div class="math-display">
+          \[
+            15^{-1}\equiv7\pmod{26}
+          \]
+        </div>
+        <p>
+          If \(C=13\), then:
+        </p>
+        <div class="math-display">
+          \[
+            P\equiv7(13-8)\pmod{26}
+          \]
+          \[
+            P\equiv7\cdot5\pmod{26}
+          \]
+          \[
+            P\equiv35\pmod{26}
+          \]
+          \[
+            P\equiv9\pmod{26}
+          \]
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: losing signs during back-substitution</div>
+          <p>
+            When substituting an expression inside parentheses, distribute the negative sign carefully. Many wrong inverses are born from one escaped minus sign skittering across the page.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: reading the wrong coefficient</div>
+          <p>
+            To find \(a^{-1}\pmod n\), use the coefficient of \(a\), not the coefficient of \(n\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: forgetting to reduce negative answers</div>
+          <p>
+            If the coefficient is negative, convert it to a standard residue by adding the modulus. For example, \(-6\equiv145\pmod{151}\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: expecting an inverse when the gcd is not 1</div>
+          <p>
+            If \(\gcd(a,n)\neq1\), then \(a^{-1}\pmod n\) does not exist.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Use the extended Euclidean algorithm to find \(7^{-1}\pmod{12}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  12=1\cdot7+5
+                \]
+                \[
+                  7=1\cdot5+2
+                \]
+                \[
+                  5=2\cdot2+1
+                \]
+              </div>
+              <p>Back-substitute:</p>
+              <div class="math-display">
+                \[
+                  1=5-2\cdot2
+                \]
+                \[
+                  1=5-2(7-5)=3\cdot5-2\cdot7
+                \]
+                \[
+                  1=3(12-7)-2\cdot7=3\cdot12-5\cdot7
+                \]
+              </div>
+              <p>The coefficient of 7 is \(-5\). Since \(-5\equiv7\pmod{12}\), \(7^{-1}\equiv7\pmod{12}\).</p>
+            </details>
+          </li>
+          <li>
+            Use the extended Euclidean algorithm to find \(11^{-1}\pmod{26}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  26=2\cdot11+4
+                \]
+                \[
+                  11=2\cdot4+3
+                \]
+                \[
+                  4=1\cdot3+1
+                \]
+              </div>
+              <p>Back-substitute:</p>
+              <div class="math-display">
+                \[
+                  1=4-3
+                \]
+                \[
+                  1=4-(11-2\cdot4)=3\cdot4-11
+                \]
+                \[
+                  1=3(26-2\cdot11)-11=3\cdot26-7\cdot11
+                \]
+              </div>
+              <p>The coefficient of 11 is \(-7\). Since \(-7\equiv19\pmod{26}\), \(11^{-1}\equiv19\pmod{26}\).</p>
+            </details>
+          </li>
+          <li>
+            Use the extended Euclidean algorithm to find \(35^{-1}\pmod{64}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  64=1\cdot35+29
+                \]
+                \[
+                  35=1\cdot29+6
+                \]
+                \[
+                  29=4\cdot6+5
+                \]
+                \[
+                  6=1\cdot5+1
+                \]
+              </div>
+              <p>Back-substitute:</p>
+              <div class="math-display">
+                \[
+                  1=6-5
+                \]
+                \[
+                  1=6-(29-4\cdot6)=5\cdot6-29
+                \]
+                \[
+                  1=5(35-29)-29=5\cdot35-6\cdot29
+                \]
+                \[
+                  1=5\cdot35-6(64-35)=11\cdot35-6\cdot64
+                \]
+              </div>
+              <p>The coefficient of 35 is 11, so \(35^{-1}\equiv11\pmod{64}\).</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          The extended Euclidean algorithm is one of the most practical tools in computational number theory.
+        </p>
+        <ul>
+          <li>It computes modular inverses efficiently.</li>
+          <li>It supports affine cipher decryption.</li>
+          <li>It is used in RSA key generation to compute private exponents.</li>
+          <li>It appears in elliptic curve cryptography when dividing by field elements.</li>
+          <li>The polynomial version later helps explain finite-field inverses.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>The Euclidean algorithm finds \(\gcd(a,b)\).</li>
+            <li>The extended Euclidean algorithm finds coefficients \(s\) and \(t\).</li>
+            <li>Bézout's identity says \(\gcd(a,b)=sa+tb\).</li>
+            <li>If \(\gcd(a,n)=1\), then \(1=sa+tn\).</li>
+            <li>Reducing modulo \(n\), the \(tn\) term disappears.</li>
+            <li>The coefficient \(s\) of \(a\) is the inverse of \(a\) modulo \(n\).</li>
+            <li>If \(s\) is negative, add \(n\) until it is in the standard range.</li>
+            <li>If the gcd is not 1, no modular inverse exists.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Meaning</th>
+              <th>Cryptography connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bézout coefficients</td>
+              <td>The \(s\) and \(t\) in \(\gcd(a,b)=sa+tb\)</td>
+              <td>Used to find inverses</td>
+            </tr>
+            <tr>
+              <td>Back-substitution</td>
+              <td>Walking backward through Euclidean steps</td>
+              <td>Turns gcd into a useful coefficient equation</td>
+            </tr>
+            <tr>
+              <td>Modular inverse</td>
+              <td>Coefficient of \(a\) when \(1=sa+tn\)</td>
+              <td>Needed for decryption and RSA</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              \gcd(a,b)=sa+tb
+            \]
+            \[
+              1=sa+tn
+            \]
+            \[
+              1\equiv sa\pmod n
+            \]
+            \[
+              a^{-1}\equiv s\pmod n
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Bytes as Polynomials: The Alphabet of AES</strong>. We will shift from integers to polynomial representations, learning how a byte can be read as a polynomial with coefficients in \(\{0,1\}\).
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bitwise Operations as Algebra | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 {
+      line-height: 1.2;
+      margin: 0 0 0.75em;
+    }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 {
+      font-size: 1.25rem;
+      color: #283f68;
+      margin-top: 1.2em;
+    }
+
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .lead {
+      font-size: 1.14rem;
+      color: #333333;
+    }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title {
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #1f3763;
+    }
+
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .truth-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .truth-table th,
+    .truth-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .truth-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .truth-table td,
+    .truth-table th {
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .math-display {
+      overflow-x: auto;
+      padding: 12px 0;
+    }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title {
+      font-weight: 800;
+      color: #1f3763;
+      margin-bottom: 12px;
+    }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .flow-arrow {
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 1.4rem;
+    }
+
+    .bit-operation {
+      display: grid;
+      grid-template-columns: 120px repeat(8, minmax(42px, 1fr));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin: 18px 0;
+      min-width: 650px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .bit-operation div {
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      padding: 8px 5px;
+      background: #ffffff;
+    }
+
+    .bit-operation div:nth-child(9n) { border-right: none; }
+    .bit-operation div:nth-last-child(-n+9) { border-bottom: none; }
+
+    .row-label {
+      font-weight: 900;
+      color: #1f3763;
+      background: #eef3ff !important;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .result-bit {
+      font-weight: 900;
+      color: #16243d;
+      background: #eaf7ef !important;
+    }
+
+    .mask-bit {
+      background: #fff4d8 !important;
+    }
+
+    .shift-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(42px, 1fr));
+      gap: 6px;
+      min-width: 420px;
+      margin: 12px 0;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .shift-cell {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      font-weight: 900;
+      background: #ffffff;
+    }
+
+    .shift-cell.new-zero { background: #f5f5f5; color: #777777; }
+    .shift-cell.wrapped { background: #fff4d8; border-color: #ead399; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    .page-break { break-before: page; }
+
+    @media (max-width: 700px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 11pt;
+        line-height: 1.45;
+      }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 {
+        font-size: 16pt;
+        border-bottom: 1px solid #999999;
+        break-after: avoid;
+      }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details { break-inside: avoid; }
+      .box, .diagram, details.solution {
+        background: #ffffff !important;
+        border: 1px solid #999999;
+      }
+      .symbol-table th, .data-table th, .truth-table th, .row-label { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 2</div>
+      <h1>Bitwise Operations as Algebra</h1>
+      <p class="subtitle">
+        Learning how XOR, AND, OR, NOT, shifts, rotations, and masks transform bits one position at a time.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="01-binary-hex-bases.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Modern cryptography is built from operations that act directly on bits. Before we can understand stream ciphers,
+            block ciphers, substitution-permutation networks, finite fields, linear feedback shift registers, or key schedules,
+            we need to understand what basic bitwise operations actually do.
+          </p>
+        </div>
+
+        <p class="lead">
+          A bitwise operation is a small rule applied across a row of bits. It is like giving every bit position its own tiny workstation.
+          Each station looks only at the bit or bits in that position, follows the rule, and writes down a result.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should be comfortable reading 8-bit binary values and hexadecimal byte notation such as <code>0x57</code>.
+          If that still feels foggy, review Tutorial 1 before continuing.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Every symbol below is defined before we use it in the lesson. Bitwise notation is compact, so this table is our decoder ring.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(0\), \(1\)</td>
+              <td>The two possible bit values: off and on.</td>
+              <td>The elements of the binary set \(\{0,1\}\).</td>
+            </tr>
+            <tr>
+              <td>\(A\), \(B\)</td>
+              <td>Two bit strings or byte values we are comparing or combining.</td>
+              <td>Variables representing fixed-width binary words.</td>
+            </tr>
+            <tr>
+              <td>\(\oplus\)</td>
+              <td>Exclusive OR, usually called XOR. It outputs 1 when the two input bits are different.</td>
+              <td>Bitwise addition modulo 2; addition in \(\mathrm{GF}(2)\).</td>
+            </tr>
+            <tr>
+              <td>\(\land\)</td>
+              <td>AND. It outputs 1 only when both input bits are 1.</td>
+              <td>Logical conjunction; multiplication-like operation on bits.</td>
+            </tr>
+            <tr>
+              <td>\(\lor\)</td>
+              <td>OR. It outputs 1 when at least one input bit is 1.</td>
+              <td>Logical disjunction.</td>
+            </tr>
+            <tr>
+              <td>\(\lnot A\)</td>
+              <td>NOT. It flips every bit in \(A\).</td>
+              <td>Logical negation or bitwise complement.</td>
+            </tr>
+            <tr>
+              <td>\(A \ll 1\)</td>
+              <td>Shift \(A\) left by one bit position.</td>
+              <td>Logical left shift by one position, usually inserting 0 on the right.</td>
+            </tr>
+            <tr>
+              <td>\(A \gg 1\)</td>
+              <td>Shift \(A\) right by one bit position.</td>
+              <td>Logical right shift by one position, usually inserting 0 on the left.</td>
+            </tr>
+            <tr>
+              <td>\(\operatorname{rotl}(A,1)\)</td>
+              <td>Rotate \(A\) left by one bit, wrapping the leftmost bit around to the right.</td>
+              <td>A cyclic left rotation of a fixed-width binary word.</td>
+            </tr>
+            <tr>
+              <td>mask</td>
+              <td>A bit pattern used to select, clear, or force certain positions.</td>
+              <td>A binary word used with bitwise operations to control specific bit positions.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Bitwise operations are not ordinary arithmetic. They do not add a whole byte the way decimal addition does.
+            Instead, they line up two bit strings and apply a small rule to each column. Each column becomes its own little truth test.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Bitwise operation flow">
+          <div class="diagram-title">Bitwise operation pattern</div>
+          <div class="flow-row">
+            <div class="flow-node">Line up bits</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Apply rule column by column</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Write result bits</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="truth-tables">
+        <h2>Truth tables: tiny rule maps</h2>
+        <p>
+          A truth table lists every possible input combination and its output. Since a bit can only be 0 or 1, a two-input bitwise operation has only four possible input cases.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: truth table</div>
+          <p>
+            A truth table is a complete map of a logical operation. It shows the output for every possible input combination.
+          </p>
+        </div>
+
+        <h3>XOR truth table</h3>
+        <table class="truth-table">
+          <thead>
+            <tr><th>\(a\)</th><th>\(b\)</th><th>\(a \oplus b\)</th><th>Friendly reading</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td><td>same, so 0</td></tr>
+            <tr><td>0</td><td>1</td><td>1</td><td>different, so 1</td></tr>
+            <tr><td>1</td><td>0</td><td>1</td><td>different, so 1</td></tr>
+            <tr><td>1</td><td>1</td><td>0</td><td>same, so 0</td></tr>
+          </tbody>
+        </table>
+
+        <h3>AND and OR truth tables</h3>
+        <table class="truth-table">
+          <thead>
+            <tr><th>\(a\)</th><th>\(b\)</th><th>\(a \land b\)</th><th>\(a \lor b\)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+            <tr><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+            <tr><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="xor">
+        <h2>XOR: the reversible difference operation</h2>
+        <p>
+          XOR, written \(\oplus\), outputs 1 when two bits are different and 0 when they are the same.
+          For cryptography, XOR is especially important because it is reversible when one input is known.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Technical definition</div>
+          <p>
+            XOR is addition modulo 2. That means the result is the remainder after ordinary bit addition is divided by 2.
+          </p>
+          <div class="math-display">
+            \[
+              0 \oplus 0 = 0, \quad 0 \oplus 1 = 1, \quad 1 \oplus 0 = 1, \quad 1 \oplus 1 = 0
+            \]
+          </div>
+        </div>
+
+        <h3>Worked example: \(0x57 \oplus 0x83\)</h3>
+        <p>
+          First translate each hex byte to binary:
+        </p>
+        <div class="math-display">
+          \[
+            \texttt{0x57} = 01010111_2
+          \]
+          \[
+            \texttt{0x83} = 10000011_2
+          \]
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">Column-by-column XOR</div>
+          <div class="bit-operation">
+            <div class="row-label">A</div><div>0</div><div>1</div><div>0</div><div>1</div><div>0</div><div>1</div><div>1</div><div>1</div>
+            <div class="row-label">B</div><div>1</div><div>0</div><div>0</div><div>0</div><div>0</div><div>0</div><div>1</div><div>1</div>
+            <div class="row-label">A XOR B</div><div class="result-bit">1</div><div class="result-bit">1</div><div class="result-bit">0</div><div class="result-bit">1</div><div class="result-bit">0</div><div class="result-bit">1</div><div class="result-bit">0</div><div class="result-bit">0</div>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            01010111_2 \oplus 10000011_2 = 11010100_2
+          \]
+          \[
+            \texttt{0x57} \oplus \texttt{0x83} = \texttt{0xD4}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why XOR reverses itself</div>
+          <p>
+            XOR is like a toggle. Toggling by the same pattern twice returns you to where you started.
+          </p>
+          <div class="math-display">
+            \[
+              (A \oplus K) \oplus K = A
+            \]
+          </div>
+          <p>
+            This is why XOR appears in one-time pads, stream ciphers, Feistel networks, and round-key mixing.
+          </p>
+        </div>
+      </section>
+
+      <section id="and-or-not">
+        <h2>AND, OR, and NOT</h2>
+        <p>
+          XOR is the star of many cryptographic operations, but AND, OR, and NOT are also essential.
+          They help select bits, combine conditions, build nonlinear Boolean functions, and create masks.
+        </p>
+
+        <h3>AND</h3>
+        <p>
+          AND outputs 1 only when both input bits are 1. It is often used for selecting bits.
+        </p>
+        <div class="math-display">
+          \[
+            1 \land 1 = 1, \quad 1 \land 0 = 0, \quad 0 \land 1 = 0, \quad 0 \land 0 = 0
+          \]
+        </div>
+
+        <h3>OR</h3>
+        <p>
+          OR outputs 1 when at least one input bit is 1. It is often used for forcing bits on.
+        </p>
+        <div class="math-display">
+          \[
+            1 \lor 1 = 1, \quad 1 \lor 0 = 1, \quad 0 \lor 1 = 1, \quad 0 \lor 0 = 0
+          \]
+        </div>
+
+        <h3>NOT</h3>
+        <p>
+          NOT flips each bit. In a fixed-width byte, every 0 becomes 1 and every 1 becomes 0.
+        </p>
+        <div class="math-display">
+          \[
+            \lnot 01010111_2 = 10101000_2
+          \]
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important width warning</div>
+          <p>
+            NOT depends on width. The complement of <code>01010111</code> as an 8-bit byte is <code>10101000</code>.
+            But if you used a different width, the result would show a different number of flipped positions.
+            In cryptography, always ask: “How many bits wide is this value?”
+          </p>
+        </div>
+      </section>
+
+      <section id="masks">
+        <h2>Bit masks: choosing which bits matter</h2>
+        <p>
+          A mask is a bit pattern used to control another bit pattern. Masks can select bits, clear bits, force bits on,
+          or test whether certain positions are set.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: mask</div>
+          <p>
+            A mask is a binary word used with a bitwise operation to affect specific bit positions while ignoring or preserving others.
+          </p>
+        </div>
+
+        <h3>Using AND to select bits</h3>
+        <p>
+          Suppose we want to keep only the low nibble of <code>0x57</code>. The low nibble is the rightmost 4 bits.
+          We use the mask <code>0x0F</code>, which is <code>00001111</code> in binary.
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title">AND mask keeps selected positions</div>
+          <div class="bit-operation">
+            <div class="row-label">A</div><div>0</div><div>1</div><div>0</div><div>1</div><div>0</div><div>1</div><div>1</div><div>1</div>
+            <div class="row-label">Mask</div><div class="mask-bit">0</div><div class="mask-bit">0</div><div class="mask-bit">0</div><div class="mask-bit">0</div><div class="mask-bit">1</div><div class="mask-bit">1</div><div class="mask-bit">1</div><div class="mask-bit">1</div>
+            <div class="row-label">A AND Mask</div><div class="result-bit">0</div><div class="result-bit">0</div><div class="result-bit">0</div><div class="result-bit">0</div><div class="result-bit">0</div><div class="result-bit">1</div><div class="result-bit">1</div><div class="result-bit">1</div>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            \texttt{0x57} \land \texttt{0x0F} = \texttt{0x07}
+          \]
+        </div>
+
+        <p>
+          The mask’s 1 positions allowed bits through. The mask’s 0 positions cleared the bits.
+        </p>
+      </section>
+
+      <section id="shifts">
+        <h2>Shifts: moving bits left and right</h2>
+        <p>
+          A shift moves every bit in a direction. In a logical shift, empty positions are filled with 0.
+          Bits that fall off the edge are lost.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: logical shift</div>
+          <p>
+            A logical shift moves bits left or right by a chosen number of positions. New empty positions are filled with 0.
+            Any bits pushed beyond the fixed width are discarded.
+          </p>
+        </div>
+
+        <h3>Left shift by 1</h3>
+        <p>
+          Start with <code>00101101</code>. Shift left by one position:</p>
+        <div class="diagram">
+          <div class="diagram-title">Logical left shift</div>
+          <p>Before:</p>
+          <div class="shift-strip">
+            <div class="shift-cell">0</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">1</div>
+          </div>
+          <p>After \(A \ll 1\):</p>
+          <div class="shift-strip">
+            <div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell new-zero">0</div>
+          </div>
+        </div>
+        <div class="math-display">
+          \[
+            00101101_2 \ll 1 = 01011010_2
+          \]
+        </div>
+
+        <h3>Right shift by 1</h3>
+        <div class="math-display">
+          \[
+            00101101_2 \gg 1 = 00010110_2
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Multiplication and division intuition</div>
+          <p>
+            For unsigned numbers, shifting left by 1 often behaves like multiplying by 2, and shifting right by 1 often behaves like dividing by 2 and dropping the remainder. But fixed width matters. If a bit falls off the edge, information is lost.
+          </p>
+        </div>
+      </section>
+
+      <section id="rotations">
+        <h2>Rotations: moving bits without dropping them</h2>
+        <p>
+          A rotation also moves bits left or right, but instead of losing the bit that falls off the edge, it wraps around to the other side.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: rotation</div>
+          <p>
+            A rotation is a cyclic shift of a fixed-width bit string. Bits that move past one edge re-enter on the opposite edge.
+          </p>
+        </div>
+
+        <h3>Rotate left by 1</h3>
+        <p>
+          Start with <code>10110001</code>. The leftmost bit wraps around to the right side.
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title">Rotate left keeps all bits</div>
+          <p>Before:</p>
+          <div class="shift-strip">
+            <div class="shift-cell wrapped">1</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">0</div><div class="shift-cell">0</div><div class="shift-cell">1</div>
+          </div>
+          <p>After \(\operatorname{rotl}(A,1)\):</p>
+          <div class="shift-strip">
+            <div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell">1</div><div class="shift-cell">0</div><div class="shift-cell">0</div><div class="shift-cell">0</div><div class="shift-cell">1</div><div class="shift-cell wrapped">1</div>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            \operatorname{rotl}(10110001_2,1) = 01100011_2
+          \]
+        </div>
+
+        <p>
+          Rotations are useful in cipher design because they rearrange bit positions without losing information.
+        </p>
+      </section>
+
+      <section id="reversibility">
+        <h2>Which operations are reversible?</h2>
+        <p>
+          Cryptography cares deeply about reversibility. If an encryption step loses information, decryption may become impossible unless the lost information is recoverable from somewhere else.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Usually reversible?</th>
+              <th>Why?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>XOR with a known value</td>
+              <td>Yes</td>
+              <td>Applying the same XOR value again restores the original.</td>
+            </tr>
+            <tr>
+              <td>NOT</td>
+              <td>Yes</td>
+              <td>Flipping all bits twice restores the original.</td>
+            </tr>
+            <tr>
+              <td>Rotation</td>
+              <td>Yes</td>
+              <td>Rotate back in the opposite direction.</td>
+            </tr>
+            <tr>
+              <td>Logical shift</td>
+              <td>No, generally</td>
+              <td>Bits can fall off the edge and be lost.</td>
+            </tr>
+            <tr>
+              <td>AND mask</td>
+              <td>No, generally</td>
+              <td>Masked-out bits are cleared and cannot be recovered from the result alone.</td>
+            </tr>
+            <tr>
+              <td>OR mask</td>
+              <td>No, generally</td>
+              <td>Forced-on bits hide whether the original bits were 0 or 1.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="cryptographic-example">
+        <h2>A first cryptographic example: XOR with a key byte</h2>
+        <p>
+          Suppose a plaintext byte \(P\) is XORed with a key byte \(K\) to produce a ciphertext byte \(C\).
+        </p>
+        <div class="math-display">
+          \[
+            C = P \oplus K
+          \]
+        </div>
+
+        <p>
+          Let:
+        </p>
+        <div class="math-display">
+          \[
+            P = \texttt{0x57}, \qquad K = \texttt{0x83}
+          \]
+        </div>
+
+        <p>
+          Then:
+        </p>
+        <div class="math-display">
+          \[
+            C = \texttt{0x57} \oplus \texttt{0x83} = \texttt{0xD4}
+          \]
+        </div>
+
+        <p>
+          To decrypt, XOR the ciphertext with the same key:
+        </p>
+        <div class="math-display">
+          \[
+            P = C \oplus K
+          \]
+          \[
+            P = \texttt{0xD4} \oplus \texttt{0x83} = \texttt{0x57}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The toggle metaphor</div>
+          <p>
+            The key byte tells which bit positions to toggle. Toggling the same positions a second time undoes the change.
+            This makes XOR one of the cleanest reversible operations in bit-level cryptography.
+          </p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating XOR like ordinary addition</div>
+          <p>
+            In XOR, \(1 \oplus 1 = 0\). There is no carry. This is different from ordinary decimal addition, where \(1 + 1 = 2\).
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting width</div>
+          <p>
+            NOT, shifts, and rotations depend on the number of bits in the value. Always know whether you are working with 4 bits, 8 bits, 16 bits, or another width.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: assuming every bitwise operation is reversible</div>
+          <p>
+            XOR, NOT, and rotations can be reversible. AND masks, OR masks, and logical shifts often lose information.
+          </p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Compute <code>1010 XOR 1100</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  1010_2 \oplus 1100_2 = 0110_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute <code>10101100 AND 00001111</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  10101100_2 \land 00001111_2 = 00001100_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute <code>10101100 OR 00001111</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  10101100_2 \lor 00001111_2 = 10101111_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute the 8-bit NOT of <code>01010111</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \lnot 01010111_2 = 10101000_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Shift <code>00101101</code> left by 1.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  00101101_2 \ll 1 = 01011010_2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Rotate <code>10110001</code> left by 1.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \operatorname{rotl}(10110001_2,1) = 01100011_2
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Bitwise operations are the gears and levers of modern symmetric cryptography. They are small, fast, and mathematically understandable.
+        </p>
+        <ul>
+          <li>XOR is used for key mixing, one-time pads, stream ciphers, and Feistel networks.</li>
+          <li>AND, OR, and NOT help build Boolean functions and bit masks.</li>
+          <li>Shifts and rotations move information across positions.</li>
+          <li>Reversibility helps determine whether an operation can safely appear inside an encryption path.</li>
+          <li>Information-losing operations can still be useful in key schedules, hash functions, and round functions, but they must be used carefully.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Bitwise operations act column by column on aligned bits.</li>
+            <li>XOR outputs 1 when bits are different.</li>
+            <li>AND outputs 1 only when both bits are 1.</li>
+            <li>OR outputs 1 when at least one bit is 1.</li>
+            <li>NOT flips bits, but the result depends on width.</li>
+            <li>Shifts move bits and may lose information.</li>
+            <li>Rotations move bits while wrapping edge bits around.</li>
+            <li>Masks use bit patterns to select, clear, or force positions.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>Rule</th>
+              <th>Cryptography connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>XOR</td>
+              <td>1 if bits differ</td>
+              <td>Key mixing and reversible toggling</td>
+            </tr>
+            <tr>
+              <td>AND</td>
+              <td>1 only if both bits are 1</td>
+              <td>Masks and Boolean functions</td>
+            </tr>
+            <tr>
+              <td>OR</td>
+              <td>1 if at least one bit is 1</td>
+              <td>Forcing selected bits on</td>
+            </tr>
+            <tr>
+              <td>NOT</td>
+              <td>Flip each bit</td>
+              <td>Complements and Boolean expressions</td>
+            </tr>
+            <tr>
+              <td>Shift</td>
+              <td>Move bits and fill with 0</td>
+              <td>Mixing, multiplication-like movement, and overflow behavior</td>
+            </tr>
+            <tr>
+              <td>Rotation</td>
+              <td>Move bits cyclically</td>
+              <td>Rearrangement without loss</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core identities</div>
+          <div class="math-display">
+            \[
+              A \oplus 0 = A
+            \]
+            \[
+              A \oplus A = 0
+            \]
+            \[
+              (A \oplus K) \oplus K = A
+            \]
+            \[
+              \lnot(\lnot A) = A
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Functions as Machines</strong>. Now that we understand how basic bit-level operations transform data,
+          we can step back and describe transformations more generally as input-output rules.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

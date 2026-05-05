@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Block Cipher Modes I: Why ECB Leaks Patterns | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .mode-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .block-table,
+    .mode-table,
+    .compare-table,
+    .pattern-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .block-table th,
+    .block-table td,
+    .mode-table th,
+    .mode-table td,
+    .compare-table th,
+    .compare-table td,
+    .pattern-table th,
+    .pattern-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .block-table th,
+    .mode-table th,
+    .compare-table th,
+    .pattern-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .block-table td,
+    .block-table th,
+    .mode-table td,
+    .mode-table th,
+    .compare-table td,
+    .compare-table th,
+    .pattern-table td,
+    .pattern-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .block-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .block-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 12px;
+      text-align: center;
+      font-weight: 850;
+      min-height: 78px;
+    }
+
+    .block-card.same { background: #fdeaea; border-color: #efb5b5; }
+    .block-card.diff { background: #eaf7ef; border-color: #b8dfc5; }
+    .block-label { color: #1f3763; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .block-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 0.92rem; }
+
+    .pixel-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 4px;
+      max-width: 520px;
+      margin: 16px auto;
+    }
+
+    .pixel {
+      aspect-ratio: 1 / 1;
+      border-radius: 4px;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+    }
+
+    .p1 { background: #334e7d; }
+    .p2 { background: #e9eef8; }
+    .p3 { background: #fff4d8; }
+    .p4 { background: #f0eafe; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .block-row { grid-template-columns: 1fr; }
+      .pixel-grid { grid-template-columns: repeat(8, 1fr); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .block-card, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, .block-card, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .block-table th, .mode-table th, .compare-table th, .pattern-table th { background: #eeeeee !important; }
+      .pixel { border: 1px solid #777777; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 26</div>
+      <h1>Block Cipher Modes I: Why ECB Leaks Patterns</h1>
+      <p class="subtitle">
+        Why encrypting each block independently can reveal structure, and why a secure block cipher still needs a safe mode of operation.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="25-key-expansion-ii-rcon-and-full-aes-128-key-schedule-walkthrough.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            So far, we have studied AES as a machine that encrypts one 128-bit block. Real messages are often longer than one block. A block cipher mode tells us how to use a block cipher repeatedly on multi-block data. This tutorial studies the simplest mode, Electronic Codebook mode, and why it is usually unsafe.</p>
+        </div>
+
+        <p class="lead">
+          AES can be mathematically strong, but a poor mode can still leak information. Electronic Codebook mode is the classic warning: identical plaintext blocks produce identical ciphertext blocks. The lock may be excellent, but the filing system gives away the pattern.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AES encrypts one 128-bit block at a time. You should also understand that encryption should hide not only the exact content of a message, but also useful patterns about that content.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Block cipher modes use compact notation. We will define each symbol before using it.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>block cipher</td><td>A machine that encrypts fixed-size chunks.</td><td>A keyed permutation on fixed-size blocks, such as AES on 128-bit blocks.</td></tr>
+            <tr><td>block</td><td>One fixed-size piece of data.</td><td>For AES, one block is 128 bits, or 16 bytes.</td></tr>
+            <tr><td>mode of operation</td><td>A rule for using a block cipher on one or more blocks.</td><td>A construction that defines how block cipher calls process messages.</td></tr>
+            <tr><td>ECB</td><td>Encrypt each block by itself.</td><td>Electronic Codebook mode.</td></tr>
+            <tr><td>\(P_i\)</td><td>The plaintext block at position \(i\).</td><td>The \(i\)-th input block.</td></tr>
+            <tr><td>\(C_i\)</td><td>The ciphertext block at position \(i\).</td><td>The \(i\)-th encrypted output block.</td></tr>
+            <tr><td>\(E_K(P)\)</td><td>Encrypt plaintext block \(P\) with key \(K\).</td><td>The block cipher encryption function under key \(K\).</td></tr>
+            <tr><td>pattern leakage</td><td>Seeing structure even without seeing the original message.</td><td>Information revealed by repeated or correlated ciphertext structure.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            ECB treats each block like an isolated worksheet. If two worksheets are identical and you use the same key, the encrypted outputs are identical too. That means repeated plaintext blocks leave repeated ciphertext blocks behind.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="ECB encrypts each block independently">
+          <div class="diagram-title">Electronic Codebook mode</div>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext block<br>\(P_1\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">AES encrypt<br>key \(K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext block<br>\(C_1\)</div>
+          </div>
+          <br>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext block<br>\(P_2\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">AES encrypt<br>key \(K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext block<br>\(C_2\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="block-cipher-mode">
+        <h2>What is a block cipher mode?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: mode of operation</div>
+          <p>
+            A block cipher mode of operation is a rule for using a block cipher on data. It tells us how to handle one block, many blocks, repeated blocks, initialization values, counters, chaining, and sometimes authentication.</p>
+        </div>
+
+        <p>
+          AES itself encrypts exactly one 128-bit block at a time. A mode of operation answers a practical question:</p>
+        <div class="math-display">
+          \[
+            \text{How do we safely encrypt a message with many blocks?}
+          \]
+        </div>
+      </section>
+
+      <section id="ecb-definition">
+        <h2>What is ECB?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Electronic Codebook mode</div>
+          <p>
+            Electronic Codebook mode, or ECB, encrypts each plaintext block independently using the same key.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            C_i=E_K(P_i)
+          \]
+        </div>
+
+        <p>
+          Friendly meaning: take each plaintext block, feed it into AES with the same key, and write down the resulting ciphertext block. Then do the same thing for the next block, without using any information from the previous block.</p>
+      </section>
+
+      <section id="ecb-example">
+        <h2>ECB pattern example</h2>
+        <p>
+          Suppose a message has repeated blocks:</p>
+
+        <div class="block-row">
+          <div class="block-card same"><div class="block-label">Plaintext \(P_1\)</div><div class="block-value">HELLO-HELLO-0001</div></div>
+          <div class="block-card diff"><div class="block-label">Plaintext \(P_2\)</div><div class="block-value">PAYLOAD-BLOCK-02</div></div>
+          <div class="block-card same"><div class="block-label">Plaintext \(P_3\)</div><div class="block-value">HELLO-HELLO-0001</div></div>
+          <div class="block-card diff"><div class="block-label">Plaintext \(P_4\)</div><div class="block-value">ENDING-BLOCK-004</div></div>
+        </div>
+
+        <p>
+          In ECB, identical plaintext blocks become identical ciphertext blocks:</p>
+
+        <div class="block-row">
+          <div class="block-card same"><div class="block-label">Ciphertext \(C_1\)</div><div class="block-value">A91F...</div></div>
+          <div class="block-card diff"><div class="block-label">Ciphertext \(C_2\)</div><div class="block-value">72C4...</div></div>
+          <div class="block-card same"><div class="block-label">Ciphertext \(C_3\)</div><div class="block-value">A91F...</div></div>
+          <div class="block-card diff"><div class="block-label">Ciphertext \(C_4\)</div><div class="block-value">D88B...</div></div>
+        </div>
+
+        <div class="box mode-box">
+          <div class="box-title">Main ECB problem</div>
+          <p>
+            If \(P_1=P_3\), then ECB gives \(C_1=C_3\). The attacker may not know what the repeated block says, but they can see that the same block occurred twice.</p>
+        </div>
+      </section>
+
+      <section id="formal-leak">
+        <h2>The formal pattern leak</h2>
+        <p>
+          In ECB mode:</p>
+        <div class="math-display">
+          \[
+            C_i=E_K(P_i)
+          \]
+        </div>
+        <p>
+          Since the same key \(K\) is used for each block, the same plaintext block always produces the same ciphertext block:</p>
+        <div class="math-display">
+          \[
+            P_i=P_j\quad\Longrightarrow\quad E_K(P_i)=E_K(P_j)\quad\Longrightarrow\quad C_i=C_j
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">What is leaked?</div>
+          <p>
+            ECB does not necessarily reveal the plaintext bytes directly. It reveals equality patterns: which encrypted blocks came from identical plaintext blocks. Depending on the data, that may be enough to reveal useful information.</p>
+        </div>
+      </section>
+
+      <section id="image-patterns">
+        <h2>The image-pattern problem</h2>
+        <p>
+          ECB is famously bad for structured data such as images. Even after encryption, repeated regions can leave visible structure because identical plaintext blocks become identical ciphertext blocks.</p>
+
+        <div class="diagram">
+          <div class="diagram-title">Simplified visual pattern example</div>
+          <p><strong>Structured plaintext blocks:</strong></p>
+          <div class="pixel-grid" aria-label="A repeated block-like visual pattern">
+            <div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p2"></div>
+            <div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p1"></div><div class="pixel p2"></div><div class="pixel p2"></div><div class="pixel p2"></div>
+            <div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p4"></div>
+            <div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p3"></div><div class="pixel p4"></div><div class="pixel p4"></div><div class="pixel p4"></div>
+          </div>
+          <p>
+            ECB does not make repeated regions behave independently. Equal input blocks still create equal output blocks, so large-scale structure can survive as a visible ghost.</p>
+        </div>
+      </section>
+
+      <section id="codebook-name">
+        <h2>Why is it called a codebook?</h2>
+        <p>
+          The name “Electronic Codebook” hints at its weakness. If the same block always maps to the same encrypted block under the same key, then the encryption behaves like a giant codebook lookup.</p>
+
+        <table class="pattern-table">
+          <thead><tr><th>Plaintext block</th><th>ECB ciphertext block</th></tr></thead>
+          <tbody>
+            <tr><td><code>AAAA...</code></td><td><code>F13C...</code></td></tr>
+            <tr><td><code>BBBB...</code></td><td><code>19D0...</code></td></tr>
+            <tr><td><code>AAAA...</code></td><td><code>F13C...</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          The attacker may not know the full codebook, but they can still recognize repeated entries.</p>
+      </section>
+
+      <section id="when-ecb-is-not-enough">
+        <h2>Why ECB is not enough for most messages</h2>
+        <p>
+          ECB lacks chaining, randomness, and position-dependent variation. That means it does not hide repeated blocks. In practical cryptography, this is usually unacceptable for multi-block data.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Security goal</th><th>Does ECB help?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Hide exact block contents</td><td>Partly</td><td>A strong block cipher hides each individual block's value.</td></tr>
+            <tr><td>Hide repeated-block patterns</td><td>No</td><td>Equal plaintext blocks create equal ciphertext blocks.</td></tr>
+            <tr><td>Make same message encrypt differently each time</td><td>No</td><td>ECB uses no initialization vector or nonce.</td></tr>
+            <tr><td>Protect message integrity</td><td>No</td><td>ECB provides encryption only, not authentication.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ecb-vs-safe-mode-preview">
+        <h2>Preview: what better modes try to fix</h2>
+        <p>
+          Safer modes avoid ECB's direct “same plaintext block gives same ciphertext block” behavior. They do this by adding chaining, counters, nonces, initialization vectors, or authentication.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Preview vocabulary</div>
+          <p>
+            An initialization vector, or IV, is a starting value used by some modes to make encryption depend on more than just the plaintext block and key. A nonce is a number used once. These ideas will matter in later tutorials.</p>
+        </div>
+
+        <p>
+          Later tutorials will cover modes such as CBC, CTR, and authenticated encryption modes. For now, the lesson is simple: do not judge a system only by the block cipher. Judge the mode too.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking strong AES automatically means safe message encryption</div>
+          <p>
+            AES is a strong block cipher, but unsafe use can still leak information. ECB is the classic example.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking ECB leaks the key</div>
+          <p>
+            ECB does not normally leak the key directly. Its major problem is pattern leakage.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: thinking different positions fix repeated blocks</div>
+          <p>
+            In ECB, block position does not change the encryption. The same plaintext block encrypts the same way wherever it appears.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking encryption also proves authenticity</div>
+          <p>
+            ECB only encrypts blocks. It does not authenticate the message or protect against block rearrangement.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does ECB stand for?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Electronic Codebook.</p>
+            </details>
+          </li>
+          <li>
+            In ECB, if \(P_2=P_5\), what must be true about \(C_2\) and \(C_5\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(C_2=C_5\), assuming the same key is used.</p>
+            </details>
+          </li>
+          <li>
+            Does ECB usually reveal plaintext directly?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Not directly. Its main leak is equality and structure patterns between blocks.</p>
+            </details>
+          </li>
+          <li>
+            Why is ECB bad for images or structured files?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Repeated regions can produce repeated ciphertext blocks, allowing visible or structural patterns to remain.</p>
+            </details>
+          </li>
+          <li>
+            What is the core formula for ECB encryption?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(C_i=E_K(P_i)\).</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          ECB teaches a humbling cryptographic lesson: a strong primitive is not enough. Correct construction matters. AES can hide a single block well, but ECB can reveal patterns when many blocks are encrypted independently.</p>
+        <ul>
+          <li>AES encrypts fixed-size blocks.</li>
+          <li>Modes define how AES is used on messages.</li>
+          <li>ECB encrypts each block independently.</li>
+          <li>Identical plaintext blocks produce identical ciphertext blocks.</li>
+          <li>This leaks structure, especially in repeated or patterned data.</li>
+          <li>Better modes are designed to hide these repeated-block patterns.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A block cipher encrypts fixed-size blocks.</li>
+            <li>AES uses 128-bit blocks.</li>
+            <li>A mode of operation tells us how to use a block cipher on messages.</li>
+            <li>ECB stands for Electronic Codebook.</li>
+            <li>ECB encrypts each block independently.</li>
+            <li>The ECB formula is \(C_i=E_K(P_i)\).</li>
+            <li>If two plaintext blocks are equal, their ECB ciphertext blocks are equal.</li>
+            <li>ECB leaks equality patterns.</li>
+            <li>ECB is usually unsafe for multi-block messages.</li>
+            <li>Strong AES still needs a safe mode of operation.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core pattern leak</div>
+          <div class="math-display">
+            \[
+              P_i=P_j\quad\Longrightarrow\quad C_i=C_j
+            \]
+          </div>
+          <p>That is the dangerous heart of ECB.</p>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Plaintext pattern</th><th>ECB result</th><th>Leak</th></tr></thead>
+          <tbody>
+            <tr><td>Repeated block</td><td>Repeated ciphertext block</td><td>Attacker sees repetition.</td></tr>
+            <tr><td>Structured image regions</td><td>Structured ciphertext regions</td><td>Shape or layout may remain visible.</td></tr>
+            <tr><td>Same message encrypted again</td><td>Same ciphertext again</td><td>No fresh variation.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Block Cipher Modes II: CBC, Initialization Vectors, and Chaining</strong>. We will study how chaining helps prevent identical plaintext blocks from producing identical ciphertext blocks.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

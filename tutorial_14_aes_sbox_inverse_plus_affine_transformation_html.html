@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The AES S-box: Inverse plus Affine Transformation | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .affine-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .matrix-table,
+    .sbox-table,
+    .affine-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .matrix-table th,
+    .matrix-table td,
+    .sbox-table th,
+    .sbox-table td,
+    .affine-table th,
+    .affine-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .matrix-table th,
+    .sbox-table th,
+    .affine-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .matrix-table td,
+    .matrix-table th,
+    .sbox-table td,
+    .sbox-table th,
+    .affine-table td,
+    .affine-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .byte-card-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .byte-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .byte-card.inverse { background: #eaf7ef; border-color: #b8dfc5; }
+    .byte-card.affine { background: var(--purple-soft); border-color: #d8c8f5; }
+    .byte-label { color: #1f3763; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .byte-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 1.6rem; font-weight: 900; margin-top: 6px; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .byte-card-row { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card, .byte-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card, .byte-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .sbox-table th, .affine-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 14</div>
+      <h1>The AES S-box: Inverse plus Affine Transformation</h1>
+      <p class="subtitle">
+        How AES turns one input byte into one substitution byte using a finite-field inverse followed by a structured bit transformation.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="13-multiplicative-inverses-in-gf-2-8.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            The AES S-box is one of the most important components in AES. It is not merely a random lookup table. It is built from mathematics: first take a multiplicative inverse in \(\mathrm{GF}(2^8)\), then apply an affine transformation to the resulting bits.
+          </p>
+        </div>
+
+        <p class="lead">
+          Think of the S-box as a two-room workshop. In the first room, the byte is inverted in the finite field. In the second room, the bits are stirred by a fixed linear pattern and then XORed with a constant. The output is the AES substitution byte.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand bytes as polynomials, multiplication in \(\mathrm{GF}(2^8)\), multiplicative inverses, XOR as addition over \(\mathrm{GF}(2)\), and the idea of a function transforming an input into an output.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          The affine transformation introduces bit-index notation. We will define it before using it.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>S-box</td>
+              <td>A substitution box: one byte goes in, one byte comes out.</td>
+              <td>A nonlinear substitution function used in a block cipher.</td>
+            </tr>
+            <tr>
+              <td>\(a\)</td>
+              <td>The original input byte.</td>
+              <td>An element of \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+            <tr>
+              <td>\(a^{-1}\)</td>
+              <td>The finite-field inverse of \(a\).</td>
+              <td>The byte satisfying \(a\cdot a^{-1}=1\), for \(a\ne0\).</td>
+            </tr>
+            <tr>
+              <td>\(b_i\)</td>
+              <td>Bit \(i\) of the inverse byte.</td>
+              <td>The \(i\)-th bit used as an input to the affine transformation.</td>
+            </tr>
+            <tr>
+              <td>\(c_i\)</td>
+              <td>Bit \(i\) of the constant byte.</td>
+              <td>The \(i\)-th bit of the AES affine constant <code>0x63</code>.</td>
+            </tr>
+            <tr>
+              <td>\(s_i\)</td>
+              <td>Bit \(i\) of the S-box output.</td>
+              <td>The \(i\)-th output bit after the affine transformation.</td>
+            </tr>
+            <tr>
+              <td>\(\oplus\)</td>
+              <td>XOR.</td>
+              <td>Addition modulo 2.</td>
+            </tr>
+            <tr>
+              <td>affine transformation</td>
+              <td>A fixed bit-mixing step followed by XOR with a constant.</td>
+              <td>A linear transformation plus a constant vector over \(\mathrm{GF}(2)\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            The inverse step gives the S-box its nonlinear bite. The affine step then reshapes the inverse output in a fixed, reversible bit pattern and XORs in the constant <code>0x63</code>. Together, they create the AES S-box value.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="AES S-box two-stage process">
+          <div class="diagram-title">AES S-box construction</div>
+          <div class="flow-row">
+            <div class="flow-node">Input byte<br>\(a\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Finite-field inverse<br>in \(\mathrm{GF}(2^8)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Affine transformation<br>over bits</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">S-box output</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="what-is-sbox">
+        <h2>What is an S-box?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: S-box</div>
+          <p>
+            An S-box, or substitution box, is a function that replaces input values with output values according to a rule or table. AES uses an 8-bit S-box: each input byte maps to one output byte.
+          </p>
+        </div>
+
+        <p>
+          Since one byte has 256 possible values, the AES S-box contains 256 substitutions. For example:</p>
+        <table class="sbox-table">
+          <thead>
+            <tr><th>Input byte</th><th>AES S-box output</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>0x00</code></td><td><code>0x63</code></td></tr>
+            <tr><td><code>0x53</code></td><td><code>0xED</code></td></tr>
+            <tr><td><code>0x7C</code></td><td><code>0x10</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="stage-one">
+        <h2>Stage 1: take the finite-field inverse</h2>
+        <p>
+          For a nonzero input byte \(a\), AES first computes \(a^{-1}\) in \(\mathrm{GF}(2^8)\):</p>
+        <div class="math-display">
+          \[
+            a\cdot a^{-1}=\texttt{0x01}
+          \]
+        </div>
+
+        <p>
+          The zero byte has no inverse, so AES treats it specially: the inverse step maps <code>0x00</code> to <code>0x00</code> before applying the affine transformation.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important boundary</div>
+          <p>
+            AES does not claim that <code>0x00</code> has an inverse. It defines the inverse step for <code>0x00</code> as <code>0x00</code> so the S-box can still map every possible byte.</p>
+        </div>
+      </section>
+
+      <section id="stage-two">
+        <h2>Stage 2: apply the affine transformation</h2>
+        <p>
+          After inversion, AES applies a fixed bit-level transformation. This transformation uses XORs of selected bits from the inverse byte, then XORs a constant bit from <code>0x63</code>.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: affine transformation</div>
+          <p>
+            An affine transformation is a linear transformation followed by adding a constant. In AES, “adding” means XORing because the bits live in \(\mathrm{GF}(2)\).</p>
+        </div>
+
+        <p>
+          AES can define the affine transformation bit-by-bit as:</p>
+        <div class="math-display">
+          \[
+            s_i=b_i\oplus b_{(i+4)\bmod8}\oplus b_{(i+5)\bmod8}\oplus b_{(i+6)\bmod8}\oplus b_{(i+7)\bmod8}\oplus c_i
+          \]
+        </div>
+
+        <p>
+          Here:</p>
+        <ul>
+          <li>\(b_i\) is bit \(i\) of the inverse byte.</li>
+          <li>\(s_i\) is bit \(i\) of the output byte.</li>
+          <li>\(c_i\) is bit \(i\) of the constant byte <code>0x63</code>.</li>
+          <li>The \(\bmod8\) part means the bit positions wrap around from 7 back to 0.</li>
+        </ul>
+
+        <div class="box technical-box">
+          <div class="box-title">Bit ordering note</div>
+          <p>
+            AES descriptions often index bits from least significant bit to most significant bit. In this tutorial, bit 0 means the least significant bit, the \(1\) place; bit 7 means the most significant bit, the \(x^7\) place.</p>
+        </div>
+      </section>
+
+      <section id="constant-63">
+        <h2>The affine constant: <code>0x63</code></h2>
+        <p>
+          The constant byte used in the AES affine transformation is:</p>
+        <div class="math-display">
+          \[
+            \texttt{0x63}=01100011_2
+          \]
+        </div>
+
+        <p>
+          If we list bits from bit 7 down to bit 0, it looks like this:</p>
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit position</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Bit value</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          If we list bits from bit 0 up to bit 7, which is convenient for the formula, the same byte is:</p>
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit position</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(c_i\)</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="worked-00">
+        <h2>Worked example 1: why <code>S-box(0x00) = 0x63</code></h2>
+        <p>
+          The zero byte has no multiplicative inverse, so AES uses <code>0x00</code> as the result of the inverse step for this special case.</p>
+
+        <div class="byte-card-row">
+          <div class="byte-card">
+            <div class="byte-label">Input</div>
+            <div class="byte-value"><code>0x00</code></div>
+          </div>
+          <div class="byte-card inverse">
+            <div class="byte-label">Inverse step</div>
+            <div class="byte-value"><code>0x00</code></div>
+          </div>
+          <div class="byte-card affine">
+            <div class="byte-label">Affine output</div>
+            <div class="byte-value"><code>0x63</code></div>
+          </div>
+        </div>
+
+        <p>
+          Since all inverse bits \(b_i\) are 0, the affine formula becomes:</p>
+        <div class="math-display">
+          \[
+            s_i=c_i
+          \]
+        </div>
+        <p>
+          Therefore the output byte is just the affine constant:</p>
+        <div class="math-display">
+          \[
+            \texttt{S-box(0x00)}=\texttt{0x63}
+          \]
+        </div>
+      </section>
+
+      <section id="worked-53-overview">
+        <h2>Worked example 2: overview of <code>S-box(0x53) = 0xED</code></h2>
+        <p>
+          This is a famous AES example. The finite-field inverse of <code>0x53</code> is <code>0xCA</code>. Then the affine transformation maps <code>0xCA</code> to <code>0xED</code>.</p>
+
+        <div class="byte-card-row">
+          <div class="byte-card">
+            <div class="byte-label">Input</div>
+            <div class="byte-value"><code>0x53</code></div>
+          </div>
+          <div class="byte-card inverse">
+            <div class="byte-label">Inverse in \(\mathrm{GF}(2^8)\)</div>
+            <div class="byte-value"><code>0xCA</code></div>
+          </div>
+          <div class="byte-card affine">
+            <div class="byte-label">Affine output</div>
+            <div class="byte-value"><code>0xED</code></div>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            \texttt{0x53}^{-1}=\texttt{0xCA}
+          \]
+          \[
+            \operatorname{Affine}(\texttt{0xCA})=\texttt{0xED}
+          \]
+        </div>
+      </section>
+
+      <section id="worked-53-affine">
+        <h2>Worked example 3: affine bits for <code>0xCA</code></h2>
+        <p>
+          Write <code>0xCA</code> in binary:</p>
+        <div class="math-display">
+          \[
+            \texttt{0xCA}=11001010_2
+          \]
+        </div>
+        <p>
+          Listed from bit 0 to bit 7, this is:</p>
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit position</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(b_i\)</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Use the affine formula:</p>
+        <div class="math-display">
+          \[
+            s_i=b_i\oplus b_{(i+4)\bmod8}\oplus b_{(i+5)\bmod8}\oplus b_{(i+6)\bmod8}\oplus b_{(i+7)\bmod8}\oplus c_i
+          \]
+        </div>
+
+        <table class="affine-table">
+          <thead>
+            <tr>
+              <th>Output bit</th>
+              <th>Calculation</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>\(s_0\)</td><td>\(b_0\oplus b_4\oplus b_5\oplus b_6\oplus b_7\oplus c_0=0\oplus0\oplus0\oplus1\oplus1\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(s_1\)</td><td>\(b_1\oplus b_5\oplus b_6\oplus b_7\oplus b_0\oplus c_1=1\oplus0\oplus1\oplus1\oplus0\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(s_2\)</td><td>\(b_2\oplus b_6\oplus b_7\oplus b_0\oplus b_1\oplus c_2=0\oplus1\oplus1\oplus0\oplus1\oplus0\)</td><td>1</td></tr>
+            <tr><td>\(s_3\)</td><td>\(b_3\oplus b_7\oplus b_0\oplus b_1\oplus b_2\oplus c_3=1\oplus1\oplus0\oplus1\oplus0\oplus0\)</td><td>1</td></tr>
+            <tr><td>\(s_4\)</td><td>\(b_4\oplus b_0\oplus b_1\oplus b_2\oplus b_3\oplus c_4=0\oplus0\oplus1\oplus0\oplus1\oplus0\)</td><td>0</td></tr>
+            <tr><td>\(s_5\)</td><td>\(b_5\oplus b_1\oplus b_2\oplus b_3\oplus b_4\oplus c_5=0\oplus1\oplus0\oplus1\oplus0\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(s_6\)</td><td>\(b_6\oplus b_2\oplus b_3\oplus b_4\oplus b_5\oplus c_6=1\oplus0\oplus1\oplus0\oplus0\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(s_7\)</td><td>\(b_7\oplus b_3\oplus b_4\oplus b_5\oplus b_6\oplus c_7=1\oplus1\oplus0\oplus0\oplus1\oplus0\)</td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          From bit 0 to bit 7, the output bits are:</p>
+        <div class="math-display">
+          \[
+            s_0s_1s_2s_3s_4s_5s_6s_7=10110111
+          \]
+        </div>
+        <p>
+          Rewriting as the usual byte display from bit 7 down to bit 0:</p>
+        <div class="math-display">
+          \[
+            11101101_2=\texttt{0xED}
+          \]
+        </div>
+      </section>
+
+      <section id="matrix-view">
+        <h2>Matrix view of the affine transformation</h2>
+        <p>
+          The bit formula can also be written as a matrix equation over \(\mathrm{GF}(2)\):</p>
+        <div class="math-display">
+          \[
+            s=A b+c
+          \]
+        </div>
+        <p>
+          In this notation:</p>
+        <ul>
+          <li>\(b\) is the inverse byte written as an 8-bit column vector.</li>
+          <li>\(A\) is a fixed 8 by 8 binary matrix.</li>
+          <li>\(c\) is the constant vector from <code>0x63</code>.</li>
+          <li>Addition is XOR.</li>
+        </ul>
+
+        <div class="box technical-box">
+          <div class="box-title">Why include the matrix view?</div>
+          <p>
+            The bit formula is easier to compute by hand. The matrix form is useful because it shows that the affine step is a structured linear bit transformation plus a constant.</p>
+        </div>
+      </section>
+
+      <section id="why-affine">
+        <h2>Why does AES add the affine transformation?</h2>
+        <p>
+          The inverse operation gives strong nonlinearity, but the affine transformation improves the structure of the S-box. It helps avoid undesirable fixed patterns and gives the S-box better cryptographic behavior.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Plain-language version</div>
+          <p>
+            The inverse step bends the byte space. The affine step rotates and offsets that bent space so the final table has fewer awkward symmetries. It is not random decoration; it is purposeful finishing work.</p>
+        </div>
+      </section>
+
+      <section id="not-just-table">
+        <h2>The S-box can be a table, but it is not arbitrary</h2>
+        <p>
+          Implementations often store the AES S-box as a 256-entry lookup table for speed. But mathematically, each table entry comes from the same two-stage rule:</p>
+        <div class="math-display">
+          \[
+            \text{input byte}\quad\longrightarrow\quad\text{field inverse}\quad\longrightarrow\quad\text{affine transform}\quad\longrightarrow\quad\text{S-box output}
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Key point</div>
+          <p>
+            A lookup table can store the answers, but the AES S-box is defined by a mathematical construction.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking the inverse step alone is the S-box</div>
+          <p>
+            The inverse step is only stage 1. AES also applies the affine transformation.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting the special handling of <code>0x00</code></div>
+          <p>
+            <code>0x00</code> has no multiplicative inverse, so AES maps it to <code>0x00</code> for the inverse step before applying the affine transformation.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: mixing up bit order</div>
+          <p>
+            The affine formula often uses bit 0 as the least significant bit. Be careful when converting between formula order and normal binary display order.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: treating the affine transformation as ordinary decimal arithmetic</div>
+          <p>
+            The affine transformation uses XOR over bits, not decimal addition.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What are the two major stages of the AES S-box construction?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>First, compute the multiplicative inverse in \(\mathrm{GF}(2^8)\). Second, apply the affine transformation.</p>
+            </details>
+          </li>
+          <li>
+            Why does <code>S-box(0x00)</code> equal <code>0x63</code>?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES handles <code>0x00</code> by using <code>0x00</code> as the inverse-step output. Since all input bits to the affine transformation are 0, the output becomes the constant <code>0x63</code>.</p>
+            </details>
+          </li>
+          <li>
+            If the inverse of <code>0x53</code> is <code>0xCA</code>, why is the AES S-box output <code>0xED</code> instead of <code>0xCA</code>?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because AES applies the affine transformation after taking the inverse. <code>0xCA</code> is the inverse; <code>0xED</code> is the final affine-transformed S-box output.</p>
+            </details>
+          </li>
+          <li>
+            In the affine formula, what does \(\oplus\) mean?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(\oplus\) means XOR, which is addition modulo 2.</p>
+            </details>
+          </li>
+          <li>
+            What does the constant <code>0x63</code> do in the affine transformation?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It is the constant vector XORed into the result of the linear bit transformation.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          The AES S-box is a carefully designed nonlinear substitution layer. It is one of the main sources of confusion and diffusion when AES rounds are repeated.
+        </p>
+        <ul>
+          <li>The inverse step gives strong nonlinearity.</li>
+          <li>The affine step removes some undesirable algebraic patterns.</li>
+          <li>The S-box maps every byte to exactly one byte.</li>
+          <li>The S-box is invertible, which AES needs for decryption.</li>
+          <li>The table can be stored, but the design is mathematical rather than arbitrary.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>The AES S-box maps one input byte to one output byte.</li>
+            <li>It has 256 possible input values and 256 output values.</li>
+            <li>Stage 1 is the multiplicative inverse in \(\mathrm{GF}(2^8)\).</li>
+            <li><code>0x00</code> has no inverse, so AES handles it specially by using <code>0x00</code> for the inverse step.</li>
+            <li>Stage 2 is an affine transformation.</li>
+            <li>An affine transformation is a linear transformation plus a constant.</li>
+            <li>In AES, the affine constant is <code>0x63</code>.</li>
+            <li>The affine step uses XOR, not ordinary addition.</li>
+            <li><code>S-box(0x00) = 0x63</code>.</li>
+            <li><code>0x53</code> inverses to <code>0xCA</code>, then affines to <code>0xED</code>.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Input</th>
+              <th>Inverse step</th>
+              <th>Affine step</th>
+              <th>S-box output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>0x00</code></td><td><code>0x00</code></td><td>Affine with <code>0x63</code></td><td><code>0x63</code></td></tr>
+            <tr><td><code>0x53</code></td><td><code>0xCA</code></td><td>Affine transformation</td><td><code>0xED</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formula</div>
+          <div class="math-display">
+            \[
+              s_i=b_i\oplus b_{(i+4)\bmod8}\oplus b_{(i+5)\bmod8}\oplus b_{(i+6)\bmod8}\oplus b_{(i+7)\bmod8}\oplus c_i
+            \]
+          </div>
+          <p>
+            This formula is applied to each bit position \(i\), from 0 through 7.
+          </p>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Inverse S-box and Reversibility</strong>. Since AES must decrypt as well as encrypt, we need to understand how the S-box can be reversed.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

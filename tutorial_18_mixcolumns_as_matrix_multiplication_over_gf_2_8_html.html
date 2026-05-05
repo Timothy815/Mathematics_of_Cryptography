@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MixColumns as Matrix Multiplication over GF(2^8) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .mix-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .matrix-table,
+    .work-table,
+    .compare-table,
+    .state-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .matrix-table th,
+    .matrix-table td,
+    .work-table th,
+    .work-table td,
+    .compare-table th,
+    .compare-table td,
+    .state-table th,
+    .state-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .matrix-table th,
+    .work-table th,
+    .compare-table th,
+    .state-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .matrix-table td,
+    .matrix-table th,
+    .work-table td,
+    .work-table th,
+    .compare-table td,
+    .compare-table th,
+    .state-table td,
+    .state-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .column-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(170px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+      align-items: center;
+    }
+
+    .column-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .column-card.output { background: #eaf7ef; border-color: #b8dfc5; }
+    .column-label { color: #1f3763; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .byte-stack { display: grid; gap: 8px; margin-top: 10px; }
+    .byte-chip { font-family: "Cascadia Code", "Consolas", monospace; font-weight: 900; background: #f5f2ea; border-radius: 10px; padding: 7px; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .column-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .column-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .column-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .matrix-table th, .work-table th, .compare-table th, .state-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 18</div>
+      <h1>MixColumns as Matrix Multiplication over \(\mathrm{GF}(2^8)\)</h1>
+      <p class="subtitle">
+        How AES mixes each column of four bytes using finite-field multiplication, XOR, and a fixed matrix.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="17-diffusion-branch-number-and-avalanche.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We have learned finite-field multiplication, matrices, diffusion, and avalanche. MixColumns is where those ideas meet inside AES. It treats each column of the AES state as a four-byte vector and multiplies it by a fixed matrix over \(\mathrm{GF}(2^8)\).
+          </p>
+        </div>
+
+        <p class="lead">
+          MixColumns is a byte-level mixing machine. Four bytes enter. Four new bytes leave. Each output byte is built by multiplying the input bytes by small constants, then XORing the results together.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand multiplication in \(\mathrm{GF}(2^8)\), especially multiplication by <code>0x02</code> and <code>0x03</code>, matrix-vector multiplication, XOR, and the idea that diffusion spreads changes across a state.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          MixColumns uses matrix notation, but the entries are bytes rather than single bits.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>state</td>
+              <td>The 16-byte working grid inside AES.</td>
+              <td>A 4 by 4 byte array transformed during AES rounds.</td>
+            </tr>
+            <tr>
+              <td>column</td>
+              <td>One vertical group of four bytes in the AES state.</td>
+              <td>A four-byte vector transformed by MixColumns.</td>
+            </tr>
+            <tr>
+              <td>\(\mathrm{GF}(2^8)\)</td>
+              <td>The byte arithmetic world used by AES.</td>
+              <td>The finite field of 256 elements defined using the AES modulus.</td>
+            </tr>
+            <tr>
+              <td>\(\oplus\)</td>
+              <td>XOR.</td>
+              <td>Addition in \(\mathrm{GF}(2^8)\), applied bytewise.</td>
+            </tr>
+            <tr>
+              <td><code>0x02 · a</code></td>
+              <td>Multiply byte \(a\) by 2 in AES's field.</td>
+              <td>\(\operatorname{xtime}(a)\).</td>
+            </tr>
+            <tr>
+              <td><code>0x03 · a</code></td>
+              <td>Multiply byte \(a\) by 3 in AES's field.</td>
+              <td>\(\operatorname{xtime}(a)\oplus a\).</td>
+            </tr>
+            <tr>
+              <td>MixColumns matrix</td>
+              <td>The fixed 4 by 4 byte matrix used to mix a column.</td>
+              <td>A linear transformation over \(\mathrm{GF}(2^8)^4\).</td>
+            </tr>
+            <tr>
+              <td>linear over \(\mathrm{GF}(2^8)\)</td>
+              <td>Built from field multiplication and XOR.</td>
+              <td>A transformation respecting vector addition and scalar multiplication over \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Tutorial 16 used matrices made of bits. MixColumns uses a matrix made of bytes. The idea is the same: each row is a recipe for one output. The difference is that the row entries are finite-field multipliers like <code>0x02</code> and <code>0x03</code>, not just include-or-ignore bits.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="MixColumns transforms one AES column into another column">
+          <div class="diagram-title">One AES column goes through the MixColumns machine</div>
+          <div class="flow-row">
+            <div class="flow-node">4 input bytes<br>one column</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">MixColumns<br>matrix over \(\mathrm{GF}(2^8)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">4 output bytes<br>mixed column</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="aes-state">
+        <h2>The AES state as a 4 by 4 byte grid</h2>
+        <p>
+          AES works on 16 bytes at a time. These bytes are arranged as a 4 by 4 state. MixColumns acts on each vertical column separately.
+        </p>
+
+        <table class="state-table">
+          <thead>
+            <tr><th>Row</th><th>Column 0</th><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>\(s_{0,0}\)</td><td>\(s_{0,1}\)</td><td>\(s_{0,2}\)</td><td>\(s_{0,3}\)</td></tr>
+            <tr><td>1</td><td>\(s_{1,0}\)</td><td>\(s_{1,1}\)</td><td>\(s_{1,2}\)</td><td>\(s_{1,3}\)</td></tr>
+            <tr><td>2</td><td>\(s_{2,0}\)</td><td>\(s_{2,1}\)</td><td>\(s_{2,2}\)</td><td>\(s_{2,3}\)</td></tr>
+            <tr><td>3</td><td>\(s_{3,0}\)</td><td>\(s_{3,1}\)</td><td>\(s_{3,2}\)</td><td>\(s_{3,3}\)</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          For one column, we can write the four bytes as:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}s_0\\s_1\\s_2\\s_3\end{bmatrix}
+          \]
+        </div>
+      </section>
+
+      <section id="mixcolumns-matrix">
+        <h2>The MixColumns matrix</h2>
+        <p>
+          AES MixColumns multiplies each column by this fixed matrix:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}
+            \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+            \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+            \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+            \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          The output column is:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}s'_0\\s'_1\\s'_2\\s'_3\end{bmatrix}
+            =
+            \begin{bmatrix}
+            \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+            \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+            \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+            \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+            \end{bmatrix}
+            \begin{bmatrix}s_0\\s_1\\s_2\\s_3\end{bmatrix}
+          \]
+        </div>
+      </section>
+
+      <section id="row-recipes">
+        <h2>Each row is an output-byte recipe</h2>
+        <p>
+          Reading the matrix row by row gives four formulas:</p>
+
+        <div class="math-display">
+          \[
+            s'_0=(\texttt{02}\cdot s_0)\oplus(\texttt{03}\cdot s_1)\oplus s_2\oplus s_3
+          \]
+          \[
+            s'_1=s_0\oplus(\texttt{02}\cdot s_1)\oplus(\texttt{03}\cdot s_2)\oplus s_3
+          \]
+          \[
+            s'_2=s_0\oplus s_1\oplus(\texttt{02}\cdot s_2)\oplus(\texttt{03}\cdot s_3)
+          \]
+          \[
+            s'_3=(\texttt{03}\cdot s_0)\oplus s_1\oplus s_2\oplus(\texttt{02}\cdot s_3)
+          \]
+        </div>
+
+        <div class="box mix-box">
+          <div class="box-title">How this differs from bit matrices</div>
+          <p>
+            In a bit matrix, 1 means “include this bit.” In MixColumns, <code>0x01</code> means “include this byte unchanged,” <code>0x02</code> means “multiply this byte by 2 in \(\mathrm{GF}(2^8)\),” and <code>0x03</code> means “multiply this byte by 3 in \(\mathrm{GF}(2^8)\).”</p>
+        </div>
+      </section>
+
+      <section id="multipliers-review">
+        <h2>Review: multiplication by <code>0x02</code> and <code>0x03</code></h2>
+        <p>
+          MixColumns mostly needs two finite-field multiplications:</p>
+        <div class="math-display">
+          \[
+            \texttt{02}\cdot a=\operatorname{xtime}(a)
+          \]
+          \[
+            \texttt{03}\cdot a=\operatorname{xtime}(a)\oplus a
+          \]
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr><th>Input byte \(a\)</th><th>\(\texttt{02}\cdot a\)</th><th>\(\texttt{03}\cdot a\)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>0x57</code></td><td><code>0xAE</code></td><td><code>0xF9</code></td></tr>
+            <tr><td><code>0x83</code></td><td><code>0x1D</code></td><td><code>0x9E</code></td></tr>
+            <tr><td><code>0x01</code></td><td><code>0x02</code></td><td><code>0x03</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="worked-example-classic">
+        <h2>Worked example: classic AES MixColumns column</h2>
+        <p>
+          A common AES example uses this input column:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}\texttt{DB}\\\texttt{13}\\\texttt{53}\\\texttt{45}\end{bmatrix}
+          \]
+        </div>
+        <p>
+          After MixColumns, the output is:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}\texttt{8E}\\\texttt{4D}\\\texttt{A1}\\\texttt{BC}\end{bmatrix}
+          \]
+        </div>
+
+        <div class="column-grid">
+          <div class="column-card">
+            <div class="column-label">Input column</div>
+            <div class="byte-stack">
+              <div class="byte-chip">DB</div>
+              <div class="byte-chip">13</div>
+              <div class="byte-chip">53</div>
+              <div class="byte-chip">45</div>
+            </div>
+          </div>
+          <div class="column-card">
+            <div class="column-label">MixColumns</div>
+            <div class="byte-stack">
+              <div class="byte-chip">02 03 01 01</div>
+              <div class="byte-chip">01 02 03 01</div>
+              <div class="byte-chip">01 01 02 03</div>
+              <div class="byte-chip">03 01 01 02</div>
+            </div>
+          </div>
+          <div class="column-card output">
+            <div class="column-label">Output column</div>
+            <div class="byte-stack">
+              <div class="byte-chip">8E</div>
+              <div class="byte-chip">4D</div>
+              <div class="byte-chip">A1</div>
+              <div class="byte-chip">BC</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="compute-first-output">
+        <h2>Computing the first output byte</h2>
+        <p>
+          Let:</p>
+        <div class="math-display">
+          \[
+            s_0=\texttt{DB},\quad s_1=\texttt{13},\quad s_2=\texttt{53},\quad s_3=\texttt{45}
+          \]
+        </div>
+        <p>
+          The first row says:</p>
+        <div class="math-display">
+          \[
+            s'_0=(\texttt{02}\cdot\texttt{DB})\oplus(\texttt{03}\cdot\texttt{13})\oplus\texttt{53}\oplus\texttt{45}
+          \]
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr><th>Piece</th><th>Result</th><th>Reason</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>02 · DB</code></td><td><code>AD</code></td><td><code>xtime(DB)</code>, top bit was set, so reduce with <code>0x1B</code>.</td></tr>
+            <tr><td><code>03 · 13</code></td><td><code>35</code></td><td><code>xtime(13) XOR 13 = 26 XOR 13</code>.</td></tr>
+            <tr><td><code>01 · 53</code></td><td><code>53</code></td><td>Multiplication by <code>01</code> leaves the byte unchanged.</td></tr>
+            <tr><td><code>01 · 45</code></td><td><code>45</code></td><td>Multiplication by <code>01</code> leaves the byte unchanged.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Now XOR the four pieces:</p>
+        <div class="math-display">
+          \[
+            \texttt{AD}\oplus\texttt{35}\oplus\texttt{53}\oplus\texttt{45}=\texttt{8E}
+          \]
+        </div>
+      </section>
+
+      <section id="compute-all-outputs">
+        <h2>The full output column</h2>
+        <p>
+          Doing the same row-by-row work gives:</p>
+
+        <table class="matrix-table">
+          <thead>
+            <tr><th>Output byte</th><th>Formula</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(s'_0\)</td><td><code>02·DB XOR 03·13 XOR 53 XOR 45</code></td><td><code>8E</code></td></tr>
+            <tr><td>\(s'_1\)</td><td><code>DB XOR 02·13 XOR 03·53 XOR 45</code></td><td><code>4D</code></td></tr>
+            <tr><td>\(s'_2\)</td><td><code>DB XOR 13 XOR 02·53 XOR 03·45</code></td><td><code>A1</code></td></tr>
+            <tr><td>\(s'_3\)</td><td><code>03·DB XOR 13 XOR 53 XOR 02·45</code></td><td><code>BC</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="why-diffusion">
+        <h2>Why MixColumns creates diffusion</h2>
+        <p>
+          Each output byte depends on all four input bytes in the column. This means a change in one input byte can affect every output byte of that column.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Diffusion role</div>
+          <p>
+            MixColumns spreads byte-level differences within each column. When combined with ShiftRows, those changes are moved across columns in later rounds, causing activity to spread through the AES state.</p>
+        </div>
+      </section>
+
+      <section id="branch-number-connection">
+        <h2>Branch number connection</h2>
+        <p>
+          AES MixColumns has a strong byte-level diffusion property: for nonzero input differences, the number of active input bytes plus active output bytes is at least 5. In branch-number language, MixColumns has branch number 5 at the byte level.</p>
+
+        <div class="math-display">
+          \[
+            B=5
+          \]
+        </div>
+
+        <p>
+          Friendly meaning: if a column enters MixColumns with a nonzero difference, the activity cannot stay too tiny across input and output combined.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why this matters</div>
+          <p>
+            Branch number helps explain why AES forces many S-boxes to become active across rounds. More active S-boxes make simple differential and linear trails harder to exploit.</p>
+        </div>
+      </section>
+
+      <section id="inverse-mixcolumns-preview">
+        <h2>Inverse MixColumns preview</h2>
+        <p>
+          MixColumns must be reversible for AES decryption. AES uses a different matrix to undo MixColumns:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}
+            \texttt{0E}&\texttt{0B}&\texttt{0D}&\texttt{09}\\
+            \texttt{09}&\texttt{0E}&\texttt{0B}&\texttt{0D}\\
+            \texttt{0D}&\texttt{09}&\texttt{0E}&\texttt{0B}\\
+            \texttt{0B}&\texttt{0D}&\texttt{09}&\texttt{0E}
+            \end{bmatrix}
+          \]
+        </div>
+        <p>
+          We will study inverse MixColumns later. For now, the key idea is that MixColumns is linear and invertible.
+        </p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: using ordinary integer multiplication</div>
+          <p>
+            <code>02 · DB</code> in MixColumns is multiplication in \(\mathrm{GF}(2^8)\), not ordinary decimal or hexadecimal integer multiplication.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: using addition instead of XOR</div>
+          <p>
+            The row products are combined with XOR, not ordinary addition with carries.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: mixing rows and columns</div>
+          <p>
+            MixColumns acts on vertical columns of the AES state. Each row of the MixColumns matrix computes one output byte for that column.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking MixColumns is nonlinear</div>
+          <p>
+            MixColumns is linear over \(\mathrm{GF}(2^8)\). AES gets nonlinearity from the S-box, not from MixColumns.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does <code>0x01</code> do as a multiplier in MixColumns?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It leaves the byte unchanged.</p>
+            </details>
+          </li>
+          <li>
+            How do you compute <code>0x03 · a</code> using <code>xtime</code>?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>0x03 · a = xtime(a) XOR a</code>.</p>
+            </details>
+          </li>
+          <li>
+            In the first MixColumns row, which input bytes affect \(s'_0\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>All four input bytes affect \(s'_0\): \(s_0\), \(s_1\), \(s_2\), and \(s_3\).</p>
+            </details>
+          </li>
+          <li>
+            Compute <code>02 · 13</code> in \(\mathrm{GF}(2^8)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>0x13</code> has top bit 0, so left shift gives <code>0x26</code>. Thus <code>02 · 13 = 26</code>.</p>
+            </details>
+          </li>
+          <li>
+            Why does MixColumns help diffusion?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Each output byte depends on all four input bytes in a column, so a change in one byte can spread across the whole column.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          MixColumns is one of AES's main diffusion layers. It does not provide nonlinearity, but it spreads the nonlinear effects of the S-box across the state over repeated rounds.
+        </p>
+        <ul>
+          <li>It treats columns as four-byte vectors.</li>
+          <li>It uses matrix multiplication over \(\mathrm{GF}(2^8)\).</li>
+          <li>It combines finite-field multiplication with XOR.</li>
+          <li>It has strong byte-level diffusion with branch number 5.</li>
+          <li>It is invertible, so AES decryption can undo it.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>MixColumns acts on one vertical AES state column at a time.</li>
+            <li>Each column has four bytes.</li>
+            <li>MixColumns is matrix multiplication over \(\mathrm{GF}(2^8)\).</li>
+            <li>The matrix uses constants <code>01</code>, <code>02</code>, and <code>03</code>.</li>
+            <li><code>01 · a = a</code>.</li>
+            <li><code>02 · a = xtime(a)</code>.</li>
+            <li><code>03 · a = xtime(a) XOR a</code>.</li>
+            <li>Each output byte is made by XORing four finite-field products.</li>
+            <li>MixColumns is linear but strongly diffusive.</li>
+            <li>MixColumns is invertible and has byte-level branch number 5.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core matrix</div>
+          <div class="math-display">
+            \[
+              \begin{bmatrix}s'_0\\s'_1\\s'_2\\s'_3\end{bmatrix}
+              =
+              \begin{bmatrix}
+              \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+              \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+              \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+              \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+              \end{bmatrix}
+              \begin{bmatrix}s_0\\s_1\\s_2\\s_3\end{bmatrix}
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Multiplier</th><th>Meaning in MixColumns</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>01</code></td><td>Use the byte unchanged.</td></tr>
+            <tr><td><code>02</code></td><td>Use \(\operatorname{xtime}(a)\).</td></tr>
+            <tr><td><code>03</code></td><td>Use \(\operatorname{xtime}(a)\oplus a\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Inverse MixColumns and Decryption Layers</strong>. We will study how AES reverses the byte-level mixing step during decryption.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Key Expansion II: Rcon and Full AES-128 Key Schedule Walkthrough | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .key-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .word-table,
+    .key-table,
+    .process-table,
+    .xor-table,
+    .rcon-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .word-table th,
+    .word-table td,
+    .key-table th,
+    .key-table td,
+    .process-table th,
+    .process-table td,
+    .xor-table th,
+    .xor-table td,
+    .rcon-table th,
+    .rcon-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .word-table th,
+    .key-table th,
+    .process-table th,
+    .xor-table th,
+    .rcon-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .word-table td,
+    .word-table th,
+    .key-table td,
+    .key-table th,
+    .process-table td,
+    .process-table th,
+    .xor-table td,
+    .xor-table th,
+    .rcon-table td,
+    .rcon-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .rot-node { background: #fff4d8; border-color: #ead399; }
+    .sub-node { background: #f0eafe; border-color: #d8c8f5; }
+    .rcon-node { background: #fdeaea; border-color: #efb5b5; }
+    .xor-node { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .byte-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(70px, 1fr));
+      gap: 10px;
+      margin: 12px 0;
+      max-width: 520px;
+    }
+
+    .byte-chip {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .byte-chip.changed { background: #f0eafe; border-color: #d8c8f5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .byte-row { grid-template-columns: repeat(2, minmax(70px, 1fr)); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .byte-chip, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, .byte-chip, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .word-table th, .key-table th, .process-table th, .xor-table th, .rcon-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 25</div>
+      <h1>Key Expansion II: Rcon and Full AES-128 Key Schedule Walkthrough</h1>
+      <p class="subtitle">
+        Completing the first AES-128 expanded round key by adding Rcon, computing \(w_4\) through \(w_7\), and assembling \(K_1\).
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="24-key-expansion-i-round-keys-words-rotword-and-subword.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 24 introduced the AES key-schedule parts: words, round keys, RotWord, and SubWord. This tutorial adds Rcon and performs a complete step-by-step computation of the first expanded round key, \(K_1\), from a standard AES-128 example key.</p>
+        </div>
+
+        <p class="lead">
+          We are now turning the key schedule crank. We will start with \(w_0\) through \(w_3\), transform \(w_3\), inject Rcon, compute \(w_4\), then use XOR chaining to compute \(w_5\), \(w_6\), and \(w_7\). Those four new words form \(K_1\).</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that an AES key-schedule word is four bytes, that AES-128 round keys are four words, and that RotWord rotates a word left by one byte while SubWord applies the AES S-box to all four bytes. You should also know XOR notation \(\oplus\).</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This lesson uses the same word notation as Tutorial 24, plus Rcon.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(w_i\)</td><td>The word numbered \(i\).</td><td>The \(i\)-th 32-bit word in the expanded AES key.</td></tr>
+            <tr><td>\(K_r\)</td><td>The round key for AES stage \(r\).</td><td>A 128-bit subkey made from four consecutive words.</td></tr>
+            <tr><td>Rcon</td><td>A round constant mixed into the first word of a new round key.</td><td>A 4-byte constant of the form \([RC,00,00,00]\).</td></tr>
+            <tr><td>\(Rcon_1\)</td><td>The first round constant.</td><td>For AES, \(Rcon_1=[01,00,00,00]\).</td></tr>
+            <tr><td>\(g(w)\)</td><td>The key-schedule core transformation.</td><td>\(g(w)=\operatorname{SubWord}(\operatorname{RotWord}(w))\oplus Rcon\).</td></tr>
+            <tr><td>\(\oplus\)</td><td>XOR.</td><td>Bitwise addition modulo 2, applied byte by byte here.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            The first word of a new round key receives special treatment. It is not merely copied or XORed. AES takes the previous word, rotates it, substitutes its bytes, XORs a round constant into it, and only then combines it with the word four places earlier.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="AES key schedule core for first new word">
+          <div class="diagram-title">The first new word of a round key</div>
+          <div class="flow-row">
+            <div class="flow-node">Previous word<br>\(w_3\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node rot-node">RotWord</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node sub-node">SubWord</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node rcon-node">XOR Rcon</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node xor-node">XOR with \(w_0\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">New word<br>\(w_4\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="rcon">
+        <h2>What is Rcon?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Rcon</div>
+          <p>
+            Rcon is a round constant used in AES key expansion. It is XORed into the transformed word when AES begins generating a new round key.</p>
+        </div>
+
+        <p>
+          In AES-128 key expansion, each Rcon value is a four-byte word. Only the first byte is nonzero:</p>
+        <div class="math-display">
+          \[
+            Rcon_j=[RC_j,00,00,00]
+          \]
+        </div>
+
+        <table class="rcon-table">
+          <thead><tr><th>Round constant</th><th>4-byte word</th></tr></thead>
+          <tbody>
+            <tr><td>\(Rcon_1\)</td><td><code>01 00 00 00</code></td></tr>
+            <tr><td>\(Rcon_2\)</td><td><code>02 00 00 00</code></td></tr>
+            <tr><td>\(Rcon_3\)</td><td><code>04 00 00 00</code></td></tr>
+            <tr><td>\(Rcon_4\)</td><td><code>08 00 00 00</code></td></tr>
+            <tr><td>\(Rcon_5\)</td><td><code>10 00 00 00</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Where Rcon comes from</div>
+          <p>
+            The nonzero byte of Rcon follows powers of \(x\) in \(\mathrm{GF}(2^8)\). For this tutorial, you only need to use the listed constants. The important operational fact is that Rcon is XORed into the first byte of the transformed word.</p>
+        </div>
+      </section>
+
+      <section id="starting-key">
+        <h2>Starting key and initial words</h2>
+        <p>
+          We will use the same standard AES-128 example key:</p>
+        <pre><code>2B 7E 15 16  28 AE D2 A6  AB F7 15 88  09 CF 4F 3C</code></pre>
+
+        <table class="word-table">
+          <thead><tr><th>Word</th><th>Bytes</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_0\)</td><td><code>2B 7E 15 16</code></td></tr>
+            <tr><td>\(w_1\)</td><td><code>28 AE D2 A6</code></td></tr>
+            <tr><td>\(w_2\)</td><td><code>AB F7 15 88</code></td></tr>
+            <tr><td>\(w_3\)</td><td><code>09 CF 4F 3C</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          These four words form \(K_0\). Our goal is to compute \(w_4,w_5,w_6,w_7\), which form \(K_1\).</p>
+      </section>
+
+      <section id="compute-g-w3">
+        <h2>Step 1: Compute \(g(w_3)\)</h2>
+        <p>
+          The key-schedule core \(g(w)\) means:</p>
+        <div class="math-display">
+          \[
+            g(w)=\operatorname{SubWord}(\operatorname{RotWord}(w))\oplus Rcon
+          \]
+        </div>
+
+        <p>Start with \(w_3\):</p>
+        <table class="process-table">
+          <thead><tr><th>Step</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Start with \(w_3\)</td><td><code>09 CF 4F 3C</code></td></tr>
+            <tr><td>RotWord</td><td><code>CF 4F 3C 09</code></td></tr>
+            <tr><td>SubWord</td><td><code>8A 84 EB 01</code></td></tr>
+            <tr><td>XOR \(Rcon_1\)</td><td><code>8B 84 EB 01</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          The Rcon step is:</p>
+        <div class="math-display">
+          \[
+            [8A,84,EB,01]\oplus[01,00,00,00]=[8B,84,EB,01]
+          \]
+        </div>
+
+        <p>
+          So:</p>
+        <div class="math-display">
+          \[
+            g(w_3)=\texttt{8B 84 EB 01}
+          \]
+        </div>
+      </section>
+
+      <section id="compute-w4">
+        <h2>Step 2: Compute \(w_4\)</h2>
+        <p>
+          The first word of \(K_1\) is:</p>
+        <div class="math-display">
+          \[
+            w_4=w_0\oplus g(w_3)
+          \]
+        </div>
+
+        <table class="xor-table">
+          <thead><tr><th>Value</th><th>Bytes</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_0\)</td><td><code>2B 7E 15 16</code></td></tr>
+            <tr><td>\(g(w_3)\)</td><td><code>8B 84 EB 01</code></td></tr>
+            <tr><td>\(w_4\)</td><td><code>A0 FA FE 17</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Byte by byte:</p>
+        <div class="math-display">
+          \[
+            \texttt{2B}\oplus\texttt{8B}=\texttt{A0},\quad
+            \texttt{7E}\oplus\texttt{84}=\texttt{FA},\quad
+            \texttt{15}\oplus\texttt{EB}=\texttt{FE},\quad
+            \texttt{16}\oplus\texttt{01}=\texttt{17}
+          \]
+        </div>
+      </section>
+
+      <section id="compute-w5-w7">
+        <h2>Step 3: Compute \(w_5\), \(w_6\), and \(w_7\)</h2>
+        <p>
+          After \(w_4\), the next three words are generated by XOR chaining:</p>
+
+        <div class="math-display">
+          \[
+            w_5=w_1\oplus w_4
+          \]
+          \[
+            w_6=w_2\oplus w_5
+          \]
+          \[
+            w_7=w_3\oplus w_6
+          \]
+        </div>
+
+        <table class="xor-table">
+          <thead><tr><th>Word</th><th>Formula</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_5\)</td><td><code>28 AE D2 A6 XOR A0 FA FE 17</code></td><td><code>88 54 2C B1</code></td></tr>
+            <tr><td>\(w_6\)</td><td><code>AB F7 15 88 XOR 88 54 2C B1</code></td><td><code>23 A3 39 39</code></td></tr>
+            <tr><td>\(w_7\)</td><td><code>09 CF 4F 3C XOR 23 A3 39 39</code></td><td><code>2A 6C 76 05</code></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="assemble-k1">
+        <h2>Step 4: Assemble \(K_1\)</h2>
+        <p>
+          The first expanded round key \(K_1\) is made from \(w_4,w_5,w_6,w_7\):</p>
+
+        <table class="key-table">
+          <thead><tr><th>Word</th><th>Bytes</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_4\)</td><td><code>A0 FA FE 17</code></td></tr>
+            <tr><td>\(w_5\)</td><td><code>88 54 2C B1</code></td></tr>
+            <tr><td>\(w_6\)</td><td><code>23 A3 39 39</code></td></tr>
+            <tr><td>\(w_7\)</td><td><code>2A 6C 76 05</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Written as one 16-byte round key:</p>
+        <pre><code>K1 = A0 FA FE 17  88 54 2C B1  23 A3 39 39  2A 6C 76 05</code></pre>
+      </section>
+
+      <section id="repeat-pattern">
+        <h2>The pattern repeats</h2>
+        <p>
+          To compute \(K_2\), AES starts with \(w_7\), applies the key-schedule core using \(Rcon_2\), computes \(w_8\), and then chains forward to \(w_9,w_{10},w_{11}\).</p>
+
+        <table class="process-table">
+          <thead><tr><th>New round key</th><th>Special first word</th><th>Rcon used</th><th>Then chain forward</th></tr></thead>
+          <tbody>
+            <tr><td>\(K_1\)</td><td>\(w_4=w_0\oplus g(w_3)\)</td><td>\(Rcon_1\)</td><td>\(w_5,w_6,w_7\)</td></tr>
+            <tr><td>\(K_2\)</td><td>\(w_8=w_4\oplus g(w_7)\)</td><td>\(Rcon_2\)</td><td>\(w_9,w_{10},w_{11}\)</td></tr>
+            <tr><td>\(K_3\)</td><td>\(w_{12}=w_8\oplus g(w_{11})\)</td><td>\(Rcon_3\)</td><td>\(w_{13},w_{14},w_{15}\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="pseudocode">
+        <h2>AES-128 key expansion pseudocode</h2>
+        <p>
+          In readable pseudocode, the AES-128 key expansion pattern is:</p>
+
+        <div class="box technical-box">
+          <pre><code>copy original key into w0, w1, w2, w3
+
+for i = 4 to 43:
+    temp = w[i - 1]
+
+    if i is a multiple of 4:
+        temp = SubWord(RotWord(temp)) XOR Rcon
+
+    w[i] = w[i - 4] XOR temp</code></pre>
+        </div>
+
+        <p>
+          This produces 44 words total, which are grouped into 11 round keys.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: applying Rcon to all four bytes</div>
+          <p>
+            Rcon is a four-byte word, but only its first byte is nonzero. For \(Rcon_1\), the value is <code>01 00 00 00</code>.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting the RotWord step</div>
+          <p>
+            The key-schedule core starts by rotating the previous word left by one byte before applying SubWord.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: applying the key-schedule core to every word</div>
+          <p>
+            In AES-128, the key-schedule core is applied only when the new word index is a multiple of 4.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: grouping words incorrectly into round keys</div>
+          <p>
+            Every AES-128 round key is four consecutive words: \(K_1=w_4,w_5,w_6,w_7\), \(K_2=w_8,w_9,w_{10},w_{11}\), and so on.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is \(Rcon_1\) as a four-byte word?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>01 00 00 00</code>.</p>
+            </details>
+          </li>
+          <li>
+            If SubWord gives <code>8A 84 EB 01</code>, what happens after XOR with \(Rcon_1\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>8A 84 EB 01 XOR 01 00 00 00 = 8B 84 EB 01</code>.</p>
+            </details>
+          </li>
+          <li>
+            What is \(w_4\) for the example key?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>A0 FA FE 17</code>.</p>
+            </details>
+          </li>
+          <li>
+            Which words form \(K_1\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(w_4,w_5,w_6,w_7\).</p>
+            </details>
+          </li>
+          <li>
+            When does AES-128 apply the key-schedule core?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>When the new word index is a multiple of 4.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          The AES key schedule controls how key material enters each round. It is not simply repeating the original key. It expands the key using rotation, nonlinear substitution, round constants, and XOR chaining so each round receives its own derived round key.</p>
+        <ul>
+          <li>Rcon breaks simple symmetry between rounds.</li>
+          <li>SubWord brings S-box nonlinearity into key expansion.</li>
+          <li>RotWord moves byte positions inside the word.</li>
+          <li>XOR chaining connects new words to previous key material.</li>
+          <li>Every four expanded words become a round key.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AES-128 key expansion starts with \(w_0,w_1,w_2,w_3\).</li>
+            <li>Those first four words form \(K_0\).</li>
+            <li>To compute \(w_4\), transform \(w_3\) using RotWord, SubWord, and Rcon.</li>
+            <li>For the example key, \(g(w_3)=\texttt{8B 84 EB 01}\).</li>
+            <li>\(w_4=w_0\oplus g(w_3)=\texttt{A0 FA FE 17}\).</li>
+            <li>\(w_5=w_1\oplus w_4=\texttt{88 54 2C B1}\).</li>
+            <li>\(w_6=w_2\oplus w_5=\texttt{23 A3 39 39}\).</li>
+            <li>\(w_7=w_3\oplus w_6=\texttt{2A 6C 76 05}\).</li>
+            <li>\(K_1=w_4,w_5,w_6,w_7\).</li>
+            <li>The pattern repeats until \(w_{43}\).</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Word</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_4\)</td><td><code>A0 FA FE 17</code></td></tr>
+            <tr><td>\(w_5\)</td><td><code>88 54 2C B1</code></td></tr>
+            <tr><td>\(w_6\)</td><td><code>23 A3 39 39</code></td></tr>
+            <tr><td>\(w_7\)</td><td><code>2A 6C 76 05</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">First expanded round key</div>
+          <pre><code>K1 = A0 FA FE 17  88 54 2C B1  23 A3 39 39  2A 6C 76 05</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Block Cipher Modes I: Why ECB Leaks Patterns</strong>. Now that we understand the AES block machine, we need to study how block ciphers are used safely on messages longer than one block.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

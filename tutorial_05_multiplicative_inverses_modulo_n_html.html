@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplicative Inverses Modulo n | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .mod-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .mod-table th,
+    .mod-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .mod-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .mod-table td,
+    .mod-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .residue-ring {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(58px, 1fr));
+      gap: 10px;
+      max-width: 620px;
+      margin: 18px auto;
+    }
+
+    .residue-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      padding: 10px 6px;
+      text-align: center;
+      background: #ffffff;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .residue-card.good { background: #eaf7ef; border-color: #b8dfc5; }
+    .residue-card.bad { background: #fdeaea; border-color: #efb5b5; }
+
+    .equation-chain {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 18px 0;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .chain-step {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 900;
+    }
+
+    .chain-step.hit { background: #fff4d8; border-color: #ead399; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .residue-ring { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details { break-inside: avoid; }
+      .box, .diagram, details.solution { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .mod-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 5</div>
+      <h1>Multiplicative Inverses Modulo \(n\)</h1>
+      <p class="subtitle">
+        Learning when modular multiplication can be undone, why some numbers have inverses, and why this matters for cryptography.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="04-modular-arithmetic.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Modular addition is easy to undo: subtract the same amount. But modular multiplication is more selective.
+            Sometimes multiplication can be undone, and sometimes it cannot. This tutorial explains how to tell the difference.
+          </p>
+        </div>
+
+        <p class="lead">
+          A multiplicative inverse modulo \(n\) is an undoing number. If multiplying by \(a\) scrambles a value around a modular circle,
+          multiplying by the inverse of \(a\) brings it back. But not every number gets an undoing number. Some numbers leave footprints that collapse together.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand modular arithmetic, especially the meaning of \(a\bmod n\), congruence, and standard residues \(0\) through \(n-1\).
+          You do not need the Euclidean algorithm yet. That comes next.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Inverses use compact notation, so we define every symbol before the machinery starts moving.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(n\)</td>
+              <td>The wraparound size.</td>
+              <td>A positive integer modulus.</td>
+            </tr>
+            <tr>
+              <td>\(a\)</td>
+              <td>The number we are trying to undo multiplication by.</td>
+              <td>An integer considered modulo \(n\).</td>
+            </tr>
+            <tr>
+              <td>\(a^{-1}\)</td>
+              <td>The undoing number for multiplication by \(a\), if it exists.</td>
+              <td>The multiplicative inverse of \(a\), usually understood relative to a modulus.</td>
+            </tr>
+            <tr>
+              <td>\(a^{-1}\pmod n\)</td>
+              <td>The number that multiplies with \(a\) to land on 1 modulo \(n\).</td>
+              <td>A residue \(x\) such that \(ax\equiv1\pmod n\).</td>
+            </tr>
+            <tr>
+              <td>\(\equiv\)</td>
+              <td>“Has the same remainder as.”</td>
+              <td>Congruence modulo a stated modulus.</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(a,n)\)</td>
+              <td>The largest number that divides both \(a\) and \(n\).</td>
+              <td>The greatest common divisor of \(a\) and \(n\).</td>
+            </tr>
+            <tr>
+              <td>coprime</td>
+              <td>Two numbers that share no divisor bigger than 1.</td>
+              <td>Integers \(a\) and \(n\) such that \(\gcd(a,n)=1\).</td>
+            </tr>
+            <tr>
+              <td>unit modulo \(n\)</td>
+              <td>A number that has a multiplicative inverse modulo \(n\).</td>
+              <td>An invertible element of \(\mathbb{Z}_n\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            In ordinary arithmetic, the inverse of 5 is \(1/5\), because \(5\cdot(1/5)=1\). In modular arithmetic,
+            we stay inside whole-number residues. So instead of asking for a fraction, we ask: is there a whole number \(x\)
+            that makes \(a\cdot x\) land on 1 after wrapping around modulo \(n\)?
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Inverse as undoing multiplication">
+          <div class="diagram-title">An inverse undoes multiplication</div>
+          <div class="flow-row">
+            <div class="flow-node">Start</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Multiply by \(a\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Moved value</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Multiply by \(a^{-1}\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Back where you started</div>
+          </div>
+        </div>
+
+        <p>
+          The essential test is simple to state:
+        </p>
+        <div class="math-display">
+          \[
+            a\cdot a^{-1}\equiv1\pmod n
+          \]
+        </div>
+      </section>
+
+      <section id="definition">
+        <h2>Technical definition</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: multiplicative inverse modulo \(n\)</div>
+          <p>
+            A number \(x\) is a multiplicative inverse of \(a\) modulo \(n\) if multiplying \(a\) by \(x\) gives a result congruent to 1 modulo \(n\).
+          </p>
+          <div class="math-display">
+            \[
+              ax\equiv1\pmod n
+            \]
+          </div>
+          <p>
+            When this happens, we may write:
+          </p>
+          <div class="math-display">
+            \[
+              x\equiv a^{-1}\pmod n
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="first-example">
+        <h2>First example: the inverse of 5 modulo 26</h2>
+        <p>
+          We want to find a number \(x\) such that:
+        </p>
+        <div class="math-display">
+          \[
+            5x\equiv1\pmod{26}
+          \]
+        </div>
+
+        <p>
+          Try small residues until one works:
+        </p>
+
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>\(x\)</th>
+              <th>\(5x\)</th>
+              <th>\(5x\bmod26\)</th>
+              <th>Is it 1?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>5</td><td>5</td><td>No</td></tr>
+            <tr><td>2</td><td>10</td><td>10</td><td>No</td></tr>
+            <tr><td>3</td><td>15</td><td>15</td><td>No</td></tr>
+            <tr><td>4</td><td>20</td><td>20</td><td>No</td></tr>
+            <tr><td>5</td><td>25</td><td>25</td><td>No</td></tr>
+            <tr><td>6</td><td>30</td><td>4</td><td>No</td></tr>
+            <tr><td>7</td><td>35</td><td>9</td><td>No</td></tr>
+            <tr><td>8</td><td>40</td><td>14</td><td>No</td></tr>
+            <tr><td>9</td><td>45</td><td>19</td><td>No</td></tr>
+            <tr><td>10</td><td>50</td><td>24</td><td>No</td></tr>
+            <tr><td>11</td><td>55</td><td>3</td><td>No</td></tr>
+            <tr><td>12</td><td>60</td><td>8</td><td>No</td></tr>
+            <tr><td>13</td><td>65</td><td>13</td><td>No</td></tr>
+            <tr><td>14</td><td>70</td><td>18</td><td>No</td></tr>
+            <tr><td>15</td><td>75</td><td>23</td><td>No</td></tr>
+            <tr><td>16</td><td>80</td><td>2</td><td>No</td></tr>
+            <tr><td>17</td><td>85</td><td>7</td><td>No</td></tr>
+            <tr><td>18</td><td>90</td><td>12</td><td>No</td></tr>
+            <tr><td>19</td><td>95</td><td>17</td><td>No</td></tr>
+            <tr><td>20</td><td>100</td><td>22</td><td>No</td></tr>
+            <tr><td>21</td><td>105</td><td>1</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Since \(5\cdot21=105\), and \(105\bmod26=1\), we have:
+        </p>
+        <div class="math-display">
+          \[
+            5^{-1}\equiv21\pmod{26}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">What this means</div>
+          <p>
+            Multiplying by 5 modulo 26 can be undone by multiplying by 21 modulo 26. The number 21 is the undoing number for 5 in this modular world.
+          </p>
+        </div>
+      </section>
+
+      <section id="undo-example">
+        <h2>Using the inverse to undo multiplication</h2>
+        <p>
+          Suppose a value \(P\) was multiplied by 5 modulo 26:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv5P\pmod{26}
+          \]
+        </div>
+
+        <p>
+          Let \(P=7\). Then:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv5\cdot7\pmod{26}
+          \]
+          \[
+            C\equiv35\pmod{26}
+          \]
+          \[
+            C\equiv9\pmod{26}
+          \]
+        </div>
+
+        <p>
+          To get back \(P\), multiply by the inverse of 5 modulo 26. We just found that inverse is 21.
+        </p>
+        <div class="math-display">
+          \[
+            P\equiv21C\pmod{26}
+          \]
+          \[
+            P\equiv21\cdot9\pmod{26}
+          \]
+          \[
+            P\equiv189\pmod{26}
+          \]
+          \[
+            P\equiv7\pmod{26}
+          \]
+        </div>
+
+        <p>
+          We recovered the original value.
+        </p>
+      </section>
+
+      <section id="when-not-exist">
+        <h2>When an inverse does not exist</h2>
+        <p>
+          Not every number has an inverse modulo \(n\). Let us try to find the inverse of 2 modulo 6.
+        </p>
+
+        <div class="math-display">
+          \[
+            2x\equiv1\pmod6
+          \]
+        </div>
+
+        <p>
+          Test all standard residues modulo 6:
+        </p>
+
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>\(x\)</th>
+              <th>\(2x\)</th>
+              <th>\(2x\bmod6\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>1</td><td>2</td><td>2</td></tr>
+            <tr><td>2</td><td>4</td><td>4</td></tr>
+            <tr><td>3</td><td>6</td><td>0</td></tr>
+            <tr><td>4</td><td>8</td><td>2</td></tr>
+            <tr><td>5</td><td>10</td><td>4</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          The result never lands on 1. So 2 has no multiplicative inverse modulo 6.
+        </p>
+
+        <div class="box mistake-box">
+          <div class="box-title">The hidden problem</div>
+          <p>
+            Multiplication by 2 modulo 6 only reaches 0, 2, and 4. It never reaches 1, 3, or 5.
+            It collapses the modular world into fewer landing spots. That collapse means information is lost.
+          </p>
+        </div>
+      </section>
+
+      <section id="collision-view">
+        <h2>The collision view</h2>
+        <p>
+          Multiplication by a number modulo \(n\) is a function from residues to residues. If the function has collisions, it cannot be inverted.
+        </p>
+
+        <h3>Multiplication by 2 modulo 6</h3>
+        <div class="residue-ring" aria-label="Multiplication by 2 modulo 6 output grid">
+          <div class="residue-card bad">0 → 0</div>
+          <div class="residue-card bad">1 → 2</div>
+          <div class="residue-card bad">2 → 4</div>
+          <div class="residue-card bad">3 → 0</div>
+          <div class="residue-card bad">4 → 2</div>
+          <div class="residue-card bad">5 → 4</div>
+        </div>
+        <p>
+          Inputs 0 and 3 both land on 0. Inputs 1 and 4 both land on 2. Inputs 2 and 5 both land on 4.
+          There are collisions everywhere, so the function cannot be undone uniquely.
+        </p>
+
+        <h3>Multiplication by 5 modulo 26</h3>
+        <p>
+          Multiplication by 5 modulo 26 does not collapse the residues. It rearranges them. That is why an inverse exists.
+        </p>
+      </section>
+
+      <section id="gcd-rule">
+        <h2>The greatest common divisor rule</h2>
+        <p>
+          There is a clean test for whether an inverse exists.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">The inverse-existence rule</div>
+          <p>
+            A number \(a\) has a multiplicative inverse modulo \(n\) exactly when \(a\) and \(n\) are coprime.
+          </p>
+          <div class="math-display">
+            \[
+              a^{-1}\pmod n\text{ exists exactly when }\gcd(a,n)=1
+            \]
+          </div>
+        </div>
+
+        <p>
+          Friendly version: \(a\) gets an undoing number modulo \(n\) only when \(a\) and \(n\) do not share any factor bigger than 1.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Number \(a\)</th>
+              <th>Modulus \(n\)</th>
+              <th>\(\gcd(a,n)\)</th>
+              <th>Inverse exists?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>5</td><td>26</td><td>1</td><td>Yes</td></tr>
+            <tr><td>2</td><td>6</td><td>2</td><td>No</td></tr>
+            <tr><td>3</td><td>10</td><td>1</td><td>Yes</td></tr>
+            <tr><td>4</td><td>10</td><td>2</td><td>No</td></tr>
+            <tr><td>7</td><td>12</td><td>1</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="finding-by-search">
+        <h2>Finding inverses by search</h2>
+        <p>
+          For small moduli, we can find an inverse by testing residues until the product lands on 1.
+        </p>
+
+        <h3>Example: find \(3^{-1}\pmod{10}\)</h3>
+        <p>
+          We need:
+        </p>
+        <div class="math-display">
+          \[
+            3x\equiv1\pmod{10}
+          \]
+        </div>
+
+        <div class="equation-chain">
+          <span class="chain-step">3·1=3</span>
+          <span class="chain-step">3·2=6</span>
+          <span class="chain-step">3·3=9</span>
+          <span class="chain-step">3·4=12≡2</span>
+          <span class="chain-step">3·5=15≡5</span>
+          <span class="chain-step">3·6=18≡8</span>
+          <span class="chain-step hit">3·7=21≡1</span>
+        </div>
+
+        <p>
+          Therefore:
+        </p>
+        <div class="math-display">
+          \[
+            3^{-1}\equiv7\pmod{10}
+          \]
+        </div>
+      </section>
+
+      <section id="affine-preview">
+        <h2>Cryptography preview: why the affine cipher cares</h2>
+        <p>
+          The affine cipher has the form:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv aP+b\pmod{26}
+          \]
+        </div>
+
+        <p>
+          Here \(P\) is the plaintext letter number, \(C\) is the ciphertext letter number, \(a\) is the multiplication part of the key,
+          and \(b\) is the shift part of the key.
+        </p>
+
+        <p>
+          To decrypt, we must undo the addition by subtracting \(b\), and then undo multiplication by \(a\). That second step only works if \(a\) has an inverse modulo 26.
+        </p>
+
+        <div class="math-display">
+          \[
+            P\equiv a^{-1}(C-b)\pmod{26}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why this is not optional</div>
+          <p>
+            If \(a\) has no inverse modulo 26, then different plaintext letters can collapse into the same ciphertext letter.
+            Decryption would become guesswork. A cipher that cannot reliably decrypt is not a cipher. It is a paper shredder wearing a monocle.
+          </p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking \(a^{-1}\) always means \(1/a\)</div>
+          <p>
+            In modular arithmetic, \(a^{-1}\pmod n\) means a whole-number residue that multiplies with \(a\) to give 1 modulo \(n\). It is not usually a fraction.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: assuming every nonzero number has an inverse</div>
+          <p>
+            In ordinary arithmetic, every nonzero number has a reciprocal. In modular arithmetic, a number has an inverse modulo \(n\) only if it is coprime to \(n\).
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: forgetting the modulus</div>
+          <p>
+            The inverse depends on the modulus. The inverse of 3 modulo 10 is 7, but the inverse of 3 modulo 26 is 9. The modulus changes the world.
+          </p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Check whether 7 is the inverse of 3 modulo 10.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  3\cdot7=21
+                \]
+                \[
+                  21\bmod10=1
+                \]
+              </div>
+              <p>Yes. \(3^{-1}\equiv7\pmod{10}\).</p>
+            </details>
+          </li>
+          <li>
+            Find \(7^{-1}\pmod{12}\) by testing residues.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Test \(7x\pmod{12}\). Since \(7\cdot7=49\), and \(49\bmod12=1\), the inverse is 7.</p>
+              <div class="math-display">
+                \[
+                  7^{-1}\equiv7\pmod{12}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Does 4 have an inverse modulo 10? Explain.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. \(\gcd(4,10)=2\), so 4 and 10 are not coprime. Therefore 4 has no inverse modulo 10.</p>
+            </details>
+          </li>
+          <li>
+            Find \(9^{-1}\pmod{26}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>We need \(9x\equiv1\pmod{26}\). Since \(9\cdot3=27\), and \(27\bmod26=1\), the inverse is 3.</p>
+              <div class="math-display">
+                \[
+                  9^{-1}\equiv3\pmod{26}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            If \(C\equiv5P\pmod{26}\) and \(C=15\), recover \(P\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The inverse of 5 modulo 26 is 21.</p>
+              <div class="math-display">
+                \[
+                  P\equiv21C\pmod{26}
+                \]
+                \[
+                  P\equiv21\cdot15\pmod{26}
+                \]
+                \[
+                  P\equiv315\pmod{26}
+                \]
+                \[
+                  P\equiv3\pmod{26}
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Multiplicative inverses are one of the first places where cryptographic mathematics becomes selective. Some operations are reversible, and some are not.
+        </p>
+        <ul>
+          <li>Affine cipher decryption requires a modular inverse.</li>
+          <li>RSA private key generation relies on modular inverses.</li>
+          <li>Diffie-Hellman and elliptic curve cryptography use inverse-like reasoning inside modular structures.</li>
+          <li>AES uses multiplicative inverses in \(\mathrm{GF}(2^8)\) when constructing its S-box.</li>
+          <li>Invertibility is central to deciding whether a transformation can be used in a reversible encryption path.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A multiplicative inverse modulo \(n\) is an undoing number for multiplication modulo \(n\).</li>
+            <li>\(x\) is the inverse of \(a\) modulo \(n\) if \(ax\equiv1\pmod n\).</li>
+            <li>Not every nonzero number has a modular inverse.</li>
+            <li>An inverse exists exactly when \(\gcd(a,n)=1\).</li>
+            <li>Numbers with inverses modulo \(n\) are called units modulo \(n\).</li>
+            <li>If multiplication causes collisions, it cannot be undone uniquely.</li>
+            <li>The inverse depends on the modulus.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Meaning</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Inverse</td>
+              <td>Undoing number for multiplication</td>
+              <td>\(5^{-1}\equiv21\pmod{26}\)</td>
+            </tr>
+            <tr>
+              <td>Coprime</td>
+              <td>No shared factor bigger than 1</td>
+              <td>\(\gcd(5,26)=1\)</td>
+            </tr>
+            <tr>
+              <td>No inverse</td>
+              <td>Multiplication cannot be undone uniquely</td>
+              <td>2 has no inverse modulo 6</td>
+            </tr>
+            <tr>
+              <td>Unit</td>
+              <td>An invertible residue</td>
+              <td>5 is a unit modulo 26</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              ax\equiv1\pmod n
+            \]
+            \[
+              x\equiv a^{-1}\pmod n
+            \]
+            \[
+              a^{-1}\pmod n\text{ exists exactly when }\gcd(a,n)=1
+            \]
+            \[
+              P\equiv a^{-1}(C-b)\pmod{26}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>The Euclidean Algorithm</strong>. Trial-and-error works for small numbers, but cryptography needs a systematic way to find greatest common divisors. That is exactly what the Euclidean algorithm gives us.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

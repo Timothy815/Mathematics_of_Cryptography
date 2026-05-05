@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 35: From Toy GHASH Back to Full 128-bit GHASH Implementation Patterns | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .impl-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .pattern-table,
+    .impl-table,
+    .flow-table,
+    .valid-table,
+    .constant-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .pattern-table th, .pattern-table td,
+    .impl-table th, .impl-table td,
+    .flow-table th, .flow-table td,
+    .valid-table th, .valid-table td,
+    .constant-table th, .constant-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .pattern-table th,
+    .impl-table th,
+    .flow-table th,
+    .valid-table th,
+    .constant-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .pattern-table th,
+    .pattern-table td,
+    .impl-table th,
+    .impl-table td,
+    .flow-table th,
+    .flow-table td,
+    .valid-table th,
+    .valid-table td,
+    .constant-table th,
+    .constant-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .pattern-table th,
+      .impl-table th,
+      .flow-table th,
+      .valid-table th,
+      .constant-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 35</div>
+      <h1>AES-GCM V: From Toy GHASH Back to Full 128-bit GHASH Implementation Patterns</h1>
+      <p class="subtitle">
+        Printable practice for mapping toy GHASH to real GHASH, carry-less multiplication, shift-and-reduce implementation patterns, reduction constants, bit ordering, and constant-time implementation awareness.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="35-aes-gcm-v-from-toy-ghash-back-to-full-128-bit-ghash-implementation-patterns.html">Tutorial 35</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            This workbook is about connecting math to implementation patterns. You are not writing production cryptography here. You are learning how the same GHASH rhythm appears in real code: XOR, carry-less multiply, reduce, and keep timing behavior disciplined.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core GHASH formulas</div>
+            <div class="math-display">
+              \[
+                Y_i=(Y_{i-1}\oplus X_i)\cdot H
+              \]
+              \[
+                p(x)=x^{128}+x^7+x^2+x+1
+              \]
+              \[
+                x^{128}\equiv x^7+x^2+x+1
+              \]
+            </div>
+          </div>
+
+          <div class="box warning-box">
+            <div class="box-title">Implementation caution</div>
+            <p>
+              Equivalent GHASH implementations can look different because of bit ordering, shift direction, reduction constants, and hardware instructions. Use vetted libraries for real systems.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is carry-less multiplication?</td><td></td></tr>
+            <tr><td>A2. What is a shift in this implementation context?</td><td></td></tr>
+            <tr><td>A3. What is a conditional XOR?</td><td></td></tr>
+            <tr><td>A4. What is a reduction constant?</td><td></td></tr>
+            <tr><td>A5. What does constant-time mean?</td><td></td></tr>
+            <tr><td>A6. What does CLMUL or PMULL help with?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-to-real-map">
+        <h2>Part B: Toy-to-real map</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>Toy GHASH</th><th>Real GHASH</th></tr></thead>
+          <tbody>
+            <tr><td>Field</td><td></td><td></td></tr>
+            <tr><td>Block size</td><td></td><td></td></tr>
+            <tr><td>Folding polynomial</td><td></td><td></td></tr>
+            <tr><td>Update rhythm</td><td></td><td></td></tr>
+            <tr><td>Security use</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="implementation-flow">
+        <h2>Part C: Implementation flow</h2>
+        <p>Put these GHASH implementation ideas in a sensible order.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step description</th><th>Order number</th><th>Why this step matters</th></tr></thead>
+          <tbody>
+            <tr><td>Reduce the product modulo \(x^{128}+x^7+x^2+x+1\).</td><td></td><td></td></tr>
+            <tr><td>XOR the current input block into the accumulator.</td><td></td><td></td></tr>
+            <tr><td>Carry the reduced result forward as the next accumulator.</td><td></td><td></td></tr>
+            <tr><td>Multiply the mixed accumulator value by \(H\) using carry-less multiplication.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="carryless-multiplication">
+        <h2>Part D: Carry-less multiplication reasoning</h2>
+
+        <div class="problem">
+          <div class="problem-title">D1. How is carry-less multiplication different from ordinary integer multiplication?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. Why does a 1-bit in one operand select a shifted copy of the other operand?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. In conceptual pseudocode, what does this line mean?</div>
+          <pre><code>if that bit is 1:
+    result = result XOR shifted_copy_of_B</code></pre>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="reduction-patterns">
+        <h2>Part E: Shift-and-reduce patterns</h2>
+        <p>Complete the table.</p>
+
+        <table class="pattern-table">
+          <thead><tr><th>Mathematical idea</th><th>Implementation pattern</th><th>Why it works</th></tr></thead>
+          <tbody>
+            <tr><td>Multiplication by a power of \(x\)</td><td></td><td></td></tr>
+            <tr><td>A bit crosses the field boundary</td><td></td><td></td></tr>
+            <tr><td>Fold by \(x^7+x^2+x+1\)</td><td></td><td></td></tr>
+            <tr><td>Combine selected shifted copies</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why can implementations reduce as they go instead of producing one huge raw product first?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="reduction-constants">
+        <h2>Part F: Reduction constants and bit ordering</h2>
+        <div class="problem">
+          <div class="problem-title">F1. What does a reduction constant encode?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Why might the same GHASH reduction rule appear as different-looking constants in different code?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. Why should you be cautious when comparing two GHASH implementations line-by-line?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="constant-time">
+        <h2>Part G: Constant-time reasoning</h2>
+        <p>Compare the two patterns.</p>
+
+        <table class="constant-table">
+          <thead><tr><th>Pattern</th><th>Potential issue or advantage</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><pre><code>if secret_bit == 1:
+    result = result XOR value</code></pre></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td><pre><code>mask = all_ones_if_bit_is_1_else_all_zeroes
+result = result XOR (value AND mask)</code></pre></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why does constant-time discipline matter in cryptographic implementation?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="implementation-styles">
+        <h2>Part H: Implementation styles</h2>
+        <p>Complete the table.</p>
+
+        <table class="impl-table">
+          <thead><tr><th>Implementation style</th><th>High-level idea</th><th>Benefit</th><th>Caution</th></tr></thead>
+          <tbody>
+            <tr><td>Bit-by-bit loop</td><td></td><td></td><td></td></tr>
+            <tr><td>Table-based methods</td><td></td><td></td><td></td></tr>
+            <tr><td>CLMUL / PMULL</td><td></td><td></td><td></td></tr>
+            <tr><td>Vetted library implementation</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part I: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>The toy GHASH accumulator structure disappears in real GHASH.</td><td></td><td></td></tr>
+            <tr><td>Carry-less multiplication is polynomial multiplication over bits.</td><td></td><td></td></tr>
+            <tr><td>Reduction constants are unrelated to the field polynomial.</td><td></td><td></td></tr>
+            <tr><td>Bit-ordering conventions can make equivalent code look different.</td><td></td><td></td></tr>
+            <tr><td>Production cryptographic primitives should usually be hand-written by beginners after understanding the math.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part J: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">J1. Explain how the toy GHASH model maps to real GHASH.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J2. Explain why XOR, shifts, and reduction are enough to describe the core GHASH multiplication pattern.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J3. Why is “understanding implementation patterns” different from “writing production cryptography”?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Real GHASH uses \(GF(2^{128})\).</td><td></td></tr>
+            <tr><td>Real GHASH uses the same accumulator shape as toy GHASH.</td><td></td></tr>
+            <tr><td>Carry-less multiplication uses ordinary carries.</td><td></td></tr>
+            <tr><td>GHASH reduction uses \(x^{128}+x^7+x^2+x+1\).</td><td></td></tr>
+            <tr><td>Bit-ordering conventions can affect how implementation constants appear.</td><td></td></tr>
+            <tr><td>Constant-time implementation discipline helps reduce timing side-channel leakage.</td><td></td></tr>
+            <tr><td>Writing your own production GHASH is recommended after one tutorial.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The full version is not conceptually different from the toy version. It is larger, optimized, and much more sensitive to implementation details.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is carry-less multiplication?</td><td>Polynomial multiplication over bits, where matching terms combine by XOR and no carries occur.</td></tr>
+            <tr><td>A2. What is a shift in this implementation context?</td><td>A movement of bits that corresponds to moving polynomial powers, depending on bit-order convention.</td></tr>
+            <tr><td>A3. What is a conditional XOR?</td><td>An XOR performed only when a particular bit condition is true, often implemented with masks for constant-time behavior.</td></tr>
+            <tr><td>A4. What is a reduction constant?</td><td>A compact implementation encoding of the field polynomial's folding rule.</td></tr>
+            <tr><td>A5. What does constant-time mean?</td><td>Avoiding timing behavior, branches, or memory access patterns that depend on secret data.</td></tr>
+            <tr><td>A6. What does CLMUL or PMULL help with?</td><td>Hardware-assisted carry-less multiplication.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Toy-to-real map</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>Toy GHASH</th><th>Real GHASH</th></tr></thead>
+          <tbody>
+            <tr><td>Field</td><td>\(GF(2^4)\)</td><td>\(GF(2^{128})\)</td></tr>
+            <tr><td>Block size</td><td>4 bits</td><td>128 bits</td></tr>
+            <tr><td>Folding polynomial</td><td>\(x^4+x+1\)</td><td>\(x^{128}+x^7+x^2+x+1\)</td></tr>
+            <tr><td>Update rhythm</td><td>XOR, multiply, reduce</td><td>XOR, multiply, reduce</td></tr>
+            <tr><td>Security use</td><td>Learning only, not secure</td><td>Used in real AES-GCM when implemented correctly</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Implementation flow</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step description</th><th>Order number</th><th>Why this step matters</th></tr></thead>
+          <tbody>
+            <tr><td>Reduce the product modulo \(x^{128}+x^7+x^2+x+1\).</td><td>3</td><td>Brings the result back into the 128-bit field.</td></tr>
+            <tr><td>XOR the current input block into the accumulator.</td><td>1</td><td>Mixes the new block into the running GHASH state.</td></tr>
+            <tr><td>Carry the reduced result forward as the next accumulator.</td><td>4</td><td>Preserves the chained state for the next block.</td></tr>
+            <tr><td>Multiply the mixed accumulator value by \(H\) using carry-less multiplication.</td><td>2</td><td>Applies field multiplication by the hash subkey.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Carry-less multiplication reasoning</h3>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> Ordinary multiplication includes carries between bit positions. Carry-less multiplication treats values as polynomials over bits, so terms combine by XOR and no carries occur.</p>
+          <p><strong>D2 sample answer.</strong> A 1-bit represents an included power of \(x\). Multiplying by that power shifts the other polynomial, so each 1-bit selects a shifted copy.</p>
+          <p><strong>D3 sample answer.</strong> If a bit is 1, that power of \(x\) contributes to the product, so the implementation XORs in the corresponding shifted copy of \(B\). If the bit is 0, that shifted copy contributes nothing.</p>
+        </div>
+
+        <h3>Part E: Shift-and-reduce patterns</h3>
+        <table class="answer-table">
+          <thead><tr><th>Mathematical idea</th><th>Implementation pattern</th><th>Why it works</th></tr></thead>
+          <tbody>
+            <tr><td>Multiplication by a power of \(x\)</td><td>Shift bits</td><td>Shifting changes polynomial degree positions.</td></tr>
+            <tr><td>A bit crosses the field boundary</td><td>Apply conditional reduction</td><td>The overflow term must be folded back into the field.</td></tr>
+            <tr><td>Fold by \(x^7+x^2+x+1\)</td><td>XOR a reduction constant</td><td>The constant encodes the reduction taps.</td></tr>
+            <tr><td>Combine selected shifted copies</td><td>XOR them together</td><td>Addition in \(GF(2)\) is XOR.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> Reduction can be interleaved with shifting because field reduction preserves equivalence modulo the field polynomial. Folding overflow terms as they appear keeps intermediate values manageable.</p>
+        </div>
+
+        <h3>Part F: Reduction constants and bit ordering</h3>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> A reduction constant encodes the field polynomial's folding rule in a form useful for XORing during implementation.</p>
+          <p><strong>F2 sample answer.</strong> Different implementations may use different bit-order conventions, byte ordering, or shift directions. The same mathematical rule can therefore appear as different constants.</p>
+          <p><strong>F3 sample answer.</strong> Line-by-line comparison can be misleading because equivalent GHASH implementations may represent polynomial coefficients differently while computing the same field operation.</p>
+        </div>
+
+        <h3>Part G: Constant-time reasoning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Pattern</th><th>Potential issue or advantage</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><pre><code>if secret_bit == 1:
+    result = result XOR value</code></pre></td>
+              <td>Potential issue: branch behavior may depend on secret data and leak timing information.</td>
+            </tr>
+            <tr>
+              <td><pre><code>mask = all_ones_if_bit_is_1_else_all_zeroes
+result = result XOR (value AND mask)</code></pre></td>
+              <td>Potential advantage: the same kind of operation can run regardless of the secret bit, reducing branch-based timing leakage.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> Constant-time discipline matters because attackers may learn information from timing differences, branches, or memory access patterns that depend on secret values.</p>
+        </div>
+
+        <h3>Part H: Implementation styles</h3>
+        <table class="answer-table">
+          <thead><tr><th>Implementation style</th><th>High-level idea</th><th>Benefit</th><th>Caution</th></tr></thead>
+          <tbody>
+            <tr><td>Bit-by-bit loop</td><td>Use shifts and XORs.</td><td>Simple to understand.</td><td>Usually slower.</td></tr>
+            <tr><td>Table-based methods</td><td>Precompute multiples of \(H\).</td><td>Can be faster.</td><td>May create side-channel risk if table lookups depend on secrets.</td></tr>
+            <tr><td>CLMUL / PMULL</td><td>Hardware carry-less multiplication.</td><td>Fast polynomial multiplication.</td><td>Requires platform-specific support and careful reduction.</td></tr>
+            <tr><td>Vetted library implementation</td><td>Use reviewed, optimized crypto code.</td><td>Best practical choice.</td><td>Still must use APIs correctly.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>The toy GHASH accumulator structure disappears in real GHASH.</td><td>Mistaken</td><td>The same accumulator shape is used, but with 128-bit blocks.</td></tr>
+            <tr><td>Carry-less multiplication is polynomial multiplication over bits.</td><td>Valid</td><td>No carries; terms combine by XOR.</td></tr>
+            <tr><td>Reduction constants are unrelated to the field polynomial.</td><td>Mistaken</td><td>They encode the field polynomial's folding rule.</td></tr>
+            <tr><td>Bit-ordering conventions can make equivalent code look different.</td><td>Valid</td><td>Shift direction and bit mapping can change code appearance.</td></tr>
+            <tr><td>Production cryptographic primitives should usually be hand-written by beginners after understanding the math.</td><td>Mistaken</td><td>Use vetted libraries for real systems.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>J1 sample answer.</strong> The toy model and real GHASH use the same accumulator rule: XOR in a block, multiply by \(H\), reduce, and carry the result forward. Real GHASH scales the block size from 4 bits to 128 bits and uses the GCM field polynomial.</p>
+          <p><strong>J2 sample answer.</strong> XOR performs addition in \(GF(2)\), shifts represent movement of polynomial powers, and reduction folds overflow terms back into the field. Together, these describe the core finite-field multiplication pattern.</p>
+          <p><strong>J3 sample answer.</strong> Understanding patterns helps you read and reason about cryptographic algorithms. Writing production cryptography requires resistance to side channels, exact standards compliance, extensive testing, and expert review.</p>
+          <p><strong>J4 sample answer.</strong> Real GHASH uses the same XOR, multiply, reduce rhythm as the toy model, but over \(GF(2^{128})\). Implementations use carry-less multiplication, shifts, reduction constants, and sometimes hardware instructions to compute the field multiplication efficiently. Bit ordering can make code look different, and constant-time discipline matters for safety. Real systems should rely on vetted libraries.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Real GHASH uses \(GF(2^{128})\).</td><td>True</td><td>That is the field used in GCM authentication.</td></tr>
+            <tr><td>Real GHASH uses the same accumulator shape as toy GHASH.</td><td>True</td><td>Both use \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\).</td></tr>
+            <tr><td>Carry-less multiplication uses ordinary carries.</td><td>False</td><td>It specifically avoids carries.</td></tr>
+            <tr><td>GHASH reduction uses \(x^{128}+x^7+x^2+x+1\).</td><td>True</td><td>That is the GHASH field polynomial.</td></tr>
+            <tr><td>Bit-ordering conventions can affect how implementation constants appear.</td><td>True</td><td>Equivalent math can be represented differently in code.</td></tr>
+            <tr><td>Constant-time implementation discipline helps reduce timing side-channel leakage.</td><td>True</td><td>It avoids secret-dependent timing behavior.</td></tr>
+            <tr><td>Writing your own production GHASH is recommended after one tutorial.</td><td>False</td><td>Use vetted cryptographic libraries for production systems.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 35: From Toy GHASH Back to Full 128-bit GHASH Implementation Patterns.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

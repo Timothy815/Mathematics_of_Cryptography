@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bytes as Polynomials | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .poly-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .poly-table th,
+    .poly-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .poly-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .poly-table td,
+    .poly-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .byte-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(58px, 1fr));
+      gap: 8px;
+      margin: 18px 0;
+      min-width: 560px;
+    }
+
+    .byte-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 10px 6px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .byte-cell.on { background: #eaf7ef; border-color: #b8dfc5; }
+    .byte-cell.off { background: #f6f6f6; color: #777777; }
+    .byte-cell .power { font-weight: 900; color: #1f3763; }
+    .byte-cell .bit { font-size: 1.35rem; font-weight: 900; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .byte-strip { grid-template-columns: repeat(4, minmax(58px, 1fr)); min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .poly-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 8</div>
+      <h1>Bytes as Polynomials</h1>
+      <p class="subtitle">
+        The Alphabet of AES: learning how an 8-bit byte can be read as a polynomial with coefficients 0 and 1.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="07-extended-euclidean-algorithm.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We are preparing for finite-field arithmetic, especially the arithmetic used inside AES. Before we can multiply bytes in \(\mathrm{GF}(2^8)\), we need one quiet but powerful idea: a byte can be interpreted as a polynomial.
+          </p>
+        </div>
+
+        <p class="lead">
+          This tutorial does not teach Galois Field multiplication yet. It only teaches the alphabet. A byte such as <code>0x57</code> can be read as eight bits, as a number, or as a polynomial. Same bit pattern, different lens.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand binary place values, hexadecimal bytes, bit positions, and basic polynomial notation such as \(x^2+x+1\). You do not need polynomial long division yet.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          The symbol \(x\) in this tutorial is not a secret number to solve for. It is a formal placeholder used to label positions.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>byte</td>
+              <td>A group of 8 bits.</td>
+              <td>An 8-bit binary word.</td>
+            </tr>
+            <tr>
+              <td>bit</td>
+              <td>A single 0 or 1.</td>
+              <td>A binary digit.</td>
+            </tr>
+            <tr>
+              <td>coefficient</td>
+              <td>A number that tells whether a term is included.</td>
+              <td>A multiplier attached to a term in a polynomial.</td>
+            </tr>
+            <tr>
+              <td>\(x\)</td>
+              <td>A position marker, not an unknown to solve for here.</td>
+              <td>An indeterminate in a polynomial.</td>
+            </tr>
+            <tr>
+              <td>\(x^k\)</td>
+              <td>The term connected to bit position \(k\).</td>
+              <td>The \(k\)-th power of the indeterminate \(x\).</td>
+            </tr>
+            <tr>
+              <td>\(a_k\)</td>
+              <td>The bit sitting in position \(k\).</td>
+              <td>The coefficient of \(x^k\), where \(a_k\in\{0,1\}\).</td>
+            </tr>
+            <tr>
+              <td>\(a_7x^7+a_6x^6+\cdots+a_0\)</td>
+              <td>The full polynomial form of an 8-bit byte.</td>
+              <td>A polynomial of degree at most 7 with binary coefficients.</td>
+            </tr>
+            <tr>
+              <td>\(\mathrm{GF}(2)\)</td>
+              <td>The tiny arithmetic world with only 0 and 1.</td>
+              <td>The finite field with two elements, 0 and 1.</td>
+            </tr>
+            <tr>
+              <td>\(\mathrm{GF}(2^8)\)</td>
+              <td>The 256-element byte-sized field we are preparing to understand.</td>
+              <td>A finite field with \(2^8=256\) elements, often represented using byte-polynomials reduced by an irreducible polynomial.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            A byte is a row of eight switches. In ordinary binary, each switch controls a power of 2. In polynomial form, each switch controls a power of \(x\). A 1 means “include that term.” A 0 means “leave that term out.”
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Byte as polynomial flow">
+          <div class="diagram-title">Same byte, different lens</div>
+          <div class="flow-row">
+            <div class="flow-node">Byte<br><code>01010111</code></div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Read bits as<br>coefficients</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Polynomial<br>\(x^6+x^4+x^2+x+1\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ordinary-binary-review">
+        <h2>Ordinary binary place values</h2>
+        <p>
+          In ordinary binary, bit positions correspond to powers of 2.
+        </p>
+
+        <table class="bit-table">
+          <thead>
+            <tr>
+              <th>Bit position</th>
+              <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Power of 2</td>
+              <td>\(2^7\)</td><td>\(2^6\)</td><td>\(2^5\)</td><td>\(2^4\)</td><td>\(2^3\)</td><td>\(2^2\)</td><td>\(2^1\)</td><td>\(2^0\)</td>
+            </tr>
+            <tr>
+              <td>Value</td>
+              <td>128</td><td>64</td><td>32</td><td>16</td><td>8</td><td>4</td><td>2</td><td>1</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          For example:
+        </p>
+        <div class="math-display">
+          \[
+            01010111_2=64+16+4+2+1=87
+          \]
+        </div>
+        <p>
+          That is the ordinary integer interpretation of the byte.
+        </p>
+      </section>
+
+      <section id="polynomial-place-values">
+        <h2>Polynomial place values</h2>
+        <p>
+          In polynomial form, bit positions correspond to powers of \(x\), not powers of 2.
+        </p>
+
+        <table class="poly-table">
+          <thead>
+            <tr>
+              <th>Bit position</th>
+              <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Polynomial term</td>
+              <td>\(x^7\)</td><td>\(x^6\)</td><td>\(x^5\)</td><td>\(x^4\)</td><td>\(x^3\)</td><td>\(x^2\)</td><td>\(x\)</td><td>\(1\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: byte-polynomial</div>
+          <p>
+            A byte-polynomial is a polynomial whose coefficients are the bits of an 8-bit byte. Each bit is either 0 or 1, and bit position \(k\) becomes the coefficient of \(x^k\).
+          </p>
+          <div class="math-display">
+            \[
+              a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="worked-example-57">
+        <h2>Worked example 1: convert <code>0x57</code> to polynomial form</h2>
+        <p>
+          First convert the hexadecimal byte to binary:
+        </p>
+        <div class="math-display">
+          \[
+            \texttt{0x57}=01010111_2
+          \]
+        </div>
+
+        <p>
+          Now line up the bits with powers of \(x\):
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title"><code>01010111</code> as polynomial switches</div>
+          <div class="byte-strip">
+            <div class="byte-cell off"><div class="power">\(x^7\)</div><div class="bit">0</div></div>
+            <div class="byte-cell on"><div class="power">\(x^6\)</div><div class="bit">1</div></div>
+            <div class="byte-cell off"><div class="power">\(x^5\)</div><div class="bit">0</div></div>
+            <div class="byte-cell on"><div class="power">\(x^4\)</div><div class="bit">1</div></div>
+            <div class="byte-cell off"><div class="power">\(x^3\)</div><div class="bit">0</div></div>
+            <div class="byte-cell on"><div class="power">\(x^2\)</div><div class="bit">1</div></div>
+            <div class="byte-cell on"><div class="power">\(x\)</div><div class="bit">1</div></div>
+            <div class="byte-cell on"><div class="power">\(1\)</div><div class="bit">1</div></div>
+          </div>
+        </div>
+
+        <div class="conversion-stack">
+          <div class="conversion-card">
+            Start with all possible byte terms:
+            \[
+              0x^7+1x^6+0x^5+1x^4+0x^3+1x^2+1x+1
+            \]
+          </div>
+          <div class="conversion-card">
+            Drop terms with coefficient 0:
+            \[
+              1x^6+1x^4+1x^2+1x+1
+            \]
+          </div>
+          <div class="conversion-card final">
+            Clean final form:
+            \[
+              \texttt{0x57}\quad\longleftrightarrow\quad x^6+x^4+x^2+x+1
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="worked-example-83">
+        <h2>Worked example 2: convert <code>0x83</code> to polynomial form</h2>
+        <p>
+          Convert the hexadecimal byte to binary:
+        </p>
+        <div class="math-display">
+          \[
+            \texttt{0x83}=10000011_2
+          \]
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title"><code>10000011</code> as polynomial switches</div>
+          <div class="byte-strip">
+            <div class="byte-cell on"><div class="power">\(x^7\)</div><div class="bit">1</div></div>
+            <div class="byte-cell off"><div class="power">\(x^6\)</div><div class="bit">0</div></div>
+            <div class="byte-cell off"><div class="power">\(x^5\)</div><div class="bit">0</div></div>
+            <div class="byte-cell off"><div class="power">\(x^4\)</div><div class="bit">0</div></div>
+            <div class="byte-cell off"><div class="power">\(x^3\)</div><div class="bit">0</div></div>
+            <div class="byte-cell off"><div class="power">\(x^2\)</div><div class="bit">0</div></div>
+            <div class="byte-cell on"><div class="power">\(x\)</div><div class="bit">1</div></div>
+            <div class="byte-cell on"><div class="power">\(1\)</div><div class="bit">1</div></div>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            \texttt{0x83}\quad\longleftrightarrow\quad x^7+x+1
+          \]
+        </div>
+      </section>
+
+      <section id="reverse-direction">
+        <h2>Going the other direction: polynomial to byte</h2>
+        <p>
+          To convert a polynomial back to a byte, mark 1 for every power that appears and 0 for every power that does not appear.
+        </p>
+
+        <h3>Example</h3>
+        <p>
+          Convert this polynomial to a byte:
+        </p>
+        <div class="math-display">
+          \[
+            x^7+x^3+x^2+1
+          \]
+        </div>
+
+        <table class="poly-table">
+          <thead>
+            <tr>
+              <th>Power</th>
+              <th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Present?</td>
+              <td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            x^7+x^3+x^2+1\quad\longleftrightarrow\quad10001101_2
+          \]
+          \[
+            10001101_2=\texttt{0x8D}
+          \]
+        </div>
+      </section>
+
+      <section id="why-coefficients-are-bits">
+        <h2>Why the coefficients are only 0 and 1</h2>
+        <p>
+          The byte has only bits, and bits only have two values: 0 or 1. So the polynomial coefficients are also only 0 or 1.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Technical version</div>
+          <p>
+            We are using polynomials with coefficients in \(\mathrm{GF}(2)\). That means every coefficient is either 0 or 1, and coefficient arithmetic will eventually happen modulo 2.
+          </p>
+        </div>
+
+        <p>
+          For now, do not worry about the arithmetic. The important idea is representation: bits become coefficients.
+        </p>
+      </section>
+
+      <section id="same-byte-three-lenses">
+        <h2>Same byte, three lenses</h2>
+        <p>
+          A byte does not change when we interpret it differently. We are changing the lens, not the underlying pattern.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Lens</th>
+              <th>How <code>0x57</code> appears</th>
+              <th>What that means</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Hexadecimal</td>
+              <td><code>0x57</code></td>
+              <td>Compact base-16 notation for one byte.</td>
+            </tr>
+            <tr>
+              <td>Binary</td>
+              <td><code>01010111</code></td>
+              <td>The actual 8-bit pattern.</td>
+            </tr>
+            <tr>
+              <td>Integer</td>
+              <td>87</td>
+              <td>The ordinary base-2 place-value number.</td>
+            </tr>
+            <tr>
+              <td>Polynomial</td>
+              <td>\(x^6+x^4+x^2+x+1\)</td>
+              <td>The same bits read as coefficients of powers of \(x\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="not-evaluation">
+        <h2>Important: we are not plugging in a value for \(x\)</h2>
+        <p>
+          In algebra class, you may be used to seeing \(x\) as an unknown number. Here, \(x\) is not something we are solving for. It is a formal symbol that organizes positions.
+        </p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Do not evaluate the polynomial</div>
+          <p>
+            When we write \(x^6+x^4+x^2+x+1\), we are not asking you to plug in \(x=2\). If you plug in \(x=2\), you get the ordinary integer value 87, but finite-field arithmetic will treat \(x\) as a formal algebraic object, not as the number 2.
+          </p>
+        </div>
+
+        <p>
+          This is subtle, but important. The polynomial is a structured representation of the byte, not merely another way to evaluate the decimal number.
+        </p>
+      </section>
+
+      <section id="addition-preview">
+        <h2>Preview: why XOR will become addition</h2>
+        <p>
+          In the next few tutorials, we will eventually add byte-polynomials. Since coefficients are bits, adding coefficients will happen modulo 2.
+        </p>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>Coefficient sum</th><th>Modulo 2 result</th><th>XOR result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(0+0\)</td><td>0</td><td>0</td></tr>
+            <tr><td>\(0+1\)</td><td>1</td><td>1</td></tr>
+            <tr><td>\(1+0\)</td><td>1</td><td>1</td></tr>
+            <tr><td>\(1+1\)</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          That table is exactly XOR. This is why, in \(\mathrm{GF}(2)\), addition and subtraction look like XOR. We will use that later, but today we are only preparing the map.
+        </p>
+      </section>
+
+      <section id="aes-connection">
+        <h2>Why AES uses this viewpoint</h2>
+        <p>
+          AES works heavily with bytes. But for some of its mathematics, a byte is treated as a polynomial with binary coefficients.
+          That lets AES define a special kind of byte multiplication in \(\mathrm{GF}(2^8)\).
+        </p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Bridge idea</div>
+          <p>
+            Integer modular arithmetic wrapped numbers around a clock. Finite-field byte arithmetic will wrap polynomials using a special polynomial rule. Before we learn the wrapping rule, we need to know how bytes become polynomials in the first place.
+          </p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating bit position 7 as \(2^7\) in polynomial form</div>
+          <p>
+            In ordinary binary, position 7 means \(2^7\). In polynomial form, position 7 means \(x^7\). Same position, different lens.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: including zero terms</div>
+          <p>
+            A 0 bit means the term is absent. For <code>01010111</code>, we do not include \(x^7\), \(x^5\), or \(x^3\).
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: thinking \(x\) is a value to solve for</div>
+          <p>
+            Here, \(x\) is a formal placeholder for polynomial position. We are not solving for \(x\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: jumping into multiplication too soon</div>
+          <p>
+            This tutorial is about representation. Multiplication in \(\mathrm{GF}(2^8)\) comes later.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Convert <code>0x57</code> to polynomial form.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x57}=01010111_2=x^6+x^4+x^2+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert <code>0x83</code> to polynomial form.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x83}=10000011_2=x^7+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert <code>0x1B</code> to polynomial form.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x1B}=00011011_2=x^4+x^3+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert \(x^7+x^5+x^2+1\) to binary and hex.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x^7+x^5+x^2+1=10100101_2=\texttt{0xA5}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Convert \(x^6+x^5+x+1\) to binary and hex.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x^6+x^5+x+1=01100011_2=\texttt{0x63}
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Bytes-as-polynomials is the doorway from ordinary bit operations into finite-field arithmetic.
+        </p>
+        <ul>
+          <li>AES represents bytes as polynomials with binary coefficients.</li>
+          <li>Polynomial addition over \(\mathrm{GF}(2)\) corresponds to XOR.</li>
+          <li>Polynomial multiplication prepares us for AES byte multiplication.</li>
+          <li>Polynomial reduction will become the finite-field version of modular wraparound.</li>
+          <li>The AES S-box uses multiplicative inverses in \(\mathrm{GF}(2^8)\), so this representation is foundational.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A byte is an 8-bit pattern.</li>
+            <li>The same byte can be read as hex, binary, an integer, or a polynomial.</li>
+            <li>In polynomial form, bit position \(k\) corresponds to \(x^k\).</li>
+            <li>A 1 bit means include the term.</li>
+            <li>A 0 bit means leave the term out.</li>
+            <li>Bit position 0 corresponds to the constant term \(1\).</li>
+            <li>We are not solving for \(x\). It is a formal placeholder.</li>
+            <li>The coefficients are in \(\{0,1\}\), also called \(\mathrm{GF}(2)\).</li>
+            <li>This representation prepares us for \(\mathrm{GF}(2^8)\) arithmetic.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Bit position</th>
+              <th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Polynomial term</td>
+              <td>\(x^7\)</td><td>\(x^6\)</td><td>\(x^5\)</td><td>\(x^4\)</td><td>\(x^3\)</td><td>\(x^2\)</td><td>\(x\)</td><td>\(1\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core representation</div>
+          <div class="math-display">
+            \[
+              a_7a_6a_5a_4a_3a_2a_1a_0
+              \quad\longleftrightarrow\quad
+              a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0
+            \]
+          </div>
+          <div class="math-display">
+            \[
+              \texttt{0x57}=01010111_2\quad\longleftrightarrow\quad x^6+x^4+x^2+x+1
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Polynomial Addition over \(\mathrm{GF}(2)\)</strong>. Now that we can read bytes as polynomials, we can learn why adding those polynomials is the same as XORing their bytes.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

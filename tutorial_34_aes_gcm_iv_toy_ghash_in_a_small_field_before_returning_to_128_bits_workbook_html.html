@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 34: Toy GHASH in a Small Field Before Returning to 128 Bits | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .toy-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .toy-table,
+    .poly-table,
+    .xor-table,
+    .field-table,
+    .accumulator-table,
+    .compare-table,
+    .valid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .toy-table th, .toy-table td,
+    .poly-table th, .poly-table td,
+    .xor-table th, .xor-table td,
+    .field-table th, .field-table td,
+    .accumulator-table th, .accumulator-table td,
+    .compare-table th, .compare-table td,
+    .valid-table th, .valid-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .toy-table th,
+    .poly-table th,
+    .xor-table th,
+    .field-table th,
+    .accumulator-table th,
+    .compare-table th,
+    .valid-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .toy-table th,
+    .toy-table td,
+    .poly-table th,
+    .poly-table td,
+    .xor-table th,
+    .xor-table td,
+    .field-table th,
+    .field-table td,
+    .accumulator-table th,
+    .accumulator-table td,
+    .compare-table th,
+    .compare-table td,
+    .valid-table th,
+    .valid-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .mini-block-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(80px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .mini-block {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 850;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .mini-block.active { background: #eaf7ef; border-color: #b8dfc5; }
+    .mini-block.subkey { background: #fff4d8; border-color: #ead399; }
+    .mini-label { color: #1f3763; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; font-family: system-ui, sans-serif; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+      .mini-block-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .mini-block { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .mini-block {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .toy-table th,
+      .poly-table th,
+      .xor-table th,
+      .field-table th,
+      .accumulator-table th,
+      .compare-table th,
+      .valid-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 34</div>
+      <h1>AES-GCM IV: Toy GHASH in a Small Field Before Returning to 128 Bits</h1>
+      <p class="subtitle">
+        Printable practice for toy \(GF(2^4)\), 4-bit polynomial conversion, XOR accumulation, multiplication by \(H\), reduction with \(x^4\equiv x+1\), and GHASH-style state updates.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="34-aes-gcm-iv-toy-ghash-in-a-small-field-before-returning-to-128-bits.html">Tutorial 34</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Work slowly through each toy GHASH step. The goal is not speed. The goal is to see the rhythm: convert bits to polynomials, XOR the accumulator with the next block, multiply by \(H\), reduce back to 4 bits, then carry the result forward.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Toy field</div>
+            <div class="math-display">
+              \[
+                m(x)=x^4+x+1
+              \]
+              \[
+                x^4\equiv x+1
+              \]
+            </div>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Toy GHASH update</div>
+            <div class="math-display">
+              \[
+                Y_0=0000
+              \]
+              \[
+                Y_i=(Y_{i-1}\oplus X_i)\cdot H
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What field does this toy GHASH use?</td><td></td></tr>
+            <tr><td>A2. Is this toy GHASH secure?</td><td></td></tr>
+            <tr><td>A3. What is the toy reduction polynomial?</td><td></td></tr>
+            <tr><td>A4. What is the toy folding rule?</td><td></td></tr>
+            <tr><td>A5. What does \(H\) represent?</td><td></td></tr>
+            <tr><td>A6. What does the accumulator \(Y_i\) represent?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="four-bit-polynomials">
+        <h2>Part B: 4-bit blocks as polynomials</h2>
+        <p>Convert each 4-bit block into a polynomial. Use bit positions \(3,2,1,0\) as powers \(x^3,x^2,x,1\).</p>
+
+        <table class="poly-table">
+          <thead><tr><th>4-bit block</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td><code>1011</code></td><td></td></tr>
+            <tr><td><code>0110</code></td><td></td></tr>
+            <tr><td><code>0011</code></td><td></td></tr>
+            <tr><td><code>1110</code></td><td></td></tr>
+            <tr><td><code>1000</code></td><td></td></tr>
+            <tr><td><code>0101</code></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="mini-block-grid">
+          <div class="mini-block"><div class="mini-label">bit 3</div>\(x^3\)</div>
+          <div class="mini-block"><div class="mini-label">bit 2</div>\(x^2\)</div>
+          <div class="mini-block"><div class="mini-label">bit 1</div>\(x\)</div>
+          <div class="mini-block"><div class="mini-label">bit 0</div>\(1\)</div>
+        </div>
+      </section>
+
+      <section id="xor-practice">
+        <h2>Part C: XOR practice</h2>
+        <p>Compute each 4-bit XOR.</p>
+
+        <table class="xor-table">
+          <thead><tr><th>Expression</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><code>0000 ⊕ 1011</code></td><td></td></tr>
+            <tr><td><code>1110 ⊕ 0110</code></td><td></td></tr>
+            <tr><td><code>1011 ⊕ 0011</code></td><td></td></tr>
+            <tr><td><code>0101 ⊕ 1111</code></td><td></td></tr>
+            <tr><td><code>1000 ⊕ 1000</code></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="reduction-practice">
+        <h2>Part D: Reduction practice</h2>
+        <p>Use the toy folding rule \(x^4\equiv x+1\). Simplify each expression into a polynomial of degree at most 3.</p>
+
+        <div class="problem">
+          <div class="problem-title">D1. Reduce \(x^4\).</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. Reduce \(x^4+x^3\).</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. Reduce \(x^4+x^3+x^2+1\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D4. Since \(x^5=x\cdot x^4\), reduce \(x^5\).</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="multiply-by-h">
+        <h2>Part E: Multiply by \(H=0011=x+1\)</h2>
+        <p>Multiply each polynomial by \(H=x+1\), cancel repeated terms, then reduce if needed.</p>
+
+        <div class="problem">
+          <div class="problem-title">E1. \((x^3+x+1)(x+1)\)</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. \(x^3(x+1)\)</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. \((x^2+x)(x+1)\)</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="worked-example-fill-in">
+        <h2>Part F: Fill in the worked example</h2>
+        <p>Use the same values from Tutorial 34:</p>
+
+        <table class="toy-table">
+          <thead><tr><th>Value</th><th>Bits</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td>\(Y_0\)</td><td><code>0000</code></td><td>\(0\)</td></tr>
+            <tr><td>\(H\)</td><td><code>0011</code></td><td>\(x+1\)</td></tr>
+            <tr><td>\(X_1\)</td><td><code>1011</code></td><td></td></tr>
+            <tr><td>\(X_2\)</td><td><code>0110</code></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <table class="accumulator-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(Y_0\oplus X_1\)</td><td></td></tr>
+            <tr><td>2</td><td>\((Y_0\oplus X_1)\cdot H\), reduced</td><td>\(Y_1=\)</td></tr>
+            <tr><td>3</td><td>\(Y_1\oplus X_2\)</td><td></td></tr>
+            <tr><td>4</td><td>\((Y_1\oplus X_2)\cdot H\), reduced</td><td>\(Y_2=\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="new-example">
+        <h2>Part G: New toy GHASH example</h2>
+        <p>Now try a new two-block toy GHASH using the same field and same \(H=0011=x+1\).</p>
+
+        <table class="toy-table">
+          <thead><tr><th>Value</th><th>Bits</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td>\(Y_0\)</td><td><code>0000</code></td><td>\(0\)</td></tr>
+            <tr><td>\(H\)</td><td><code>0011</code></td><td>\(x+1\)</td></tr>
+            <tr><td>\(X_1\)</td><td><code>0101</code></td><td>\(x^2+1\)</td></tr>
+            <tr><td>\(X_2\)</td><td><code>0010</code></td><td>\(x\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Compute \(Y_1=(Y_0\oplus X_1)\cdot H\).</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Compute \(Y_2=(Y_1\oplus X_2)\cdot H\).</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="toy-to-real">
+        <h2>Part H: Toy-to-real comparison</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>Toy GHASH</th><th>Real GHASH in AES-GCM</th></tr></thead>
+          <tbody>
+            <tr><td>Field</td><td></td><td></td></tr>
+            <tr><td>Block size</td><td></td><td></td></tr>
+            <tr><td>Reduction polynomial</td><td></td><td></td></tr>
+            <tr><td>Accumulator form</td><td></td><td></td></tr>
+            <tr><td>Security status</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part I: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why is the toy field useful even though it is not secure?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. What role does the accumulator play?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Why must we reduce after multiplication?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I4. Summarize toy GHASH in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>This tutorial's toy GHASH uses \(GF(2^4)\).</td><td></td></tr>
+            <tr><td>Real AES-GCM uses \(GF(2^4)\).</td><td></td></tr>
+            <tr><td>The toy reduction polynomial is \(x^4+x+1\).</td><td></td></tr>
+            <tr><td>In the toy field, \(x^4\equiv x+1\).</td><td></td></tr>
+            <tr><td>The accumulator starts at \(Y_0=0000\).</td><td></td></tr>
+            <tr><td>Each new block depends on the previous accumulator value.</td><td></td></tr>
+            <tr><td>Reduction is optional after multiplication.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            This toy model is a hand-cranked GHASH. The numbers are tiny so the process is visible: XOR, multiply, reduce, repeat.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What field does this toy GHASH use?</td><td>\(GF(2^4)\).</td></tr>
+            <tr><td>A2. Is this toy GHASH secure?</td><td>No. It is for learning only.</td></tr>
+            <tr><td>A3. What is the toy reduction polynomial?</td><td>\(m(x)=x^4+x+1\).</td></tr>
+            <tr><td>A4. What is the toy folding rule?</td><td>\(x^4\equiv x+1\).</td></tr>
+            <tr><td>A5. What does \(H\) represent?</td><td>The toy hash subkey multiplied after each block is mixed in.</td></tr>
+            <tr><td>A6. What does the accumulator \(Y_i\) represent?</td><td>The running GHASH-like state after processing block \(i\).</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: 4-bit blocks as polynomials</h3>
+        <table class="answer-table">
+          <thead><tr><th>4-bit block</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td><code>1011</code></td><td>\(x^3+x+1\)</td></tr>
+            <tr><td><code>0110</code></td><td>\(x^2+x\)</td></tr>
+            <tr><td><code>0011</code></td><td>\(x+1\)</td></tr>
+            <tr><td><code>1110</code></td><td>\(x^3+x^2+x\)</td></tr>
+            <tr><td><code>1000</code></td><td>\(x^3\)</td></tr>
+            <tr><td><code>0101</code></td><td>\(x^2+1\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: XOR practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Expression</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><code>0000 ⊕ 1011</code></td><td><code>1011</code></td></tr>
+            <tr><td><code>1110 ⊕ 0110</code></td><td><code>1000</code></td></tr>
+            <tr><td><code>1011 ⊕ 0011</code></td><td><code>1000</code></td></tr>
+            <tr><td><code>0101 ⊕ 1111</code></td><td><code>1010</code></td></tr>
+            <tr><td><code>1000 ⊕ 1000</code></td><td><code>0000</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Reduction practice</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> \(x^4\equiv x+1\)</p>
+          <p><strong>D2.</strong> \(x^4+x^3\equiv (x+1)+x^3=x^3+x+1\)</p>
+          <p><strong>D3.</strong> \(x^4+x^3+x^2+1\equiv (x+1)+x^3+x^2+1=x^3+x^2+x\)</p>
+          <p><strong>D4.</strong> \(x^5=x\cdot x^4\equiv x(x+1)=x^2+x\)</p>
+        </div>
+
+        <h3>Part E: Multiply by \(H=0011=x+1\)</h3>
+        <div class="answer-step">
+          <p><strong>E1.</strong> \((x^3+x+1)(x+1)=x^4+x^3+x^2+x+x+1=x^4+x^3+x^2+1\). Reduce: \((x+1)+x^3+x^2+1=x^3+x^2+x\), so result is <code>1110</code>.</p>
+          <p><strong>E2.</strong> \(x^3(x+1)=x^4+x^3\). Reduce: \((x+1)+x^3=x^3+x+1\), so result is <code>1011</code>.</p>
+          <p><strong>E3.</strong> \((x^2+x)(x+1)=x^3+x^2+x^2+x=x^3+x\), so result is <code>1010</code>.</p>
+        </div>
+
+        <h3>Part F: Fill in the worked example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Value</th><th>Bits</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td>\(Y_0\)</td><td><code>0000</code></td><td>\(0\)</td></tr>
+            <tr><td>\(H\)</td><td><code>0011</code></td><td>\(x+1\)</td></tr>
+            <tr><td>\(X_1\)</td><td><code>1011</code></td><td>\(x^3+x+1\)</td></tr>
+            <tr><td>\(X_2\)</td><td><code>0110</code></td><td>\(x^2+x\)</td></tr>
+          </tbody>
+        </table>
+
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(Y_0\oplus X_1\)</td><td><code>1011</code></td></tr>
+            <tr><td>2</td><td>\((Y_0\oplus X_1)\cdot H\), reduced</td><td>\(Y_1=\)<code>1110</code></td></tr>
+            <tr><td>3</td><td>\(Y_1\oplus X_2\)</td><td><code>1000</code></td></tr>
+            <tr><td>4</td><td>\((Y_1\oplus X_2)\cdot H\), reduced</td><td>\(Y_2=\)<code>1011</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: New toy GHASH example</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> \(Y_0\oplus X_1=0000\oplus0101=0101=x^2+1\).</p>
+          <p>Multiply by \(H=x+1\): \((x^2+1)(x+1)=x^3+x^2+x+1\). This already has degree 3, so no reduction is needed.</p>
+          <p>Therefore \(Y_1=x^3+x^2+x+1=1111\).</p>
+          <p><strong>G2.</strong> \(Y_1\oplus X_2=1111\oplus0010=1101=x^3+x^2+1\).</p>
+          <p>Multiply by \(H=x+1\): \((x^3+x^2+1)(x+1)=x^4+x^3+x^3+x^2+x+1=x^4+x^2+x+1\).</p>
+          <p>Reduce: \((x+1)+x^2+x+1=x^2\). Therefore \(Y_2=0100\).</p>
+        </div>
+
+        <h3>Part H: Toy-to-real comparison</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>Toy GHASH</th><th>Real GHASH in AES-GCM</th></tr></thead>
+          <tbody>
+            <tr><td>Field</td><td>\(GF(2^4)\)</td><td>\(GF(2^{128})\)</td></tr>
+            <tr><td>Block size</td><td>4 bits</td><td>128 bits</td></tr>
+            <tr><td>Reduction polynomial</td><td>\(x^4+x+1\)</td><td>\(x^{128}+x^7+x^2+x+1\)</td></tr>
+            <tr><td>Accumulator form</td><td>\(Y_i=(Y_{i-1}\oplus X_i)\cdot H\)</td><td>\(Y_i=(Y_{i-1}\oplus X_i)\cdot H\)</td></tr>
+            <tr><td>Security status</td><td>Not secure, for learning only</td><td>Used in real authenticated encryption when implemented correctly</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> The toy field is useful because the blocks are small enough to work by hand. It lets us see the GHASH rhythm without being buried under 128-bit arithmetic.</p>
+          <p><strong>I2 sample answer.</strong> The accumulator carries the result from one block to the next. Each new block is mixed with the previous accumulator, so the final value depends on the sequence of blocks.</p>
+          <p><strong>I3 sample answer.</strong> Multiplication can create terms too large for the field. Reduction folds those terms back into valid field elements using the reduction polynomial.</p>
+          <p><strong>I4 sample answer.</strong> Toy GHASH starts with \(Y_0=0000\). For each 4-bit input block, it XORs the block with the previous accumulator, multiplies the result by the toy hash subkey \(H\), and reduces the product modulo \(x^4+x+1\). The same accumulator structure is used by real GHASH, but real GHASH uses 128-bit blocks.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>This tutorial's toy GHASH uses \(GF(2^4)\).</td><td>True</td><td>The toy field has 4-bit elements.</td></tr>
+            <tr><td>Real AES-GCM uses \(GF(2^4)\).</td><td>False</td><td>Real GHASH uses \(GF(2^{128})\).</td></tr>
+            <tr><td>The toy reduction polynomial is \(x^4+x+1\).</td><td>True</td><td>That is the chosen toy polynomial.</td></tr>
+            <tr><td>In the toy field, \(x^4\equiv x+1\).</td><td>True</td><td>This follows from reducing modulo \(x^4+x+1\).</td></tr>
+            <tr><td>The accumulator starts at \(Y_0=0000\).</td><td>True</td><td>The starting accumulator is zero.</td></tr>
+            <tr><td>Each new block depends on the previous accumulator value.</td><td>True</td><td>The update uses \(Y_{i-1}\).</td></tr>
+            <tr><td>Reduction is optional after multiplication.</td><td>False</td><td>Reduction is required whenever the product exceeds the field size.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 34: Toy GHASH in a Small Field Before Returning to 128 Bits.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 3: Functions as Machines | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .mapping-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .mapping-table th, .mapping-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .mapping-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .mapping-table th,
+    .mapping-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .mapping-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 3</div>
+      <h1>Functions as Machines</h1>
+      <p class="subtitle">
+        Printable practice for function notation, domain, range, mapping tables, composition, inverse functions, and encryption as a function.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="03-functions-as-machines.html">Tutorial 3</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat each function like a machine: identify the input, apply the rule, and write the output. When checking whether a function is reversible, look for collisions: two different inputs producing the same output.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Function vocabulary</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Term</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Function</td><td>A rule that assigns each allowed input exactly one output.</td></tr>
+                <tr><td>Domain</td><td>The set of allowed inputs.</td></tr>
+                <tr><td>Codomain</td><td>The declared set where outputs are supposed to live.</td></tr>
+                <tr><td>Range</td><td>The outputs actually produced.</td></tr>
+                <tr><td>One-to-one</td><td>No two different inputs produce the same output.</td></tr>
+                <tr><td>Inverse</td><td>A function that undoes another function.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Core notation</div>
+            <div class="math-display">
+              \[
+                f:A\to B
+              \]
+              \[
+                f(x)=\text{output of }f\text{ on input }x
+              \]
+              \[
+                (g\circ f)(x)=g(f(x))
+              \]
+              \[
+                f^{-1}(f(x))=x
+              \]
+              \[
+                C=E_K(P), \qquad P=D_K(C)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. Explain \(f(x)\) in friendly language.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What is the domain of a function?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. What is the range of a function?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. Explain why output collisions are a problem for decryption.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="evaluating-functions">
+        <h2>Part B: Evaluating functions</h2>
+        <p>For each problem, substitute the input value and simplify.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Function</th>
+              <th>Input</th>
+              <th>Work</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td>\(f(x)=2x+1\)</td><td>\(x=4\)</td><td></td><td></td></tr>
+            <tr><td>B2</td><td>\(f(x)=3x+2\)</td><td>\(x=5\)</td><td></td><td></td></tr>
+            <tr><td>B3</td><td>\(h(x)=x^2\)</td><td>\(x=7\)</td><td></td><td></td></tr>
+            <tr><td>B4</td><td>\(r(x)=x-9\)</td><td>\(x=14\)</td><td></td><td></td></tr>
+            <tr><td>B5</td><td>\(m(x)=4x\)</td><td>\(x=8\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mapping-tables">
+        <h2>Part C: Mapping tables</h2>
+
+        <div class="problem">
+          <div class="problem-title">C1. Use the table to answer the questions.</div>
+          <table class="mapping-table">
+            <tbody>
+              <tr><th>Input \(x\)</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+              <tr><th>Output \(f(x)\)</th><td>3</td><td>5</td><td>1</td><td>4</td><td>0</td><td>2</td></tr>
+            </tbody>
+          </table>
+          <p>What is \(f(2)\)?</p>
+          <span class="blank-line"></span>
+          <p>What is \(f(5)\)?</p>
+          <span class="blank-line"></span>
+          <p>Is this function one-to-one? Explain.</p>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Is this table a function?</div>
+          <table class="mapping-table">
+            <tbody>
+              <tr><th>Input \(x\)</th><td>0</td><td>1</td><td>1</td><td>2</td></tr>
+              <tr><th>Output</th><td>4</td><td>5</td><td>7</td><td>8</td></tr>
+            </tbody>
+          </table>
+          <p>Answer and reason:</p>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. Identify the range.</div>
+          <p>Let the domain be \(\{0,1,2,3\}\), and let \(f(x)=x^2\).</p>
+          <p>List the outputs:</p>
+          <span class="blank-line"></span>
+          <p>Range:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="one-to-one-onto">
+        <h2>Part D: One-to-one and onto</h2>
+        <p>For each table, decide whether the function is one-to-one. Then explain why.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Input row</th>
+              <th>Output row</th>
+              <th>One-to-one?</th>
+              <th>Reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1</td><td>0, 1, 2, 3</td><td>2, 0, 3, 1</td><td></td><td></td></tr>
+            <tr><td>D2</td><td>0, 1, 2, 3</td><td>2, 2, 1, 0</td><td></td><td></td></tr>
+            <tr><td>D3</td><td>A, B, C, D</td><td>D, C, B, A</td><td></td><td></td></tr>
+            <tr><td>D4</td><td>A, B, C, D</td><td>X, Y, X, Z</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D5. Why is one-to-one important for reversible encryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="composition">
+        <h2>Part E: Function composition</h2>
+        <p>Remember: \((g\circ f)(x)=g(f(x))\), so do \(f\) first.</p>
+
+        <div class="problem">
+          <div class="problem-title">E1. Let \(f(x)=x+3\) and \(g(x)=2x\). Find \((g\circ f)(5)\).</div>
+          <div class="work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. Let \(f(x)=x+2\) and \(g(x)=x^2\). Find \((g\circ f)(3)\).</div>
+          <div class="work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. Using the same functions from E2, find \((f\circ g)(3)\).</div>
+          <div class="work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E4. Explain why \((g\circ f)(3)\) and \((f\circ g)(3)\) are not necessarily the same.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="inverse-functions">
+        <h2>Part F: Inverse functions</h2>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Function</th>
+              <th>Inverse function</th>
+              <th>Check with one value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>F1</td><td>\(f(x)=x+5\)</td><td></td><td></td></tr>
+            <tr><td>F2</td><td>\(f(x)=x-7\)</td><td></td><td></td></tr>
+            <tr><td>F3</td><td>\(f(x)=2x\)</td><td></td><td></td></tr>
+            <tr><td>F4</td><td>\(f(x)=x/3\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F5. Explain why a function with output collisions cannot have an inverse function.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="cryptography-practice">
+        <h2>Part G: Cryptography-flavored function practice</h2>
+
+        <div class="problem">
+          <div class="problem-title">G1. Read the formula.</div>
+          <div class="math-display">
+            \[
+              C=E_K(P)
+            \]
+          </div>
+          <p>Explain what \(C\), \(E_K\), and \(P\) mean.</p>
+          <p>\(C\):</p>
+          <span class="blank-line"></span>
+          <p>\(E_K\):</p>
+          <span class="blank-line"></span>
+          <p>\(P\):</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. XOR encryption function.</div>
+          <p>Let \(E_K(P)=P\oplus K\). If \(P=\)<code>0x57</code> and \(K=\)<code>0x83</code>, find \(C\).</p>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. XOR decryption function.</div>
+          <p>Let \(D_K(C)=C\oplus K\). If \(C=\)<code>0xD4</code> and \(K=\)<code>0x83</code>, recover \(P\).</p>
+          <div class="work-space large-work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G4. Rounds as composition.</div>
+          <p>If a toy cipher has three rounds \(R_1\), \(R_2\), and \(R_3\), write a function expression showing that plaintext \(P\) goes through \(R_1\), then \(R_2\), then \(R_3\).</p>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Statement</th>
+              <th>True or False?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>In \(f(x)\), the notation means \(f\times x\).</td><td></td></tr>
+            <tr><td>A function may assign one input two different outputs.</td><td></td></tr>
+            <tr><td>The range is the set of outputs actually produced.</td><td></td></tr>
+            <tr><td>A permutation of a finite set is reversible.</td><td></td></tr>
+            <tr><td>Composition means chaining functions together.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            For function problems, always ask: What is the input? What rule is being applied? What output is produced?
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> \(f(x)\) means the output produced when input \(x\) is put into function \(f\). It does not mean multiplication.</p>
+          <p><strong>A2.</strong> The domain is the set of allowed inputs.</p>
+          <p><strong>A3.</strong> The range is the set of outputs the function actually produces.</p>
+          <p><strong>A4.</strong> Output collisions are a problem because if two different plaintexts produce the same ciphertext, decryption cannot know which original plaintext to return.</p>
+        </div>
+
+        <h3>Part B: Evaluating functions</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Work</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\(f(4)=2(4)+1=8+1\)</td><td>9</td></tr>
+            <tr><td>B2</td><td>\(f(5)=3(5)+2=15+2\)</td><td>17</td></tr>
+            <tr><td>B3</td><td>\(h(7)=7^2\)</td><td>49</td></tr>
+            <tr><td>B4</td><td>\(r(14)=14-9\)</td><td>5</td></tr>
+            <tr><td>B5</td><td>\(m(8)=4(8)\)</td><td>32</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Mapping tables</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> From the table, \(f(2)=1\), and \(f(5)=2\). Yes, the function is one-to-one because every output appears only once.</p>
+          <p><strong>C2.</strong> No, this is not a function. Input 1 is assigned two different outputs, 5 and 7.</p>
+          <p><strong>C3.</strong> With domain \(\{0,1,2,3\}\), the outputs are \(0^2=0\), \(1^2=1\), \(2^2=4\), and \(3^2=9\). The range is \(\{0,1,4,9\}\).</p>
+        </div>
+
+        <h3>Part D: One-to-one and onto</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>One-to-one?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td>Yes</td><td>Outputs 2, 0, 3, and 1 are all different.</td></tr>
+            <tr><td>D2</td><td>No</td><td>Output 2 appears twice.</td></tr>
+            <tr><td>D3</td><td>Yes</td><td>Outputs D, C, B, and A are all different.</td></tr>
+            <tr><td>D4</td><td>No</td><td>Output X appears twice.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D5 sample answer.</strong> One-to-one is important because reversible encryption needs each ciphertext to point back to exactly one plaintext. If two plaintexts collide into one ciphertext, decryption becomes ambiguous.</p>
+        </div>
+
+        <h3>Part E: Function composition</h3>
+        <div class="answer-step">
+          <p><strong>E1.</strong> \(f(5)=5+3=8\). Then \(g(8)=2(8)=16\). So \((g\circ f)(5)=16\).</p>
+          <p><strong>E2.</strong> \(f(3)=3+2=5\). Then \(g(5)=5^2=25\). So \((g\circ f)(3)=25\).</p>
+          <p><strong>E3.</strong> \(g(3)=3^2=9\). Then \(f(9)=9+2=11\). So \((f\circ g)(3)=11\).</p>
+          <p><strong>E4 sample answer.</strong> Function order matters. Doing \(f\) first and then \(g\) can produce a different result from doing \(g\) first and then \(f\).</p>
+        </div>
+
+        <h3>Part F: Inverse functions</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Inverse</th><th>Check</th></tr></thead>
+          <tbody>
+            <tr><td>F1</td><td>\(f^{-1}(x)=x-5\)</td><td>\(f(10)=15\), then \(f^{-1}(15)=10\)</td></tr>
+            <tr><td>F2</td><td>\(f^{-1}(x)=x+7\)</td><td>\(f(10)=3\), then \(f^{-1}(3)=10\)</td></tr>
+            <tr><td>F3</td><td>\(f^{-1}(x)=x/2\)</td><td>\(f(10)=20\), then \(f^{-1}(20)=10\)</td></tr>
+            <tr><td>F4</td><td>\(f^{-1}(x)=3x\)</td><td>\(f(12)=4\), then \(f^{-1}(4)=12\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F5 sample answer.</strong> If two inputs produce the same output, the inverse would not know which input to return. One output would point backward to multiple possible inputs, so the undoing rule would not be a proper function.</p>
+        </div>
+
+        <h3>Part G: Cryptography-flavored function practice</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> \(C\) is ciphertext. \(E_K\) is the encryption function using key \(K\). \(P\) is plaintext.</p>
+          <p><strong>G2.</strong> \(C=\texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}\).</p>
+          <div class="math-display">
+            \[
+              01010111_2\oplus10000011_2=11010100_2
+            \]
+          </div>
+          <p><strong>G3.</strong> \(P=\texttt{0xD4}\oplus\texttt{0x83}=\texttt{0x57}\).</p>
+          <div class="math-display">
+            \[
+              11010100_2\oplus10000011_2=01010111_2
+            \]
+          </div>
+          <p><strong>G4.</strong> One valid expression is:</p>
+          <div class="math-display">
+            \[
+              C=R_3(R_2(R_1(P)))
+            \]
+          </div>
+          <p>This means \(P\) goes through \(R_1\), then \(R_2\), then \(R_3\).</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>In \(f(x)\), the notation means \(f\times x\).</td><td>False</td><td>It means apply function \(f\) to input \(x\).</td></tr>
+            <tr><td>A function may assign one input two different outputs.</td><td>False</td><td>Each allowed input must have exactly one output.</td></tr>
+            <tr><td>The range is the set of outputs actually produced.</td><td>True</td><td>That is the definition of range.</td></tr>
+            <tr><td>A permutation of a finite set is reversible.</td><td>True</td><td>It is one-to-one and onto.</td></tr>
+            <tr><td>Composition means chaining functions together.</td><td>True</td><td>The output of one function becomes the input of another.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 3: Functions as Machines.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

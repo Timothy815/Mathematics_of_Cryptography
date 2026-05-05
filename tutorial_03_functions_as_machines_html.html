@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Functions as Machines | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .mapping-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .mapping-table th,
+    .mapping-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .mapping-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .mapping-table td,
+    .mapping-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 22px 26px;
+      min-width: 190px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .mapping-diagram {
+      display: grid;
+      grid-template-columns: 1fr 90px 1fr;
+      gap: 10px;
+      align-items: center;
+      min-width: 520px;
+      margin: 18px 0;
+    }
+
+    .set-box {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .set-title {
+      font-weight: 900;
+      color: #1f3763;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .set-item {
+      border: 1px solid var(--border);
+      background: #fdfdfd;
+      border-radius: 999px;
+      padding: 6px 10px;
+      margin: 8px auto;
+      text-align: center;
+      max-width: 120px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .arrow-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      align-items: center;
+      color: var(--accent);
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+
+    .composition-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .small-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 800;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 700px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .mapping-diagram { grid-template-columns: 1fr; min-width: 0; }
+      .arrow-stack { transform: rotate(90deg); margin: 18px 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details { break-inside: avoid; }
+      .box, .diagram, details.solution { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .mapping-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 3</div>
+      <h1>Functions as Machines</h1>
+      <p class="subtitle">
+        Understanding functions as input-output rules, then using that idea to explain encryption, decryption, composition, and invertibility.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="02-bitwise-operations.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Cryptography is full of transformations. A plaintext becomes a ciphertext. A key becomes round keys.
+            A byte becomes another byte through an S-box. A block passes through many rounds. The mathematical language
+            for a predictable transformation is a function.
+          </p>
+        </div>
+
+        <p class="lead">
+          A function is a machine with a rule. You feed it an input, it follows its rule, and it produces an output.
+          That simple idea becomes powerful because encryption itself can be understood as a carefully designed function.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand that data can be represented as numbers, bits, bytes, and hexadecimal values. You should also be familiar with the idea that operations such as XOR transform bit patterns.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Function notation can look like tiny machinery labels. This table gives each label a friendly meaning and a precise meaning before we use it.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(f\)</td>
+              <td>The name of a function, like the name on a machine.</td>
+              <td>A rule that assigns each allowed input exactly one output.</td>
+            </tr>
+            <tr>
+              <td>\(x\)</td>
+              <td>An input placed into the function.</td>
+              <td>An element of the function’s domain.</td>
+            </tr>
+            <tr>
+              <td>\(f(x)\)</td>
+              <td>The output produced when \(x\) goes into the function named \(f\).</td>
+              <td>The value of function \(f\) evaluated at input \(x\).</td>
+            </tr>
+            <tr>
+              <td>\(A\)</td>
+              <td>The set of allowed inputs.</td>
+              <td>The domain of the function.</td>
+            </tr>
+            <tr>
+              <td>\(B\)</td>
+              <td>The set where outputs are supposed to live.</td>
+              <td>The codomain of the function.</td>
+            </tr>
+            <tr>
+              <td>\(f: A \to B\)</td>
+              <td>The function \(f\) takes inputs from \(A\) and sends them into \(B\).</td>
+              <td>A function with domain \(A\) and codomain \(B\).</td>
+            </tr>
+            <tr>
+              <td>\(g(f(x))\)</td>
+              <td>First run \(x\) through \(f\), then run the result through \(g\).</td>
+              <td>The composition of \(g\) after \(f\), often written \((g\circ f)(x)\).</td>
+            </tr>
+            <tr>
+              <td>\(f^{-1}\)</td>
+              <td>The undoing machine for \(f\), if such a machine exists.</td>
+              <td>The inverse function of \(f\).</td>
+            </tr>
+            <tr>
+              <td>\(E_K\)</td>
+              <td>An encryption machine using key \(K\).</td>
+              <td>An encryption function parameterized by key \(K\).</td>
+            </tr>
+            <tr>
+              <td>\(D_K\)</td>
+              <td>A decryption machine using key \(K\).</td>
+              <td>A decryption function parameterized by key \(K\), usually the inverse of \(E_K\).</td>
+            </tr>
+            <tr>
+              <td>\(P\)</td>
+              <td>Plaintext, the original message or data.</td>
+              <td>An element of the plaintext space.</td>
+            </tr>
+            <tr>
+              <td>\(C\)</td>
+              <td>Ciphertext, the transformed encrypted data.</td>
+              <td>An element of the ciphertext space.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            A function is like a dependable machine. The same input must always produce the same output. If the machine turns 3 into 10 today, it must turn 3 into 10 tomorrow, next Tuesday, and during a thunderstorm.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Function machine diagram">
+          <div class="diagram-title">A function as a machine</div>
+          <div class="flow-row">
+            <div class="flow-node">Input<br>\(x\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Function<br>\(f\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Output<br>\(f(x)\)</div>
+          </div>
+        </div>
+
+        <p>
+          The key requirement is this: one allowed input cannot produce two different outputs. A function may send two different inputs to the same output, but one input cannot split into multiple answers.
+        </p>
+      </section>
+
+      <section id="technical-definition">
+        <h2>Technical definition</h2>
+        <div class="box technical-box">
+          <div class="box-title">More precise version</div>
+          <p>
+            A function from a set \(A\) to a set \(B\) is a rule that assigns every element of \(A\) exactly one element of \(B\).
+          </p>
+          <div class="math-display">
+            \[
+              f: A \to B
+            \]
+          </div>
+          <p>
+            The set \(A\) is called the domain. The set \(B\) is called the codomain. If \(x\) is an input from \(A\), then \(f(x)\) is the output assigned to \(x\).
+          </p>
+        </div>
+      </section>
+
+      <section id="domain-codomain-range">
+        <h2>Domain, codomain, and range</h2>
+        <p>
+          Three terms are easy to blur together, so we will separate them carefully.
+        </p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Term</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Domain</td>
+              <td>All inputs the machine is allowed to accept.</td>
+              <td>The set of valid inputs.</td>
+            </tr>
+            <tr>
+              <td>Codomain</td>
+              <td>The output shelf where answers are supposed to come from.</td>
+              <td>The declared set of possible output values.</td>
+            </tr>
+            <tr>
+              <td>Range</td>
+              <td>The outputs the function actually produces.</td>
+              <td>The subset of the codomain that is hit by at least one input.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="diagram">
+          <div class="diagram-title">Mapping from inputs to outputs</div>
+          <div class="mapping-diagram">
+            <div class="set-box">
+              <div class="set-title">Domain \(A\)</div>
+              <div class="set-item">0</div>
+              <div class="set-item">1</div>
+              <div class="set-item">2</div>
+              <div class="set-item">3</div>
+            </div>
+            <div class="arrow-stack">
+              <div>→</div>
+              <div>→</div>
+              <div>→</div>
+              <div>→</div>
+            </div>
+            <div class="set-box">
+              <div class="set-title">Codomain \(B\)</div>
+              <div class="set-item">0</div>
+              <div class="set-item">1</div>
+              <div class="set-item">4</div>
+              <div class="set-item">9</div>
+              <div class="set-item">16</div>
+            </div>
+          </div>
+          <p>
+            If this function squares the input, then the actual outputs are 0, 1, 4, and 9. The value 16 is in the codomain, but it is not reached by these inputs, so it is not in the range.
+          </p>
+        </div>
+      </section>
+
+      <section id="worked-example-1">
+        <h2>Worked example 1: a simple number function</h2>
+        <p>
+          Let the function \(f\) be defined by this rule:
+        </p>
+        <div class="math-display">
+          \[
+            f(x) = 2x + 1
+          \]
+        </div>
+
+        <h3>Step 1: Understand the rule</h3>
+        <p>
+          The rule says: take the input, multiply it by 2, then add 1.
+        </p>
+
+        <h3>Step 2: Evaluate the function</h3>
+        <p>
+          If \(x = 4\), then:
+        </p>
+        <div class="math-display">
+          \[
+            f(4) = 2(4) + 1
+          \]
+          \[
+            f(4) = 8 + 1 = 9
+          \]
+        </div>
+
+        <h3>Step 3: Interpret the answer</h3>
+        <p>
+          The input 4 produces the output 9. In machine language: 4 goes in, 9 comes out.
+        </p>
+      </section>
+
+      <section id="function-tables">
+        <h2>Functions can be shown as tables</h2>
+        <p>
+          A function does not always need a formula. It can also be shown as a table, as long as every input has exactly one output.
+        </p>
+
+        <table class="mapping-table">
+          <thead>
+            <tr>
+              <th>Input \(x\)</th>
+              <th>0</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+              <th>4</th>
+              <th>5</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Output \(f(x)\)</td>
+              <td>3</td>
+              <td>5</td>
+              <td>1</td>
+              <td>4</td>
+              <td>0</td>
+              <td>2</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          This kind of table is very close to how substitution boxes are represented. An S-box is a lookup function: input bits select an output value.
+        </p>
+      </section>
+
+      <section id="one-to-one">
+        <h2>One-to-one functions and why they matter</h2>
+        <p>
+          A function is one-to-one if different inputs always produce different outputs. In plain language, no two inputs crash into the same output.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: one-to-one</div>
+          <p>
+            A function \(f\) is one-to-one if whenever \(x_1\neq x_2\), we also have \(f(x_1)\neq f(x_2)\).
+          </p>
+        </div>
+
+        <p>
+          One-to-one functions are important for encryption because if two different plaintexts produce the same ciphertext, decryption would not know which plaintext to return.
+        </p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Information collision</div>
+          <p>
+            If Alice and Bob both check their coats at a coatroom and receive the same ticket number, the ticket system is broken. The same idea applies to reversible encryption. If two inputs share one output, the output no longer contains enough information to distinguish the originals.
+          </p>
+        </div>
+      </section>
+
+      <section id="onto">
+        <h2>Onto functions</h2>
+        <p>
+          A function is onto if every value in the codomain is actually reached by some input.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: onto</div>
+          <p>
+            A function \(f: A\to B\) is onto if for every element \(y\) in \(B\), there is at least one element \(x\) in \(A\) such that \(f(x)=y\).
+          </p>
+        </div>
+
+        <p>
+          In many cryptographic settings, especially when encrypting fixed-size blocks, we want a transformation that rearranges all possible block values. That kind of function is both one-to-one and onto.
+        </p>
+      </section>
+
+      <section id="permutations">
+        <h2>Permutations as functions</h2>
+        <p>
+          A permutation is a function that rearranges a finite set without losing or duplicating anything.
+          Every input has one output, every output is used, and no two inputs collide.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: permutation</div>
+          <p>
+            A permutation of a finite set is a one-to-one and onto function from the set to itself.
+          </p>
+        </div>
+
+        <table class="mapping-table">
+          <thead>
+            <tr>
+              <th>Input position</th>
+              <th>0</th>
+              <th>1</th>
+              <th>2</th>
+              <th>3</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Output position</td>
+              <td>2</td>
+              <td>0</td>
+              <td>3</td>
+              <td>1</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          This table says: item 0 goes to position 2, item 1 goes to position 0, item 2 goes to position 3, and item 3 goes to position 1.
+          Since every output position appears exactly once, this is reversible.
+        </p>
+      </section>
+
+      <section id="composition">
+        <h2>Composition: feeding one machine into another</h2>
+        <p>
+          Composition means running functions in sequence. The output of one function becomes the input of the next function.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: composition</div>
+          <p>
+            The composition \(g\circ f\) means “do \(f\) first, then do \(g\).”
+          </p>
+          <div class="math-display">
+            \[
+              (g\circ f)(x) = g(f(x))
+            \]
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">Composition as a machine chain</div>
+          <div class="composition-row">
+            <div class="small-node">Input \(x\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">\(f\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="small-node">\(f(x)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">\(g\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="small-node">\(g(f(x))\)</div>
+          </div>
+        </div>
+
+        <h3>Worked example</h3>
+        <p>
+          Let:
+        </p>
+        <div class="math-display">
+          \[
+            f(x)=x+3
+          \]
+          \[
+            g(x)=2x
+          \]
+        </div>
+        <p>
+          Now evaluate \((g\circ f)(5)\). Remember: do \(f\) first.
+        </p>
+        <div class="math-display">
+          \[
+            f(5)=5+3=8
+          \]
+          \[
+            g(f(5))=g(8)=2(8)=16
+          \]
+          \[
+            (g\circ f)(5)=16
+          \]
+        </div>
+      </section>
+
+      <section id="inverse-functions">
+        <h2>Inverse functions: undoing the machine</h2>
+        <p>
+          An inverse function reverses what the original function did. If \(f\) sends \(x\) to \(y\), then \(f^{-1}\) sends \(y\) back to \(x\).
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: inverse function</div>
+          <p>
+            A function \(f^{-1}\) is the inverse of \(f\) if applying \(f\) and then \(f^{-1}\) returns the original input.
+          </p>
+          <div class="math-display">
+            \[
+              f^{-1}(f(x))=x
+            \]
+          </div>
+        </div>
+
+        <h3>Worked example</h3>
+        <p>
+          Let:
+        </p>
+        <div class="math-display">
+          \[
+            f(x)=x+3
+          \]
+        </div>
+        <p>
+          To undo “add 3,” we subtract 3. So:
+        </p>
+        <div class="math-display">
+          \[
+            f^{-1}(x)=x-3
+          \]
+        </div>
+        <p>
+          Check it:
+        </p>
+        <div class="math-display">
+          \[
+            f(10)=13
+          \]
+          \[
+            f^{-1}(13)=10
+          \]
+        </div>
+      </section>
+
+      <section id="encryption-as-function">
+        <h2>Encryption as a function</h2>
+        <p>
+          In cryptography, encryption can be described as a function that takes plaintext and produces ciphertext.
+          The key controls which encryption function is being used.
+        </p>
+
+        <div class="math-display">
+          \[
+            C = E_K(P)
+          \]
+        </div>
+
+        <p>
+          Read this as: ciphertext \(C\) is produced by applying the encryption function \(E\), using key \(K\), to plaintext \(P\).
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title">Encryption as a keyed machine</div>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext<br>\(P\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Encryption<br>\(E_K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext<br>\(C\)</div>
+          </div>
+        </div>
+
+        <p>
+          Decryption is the inverse direction:
+        </p>
+        <div class="math-display">
+          \[
+            P = D_K(C)
+          \]
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">Decryption as the undoing machine</div>
+          <div class="flow-row">
+            <div class="flow-node">Ciphertext<br>\(C\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Decryption<br>\(D_K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Plaintext<br>\(P\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="worked-example-cryptography">
+        <h2>Worked example 2: XOR encryption as a function</h2>
+        <p>
+          Define an encryption function that XORs a byte with the key byte <code>0x83</code>.
+        </p>
+
+        <div class="math-display">
+          \[
+            E_K(P)=P\oplus K
+          \]
+        </div>
+
+        <p>
+          Let:
+        </p>
+        <div class="math-display">
+          \[
+            P=\texttt{0x57}, \qquad K=\texttt{0x83}
+          \]
+        </div>
+
+        <p>
+          Then:
+        </p>
+        <div class="math-display">
+          \[
+            E_K(\texttt{0x57})=\texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}
+          \]
+        </div>
+
+        <p>
+          So:
+        </p>
+        <div class="math-display">
+          \[
+            C=\texttt{0xD4}
+          \]
+        </div>
+
+        <p>
+          To decrypt:
+        </p>
+        <div class="math-display">
+          \[
+            D_K(C)=C\oplus K
+          \]
+          \[
+            D_K(\texttt{0xD4})=\texttt{0xD4}\oplus\texttt{0x83}=\texttt{0x57}
+          \]
+        </div>
+
+        <p>
+          Because XOR undoes itself with the same key, the encryption and decryption functions have the same shape in this simple example.
+        </p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking \(f(x)\) means multiplication</div>
+          <p>
+            The notation \(f(x)\) does not mean \(f\times x\). It means “apply function \(f\) to input \(x\).”
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: confusing codomain and range</div>
+          <p>
+            The codomain is where outputs are allowed to live. The range is where outputs actually land.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: assuming every function has an inverse</div>
+          <p>
+            A function only has an inverse function when outputs preserve enough information to recover the original inputs. If two inputs collide into one output, the function cannot be undone uniquely.
+          </p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Let \(f(x)=3x+2\). Find \(f(4)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  f(4)=3(4)+2=12+2=14
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Let \(f(x)=x+5\). What is \(f^{-1}(x)\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>To undo adding 5, subtract 5.</p>
+              <div class="math-display">
+                \[
+                  f^{-1}(x)=x-5
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Let \(f(x)=x+2\) and \(g(x)=x^2\). Find \((g\circ f)(3)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Do \(f\) first:</p>
+              <div class="math-display">
+                \[
+                  f(3)=3+2=5
+                \]
+                \[
+                  g(f(3))=g(5)=5^2=25
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Is this table one-to-one?
+            <table class="mapping-table">
+              <tbody>
+                <tr><th>Input</th><td>0</td><td>1</td><td>2</td><td>3</td></tr>
+                <tr><th>Output</th><td>2</td><td>2</td><td>1</td><td>0</td></tr>
+              </tbody>
+            </table>
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. Inputs 0 and 1 both produce output 2, so two inputs collide.</p>
+            </details>
+          </li>
+          <li>
+            Let \(E_K(P)=P\oplus K\). If \(P=\texttt{0x2D}\) and \(K=\texttt{0x0F}\), find \(C\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x2D}\oplus\texttt{0x0F}=\texttt{0x22}
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Functions give us the language for describing cryptographic machines precisely.
+        </p>
+        <ul>
+          <li>A cipher can be viewed as a keyed function from plaintexts to ciphertexts.</li>
+          <li>Decryption is possible only when encryption can be undone for the intended key.</li>
+          <li>Permutation functions are central to reversible block cipher design.</li>
+          <li>Composition explains rounds: each round is a function, and the full cipher is a chain of functions.</li>
+          <li>S-boxes, permutations, key schedules, and mixing layers can all be studied as functions.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A function assigns each allowed input exactly one output.</li>
+            <li>\(f(x)\) means “the output of function \(f\) on input \(x\).”</li>
+            <li>The domain is the set of allowed inputs.</li>
+            <li>The codomain is the declared set of possible outputs.</li>
+            <li>The range is the set of outputs actually produced.</li>
+            <li>A one-to-one function has no output collisions.</li>
+            <li>An onto function reaches every value in the codomain.</li>
+            <li>A permutation is a reversible rearrangement of a finite set.</li>
+            <li>Composition means chaining functions together.</li>
+            <li>An inverse function undoes another function.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Meaning</th>
+              <th>Cryptography connection</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Function</td>
+              <td>Input-output rule</td>
+              <td>Ciphers transform plaintext into ciphertext</td>
+            </tr>
+            <tr>
+              <td>Inverse</td>
+              <td>Undoing function</td>
+              <td>Decryption reverses encryption</td>
+            </tr>
+            <tr>
+              <td>Composition</td>
+              <td>Function chain</td>
+              <td>Cipher rounds are composed transformations</td>
+            </tr>
+            <tr>
+              <td>Permutation</td>
+              <td>Reversible rearrangement</td>
+              <td>Block ciphers often need reversible transformations</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              f:A\to B
+            \]
+            \[
+              (g\circ f)(x)=g(f(x))
+            \]
+            \[
+              f^{-1}(f(x))=x
+            \]
+            \[
+              C=E_K(P), \qquad P=D_K(C)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Modular Arithmetic</strong>. Once functions feel like machines, we can build one of the most important cryptographic machines: arithmetic that wraps around.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

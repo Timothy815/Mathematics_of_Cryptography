@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polynomial Reduction and Irreducible Polynomials | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .poly-table,
+    .reduction-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .poly-table th,
+    .poly-table td,
+    .reduction-table th,
+    .reduction-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .poly-table th,
+    .reduction-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .poly-table td,
+    .poly-table th,
+    .reduction-table td,
+    .reduction-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .fold-strip {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(72px, 1fr));
+      gap: 8px;
+      margin: 18px 0;
+      min-width: 720px;
+    }
+
+    .fold-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 10px 6px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 800;
+    }
+
+    .fold-cell.high { background: #fdeaea; border-color: #efb5b5; }
+    .fold-cell.low { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .fold-strip { grid-template-columns: repeat(3, minmax(72px, 1fr)); min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .poly-table th, .reduction-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 11</div>
+      <h1>Polynomial Reduction and Irreducible Polynomials</h1>
+      <p class="subtitle">
+        Folding high powers back into byte-sized form: the polynomial version of modular wraparound.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="10-polynomial-multiplication-over-gf2.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Polynomial multiplication can create powers like \(x^8\), \(x^9\), or even \(x^{14}\). But a byte-polynomial can only use powers from \(x^7\) down to \(1\). This tutorial explains how high powers are reduced, or folded, back into byte-sized form.
+          </p>
+        </div>
+
+        <p class="lead">
+          Integer modular arithmetic has a wraparound rule. Polynomial finite-field arithmetic has a folding rule. Instead of reducing a number modulo an integer, we reduce a polynomial modulo another polynomial. This is the moment where the clock becomes a little algebraic machine.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know how to read bytes as polynomials, how addition over \(\mathrm{GF}(2)\) works, and how to multiply polynomials over \(\mathrm{GF}(2)\) before reduction. You should also remember the idea of a remainder from modular arithmetic.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Reduction introduces a modulus polynomial. This is the polynomial that controls the folding rule.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(m(x)\)</td>
+              <td>The folding-rule polynomial.</td>
+              <td>The modulus polynomial used for polynomial reduction.</td>
+            </tr>
+            <tr>
+              <td>\(p(x)\)</td>
+              <td>The polynomial we want to reduce.</td>
+              <td>A polynomial over \(\mathrm{GF}(2)\).</td>
+            </tr>
+            <tr>
+              <td>\(p(x)\bmod m(x)\)</td>
+              <td>The remainder after folding \(p(x)\) by \(m(x)\).</td>
+              <td>The polynomial remainder after division by \(m(x)\).</td>
+            </tr>
+            <tr>
+              <td>degree</td>
+              <td>The highest power of \(x\) that appears.</td>
+              <td>The largest exponent with nonzero coefficient.</td>
+            </tr>
+            <tr>
+              <td>irreducible polynomial</td>
+              <td>A polynomial that cannot be factored into smaller nontrivial pieces in this arithmetic world.</td>
+              <td>A nonconstant polynomial over a field that cannot be written as a product of lower-degree nonconstant polynomials over that field.</td>
+            </tr>
+            <tr>
+              <td>\(\mathrm{GF}(2)\)</td>
+              <td>The arithmetic world with only 0 and 1.</td>
+              <td>The finite field with two elements.</td>
+            </tr>
+            <tr>
+              <td>\(\mathrm{GF}(2^8)\)</td>
+              <td>The byte-sized field created from polynomials over \(\mathrm{GF}(2)\) using a degree-8 irreducible polynomial.</td>
+              <td>A finite field with 256 elements.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Reduction is controlled substitution. If the modulus polynomial tells us that a high power of \(x\) is equivalent to a smaller combination of terms, then we replace the high power with that smaller combination. Repeat until every term fits below the modulus degree.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Polynomial reduction as folding high powers">
+          <div class="diagram-title">Folding high powers back down</div>
+          <div class="flow-row">
+            <div class="flow-node">Unreduced product<br>may contain \(x^8,x^9,\dots\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Apply modulus<br>polynomial rule</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Reduced polynomial<br>degree below 8</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="integer-analogy">
+        <h2>The integer modular arithmetic analogy</h2>
+        <p>
+          In integer modular arithmetic, reducing modulo \(n\) means keeping the remainder after division by \(n\):
+        </p>
+        <div class="math-display">
+          \[
+            29\bmod 12=5
+          \]
+        </div>
+        <p>
+          Because:
+        </p>
+        <div class="math-display">
+          \[
+            29=2\cdot12+5
+          \]
+        </div>
+
+        <p>
+          Polynomial reduction works the same way in spirit:</p>
+        <div class="math-display">
+          \[
+            p(x)=q(x)m(x)+r(x)
+          \]
+        </div>
+        <p>
+          The reduced result is the remainder \(r(x)\), whose degree is smaller than the degree of \(m(x)\).</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: polynomial reduction</div>
+          <p>
+            Polynomial reduction modulo \(m(x)\) means finding the remainder after dividing by \(m(x)\). The result must have degree smaller than \(m(x)\).</p>
+        </div>
+      </section>
+
+      <section id="toy-modulus">
+        <h2>A small toy modulus first</h2>
+        <p>
+          Before AES's degree-8 rule, use a smaller rule so the idea is visible. Let:</p>
+        <div class="math-display">
+          \[
+            m(x)=x^3+x+1
+          \]
+        </div>
+        <p>
+          Since we reduce modulo \(m(x)\), we treat \(m(x)\) as equivalent to 0:</p>
+        <div class="math-display">
+          \[
+            x^3+x+1\equiv0\pmod{m(x)}
+          \]
+        </div>
+        <p>
+          Rearranging over \(\mathrm{GF}(2)\), where subtraction is the same as addition, gives:</p>
+        <div class="math-display">
+          \[
+            x^3\equiv x+1\pmod{x^3+x+1}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The folding rule</div>
+          <p>
+            Whenever \(x^3\) appears, we can replace it with \(x+1\). That is the toy folding rule.</p>
+        </div>
+      </section>
+
+      <section id="toy-example-1">
+        <h2>Worked example 1: reduce \(x^3+x^2+1\)</h2>
+        <p>
+          Reduce modulo:</p>
+        <div class="math-display">
+          \[
+            m(x)=x^3+x+1
+          \]
+        </div>
+        <p>
+          We use the rule:</p>
+        <div class="math-display">
+          \[
+            x^3\equiv x+1
+          \]
+        </div>
+        <p>
+          Replace \(x^3\):</p>
+        <div class="math-display">
+          \[
+            x^3+x^2+1\equiv (x+1)+x^2+1
+          \]
+        </div>
+        <p>
+          Combine like terms over \(\mathrm{GF}(2)\):</p>
+        <div class="math-display">
+          \[
+            x^2+x+(1+1)=x^2+x
+          \]
+        </div>
+        <div class="box definition-box">
+          <div class="box-title">Reduced result</div>
+          <div class="math-display">
+            \[
+              x^3+x^2+1\equiv x^2+x\pmod{x^3+x+1}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="toy-example-2">
+        <h2>Worked example 2: reduce \(x^4+x^2\)</h2>
+        <p>
+          With the same toy modulus \(m(x)=x^3+x+1\), we need to reduce \(x^4\). Multiply the folding rule by \(x\):</p>
+        <div class="math-display">
+          \[
+            x^3\equiv x+1
+          \]
+          \[
+            x^4\equiv x(x+1)=x^2+x
+          \]
+        </div>
+        <p>
+          Now substitute into the polynomial:</p>
+        <div class="math-display">
+          \[
+            x^4+x^2\equiv (x^2+x)+x^2
+          \]
+          \[
+            x^2+x^2+x=x
+          \]
+        </div>
+        <div class="box definition-box">
+          <div class="box-title">Reduced result</div>
+          <div class="math-display">
+            \[
+              x^4+x^2\equiv x\pmod{x^3+x+1}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="aes-polynomial">
+        <h2>The AES modulus polynomial</h2>
+        <p>
+          AES uses a degree-8 irreducible polynomial:</p>
+        <div class="math-display">
+          \[
+            m(x)=x^8+x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          In hexadecimal, the lower terms \(x^4+x^3+x+1\) correspond to <code>0x1B</code>. The full polynomial is often associated with <code>0x11B</code>, because the \(x^8\) term is the ninth bit.</p>
+
+        <table class="poly-table">
+          <thead>
+            <tr>
+              <th>Term</th>
+              <th>\(x^8\)</th><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Coefficient</td>
+              <td>1</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            x^8+x^4+x^3+x+1\quad\longleftrightarrow\quad\texttt{0x11B}
+          \]
+        </div>
+      </section>
+
+      <section id="aes-folding-rule">
+        <h2>The AES folding rule for \(x^8\)</h2>
+        <p>
+          Since AES reduces modulo:</p>
+        <div class="math-display">
+          \[
+            m(x)=x^8+x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          we treat it as equivalent to 0:</p>
+        <div class="math-display">
+          \[
+            x^8+x^4+x^3+x+1\equiv0
+          \]
+        </div>
+        <p>
+          Rearranging gives:</p>
+        <div class="math-display">
+          \[
+            x^8\equiv x^4+x^3+x+1
+          \]
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">AES folding rule</div>
+          <div class="fold-strip">
+            <div class="fold-cell high">\(x^8\)</div>
+            <div class="fold-cell">→</div>
+            <div class="fold-cell low">\(x^4\)</div>
+            <div class="fold-cell low">\(x^3\)</div>
+            <div class="fold-cell low">\(x\)</div>
+            <div class="fold-cell low">\(1\)</div>
+          </div>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The important AES memory hook</div>
+          <p>
+            In AES, whenever a left shift creates an \(x^8\) term, that high term is folded back as \(x^4+x^3+x+1\), which corresponds to XORing with <code>0x1B</code> at the byte level.</p>
+        </div>
+      </section>
+
+      <section id="aes-example-1">
+        <h2>Worked example 3: reduce \(x^8\) with the AES rule</h2>
+        <p>
+          Use:</p>
+        <div class="math-display">
+          \[
+            x^8\equiv x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          Therefore:</p>
+        <div class="math-display">
+          \[
+            x^8\bmod (x^8+x^4+x^3+x+1)=x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          In byte language:</p>
+        <div class="math-display">
+          \[
+            x^4+x^3+x+1=00011011_2=\texttt{0x1B}
+          \]
+        </div>
+      </section>
+
+      <section id="aes-example-2">
+        <h2>Worked example 4: reduce \(x^8+x^4+x^2\)</h2>
+        <p>
+          Start with:</p>
+        <div class="math-display">
+          \[
+            x^8+x^4+x^2
+          \]
+        </div>
+        <p>
+          Replace \(x^8\):</p>
+        <div class="math-display">
+          \[
+            (x^4+x^3+x+1)+x^4+x^2
+          \]
+        </div>
+        <p>
+          Combine terms over \(\mathrm{GF}(2)\). The two \(x^4\) terms cancel:</p>
+        <div class="math-display">
+          \[
+            x^3+x^2+x+1
+          \]
+        </div>
+        <div class="box definition-box">
+          <div class="box-title">Reduced result</div>
+          <div class="math-display">
+            \[
+              x^8+x^4+x^2\equiv x^3+x^2+x+1
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="irreducible-why">
+        <h2>Why irreducible polynomials matter</h2>
+        <p>
+          In integer modular arithmetic, using a prime modulus gives a clean arithmetic world where every nonzero element has a multiplicative inverse. For polynomials, an irreducible polynomial plays a similar role.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: irreducible polynomial</div>
+          <p>
+            A polynomial is irreducible over \(\mathrm{GF}(2)\) if it cannot be factored into lower-degree nonconstant polynomials whose coefficients are also in \(\mathrm{GF}(2)\).</p>
+        </div>
+
+        <p>
+          AES uses an irreducible degree-8 polynomial so the 256 byte-polynomials form a field. In that field, every nonzero byte has a multiplicative inverse. That inverse is essential for the AES S-box.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Analogy</div>
+          <p>
+            Prime numbers are the “solid stones” of integer modular arithmetic. Irreducible polynomials are the solid stones of polynomial modular arithmetic. You cannot split them into smaller useful factors inside the arithmetic world you are using.</p>
+        </div>
+      </section>
+
+      <section id="not-yet-gf-multiplication">
+        <h2>What this tutorial does and does not do</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>This tutorial does</th>
+              <th>This tutorial does not yet do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Explain why products must be reduced.</td>
+              <td>Fully compute AES byte multiplication from start to finish.</td>
+            </tr>
+            <tr>
+              <td>Show how a modulus polynomial creates a folding rule.</td>
+              <td>Teach the full Russian peasant / xtime algorithm.</td>
+            </tr>
+            <tr>
+              <td>Explain why AES uses <code>0x11B</code> and why <code>0x1B</code> appears.</td>
+              <td>Teach multiplicative inverses in \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+            <tr>
+              <td>Prepare for \(\mathrm{GF}(2^8)\) multiplication.</td>
+              <td>Build the AES S-box yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: reducing high powers without a modulus polynomial</div>
+          <p>
+            You need a chosen modulus polynomial before reduction has a specific meaning. Different modulus polynomials create different folding rules.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking <code>0x1B</code> is the full AES modulus</div>
+          <p>
+            The full AES modulus is <code>0x11B</code>, representing \(x^8+x^4+x^3+x+1\). The byte <code>0x1B</code> is the lower part \(x^4+x^3+x+1\), which appears after folding \(x^8\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using ordinary subtraction signs as if they differ from addition</div>
+          <p>
+            Over \(\mathrm{GF}(2)\), subtraction and addition are the same. Moving terms across the congruence does not change signs in a practical way.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: expecting reduction to mean decimal remainder</div>
+          <p>
+            This is polynomial remainder, not decimal integer remainder. We reduce powers of \(x\), not ordinary base-10 values.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            With toy modulus \(m(x)=x^3+x+1\), reduce \(x^3+x^2+1\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Since \(x^3\equiv x+1\):</p>
+              <div class="math-display">
+                \[
+                  x^3+x^2+1\equiv(x+1)+x^2+1=x^2+x
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            With toy modulus \(m(x)=x^3+x+1\), reduce \(x^4+x^2\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Since \(x^4\equiv x(x+1)=x^2+x\):</p>
+              <div class="math-display">
+                \[
+                  x^4+x^2\equiv(x^2+x)+x^2=x
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Using the AES rule, reduce \(x^8\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x^8\equiv x^4+x^3+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Using the AES rule, reduce \(x^8+x^4+x^2\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x^8+x^4+x^2\equiv(x^4+x^3+x+1)+x^4+x^2
+                \]
+                \[
+                  =x^3+x^2+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Why does AES need an irreducible polynomial rather than just any polynomial?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>An irreducible polynomial makes the nonzero byte-polynomials behave like field elements, so every nonzero element has a multiplicative inverse. AES needs those inverses for the S-box.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Polynomial reduction is the mechanism that keeps finite-field multiplication closed inside a fixed-size world.</p>
+        <ul>
+          <li>Byte-polynomial multiplication can produce powers above \(x^7\).</li>
+          <li>Reduction folds those high powers back into byte-sized form.</li>
+          <li>AES uses \(x^8+x^4+x^3+x+1\), represented as <code>0x11B</code>.</li>
+          <li>The folded form of \(x^8\) is \(x^4+x^3+x+1\), represented as <code>0x1B</code>.</li>
+          <li>Using an irreducible polynomial gives a field, which supports nonzero multiplicative inverses.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Polynomial multiplication can create powers above \(x^7\).</li>
+            <li>Byte-sized polynomial results must have degree at most 7.</li>
+            <li>Polynomial reduction means taking a remainder modulo a polynomial.</li>
+            <li>The modulus polynomial creates the folding rule.</li>
+            <li>AES uses \(m(x)=x^8+x^4+x^3+x+1\).</li>
+            <li>The full AES modulus is represented as <code>0x11B</code>.</li>
+            <li>The folded form of \(x^8\) is \(x^4+x^3+x+1\), represented as <code>0x1B</code>.</li>
+            <li>Irreducible polynomials are the polynomial-world analogue of primes.</li>
+            <li>Irreducibility matters because it helps create a field where nonzero elements have inverses.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Idea</th>
+              <th>Integer modular arithmetic</th>
+              <th>Polynomial modular arithmetic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Thing being reduced</td>
+              <td>Integer</td>
+              <td>Polynomial</td>
+            </tr>
+            <tr>
+              <td>Modulus</td>
+              <td>Number, like 12</td>
+              <td>Polynomial, like \(x^8+x^4+x^3+x+1\)</td>
+            </tr>
+            <tr>
+              <td>Result</td>
+              <td>Integer remainder</td>
+              <td>Polynomial remainder</td>
+            </tr>
+            <tr>
+              <td>Crypto role</td>
+              <td>Wraparound arithmetic</td>
+              <td>Finite-field byte arithmetic</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              p(x)=q(x)m(x)+r(x)
+            \]
+            \[
+              \deg(r)<\deg(m)
+            \]
+            \[
+              m(x)=x^8+x^4+x^3+x+1
+            \]
+            \[
+              x^8\equiv x^4+x^3+x+1\pmod{x^8+x^4+x^3+x+1}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Multiplication in \(\mathrm{GF}(2^8)\)</strong>. We now have all the ingredients: byte-polynomials, XOR addition, polynomial multiplication, and reduction by the AES modulus.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

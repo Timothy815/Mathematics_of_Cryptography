@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inverse MixColumns and Decryption Layers | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .inverse-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .matrix-table,
+    .work-table,
+    .compare-table,
+    .layer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .matrix-table th,
+    .matrix-table td,
+    .work-table th,
+    .work-table td,
+    .compare-table th,
+    .compare-table td,
+    .layer-table th,
+    .layer-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .matrix-table th,
+    .work-table th,
+    .compare-table th,
+    .layer-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .matrix-table td,
+    .matrix-table th,
+    .work-table td,
+    .work-table th,
+    .compare-table td,
+    .compare-table th,
+    .layer-table td,
+    .layer-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .inverse-node {
+      border: 2px solid #5f4b8b;
+      background: var(--purple-soft);
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #34224f;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .column-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(170px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+      align-items: center;
+    }
+
+    .column-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .column-card.output { background: #eaf7ef; border-color: #b8dfc5; }
+    .column-card.inverse { background: var(--purple-soft); border-color: #d8c8f5; }
+    .column-label { color: #1f3763; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .byte-stack { display: grid; gap: 8px; margin-top: 10px; }
+    .byte-chip { font-family: "Cascadia Code", "Consolas", monospace; font-weight: 900; background: #f5f2ea; border-radius: 10px; padding: 7px; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .column-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .column-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .column-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .matrix-table th, .work-table th, .compare-table th, .layer-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 19</div>
+      <h1>Inverse MixColumns and Decryption Layers</h1>
+      <p class="subtitle">
+        How AES reverses MixColumns using a different matrix over \(\mathrm{GF}(2^8)\), and why decryption walks round layers backward.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="18-mixcolumns-as-matrix-multiplication-over-gf-2-8.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            MixColumns spreads information across each AES column. But AES must also decrypt, so that spreading must be reversible. This tutorial explains the inverse MixColumns matrix and how it restores a mixed column back to its original form.
+          </p>
+        </div>
+
+        <p class="lead">
+          Forward MixColumns is the blender. Inverse MixColumns is not “unblending” by magic. It is another carefully chosen matrix that reverses the first matrix inside the same finite-field arithmetic world.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand MixColumns as matrix multiplication over \(\mathrm{GF}(2^8)\), finite-field multiplication, XOR as field addition, and the idea that reversible cipher layers must have inverse operations.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This tutorial adds inverse matrix language to the MixColumns machinery.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(M\)</td>
+              <td>The forward MixColumns matrix.</td>
+              <td>The AES matrix with constants <code>01</code>, <code>02</code>, and <code>03</code>.</td>
+            </tr>
+            <tr>
+              <td>\(M^{-1}\)</td>
+              <td>The matrix that undoes MixColumns.</td>
+              <td>The inverse MixColumns matrix over \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+            <tr>
+              <td>\(c\)</td>
+              <td>The original column before MixColumns.</td>
+              <td>A four-byte vector in \(\mathrm{GF}(2^8)^4\).</td>
+            </tr>
+            <tr>
+              <td>\(c'\)</td>
+              <td>The mixed column after MixColumns.</td>
+              <td>\(c'=Mc\).</td>
+            </tr>
+            <tr>
+              <td>\(I\)</td>
+              <td>The do-nothing matrix.</td>
+              <td>The identity matrix satisfying \(M^{-1}M=I\).</td>
+            </tr>
+            <tr>
+              <td>decryption layer</td>
+              <td>A step that undoes an encryption-layer step.</td>
+              <td>An inverse transformation used while reversing the round structure.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            If forward MixColumns sends column \(c\) to mixed column \(c'\), inverse MixColumns sends \(c'\) back to \(c\). The two matrices are paired like a lock and its key.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Forward and inverse MixColumns flow">
+          <div class="diagram-title">Forward MixColumns and inverse MixColumns</div>
+          <div class="flow-row">
+            <div class="flow-node">Original column<br>\(c\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">MixColumns<br>\(M\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Mixed column<br>\(c'\)</div>
+          </div>
+          <p style="margin: 18px 0 8px; font-weight: 800; color: #1f3763;">To reverse:</p>
+          <div class="flow-row">
+            <div class="flow-node">Mixed column<br>\(c'\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="inverse-node">Inverse MixColumns<br>\(M^{-1}\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Original column<br>\(c\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="forward-matrix-review">
+        <h2>Forward MixColumns matrix review</h2>
+        <p>
+          The forward MixColumns matrix is:</p>
+        <div class="math-display">
+          \[
+            M=
+            \begin{bmatrix}
+            \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+            \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+            \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+            \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          It computes:</p>
+        <div class="math-display">
+          \[
+            c'=Mc
+          \]
+        </div>
+        <p>
+          where \(c\) is the original column and \(c'\) is the mixed column.
+        </p>
+      </section>
+
+      <section id="inverse-matrix">
+        <h2>The inverse MixColumns matrix</h2>
+        <p>
+          The inverse MixColumns matrix is:</p>
+        <div class="math-display">
+          \[
+            M^{-1}=
+            \begin{bmatrix}
+            \texttt{0E}&\texttt{0B}&\texttt{0D}&\texttt{09}\\
+            \texttt{09}&\texttt{0E}&\texttt{0B}&\texttt{0D}\\
+            \texttt{0D}&\texttt{09}&\texttt{0E}&\texttt{0B}\\
+            \texttt{0B}&\texttt{0D}&\texttt{09}&\texttt{0E}
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          It computes:</p>
+        <div class="math-display">
+          \[
+            c=M^{-1}c'
+          \]
+        </div>
+
+        <div class="box inverse-box">
+          <div class="box-title">Why the constants are different</div>
+          <p>
+            The inverse matrix is not found by merely reversing the order of <code>01</code>, <code>02</code>, and <code>03</code>. It is the true matrix inverse over \(\mathrm{GF}(2^8)\), so it uses constants <code>09</code>, <code>0B</code>, <code>0D</code>, and <code>0E</code>.</p>
+        </div>
+      </section>
+
+      <section id="identity-check">
+        <h2>The identity check</h2>
+        <p>
+          The reason \(M^{-1}\) works is that multiplying the inverse matrix by the forward matrix gives the identity matrix:</p>
+        <div class="math-display">
+          \[
+            M^{-1}M=I
+          \]
+        </div>
+
+        <p>
+          Friendly meaning: doing MixColumns and then inverse MixColumns returns the original column.</p>
+        <div class="math-display">
+          \[
+            M^{-1}(Mc)=c
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Important order note</div>
+          <p>
+            For this AES matrix, \(MM^{-1}=I\) also holds. Both directions work because these matrices are true inverses.</p>
+        </div>
+      </section>
+
+      <section id="inverse-row-recipes">
+        <h2>Inverse MixColumns row recipes</h2>
+        <p>
+          Let the mixed column be:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}s'_0\\s'_1\\s'_2\\s'_3\end{bmatrix}
+          \]
+        </div>
+        <p>
+          The recovered original column is:</p>
+        <div class="math-display">
+          \[
+            s_0=(\texttt{0E}\cdot s'_0)\oplus(\texttt{0B}\cdot s'_1)\oplus(\texttt{0D}\cdot s'_2)\oplus(\texttt{09}\cdot s'_3)
+          \]
+          \[
+            s_1=(\texttt{09}\cdot s'_0)\oplus(\texttt{0E}\cdot s'_1)\oplus(\texttt{0B}\cdot s'_2)\oplus(\texttt{0D}\cdot s'_3)
+          \]
+          \[
+            s_2=(\texttt{0D}\cdot s'_0)\oplus(\texttt{09}\cdot s'_1)\oplus(\texttt{0E}\cdot s'_2)\oplus(\texttt{0B}\cdot s'_3)
+          \]
+          \[
+            s_3=(\texttt{0B}\cdot s'_0)\oplus(\texttt{0D}\cdot s'_1)\oplus(\texttt{09}\cdot s'_2)\oplus(\texttt{0E}\cdot s'_3)
+          \]
+        </div>
+      </section>
+
+      <section id="multipliers-09-0b-0d-0e">
+        <h2>How the inverse constants are computed</h2>
+        <p>
+          The inverse constants can be built from repeated <code>xtime</code> values. For any byte \(a\):</p>
+        <div class="math-display">
+          \[
+            \texttt{09}\cdot a=(\texttt{08}\cdot a)\oplus a
+          \]
+          \[
+            \texttt{0B}\cdot a=(\texttt{08}\cdot a)\oplus(\texttt{02}\cdot a)\oplus a
+          \]
+          \[
+            \texttt{0D}\cdot a=(\texttt{08}\cdot a)\oplus(\texttt{04}\cdot a)\oplus a
+          \]
+          \[
+            \texttt{0E}\cdot a=(\texttt{08}\cdot a)\oplus(\texttt{04}\cdot a)\oplus(\texttt{02}\cdot a)
+          \]
+        </div>
+
+        <p>
+          Here <code>04 · a</code> means apply <code>xtime</code> twice, and <code>08 · a</code> means apply <code>xtime</code> three times.</p>
+      </section>
+
+      <section id="worked-classic-reverse">
+        <h2>Worked example: reverse the classic column</h2>
+        <p>
+          From Tutorial 18, forward MixColumns gives:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}\texttt{DB}\\\texttt{13}\\\texttt{53}\\\texttt{45}\end{bmatrix}
+            \xrightarrow{M}
+            \begin{bmatrix}\texttt{8E}\\\texttt{4D}\\\texttt{A1}\\\texttt{BC}\end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          Inverse MixColumns restores the original column:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}\texttt{8E}\\\texttt{4D}\\\texttt{A1}\\\texttt{BC}\end{bmatrix}
+            \xrightarrow{M^{-1}}
+            \begin{bmatrix}\texttt{DB}\\\texttt{13}\\\texttt{53}\\\texttt{45}\end{bmatrix}
+          \]
+        </div>
+
+        <div class="column-grid">
+          <div class="column-card">
+            <div class="column-label">Original column</div>
+            <div class="byte-stack">
+              <div class="byte-chip">DB</div>
+              <div class="byte-chip">13</div>
+              <div class="byte-chip">53</div>
+              <div class="byte-chip">45</div>
+            </div>
+          </div>
+          <div class="column-card output">
+            <div class="column-label">After MixColumns</div>
+            <div class="byte-stack">
+              <div class="byte-chip">8E</div>
+              <div class="byte-chip">4D</div>
+              <div class="byte-chip">A1</div>
+              <div class="byte-chip">BC</div>
+            </div>
+          </div>
+          <div class="column-card inverse">
+            <div class="column-label">After inverse MixColumns</div>
+            <div class="byte-stack">
+              <div class="byte-chip">DB</div>
+              <div class="byte-chip">13</div>
+              <div class="byte-chip">53</div>
+              <div class="byte-chip">45</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="compute-first-recovered-byte">
+        <h2>Computing the first recovered byte</h2>
+        <p>
+          Let the mixed column be:</p>
+        <div class="math-display">
+          \[
+            s'_0=\texttt{8E},\quad s'_1=\texttt{4D},\quad s'_2=\texttt{A1},\quad s'_3=\texttt{BC}
+          \]
+        </div>
+
+        <p>
+          The first inverse row says:</p>
+        <div class="math-display">
+          \[
+            s_0=(\texttt{0E}\cdot\texttt{8E})\oplus(\texttt{0B}\cdot\texttt{4D})\oplus(\texttt{0D}\cdot\texttt{A1})\oplus(\texttt{09}\cdot\texttt{BC})
+          \]
+        </div>
+
+        <table class="work-table">
+          <thead><tr><th>Piece</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td><code>0E · 8E</code></td><td><code>15</code></td></tr>
+            <tr><td><code>0B · 4D</code></td><td><code>89</code></td></tr>
+            <tr><td><code>0D · A1</code></td><td><code>6F</code></td></tr>
+            <tr><td><code>09 · BC</code></td><td><code>28</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Now XOR the four pieces:</p>
+        <div class="math-display">
+          \[
+            \texttt{15}\oplus\texttt{89}\oplus\texttt{6F}\oplus\texttt{28}=\texttt{DB}
+          \]
+        </div>
+      </section>
+
+      <section id="decryption-order">
+        <h2>Decryption layers walk backward</h2>
+        <p>
+          AES encryption rounds apply several operations in a particular order. Decryption must undo those operations in reverse order.</p>
+
+        <table class="layer-table">
+          <thead><tr><th>Encryption idea</th><th>Decryption undo</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>InvSubBytes</td></tr>
+            <tr><td>ShiftRows</td><td>InvShiftRows</td></tr>
+            <tr><td>MixColumns</td><td>InvMixColumns</td></tr>
+            <tr><td>AddRoundKey</td><td>AddRoundKey again, because XOR undoes itself</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Reverse-order rule</div>
+          <p>
+            If encryption does A, then B, then C, decryption must undo C first, then B, then A. Cipher layers are not undone in the same order they were applied.</p>
+        </div>
+      </section>
+
+      <section id="why-invertible-linear-layer">
+        <h2>Why use an invertible linear layer?</h2>
+        <p>
+          MixColumns is linear, but it is carefully chosen. It spreads byte differences strongly while still being reversible. That balance is important: AES needs diffusion for security and invertibility for decryption.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Design balance</div>
+          <p>
+            A block cipher should scramble information without destroying it. MixColumns spreads information across a column, but inverse MixColumns can recover the original column when the decryption process is followed correctly.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: trying to undo MixColumns with the forward matrix</div>
+          <p>
+            Decryption uses the inverse matrix, not the original MixColumns matrix again.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking inverse constants are decimal reciprocals</div>
+          <p>
+            The constants <code>09</code>, <code>0B</code>, <code>0D</code>, and <code>0E</code> are finite-field matrix inverse constants, not ordinary fractions.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using ordinary multiplication</div>
+          <p>
+            Inverse MixColumns still uses multiplication in \(\mathrm{GF}(2^8)\), not ordinary integer multiplication.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: undoing decryption layers in the wrong order</div>
+          <p>
+            Decryption reverses the order of encryption operations. The last forward operation must be the first one undone.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What matrix does AES use to undo MixColumns?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES uses the inverse MixColumns matrix with constants <code>0E</code>, <code>0B</code>, <code>0D</code>, and <code>09</code>.</p>
+            </details>
+          </li>
+          <li>
+            If forward MixColumns maps <code>DB 13 53 45</code> to <code>8E 4D A1 BC</code>, what should inverse MixColumns do to <code>8E 4D A1 BC</code>?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It should recover <code>DB 13 53 45</code>.</p>
+            </details>
+          </li>
+          <li>
+            Why are the inverse MixColumns constants different from the forward constants?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>They come from the true matrix inverse over \(\mathrm{GF}(2^8)\), not from merely reversing the forward constants.</p>
+            </details>
+          </li>
+          <li>
+            What does \(M^{-1}M=I\) mean in friendly language?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Doing MixColumns and then inverse MixColumns returns the column to its original value.</p>
+            </details>
+          </li>
+          <li>
+            Why does AES need inverse layers during decryption?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Decryption must reverse the transformations applied during encryption to recover the original plaintext.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Inverse MixColumns shows a recurring block-cipher design principle: a layer can be strongly diffusive and still reversible. That matters because encryption should hide structure, but decryption must recover the original data with the correct key.
+        </p>
+        <ul>
+          <li>MixColumns spreads information through a column.</li>
+          <li>Inverse MixColumns restores the original column.</li>
+          <li>Both use matrix multiplication over \(\mathrm{GF}(2^8)\).</li>
+          <li>The inverse matrix uses different constants from the forward matrix.</li>
+          <li>Decryption applies inverse layers in reverse order.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Forward MixColumns uses matrix \(M\).</li>
+            <li>Inverse MixColumns uses matrix \(M^{-1}\).</li>
+            <li>Forward MixColumns computes \(c'=Mc\).</li>
+            <li>Inverse MixColumns computes \(c=M^{-1}c'\).</li>
+            <li>The inverse matrix uses constants <code>0E</code>, <code>0B</code>, <code>0D</code>, and <code>09</code>.</li>
+            <li>The inverse constants are not ordinary reciprocals.</li>
+            <li>All multiplication is still in \(\mathrm{GF}(2^8)\).</li>
+            <li>Doing MixColumns then inverse MixColumns returns the original column.</li>
+            <li>Decryption layers must be applied in reverse order.</li>
+            <li>Invertible diffusion lets AES scramble without losing recoverable information.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core matrices</div>
+          <div class="math-display">
+            \[
+              M=
+              \begin{bmatrix}
+              \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+              \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+              \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+              \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+              \end{bmatrix}
+            \]
+            \[
+              M^{-1}=
+              \begin{bmatrix}
+              \texttt{0E}&\texttt{0B}&\texttt{0D}&\texttt{09}\\
+              \texttt{09}&\texttt{0E}&\texttt{0B}&\texttt{0D}\\
+              \texttt{0D}&\texttt{09}&\texttt{0E}&\texttt{0B}\\
+              \texttt{0B}&\texttt{0D}&\texttt{09}&\texttt{0E}
+              \end{bmatrix}
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Forward</th><th>Reverse</th></tr></thead>
+          <tbody>
+            <tr><td><code>DB 13 53 45 → 8E 4D A1 BC</code></td><td><code>8E 4D A1 BC → DB 13 53 45</code></td></tr>
+            <tr><td>MixColumns matrix \(M\)</td><td>Inverse MixColumns matrix \(M^{-1}\)</td></tr>
+            <tr><td>Diffuses across a column</td><td>Restores the original column</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Permutation Layers: ShiftRows, Bit Permutations, and Position Mixing</strong>. We will study how moving positions works together with column mixing to spread information across the whole AES state.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

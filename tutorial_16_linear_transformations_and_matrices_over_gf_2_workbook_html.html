@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 16: Linear Transformations and Matrices over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .matrix-box { background: var(--purple-soft); border-color: #d8c8f5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .matrix-table,
+    .truth-table,
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .matrix-table th, .matrix-table td,
+    .truth-table th, .truth-table td,
+    .compare-table th, .compare-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .matrix-table th,
+    .truth-table th,
+    .compare-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .matrix-table th,
+    .matrix-table td,
+    .truth-table th,
+    .truth-table td,
+    .compare-table th,
+    .compare-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .matrix-table th,
+      .truth-table th,
+      .compare-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 16</div>
+      <h1>Linear Transformations and Matrices over \(\mathrm{GF}(2)\)</h1>
+      <p class="subtitle">
+        Printable practice for vectors, XOR arithmetic, matrix rows as bit recipes, matrix-vector multiplication, and linear versus affine transformations.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="16-linear-transformations-and-matrices-over-gf2.html">Tutorial 16</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat each matrix row as one output-bit recipe. A 1 means include the input bit. A 0 means ignore it. Combine included bits using XOR. Remember: over \(\mathrm{GF}(2)\), \(1+1=0\).
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">XOR arithmetic</div>
+            <table class="truth-table">
+              <thead><tr><th>Expression</th><th>Result</th></tr></thead>
+              <tbody>
+                <tr><td>\(0\oplus0\)</td><td>0</td></tr>
+                <tr><td>\(0\oplus1\)</td><td>1</td></tr>
+                <tr><td>\(1\oplus0\)</td><td>1</td></tr>
+                <tr><td>\(1\oplus1\)</td><td>0</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Transformation forms</div>
+            <div class="math-display">
+              \[
+                \text{Linear: } y=Av
+              \]
+              \[
+                \text{Affine: } y=Av\oplus c
+              \]
+              \[
+                \text{Invertible: } A^{-1}A=I
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. What is a vector in friendly language?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What is a matrix in friendly language?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. What does a 1 in a matrix row mean?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. What does a 0 in a matrix row mean?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="xor-practice">
+        <h2>Part B: XOR arithmetic practice</h2>
+        <p>Compute each expression over \(\mathrm{GF}(2)\).</p>
+
+        <table class="work-table">
+          <thead><tr><th>Problem</th><th>Expression</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\(1\oplus1\)</td><td></td></tr>
+            <tr><td>B2</td><td>\(1\oplus0\oplus1\)</td><td></td></tr>
+            <tr><td>B3</td><td>\(1\oplus1\oplus1\)</td><td></td></tr>
+            <tr><td>B4</td><td>\(0\oplus0\oplus1\oplus1\)</td><td></td></tr>
+            <tr><td>B5</td><td>\(1\oplus1\oplus1\oplus1\)</td><td></td></tr>
+            <tr><td>B6</td><td>\(1\oplus0\oplus0\oplus1\oplus1\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vector-practice">
+        <h2>Part C: Vector notation practice</h2>
+
+        <div class="problem">
+          <div class="problem-title">C1. Write the bit list <code>1011</code> as a column vector.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Write this column vector as a bit list.</div>
+          <div class="math-display">
+            \[
+              \begin{bmatrix}0\\1\\1\\0\end{bmatrix}
+            \]
+          </div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. If \(v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}\), what are \(v_0\), \(v_1\), \(v_2\), and \(v_3\)?</div>
+          <table class="matrix-table">
+            <thead><tr><th>\(v_0\)</th><th>\(v_1\)</th><th>\(v_2\)</th><th>\(v_3\)</th></tr></thead>
+            <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="row-recipes">
+        <h2>Part D: Matrix rows as recipes</h2>
+        <p>For each row, write which input bits are included.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Problem</th><th>Row</th><th>Included bits</th><th>Recipe</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td>\([1\ 0\ 1\ 0]\)</td><td></td><td></td></tr>
+            <tr><td>D2</td><td>\([0\ 1\ 1\ 0]\)</td><td></td><td></td></tr>
+            <tr><td>D3</td><td>\([1\ 1\ 0\ 1]\)</td><td></td><td></td></tr>
+            <tr><td>D4</td><td>\([0\ 0\ 1\ 1]\)</td><td></td><td></td></tr>
+            <tr><td>D5</td><td>\([1\ 1\ 1\ 1]\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="matrix-vector-multiplication">
+        <h2>Part E: Matrix-vector multiplication</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            A=\begin{bmatrix}
+            1&0&1&0\\
+            0&1&1&0\\
+            1&1&0&1\\
+            0&0&1&1
+            \end{bmatrix},\quad
+            v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+          \]
+        </div>
+
+        <table class="matrix-table">
+          <thead><tr><th>Output bit</th><th>Row recipe</th><th>Substitute values</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>\(y_0\)</td><td>\(v_0\oplus v_2\)</td><td></td><td></td></tr>
+            <tr><td>\(y_1\)</td><td>\(v_1\oplus v_2\)</td><td></td><td></td></tr>
+            <tr><td>\(y_2\)</td><td>\(v_0\oplus v_1\oplus v_3\)</td><td></td><td></td></tr>
+            <tr><td>\(y_3\)</td><td>\(v_2\oplus v_3\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Write the final output vector \(y=Av\).</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="identity-permutation">
+        <h2>Part F: Identity and permutation matrices</h2>
+
+        <div class="problem">
+          <div class="problem-title">F1. What does the identity matrix do to a vector?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Apply this permutation matrix to \(v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}\).</div>
+          <div class="math-display">
+            \[
+              P=\begin{bmatrix}
+              0&0&0&1\\
+              0&0&1&0\\
+              0&1&0&0\\
+              1&0&0&0
+              \end{bmatrix}
+            \]
+          </div>
+          <p>This matrix reverses the vector order.</p>
+          <div class="work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. Why is a permutation matrix reversible?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="mixing-matrix">
+        <h2>Part G: Mixing matrix practice</h2>
+        <p>Use this matrix:</p>
+        <div class="math-display">
+          \[
+            M=\begin{bmatrix}
+            1&1&0&0\\
+            0&1&1&0\\
+            0&0&1&1\\
+            1&0&0&1
+            \end{bmatrix}
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. Write the four output recipes.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Apply \(M\) to \(v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="linear-affine">
+        <h2>Part H: Linear versus affine</h2>
+        <p>Classify each transformation as linear or affine.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Problem</th><th>Transformation</th><th>Linear or affine?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>H1</td><td>\(y=Av\)</td><td></td><td></td></tr>
+            <tr><td>H2</td><td>\(y=Av\oplus c\)</td><td></td><td></td></tr>
+            <tr><td>H3</td><td>\(y=Pv\), where \(P\) is a permutation matrix</td><td></td><td></td></tr>
+            <tr><td>H4</td><td>\(y=Mv\oplus\begin{bmatrix}1\\0\\0\\1\end{bmatrix}\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="invertibility">
+        <h2>Part I: Invertibility concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. What does it mean for a matrix to be invertible?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why does invertibility matter for block cipher decryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Does every matrix have an inverse? Explain.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="crypto-connection">
+        <h2>Part J: Cryptography connection</h2>
+
+        <div class="problem">
+          <div class="problem-title">J1. How does this matrix idea connect to the AES S-box affine layer?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J2. Why are linear layers useful even though they are not enough by themselves?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead>
+            <tr><th>Statement</th><th>True or False?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Over \(\mathrm{GF}(2)\), addition is XOR.</td><td></td></tr>
+            <tr><td>Each matrix row creates one output bit.</td><td></td></tr>
+            <tr><td>A 0 in a matrix row means include that input bit.</td><td></td></tr>
+            <tr><td>\(y=Av\oplus c\) is affine.</td><td></td></tr>
+            <tr><td>Every matrix is automatically invertible.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The core habit is row-by-row thinking. Each row asks, “Which input bits do I XOR together to get this output bit?”
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> A vector is an ordered list of values. Here, it is usually an ordered list of bits.</p>
+          <p><strong>A2.</strong> A matrix is a rectangular rule table that tells how to combine input bits to produce output bits.</p>
+          <p><strong>A3.</strong> A 1 means include the matching input bit in the XOR.</p>
+          <p><strong>A4.</strong> A 0 means ignore the matching input bit.</p>
+        </div>
+
+        <h3>Part B: XOR arithmetic practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Result</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>0</td><td>Two 1s cancel.</td></tr>
+            <tr><td>B2</td><td>0</td><td>Two 1s total.</td></tr>
+            <tr><td>B3</td><td>1</td><td>Three 1s total.</td></tr>
+            <tr><td>B4</td><td>0</td><td>Two 1s total.</td></tr>
+            <tr><td>B5</td><td>0</td><td>Four 1s total.</td></tr>
+            <tr><td>B6</td><td>1</td><td>Three 1s total.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Vector notation practice</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong></p>
+          <div class="math-display">
+            \[
+              1011=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+            \]
+          </div>
+          <p><strong>C2.</strong> The bit list is <code>0110</code>.</p>
+          <p><strong>C3.</strong> \(v_0=1\), \(v_1=0\), \(v_2=1\), \(v_3=1\).</p>
+        </div>
+
+        <h3>Part D: Matrix rows as recipes</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Included bits</th><th>Recipe</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td>\(v_0, v_2\)</td><td>\(v_0\oplus v_2\)</td></tr>
+            <tr><td>D2</td><td>\(v_1, v_2\)</td><td>\(v_1\oplus v_2\)</td></tr>
+            <tr><td>D3</td><td>\(v_0, v_1, v_3\)</td><td>\(v_0\oplus v_1\oplus v_3\)</td></tr>
+            <tr><td>D4</td><td>\(v_2, v_3\)</td><td>\(v_2\oplus v_3\)</td></tr>
+            <tr><td>D5</td><td>\(v_0, v_1, v_2, v_3\)</td><td>\(v_0\oplus v_1\oplus v_2\oplus v_3\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Matrix-vector multiplication</h3>
+        <table class="answer-table">
+          <thead><tr><th>Output bit</th><th>Substitution</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>\(y_0\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_1\)</td><td>\(0\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(y_2\)</td><td>\(1\oplus0\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_3\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1.</strong></p>
+          <div class="math-display">
+            \[
+              Av=\begin{bmatrix}0\\1\\0\\0\end{bmatrix}
+            \]
+          </div>
+        </div>
+
+        <h3>Part F: Identity and permutation matrices</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong> The identity matrix leaves a vector unchanged.</p>
+          <p><strong>F2.</strong> The matrix reverses the vector:</p>
+          <div class="math-display">
+            \[
+              P\begin{bmatrix}1\\0\\1\\1\end{bmatrix}=\begin{bmatrix}1\\1\\0\\1\end{bmatrix}
+            \]
+          </div>
+          <p><strong>F3.</strong> A permutation matrix is reversible because it rearranges positions without losing or combining information. You can undo the rearrangement.</p>
+        </div>
+
+        <h3>Part G: Mixing matrix practice</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong></p>
+          <div class="math-display">
+            \[
+              y_0=v_0\oplus v_1
+            \]
+            \[
+              y_1=v_1\oplus v_2
+            \]
+            \[
+              y_2=v_2\oplus v_3
+            \]
+            \[
+              y_3=v_0\oplus v_3
+            \]
+          </div>
+          <p><strong>G2.</strong> With \(v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}\):</p>
+          <div class="math-display">
+            \[
+              y_0=1\oplus0=1
+            \]
+            \[
+              y_1=0\oplus1=1
+            \]
+            \[
+              y_2=1\oplus1=0
+            \]
+            \[
+              y_3=1\oplus1=0
+            \]
+            \[
+              Mv=\begin{bmatrix}1\\1\\0\\0\end{bmatrix}
+            \]
+          </div>
+        </div>
+
+        <h3>Part H: Linear versus affine</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Classification</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>H1</td><td>Linear</td><td>It has the form \(y=Av\).</td></tr>
+            <tr><td>H2</td><td>Affine</td><td>It has a constant vector \(c\) added by XOR.</td></tr>
+            <tr><td>H3</td><td>Linear</td><td>A permutation matrix is still a matrix multiplication with no added constant.</td></tr>
+            <tr><td>H4</td><td>Affine</td><td>It adds a fixed constant vector after matrix multiplication.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Invertibility concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> A matrix is invertible if another matrix exists that undoes its transformation, so applying both returns the original vector.</p>
+          <p><strong>I2 sample answer.</strong> Decryption must recover earlier cipher states. If a cipher layer loses information, it cannot be reversed reliably.</p>
+          <p><strong>I3 sample answer.</strong> No. Some matrices collapse different inputs to the same output, which means information is lost and no inverse exists.</p>
+        </div>
+
+        <h3>Part J: Cryptography connection</h3>
+        <div class="answer-step">
+          <p><strong>J1 sample answer.</strong> The AES S-box affine layer can be written as \(s=Ab\oplus c\), where \(A\) is a fixed binary matrix and \(c\) is the constant from <code>0x63</code>.</p>
+          <p><strong>J2 sample answer.</strong> Linear layers spread influence and create diffusion, but by themselves they preserve algebraic structure. Ciphers also need nonlinear layers such as S-boxes.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Over \(\mathrm{GF}(2)\), addition is XOR.</td><td>True</td><td>That is the arithmetic rule.</td></tr>
+            <tr><td>Each matrix row creates one output bit.</td><td>True</td><td>Each row is one output recipe.</td></tr>
+            <tr><td>A 0 in a matrix row means include that input bit.</td><td>False</td><td>0 means ignore that input bit.</td></tr>
+            <tr><td>\(y=Av\oplus c\) is affine.</td><td>True</td><td>It is linear plus a constant.</td></tr>
+            <tr><td>Every matrix is automatically invertible.</td><td>False</td><td>Some matrices lose information.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 16: Linear Transformations and Matrices over GF(2).
+      </p>
+    </main>
+  </div>
+</body>
+</html>

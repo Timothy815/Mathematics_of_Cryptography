@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 1: Binary, Hexadecimal, and Bases | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 {
+      line-height: 1.2;
+      margin: 0 0 0.75em;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      color: #283f68;
+      margin-top: 1.2em;
+    }
+
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title {
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #1f3763;
+    }
+
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display {
+      overflow-x: auto;
+      padding: 10px 0;
+    }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line {
+      border-bottom: 1.5px solid #333333;
+      min-height: 32px;
+      padding-top: 6px;
+    }
+
+    .field-label {
+      font-weight: 750;
+      color: #333333;
+    }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th,
+    .data-table td,
+    .work-table th,
+    .work-table td,
+    .answer-table th,
+    .answer-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space {
+      min-height: 150px;
+    }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title {
+      font-weight: 900;
+      color: #1f3763;
+      margin-bottom: 8px;
+    }
+
+    .problem ol,
+    .problem ul { margin-top: 8px; }
+
+    .checklist li { margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 {
+        font-size: 15pt;
+        border-bottom: 1px solid #999999;
+        break-after: avoid;
+      }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box,
+      .problem,
+      table,
+      .work-space {
+        break-inside: avoid;
+      }
+
+      .box,
+      .problem,
+      .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 1</div>
+      <h1>Binary, Hexadecimal, and Bases</h1>
+      <p class="subtitle">
+        Printable practice for translating between decimal, binary, and hexadecimal while building fixed-width number fluency.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="01-binary-hex-bases.html">Tutorial 1</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Work through the problems in order. Show your work when a problem asks for it. The answer key begins after the practice section and includes worked steps where steps are useful.
+          </p>
+          <p>
+            For self-study, try the problem first, then check the answer key. For classroom use, print only the practice pages first, then print the answer key separately if needed.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Place values in one byte</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>7</th>
+                  <th>6</th>
+                  <th>5</th>
+                  <th>4</th>
+                  <th>3</th>
+                  <th>2</th>
+                  <th>1</th>
+                  <th>0</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Value</td>
+                  <td>128</td>
+                  <td>64</td>
+                  <td>32</td>
+                  <td>16</td>
+                  <td>8</td>
+                  <td>4</td>
+                  <td>2</td>
+                  <td>1</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Hex digit map</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Hex</th>
+                  <th>Decimal</th>
+                  <th>Binary</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>0</td><td>0</td><td>0000</td></tr>
+                <tr><td>1</td><td>1</td><td>0001</td></tr>
+                <tr><td>2</td><td>2</td><td>0010</td></tr>
+                <tr><td>3</td><td>3</td><td>0011</td></tr>
+                <tr><td>4</td><td>4</td><td>0100</td></tr>
+                <tr><td>5</td><td>5</td><td>0101</td></tr>
+                <tr><td>6</td><td>6</td><td>0110</td></tr>
+                <tr><td>7</td><td>7</td><td>0111</td></tr>
+                <tr><td>8</td><td>8</td><td>1000</td></tr>
+                <tr><td>9</td><td>9</td><td>1001</td></tr>
+                <tr><td>A</td><td>10</td><td>1010</td></tr>
+                <tr><td>B</td><td>11</td><td>1011</td></tr>
+                <tr><td>C</td><td>12</td><td>1100</td></tr>
+                <tr><td>D</td><td>13</td><td>1101</td></tr>
+                <tr><td>E</td><td>14</td><td>1110</td></tr>
+                <tr><td>F</td><td>15</td><td>1111</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. Define a bit.</div>
+          <p>Write a friendly definition and a technical definition.</p>
+          <p><strong>Friendly definition:</strong></p>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+          <p><strong>Technical definition:</strong></p>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. Define a nibble.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. Define a byte.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. Explain why hexadecimal is useful when working with bytes.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="binary-to-decimal">
+        <h2>Part B: Binary to decimal</h2>
+        <p>
+          For each binary number, list the place values that are turned on, then add them.
+        </p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Binary</th>
+              <th>Turned-on place values</th>
+              <th>Decimal answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td><code>1010</code></td><td></td><td></td></tr>
+            <tr><td>B2</td><td><code>1101</code></td><td></td><td></td></tr>
+            <tr><td>B3</td><td><code>10011</code></td><td></td><td></td></tr>
+            <tr><td>B4</td><td><code>00101101</code></td><td></td><td></td></tr>
+            <tr><td>B5</td><td><code>11111111</code></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="decimal-to-binary">
+        <h2>Part C: Decimal to binary</h2>
+        <p>
+          Break each decimal number into powers of 2. Then write the binary value.
+        </p>
+
+        <div class="problem">
+          <div class="problem-title">C1. Convert \(13_{10}\) to binary.</div>
+          <p>Powers used:</p>
+          <span class="blank-line"></span>
+          <p>Binary answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Convert \(27_{10}\) to binary.</div>
+          <p>Powers used:</p>
+          <span class="blank-line"></span>
+          <p>Binary answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. Convert \(45_{10}\) to an 8-bit binary byte.</div>
+          <p>Powers used:</p>
+          <span class="blank-line"></span>
+          <p>8-bit binary answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C4. Convert \(128_{10}\) to an 8-bit binary byte.</div>
+          <p>Powers used:</p>
+          <span class="blank-line"></span>
+          <p>8-bit binary answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C5. Convert \(255_{10}\) to an 8-bit binary byte.</div>
+          <p>Powers used:</p>
+          <span class="blank-line"></span>
+          <p>8-bit binary answer:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="binary-and-hex">
+        <h2>Part D: Binary and hexadecimal</h2>
+        <p>
+          Split each byte into two nibbles. Then convert each nibble into one hexadecimal digit.
+        </p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Binary byte</th>
+              <th>Left nibble</th>
+              <th>Right nibble</th>
+              <th>Hex answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1</td><td><code>01010111</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D2</td><td><code>10101110</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D3</td><td><code>11000001</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D4</td><td><code>00011011</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D5</td><td><code>11110000</code></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Now convert each hexadecimal value into an 8-bit binary byte.
+        </p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Hex value</th>
+              <th>Left hex digit as binary</th>
+              <th>Right hex digit as binary</th>
+              <th>Binary byte answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D6</td><td><code>0x2D</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D7</td><td><code>0x7F</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D8</td><td><code>0x80</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D9</td><td><code>0xAE</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D10</td><td><code>0xFF</code></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mixed-practice">
+        <h2>Part E: Mixed practice</h2>
+
+        <div class="problem">
+          <div class="problem-title">E1. Complete the representation table.</div>
+          <table class="work-table">
+            <thead>
+              <tr>
+                <th>Decimal</th>
+                <th>8-bit binary</th>
+                <th>Hexadecimal</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>45</td><td></td><td></td></tr>
+              <tr><td></td><td><code>01010111</code></td><td></td></tr>
+              <tr><td></td><td></td><td><code>0xC1</code></td></tr>
+              <tr><td>174</td><td></td><td></td></tr>
+              <tr><td></td><td><code>00011011</code></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. Explain the statement: “Width matters in cryptography.”</div>
+          <p>
+            Use the values <code>101101</code> and <code>00101101</code> in your explanation.
+          </p>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. A byte has \(2^8\) possible patterns. Explain why the largest unsigned byte value is 255, not 256.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="challenge">
+        <h2>Part F: Challenge problems</h2>
+
+        <div class="box challenge-box">
+          <div class="box-title">These are meant to stretch the idea</div>
+          <p>
+            Challenge problems may combine several skills at once. Do not rush. Translate one layer at a time.
+          </p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F1. Convert <code>0x57</code> to binary and decimal.</div>
+          <p>Binary:</p>
+          <span class="blank-line"></span>
+          <p>Decimal:</p>
+          <span class="blank-line"></span>
+          <p>Show work:</p>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Convert <code>0x83</code> to binary and decimal.</div>
+          <p>Binary:</p>
+          <span class="blank-line"></span>
+          <p>Decimal:</p>
+          <span class="blank-line"></span>
+          <p>Show work:</p>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. Why do <code>0x57</code> and <code>01010111</code> represent the same byte?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <p>Before checking the answer key, mark each statement as true or false.</p>
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Statement</th>
+              <th>True or False?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>One hex digit represents exactly 4 bits.</td><td></td></tr>
+            <tr><td>One byte contains 4 bits.</td><td></td></tr>
+            <tr><td><code>0xFF</code> is the largest unsigned byte value.</td><td></td></tr>
+            <tr><td>Leading zeros never matter in cryptography.</td><td></td></tr>
+            <tr><td>Binary, decimal, and hexadecimal can represent the same quantity.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The answer key shows work for problems where the process matters. Some explanation answers may vary in wording, but they should preserve the key idea.
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> A bit is a single binary digit. Friendly: one tiny on/off value. Technical: one binary digit with value 0 or 1.</p>
+          <p><strong>A2.</strong> A nibble is a group of 4 bits. It represents exactly one hexadecimal digit.</p>
+          <p><strong>A3.</strong> A byte is a group of 8 bits. An unsigned byte can represent values from 0 through 255.</p>
+          <p><strong>A4.</strong> Hexadecimal is useful because one hex digit represents one nibble, and two hex digits represent one byte. This makes bytes easier to read than long strings of bits.</p>
+        </div>
+
+        <h3>Part B: Binary to decimal</h3>
+        <table class="answer-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Work</th>
+              <th>Answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>B1</td>
+              <td>\(1010_2 = 2^3 + 2^1 = 8 + 2\)</td>
+              <td>\(10_{10}\)</td>
+            </tr>
+            <tr>
+              <td>B2</td>
+              <td>\(1101_2 = 2^3 + 2^2 + 2^0 = 8 + 4 + 1\)</td>
+              <td>\(13_{10}\)</td>
+            </tr>
+            <tr>
+              <td>B3</td>
+              <td>\(10011_2 = 2^4 + 2^1 + 2^0 = 16 + 2 + 1\)</td>
+              <td>\(19_{10}\)</td>
+            </tr>
+            <tr>
+              <td>B4</td>
+              <td>\(00101101_2 = 2^5 + 2^3 + 2^2 + 2^0 = 32 + 8 + 4 + 1\)</td>
+              <td>\(45_{10}\)</td>
+            </tr>
+            <tr>
+              <td>B5</td>
+              <td>\(11111111_2 = 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1\)</td>
+              <td>\(255_{10}\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Decimal to binary</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> \(13 = 8 + 4 + 1 = 2^3 + 2^2 + 2^0\). Therefore \(13_{10} = 1101_2\).</p>
+          <p><strong>C2.</strong> \(27 = 16 + 8 + 2 + 1 = 2^4 + 2^3 + 2^1 + 2^0\). Therefore \(27_{10} = 11011_2\).</p>
+          <p><strong>C3.</strong> \(45 = 32 + 8 + 4 + 1 = 2^5 + 2^3 + 2^2 + 2^0\). As an 8-bit byte: \(00101101_2\).</p>
+          <p><strong>C4.</strong> \(128 = 2^7\). As an 8-bit byte: \(10000000_2\).</p>
+          <p><strong>C5.</strong> \(255 = 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1\). As an 8-bit byte: \(11111111_2\).</p>
+        </div>
+
+        <h3>Part D: Binary and hexadecimal</h3>
+        <table class="answer-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Work</th>
+              <th>Answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1</td><td><code>0101 0111</code> → <code>5 7</code></td><td><code>0x57</code></td></tr>
+            <tr><td>D2</td><td><code>1010 1110</code> → <code>A E</code></td><td><code>0xAE</code></td></tr>
+            <tr><td>D3</td><td><code>1100 0001</code> → <code>C 1</code></td><td><code>0xC1</code></td></tr>
+            <tr><td>D4</td><td><code>0001 1011</code> → <code>1 B</code></td><td><code>0x1B</code></td></tr>
+            <tr><td>D5</td><td><code>1111 0000</code> → <code>F 0</code></td><td><code>0xF0</code></td></tr>
+            <tr><td>D6</td><td><code>2</code> → <code>0010</code>, <code>D</code> → <code>1101</code></td><td><code>00101101</code></td></tr>
+            <tr><td>D7</td><td><code>7</code> → <code>0111</code>, <code>F</code> → <code>1111</code></td><td><code>01111111</code></td></tr>
+            <tr><td>D8</td><td><code>8</code> → <code>1000</code>, <code>0</code> → <code>0000</code></td><td><code>10000000</code></td></tr>
+            <tr><td>D9</td><td><code>A</code> → <code>1010</code>, <code>E</code> → <code>1110</code></td><td><code>10101110</code></td></tr>
+            <tr><td>D10</td><td><code>F</code> → <code>1111</code>, <code>F</code> → <code>1111</code></td><td><code>11111111</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Mixed practice</h3>
+        <table class="answer-table">
+          <thead>
+            <tr>
+              <th>Decimal</th>
+              <th>8-bit binary</th>
+              <th>Hexadecimal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>45</td><td><code>00101101</code></td><td><code>0x2D</code></td></tr>
+            <tr><td>87</td><td><code>01010111</code></td><td><code>0x57</code></td></tr>
+            <tr><td>193</td><td><code>11000001</code></td><td><code>0xC1</code></td></tr>
+            <tr><td>174</td><td><code>10101110</code></td><td><code>0xAE</code></td></tr>
+            <tr><td>27</td><td><code>00011011</code></td><td><code>0x1B</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="answer-step">
+          <p><strong>E2 sample answer.</strong> Width matters because cryptography often works with fixed-size containers. The value <code>101101</code> and <code>00101101</code> have the same decimal value, 45, but <code>00101101</code> explicitly shows an 8-bit byte. The leading zeros help preserve the expected width.</p>
+          <p><strong>E3 sample answer.</strong> A byte has \(2^8 = 256\) possible patterns. Since unsigned byte values start at 0, the values are 0 through 255. That is 256 total values, but the largest value is 255.</p>
+        </div>
+
+        <h3>Part F: Challenge problems</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong> <code>0x57</code> → <code>5</code> is <code>0101</code>, <code>7</code> is <code>0111</code>, so binary is <code>01010111</code>. Decimal: \(64 + 16 + 4 + 2 + 1 = 87\).</p>
+          <p><strong>F2.</strong> <code>0x83</code> → <code>8</code> is <code>1000</code>, <code>3</code> is <code>0011</code>, so binary is <code>10000011</code>. Decimal: \(128 + 2 + 1 = 131\).</p>
+          <p><strong>F3 sample answer.</strong> <code>0x57</code> and <code>01010111</code> represent the same byte because each hex digit maps to one 4-bit nibble. Hex digit <code>5</code> maps to <code>0101</code>, and hex digit <code>7</code> maps to <code>0111</code>. Together they form <code>01010111</code>.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead>
+            <tr>
+              <th>Statement</th>
+              <th>Answer</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>One hex digit represents exactly 4 bits.</td><td>True</td><td>One hex digit maps to one nibble.</td></tr>
+            <tr><td>One byte contains 4 bits.</td><td>False</td><td>One byte contains 8 bits. Four bits is a nibble.</td></tr>
+            <tr><td><code>0xFF</code> is the largest unsigned byte value.</td><td>True</td><td><code>0xFF</code> is <code>11111111</code>, which equals 255.</td></tr>
+            <tr><td>Leading zeros never matter in cryptography.</td><td>False</td><td>Leading zeros can matter when fixed width matters.</td></tr>
+            <tr><td>Binary, decimal, and hexadecimal can represent the same quantity.</td><td>True</td><td>They are different representations of values.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 1: Binary, Hexadecimal, and Bases.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

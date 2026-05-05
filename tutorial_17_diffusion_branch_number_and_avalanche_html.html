@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Diffusion, Branch Number, and Avalanche | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .diffusion-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .matrix-table,
+    .trail-table,
+    .compare-table,
+    .branch-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .matrix-table th,
+    .matrix-table td,
+    .trail-table th,
+    .trail-table td,
+    .compare-table th,
+    .compare-table td,
+    .branch-table th,
+    .branch-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .matrix-table th,
+    .trail-table th,
+    .compare-table th,
+    .branch-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .matrix-table td,
+    .matrix-table th,
+    .trail-table td,
+    .trail-table th,
+    .compare-table td,
+    .compare-table th,
+    .branch-table td,
+    .branch-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .bit-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(54px, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+      min-width: 520px;
+    }
+
+    .bit-cell {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px 4px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .bit-cell.changed { background: #fdeaea; border-color: #efb5b5; }
+    .bit-cell.spread { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .round-card-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .round-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .round-card.output { background: #eaf7ef; border-color: #b8dfc5; }
+    .round-label { color: #1f3763; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .round-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 1.35rem; font-weight: 900; margin-top: 6px; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .round-card-row { grid-template-columns: 1fr; }
+      .bit-row { grid-template-columns: repeat(4, minmax(54px, 1fr)); min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .round-card, .bit-cell { break-inside: avoid; }
+      .box, .diagram, details.solution, .round-card, .bit-cell { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .trail-table th, .compare-table th, .branch-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 17</div>
+      <h1>Diffusion, Branch Number, and Avalanche</h1>
+      <p class="subtitle">
+        How ciphers spread small input changes into many output changes, and how designers measure the strength of that spreading.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="16-linear-transformations-and-matrices-over-gf2.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We have studied S-boxes, matrices, and linear transformations. Now we ask a design question: what should those pieces accomplish? One major answer is diffusion. A small change in the input should spread widely through the cipher state so patterns become hard to track.
+          </p>
+        </div>
+
+        <p class="lead">
+          Diffusion is the art of making a tiny crack in the ice spread across the pond. In cryptography, the crack is a changed bit. A good cipher makes that single change ripple outward until many bits are affected in ways that are difficult to predict without the key.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know XOR, bit vectors, matrix-based linear transformations, and the basic idea that block ciphers are built from repeated rounds. You do not need advanced probability yet. This tutorial uses small examples before naming the formal ideas.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This tutorial introduces measurement language. Each symbol below names something we can count or compare.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>diffusion</td>
+              <td>Spreading one small change across many positions.</td>
+              <td>A cipher property where plaintext or state statistics are spread across ciphertext/state bits.</td>
+            </tr>
+            <tr>
+              <td>avalanche</td>
+              <td>A one-bit change causing many output bits to change.</td>
+              <td>A sensitivity property where small input changes cause large output changes.</td>
+            </tr>
+            <tr>
+              <td>Hamming weight</td>
+              <td>The number of 1s in a bit string.</td>
+              <td>For a vector \(x\), often written \(wt(x)\).</td>
+            </tr>
+            <tr>
+              <td>Hamming distance</td>
+              <td>The number of positions where two bit strings differ.</td>
+              <td>For strings \(a\) and \(b\), the Hamming weight of \(a\oplus b\).</td>
+            </tr>
+            <tr>
+              <td>\(wt(x)\)</td>
+              <td>How many active or changed positions are in \(x\).</td>
+              <td>The Hamming weight of vector \(x\).</td>
+            </tr>
+            <tr>
+              <td>\(L(x)\)</td>
+              <td>The output of linear layer \(L\) on input difference \(x\).</td>
+              <td>A linear transformation applied to a nonzero input vector.</td>
+            </tr>
+            <tr>
+              <td>branch number</td>
+              <td>A score for how much a linear layer spreads nonzero input differences.</td>
+              <td>\(B=\min_{x\ne0}(wt(x)+wt(L(x)))\).</td>
+            </tr>
+            <tr>
+              <td>active component</td>
+              <td>A chunk affected by a difference.</td>
+              <td>A nonzero unit, often a bit, nibble, byte, or S-box input/output in a trail.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Confusion makes the relationship between key, plaintext, and ciphertext complicated. Diffusion spreads local changes across the state. Strong ciphers need both: nonlinear confusion to bend patterns, and diffusion to carry those bent patterns everywhere.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Diffusion spreading one input change to many outputs">
+          <div class="diagram-title">Diffusion as spreading</div>
+          <div class="flow-row">
+            <div class="flow-node">One changed bit</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Linear mixing layer</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Several changed bits</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">More rounds</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Many changed bits</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="hamming-weight">
+        <h2>Hamming weight: counting 1s</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Hamming weight</div>
+          <p>
+            The Hamming weight of a bit string is the number of 1 bits it contains. It is often written as \(wt(x)\).
+          </p>
+        </div>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit string</th><th>Number of 1s</th><th>Hamming weight</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>00000000</code></td><td>0</td><td>0</td></tr>
+            <tr><td><code>00010000</code></td><td>1</td><td>1</td></tr>
+            <tr><td><code>10110000</code></td><td>3</td><td>3</td></tr>
+            <tr><td><code>11111111</code></td><td>8</td><td>8</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="hamming-distance">
+        <h2>Hamming distance: counting differences</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Hamming distance</div>
+          <p>
+            The Hamming distance between two bit strings is the number of positions where they differ. To compute it, XOR the two strings and count the 1s.
+          </p>
+        </div>
+
+        <p>Example:</p>
+        <div class="math-display">
+          \[
+            a=10110010
+          \]
+          \[
+            b=10110111
+          \]
+          \[
+            a\oplus b=00000101
+          \]
+        </div>
+        <p>
+          The XOR result has two 1s, so the Hamming distance is 2.
+        </p>
+      </section>
+
+      <section id="visual-distance">
+        <h2>Visualizing changed bits</h2>
+        <p>
+          Suppose two states differ in only one bit at first:</p>
+
+        <div class="diagram">
+          <div class="diagram-title">Before mixing</div>
+          <div class="bit-row">
+            <div class="bit-cell">0</div><div class="bit-cell">1</div><div class="bit-cell">0</div><div class="bit-cell changed">1</div><div class="bit-cell">0</div><div class="bit-cell">0</div><div class="bit-cell">1</div><div class="bit-cell">0</div>
+          </div>
+          <div class="bit-row">
+            <div class="bit-cell">0</div><div class="bit-cell">1</div><div class="bit-cell">0</div><div class="bit-cell changed">0</div><div class="bit-cell">0</div><div class="bit-cell">0</div><div class="bit-cell">1</div><div class="bit-cell">0</div>
+          </div>
+        </div>
+
+        <p>
+          After good mixing and more rounds, many positions should differ:</p>
+
+        <div class="diagram">
+          <div class="diagram-title">After stronger diffusion</div>
+          <div class="bit-row">
+            <div class="bit-cell changed">1</div><div class="bit-cell">0</div><div class="bit-cell changed">1</div><div class="bit-cell">1</div><div class="bit-cell changed">0</div><div class="bit-cell changed">1</div><div class="bit-cell">0</div><div class="bit-cell changed">1</div>
+          </div>
+          <div class="bit-row">
+            <div class="bit-cell changed">0</div><div class="bit-cell">0</div><div class="bit-cell changed">0</div><div class="bit-cell">1</div><div class="bit-cell changed">1</div><div class="bit-cell changed">0</div><div class="bit-cell">0</div><div class="bit-cell changed">0</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="avalanche">
+        <h2>Avalanche effect</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: avalanche effect</div>
+          <p>
+            The avalanche effect describes the idea that a small change in the input, often just one bit, should cause many output bits to change.
+          </p>
+        </div>
+
+        <p>
+          In an ideal-looking block cipher output, flipping one input bit should eventually change about half of the output bits on average. Not exactly half every time, but roughly half across many trials.
+        </p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            Avalanche is usually observed across the whole cipher or across several rounds. A single small component may not avalanche by itself. Instead, the round structure gradually spreads and amplifies differences.</p>
+        </div>
+      </section>
+
+      <section id="diffusion-layer-example">
+        <h2>A small diffusion layer example</h2>
+        <p>
+          Consider this 4-bit linear layer:</p>
+        <div class="math-display">
+          \[
+            L\begin{bmatrix}v_0\\v_1\\v_2\\v_3\end{bmatrix}
+            =
+            \begin{bmatrix}
+            v_0\oplus v_1\\
+            v_1\oplus v_2\\
+            v_2\oplus v_3\\
+            v_0\oplus v_3
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          If the input difference is only in \(v_0\):</p>
+        <div class="math-display">
+          \[
+            x=\begin{bmatrix}1\\0\\0\\0\end{bmatrix}
+          \]
+        </div>
+        <p>
+          Then:</p>
+        <div class="math-display">
+          \[
+            L(x)=\begin{bmatrix}1\\0\\0\\1\end{bmatrix}
+          \]
+        </div>
+        <p>
+          One active input bit became two active output bits. This is diffusion beginning to work.</p>
+      </section>
+
+      <section id="branch-number">
+        <h2>Branch number</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: branch number</div>
+          <p>
+            The branch number of a linear layer \(L\) is the smallest possible value of \(wt(x)+wt(L(x))\) over all nonzero input differences \(x\):</p>
+          <div class="math-display">
+            \[
+              B=\min_{x\ne0}\bigl(wt(x)+wt(L(x))\bigr)
+            \]
+          </div>
+        </div>
+
+        <p>
+          Friendly meaning: branch number measures the worst-case spreading. It asks, “What is the least amount of activity this layer can produce if the input difference is not zero?”</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why worst-case matters</div>
+          <p>
+            Attackers look for weak trails, not average trails. A strong diffusion layer should avoid letting a small difference remain small too easily.</p>
+        </div>
+      </section>
+
+      <section id="branch-example">
+        <h2>Worked example: branch number for a tiny layer</h2>
+        <p>
+          Use the same layer:</p>
+        <div class="math-display">
+          \[
+            L(v_0,v_1,v_2,v_3)=(v_0\oplus v_1,\ v_1\oplus v_2,\ v_2\oplus v_3,\ v_0\oplus v_3)
+          \]
+        </div>
+
+        <p>
+          Test several nonzero differences:</p>
+        <table class="branch-table">
+          <thead>
+            <tr><th>Input \(x\)</th><th>\(wt(x)\)</th><th>\(L(x)\)</th><th>\(wt(L(x))\)</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1000</td><td>1</td><td>1001</td><td>2</td><td>3</td></tr>
+            <tr><td>0100</td><td>1</td><td>1100</td><td>2</td><td>3</td></tr>
+            <tr><td>0010</td><td>1</td><td>0110</td><td>2</td><td>3</td></tr>
+            <tr><td>0001</td><td>1</td><td>0011</td><td>2</td><td>3</td></tr>
+            <tr><td>1100</td><td>2</td><td>0101</td><td>2</td><td>4</td></tr>
+            <tr><td>1010</td><td>2</td><td>1111</td><td>4</td><td>6</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Since the smallest total shown is 3, and every one-bit input difference already gives total 3, this layer has branch number 3.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Result</div>
+          <div class="math-display">
+            \[
+              B=3
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="active-components">
+        <h2>Active components</h2>
+        <p>
+          In cipher analysis, we often track whether a component is active rather than tracking every bit in detail. A component is active if it has a nonzero difference.</p>
+
+        <table class="trail-table">
+          <thead>
+            <tr><th>Component</th><th>Difference</th><th>Active?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Nibble 0</td><td><code>0000</code></td><td>No</td></tr>
+            <tr><td>Nibble 1</td><td><code>0100</code></td><td>Yes</td></tr>
+            <tr><td>Nibble 2</td><td><code>1110</code></td><td>Yes</td></tr>
+            <tr><td>Nibble 3</td><td><code>0000</code></td><td>No</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Active-component thinking is especially important when studying S-box layers. A difference entering an S-box makes that S-box active.</p>
+      </section>
+
+      <section id="wide-trail-intuition">
+        <h2>Wide-trail intuition</h2>
+        <p>
+          AES was designed so that differences do not stay trapped in a small part of the state. S-boxes provide nonlinear confusion, and linear layers spread activity across more S-boxes in later rounds.</p>
+
+        <div class="diagram" role="img" aria-label="Activity spreading across rounds">
+          <div class="diagram-title">Activity spreading across rounds</div>
+          <div class="flow-row">
+            <div class="flow-node">1 active byte</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">S-box layer</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Linear diffusion</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">more active bytes</div>
+          </div>
+        </div>
+
+        <div class="box diffusion-box">
+          <div class="box-title">Big-picture design idea</div>
+          <p>
+            Good diffusion does not merely change many bits for decoration. It forces future nonlinear components to become active, making simple attack trails harder to maintain.</p>
+        </div>
+      </section>
+
+      <section id="aes-mixcolumns-preview">
+        <h2>AES MixColumns preview</h2>
+        <p>
+          AES MixColumns is a linear diffusion layer. It operates on columns of four bytes. Its entries are not just 0 and 1; they are values in \(\mathrm{GF}(2^8)\), such as <code>0x02</code> and <code>0x03</code>. But the design goal is similar: spread input byte differences across output bytes.</p>
+
+        <div class="math-display">
+          \[
+            \begin{bmatrix}
+            02&03&01&01\\
+            01&02&03&01\\
+            01&01&02&03\\
+            03&01&01&02
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          We will study MixColumns more carefully later. For now, see it as a byte-level matrix designed for diffusion.</p>
+      </section>
+
+      <section id="diffusion-vs-confusion">
+        <h2>Diffusion versus confusion</h2>
+        <table class="compare-table">
+          <thead>
+            <tr><th>Idea</th><th>Plain-language meaning</th><th>Typical mechanism</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Confusion</td><td>Make relationships complicated and nonlinear.</td><td>S-boxes, inverses, nonlinear operations.</td></tr>
+            <tr><td>Diffusion</td><td>Spread local changes across many positions.</td><td>Permutations, matrices, MixColumns, linear layers.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          A cipher with only diffusion may be too algebraically predictable. A cipher with only confusion may leave changes too localized. The craft is in combining them across rounds.
+        </p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking one changed bit must instantly change half the state</div>
+          <p>
+            Avalanche is usually a multi-round behavior. Individual components may only begin the spreading process.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: confusing Hamming weight and Hamming distance</div>
+          <p>
+            Hamming weight counts 1s in one string. Hamming distance counts differences between two strings, often by XORing them first.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: judging diffusion only by average behavior</div>
+          <p>
+            Worst-case behavior matters. Branch number focuses on the smallest possible amount of activity created by a nonzero input difference.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: treating linear layers as useless because they are linear</div>
+          <p>
+            Linear layers are essential for diffusion. They need nonlinear layers beside them, not because they are useless, but because they perform a different job.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Find the Hamming weight of <code>10110100</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The string has four 1s, so its Hamming weight is 4.</p>
+            </details>
+          </li>
+          <li>
+            Find the Hamming distance between <code>10110010</code> and <code>00110111</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  10110010\oplus00110111=10000101
+                \]
+              </div>
+              <p>The XOR result has three 1s, so the Hamming distance is 3.</p>
+            </details>
+          </li>
+          <li>
+            What does avalanche mean in cipher design?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A small input change, such as flipping one bit, should eventually cause many output bits to change.</p>
+            </details>
+          </li>
+          <li>
+            In branch number, why do we use \(x\ne0\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>If \(x=0\), then there is no input difference. The branch number measures spreading of nonzero differences.</p>
+            </details>
+          </li>
+          <li>
+            Why do ciphers combine S-boxes with diffusion layers?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>S-boxes provide nonlinear confusion. Diffusion layers spread changes so more S-boxes become active in later rounds.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Diffusion is one of the central design goals of modern block ciphers. It prevents small changes from staying local and helps ensure that patterns cannot be followed easily through the cipher.
+        </p>
+        <ul>
+          <li>Hamming weight helps count active or changed bits.</li>
+          <li>Hamming distance helps compare two states.</li>
+          <li>Avalanche describes broad sensitivity to small input changes.</li>
+          <li>Branch number measures worst-case spreading in a linear layer.</li>
+          <li>AES uses S-boxes for confusion and linear layers like ShiftRows and MixColumns for diffusion.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Diffusion spreads small changes across many positions.</li>
+            <li>Hamming weight counts the number of 1s in one bit string.</li>
+            <li>Hamming distance counts how many positions differ between two strings.</li>
+            <li>To compute Hamming distance, XOR the strings and count the 1s.</li>
+            <li>Avalanche means a small input change eventually causes many output changes.</li>
+            <li>Branch number measures worst-case spreading in a linear layer.</li>
+            <li>The branch number formula is \(B=\min_{x\ne0}(wt(x)+wt(L(x)))\).</li>
+            <li>An active component is a component with a nonzero difference.</li>
+            <li>S-boxes provide nonlinear confusion.</li>
+            <li>Linear layers provide diffusion and help activate more S-boxes across rounds.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Concept</th><th>Question it answers</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Hamming weight</td><td>How many 1s are in this string?</td><td><code>10110000</code> has weight 3.</td></tr>
+            <tr><td>Hamming distance</td><td>How many positions changed?</td><td>Count 1s after XOR.</td></tr>
+            <tr><td>Avalanche</td><td>Does a small change spread widely?</td><td>One bit flip changes many output bits.</td></tr>
+            <tr><td>Branch number</td><td>What is the worst-case spreading?</td><td>\(wt(x)+wt(L(x))\).</td></tr>
+            <tr><td>Active component</td><td>Which chunks are affected?</td><td>A nonzero byte difference activates a byte/S-box.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              \text{Hamming distance}(a,b)=wt(a\oplus b)
+            \]
+            \[
+              B=\min_{x\ne0}\bigl(wt(x)+wt(L(x))\bigr)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>MixColumns as Matrix Multiplication over \(\mathrm{GF}(2^8)\)</strong>. We will move from bit-level matrices to byte-level matrices and see how AES spreads one byte change across a column.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

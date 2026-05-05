@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multiplicative Inverses in GF(2^8) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .inverse-table,
+    .verify-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .inverse-table th,
+    .inverse-table td,
+    .verify-table th,
+    .verify-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .inverse-table th,
+    .verify-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .inverse-table td,
+    .inverse-table th,
+    .verify-table td,
+    .verify-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .inverse-pair {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+      margin: 18px 0;
+      min-width: 700px;
+    }
+
+    .pair-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      background: #ffffff;
+      font-weight: 900;
+    }
+
+    .pair-card.result { background: #eaf7ef; border-color: #b8dfc5; }
+    .pair-symbol { font-size: 1.5rem; color: var(--accent); font-weight: 900; text-align: center; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .inverse-pair { grid-template-columns: 1fr; min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card, .pair-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .inverse-table th, .verify-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 13</div>
+      <h1>Multiplicative Inverses in \(\mathrm{GF}(2^8)\)</h1>
+      <p class="subtitle">
+        Finding the byte that multiplies with another byte to produce <code>0x01</code>, and why this matters for the AES S-box.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="12-multiplication-in-gf-2-8.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We now know how to multiply bytes in \(\mathrm{GF}(2^8)\). The next question is: can multiplication be undone? For every nonzero byte in the AES field, the answer is yes. Each nonzero byte has a multiplicative inverse: another byte that multiplies with it to give <code>0x01</code>.
+          </p>
+        </div>
+
+        <p class="lead">
+          This tutorial is about the “undo button” for finite-field multiplication. In ordinary arithmetic, the inverse of 5 is \(1/5\), because \(5\cdot(1/5)=1\). In AES's byte field, the inverse of a byte is another byte, and the product is <code>0x01</code>.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand multiplication in \(\mathrm{GF}(2^8)\), especially the AES modulus:
+        </p>
+        <div class="math-display">
+          \[
+            m(x)=x^8+x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          You should also remember the extended Euclidean algorithm from integers, because the polynomial version is one way to find inverses in finite fields.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This lesson reuses inverse notation, but now the objects are bytes, not ordinary integers.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(a\)</td>
+              <td>The byte we want to invert.</td>
+              <td>A nonzero element of \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+            <tr>
+              <td>\(a^{-1}\)</td>
+              <td>The byte that undoes multiplication by \(a\).</td>
+              <td>The multiplicative inverse of \(a\), satisfying \(a\cdot a^{-1}=1\).</td>
+            </tr>
+            <tr>
+              <td><code>0x01</code></td>
+              <td>The multiplication identity byte.</td>
+              <td>The field element represented by polynomial \(1\).</td>
+            </tr>
+            <tr>
+              <td><code>0x00</code></td>
+              <td>The zero byte.</td>
+              <td>The additive identity. It has no multiplicative inverse.</td>
+            </tr>
+            <tr>
+              <td>\(m(x)\)</td>
+              <td>The AES folding-rule polynomial.</td>
+              <td>\(x^8+x^4+x^3+x+1\).</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(a(x),m(x))=1\)</td>
+              <td>The byte-polynomial and the AES modulus share no meaningful factor.</td>
+              <td>The condition that guarantees an inverse modulo \(m(x)\).</td>
+            </tr>
+            <tr>
+              <td>\(a(x)b(x)\equiv1\pmod{m(x)}\)</td>
+              <td>The two byte-polynomials multiply to 1 after reduction.</td>
+              <td>\(b(x)\) is the inverse of \(a(x)\) modulo \(m(x)\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            In a field, every nonzero element has a multiplication partner that brings it back to 1. Since AES's byte arithmetic uses an irreducible modulus, the 255 nonzero bytes all have inverses. The only byte without an inverse is <code>0x00</code>.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Byte inverse relationship in GF(2^8)">
+          <div class="diagram-title">An inverse pair multiplies to <code>0x01</code></div>
+          <div class="inverse-pair">
+            <div class="pair-card">byte \(a\)</div>
+            <div class="pair-symbol">×</div>
+            <div class="pair-card">inverse \(a^{-1}\)</div>
+            <div class="pair-symbol">=</div>
+            <div class="pair-card result"><code>0x01</code></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="definition">
+        <h2>Definition: multiplicative inverse in \(\mathrm{GF}(2^8)\)</h2>
+        <div class="box definition-box">
+          <div class="box-title">Formal definition</div>
+          <p>
+            For a nonzero byte \(a\), the multiplicative inverse of \(a\) in \(\mathrm{GF}(2^8)\) is the byte \(b\) such that:</p>
+          <div class="math-display">
+            \[
+              a\cdot b=\texttt{0x01}
+            \]
+          </div>
+          <p>
+            Equivalently, using polynomial notation:</p>
+          <div class="math-display">
+            \[
+              a(x)b(x)\equiv1\pmod{x^8+x^4+x^3+x+1}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="why-nonzero-only">
+        <h2>Why <code>0x00</code> has no inverse</h2>
+        <p>
+          The zero byte cannot have a multiplicative inverse because multiplying by zero always gives zero:</p>
+        <div class="math-display">
+          \[
+            \texttt{0x00}\cdot b=\texttt{0x00}
+          \]
+        </div>
+        <p>
+          No choice of \(b\) can make the result become <code>0x01</code>.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Boundary rule</div>
+          <p>
+            Every nonzero byte has an inverse in AES's \(\mathrm{GF}(2^8)\). The zero byte does not.</p>
+        </div>
+      </section>
+
+      <section id="why-every-nonzero">
+        <h2>Why every nonzero byte has an inverse</h2>
+        <p>
+          AES reduces byte-polynomials modulo an irreducible degree-8 polynomial:</p>
+        <div class="math-display">
+          \[
+            m(x)=x^8+x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          Because \(m(x)\) is irreducible over \(\mathrm{GF}(2)\), the arithmetic world produced by reducing modulo \(m(x)\) is a field. In a field, every nonzero element has a multiplicative inverse.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Bridge from earlier tutorials</div>
+          <p>
+            In integer modular arithmetic, inverses exist for numbers coprime to the modulus. In polynomial modular arithmetic, a byte-polynomial has an inverse when it is coprime to the modulus polynomial. Since the AES modulus is irreducible, every nonzero byte-polynomial is coprime to it.</p>
+        </div>
+      </section>
+
+      <section id="checking-inverse">
+        <h2>How to check an inverse</h2>
+        <p>
+          To check whether one byte is the inverse of another, multiply them in \(\mathrm{GF}(2^8)\). If the result is <code>0x01</code>, they are inverses.</p>
+
+        <table class="verify-table">
+          <thead>
+            <tr>
+              <th>Byte</th>
+              <th>Candidate inverse</th>
+              <th>Product in \(\mathrm{GF}(2^8)\)</th>
+              <th>Inverse?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>0x53</code></td><td><code>0xCA</code></td><td><code>0x01</code></td><td>Yes</td></tr>
+            <tr><td><code>0x57</code></td><td><code>0xBF</code></td><td><code>0x01</code></td><td>Yes</td></tr>
+            <tr><td><code>0x02</code></td><td><code>0x8D</code></td><td><code>0x01</code></td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="worked-check-02">
+        <h2>Worked example 1: verify that <code>0x8D</code> is the inverse of <code>0x02</code></h2>
+        <p>
+          The byte <code>0x02</code> represents \(x\). The candidate inverse <code>0x8D</code> is:</p>
+        <div class="math-display">
+          \[
+            \texttt{0x8D}=10001101_2=x^7+x^3+x^2+1
+          \]
+        </div>
+        <p>
+          Multiply by \(x\):</p>
+        <div class="math-display">
+          \[
+            x(x^7+x^3+x^2+1)=x^8+x^4+x^3+x
+          \]
+        </div>
+        <p>
+          Reduce \(x^8\) using the AES rule:</p>
+        <div class="math-display">
+          \[
+            x^8\equiv x^4+x^3+x+1
+          \]
+        </div>
+        <p>
+          Substitute and cancel duplicates:</p>
+        <div class="math-display">
+          \[
+            (x^4+x^3+x+1)+x^4+x^3+x
+          \]
+          \[
+            =1
+          \]
+        </div>
+        <div class="box definition-box">
+          <div class="box-title">Result</div>
+          <div class="math-display">
+            \[
+              \texttt{0x02}\cdot\texttt{0x8D}=\texttt{0x01}
+            \]
+          </div>
+          <p>So <code>0x8D</code> is the inverse of <code>0x02</code>.</p>
+        </div>
+      </section>
+
+      <section id="worked-check-53">
+        <h2>Worked example 2: verify the famous AES S-box inverse pair</h2>
+        <p>
+          In the AES S-box construction, <code>0x53</code> has multiplicative inverse <code>0xCA</code> in \(\mathrm{GF}(2^8)\). The inverse step is not the entire S-box, but it is the core nonlinear move.
+        </p>
+
+        <div class="math-display">
+          \[
+            \texttt{0x53}=01010011_2=x^6+x^4+x+1
+          \]
+          \[
+            \texttt{0xCA}=11001010_2=x^7+x^6+x^3+x
+          \]
+        </div>
+
+        <p>
+          Multiplying these two byte-polynomials and reducing by the AES modulus gives:</p>
+        <div class="math-display">
+          \[
+            \texttt{0x53}\cdot\texttt{0xCA}=\texttt{0x01}
+          \]
+        </div>
+
+        <p>
+          We will not expand every term here because the product is longer, but the check is the same principle: multiply, reduce, and see whether the result is <code>0x01</code>.</p>
+      </section>
+
+      <section id="finding-methods">
+        <h2>How inverses can be found</h2>
+        <p>
+          There are several ways to find a multiplicative inverse in \(\mathrm{GF}(2^8)\). This course will treat them as different tools, not different truths.</p>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Basic idea</th>
+              <th>Why it matters</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Brute force search</td>
+              <td>Try every nonzero byte until the product is <code>0x01</code>.</td>
+              <td>Simple and good for learning or small tools.</td>
+            </tr>
+            <tr>
+              <td>Polynomial extended Euclidean algorithm</td>
+              <td>Find coefficients \(s(x)\) and \(t(x)\) such that \(s(x)a(x)+t(x)m(x)=1\).</td>
+              <td>Mathematically direct and general.</td>
+            </tr>
+            <tr>
+              <td>Exponentiation</td>
+              <td>Use the finite-field fact that \(a^{-1}=a^{254}\) for nonzero bytes.</td>
+              <td>Useful in implementations and theory.</td>
+            </tr>
+            <tr>
+              <td>Lookup table</td>
+              <td>Precompute each byte's inverse.</td>
+              <td>Fast, but table-based designs can raise implementation concerns.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="extended-euclidean-polynomial-preview">
+        <h2>Preview: polynomial extended Euclidean algorithm</h2>
+        <p>
+          The integer extended Euclidean algorithm gave us equations like:</p>
+        <div class="math-display">
+          \[
+            1=sa+tn
+          \]
+        </div>
+        <p>
+          In the polynomial world, the same shape appears:</p>
+        <div class="math-display">
+          \[
+            1=s(x)a(x)+t(x)m(x)
+          \]
+        </div>
+        <p>
+          When we reduce modulo \(m(x)\), the \(t(x)m(x)\) term disappears:</p>
+        <div class="math-display">
+          \[
+            1\equiv s(x)a(x)\pmod{m(x)}
+          \]
+        </div>
+        <p>
+          So \(s(x)\) is the inverse of \(a(x)\) modulo \(m(x)\).</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Important note</div>
+          <p>
+            We will practice the polynomial extended Euclidean algorithm later. In this tutorial, the main goal is to understand what inverses mean and how to verify them.</p>
+        </div>
+      </section>
+
+      <section id="aes-sbox-connection">
+        <h2>Connection to the AES S-box</h2>
+        <p>
+          The AES S-box is built in two major stages:</p>
+        <ol>
+          <li>Take the multiplicative inverse of the byte in \(\mathrm{GF}(2^8)\), with <code>0x00</code> handled specially.</li>
+          <li>Apply an affine transformation, which is a structured bit-level transformation plus a constant.</li>
+        </ol>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why this is powerful</div>
+          <p>
+            The inverse operation supplies strong nonlinearity. The affine transformation then reshapes the result to improve cryptographic properties and avoid certain patterns. Together, they form the AES S-box.</p>
+        </div>
+
+        <p>
+          For example, AES uses the inverse of <code>0x53</code>, which is <code>0xCA</code>, and then applies the affine transformation to produce the S-box output <code>0xED</code>. That affine transformation is the subject of a later tutorial.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking the inverse means decimal reciprocal</div>
+          <p>
+            The inverse of a byte in \(\mathrm{GF}(2^8)\) is another byte, not a fraction like \(1/a\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: trying to invert <code>0x00</code></div>
+          <p>
+            Zero has no multiplicative inverse. AES handles <code>0x00</code> specially during the S-box inverse step.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using ordinary integer multiplication to check inverses</div>
+          <p>
+            To verify an inverse, multiply in \(\mathrm{GF}(2^8)\), not in ordinary decimal or hexadecimal integer arithmetic.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking the inverse alone is the AES S-box</div>
+          <p>
+            The inverse step is central, but AES also applies an affine transformation afterward.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What byte is the multiplicative identity in \(\mathrm{GF}(2^8)\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The multiplicative identity is <code>0x01</code>, represented by the polynomial \(1\).</p>
+            </details>
+          </li>
+          <li>
+            Which byte has no multiplicative inverse?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>0x00</code> has no multiplicative inverse, because zero times any byte is still zero.</p>
+            </details>
+          </li>
+          <li>
+            Verify that <code>0x8D</code> is the inverse of <code>0x02</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><code>0x02</code> represents \(x\), and <code>0x8D</code> represents \(x^7+x^3+x^2+1\).</p>
+              <div class="math-display">
+                \[
+                  x(x^7+x^3+x^2+1)=x^8+x^4+x^3+x
+                \]
+                \[
+                  x^8\equiv x^4+x^3+x+1
+                \]
+                \[
+                  (x^4+x^3+x+1)+x^4+x^3+x=1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            If \(a\cdot b=\texttt{0x01}\) in \(\mathrm{GF}(2^8)\), what is \(b\) called?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(b\) is the multiplicative inverse of \(a\), written \(a^{-1}\).</p>
+            </details>
+          </li>
+          <li>
+            Why does the AES S-box use multiplicative inverses?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The inverse operation provides strong nonlinearity, which helps resist linear and differential patterns. AES then applies an affine transformation afterward.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Multiplicative inverses in \(\mathrm{GF}(2^8)\) are one of the central mathematical ingredients of AES.</p>
+        <ul>
+          <li>They provide a nonlinear operation on bytes.</li>
+          <li>They are used in the AES S-box construction.</li>
+          <li>The irreducible AES modulus makes inverses exist for all nonzero bytes.</li>
+          <li>They connect modular arithmetic, Euclidean algorithms, finite fields, and substitution layers.</li>
+          <li>They are one reason AES has a clear mathematical structure rather than being a bag of arbitrary lookup values.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A multiplicative inverse is the value that multiplies with another value to give 1.</li>
+            <li>In \(\mathrm{GF}(2^8)\), the identity value is <code>0x01</code>.</li>
+            <li>For a nonzero byte \(a\), its inverse \(a^{-1}\) satisfies \(a\cdot a^{-1}=\texttt{0x01}\).</li>
+            <li><code>0x00</code> has no multiplicative inverse.</li>
+            <li>Every other byte does have an inverse because AES uses an irreducible modulus polynomial.</li>
+            <li>To check an inverse, multiply in \(\mathrm{GF}(2^8)\), not with ordinary integer multiplication.</li>
+            <li>The polynomial extended Euclidean algorithm can find inverses.</li>
+            <li>Brute force, exponentiation, and lookup tables can also find or store inverses.</li>
+            <li>The AES S-box uses the inverse step and then an affine transformation.</li>
+          </ul>
+        </div>
+
+        <table class="inverse-table">
+          <thead>
+            <tr>
+              <th>Byte</th>
+              <th>Inverse</th>
+              <th>Check</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>0x01</code></td><td><code>0x01</code></td><td><code>0x01 · 0x01 = 0x01</code></td></tr>
+            <tr><td><code>0x02</code></td><td><code>0x8D</code></td><td><code>0x02 · 0x8D = 0x01</code></td></tr>
+            <tr><td><code>0x53</code></td><td><code>0xCA</code></td><td><code>0x53 · 0xCA = 0x01</code></td></tr>
+            <tr><td><code>0x57</code></td><td><code>0xBF</code></td><td><code>0x57 · 0xBF = 0x01</code></td></tr>
+            <tr><td><code>0x00</code></td><td>none</td><td>Zero has no inverse.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              a\cdot a^{-1}=1
+            \]
+            \[
+              a(x)b(x)\equiv1\pmod{x^8+x^4+x^3+x+1}
+            \]
+            \[
+              1=s(x)a(x)+t(x)m(x)
+            \]
+            \[
+              1\equiv s(x)a(x)\pmod{m(x)}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>The AES S-box: Inverse plus Affine Transformation</strong>. We will see how AES takes a byte's finite-field inverse and then applies a structured bit transformation to produce the final substitution value.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

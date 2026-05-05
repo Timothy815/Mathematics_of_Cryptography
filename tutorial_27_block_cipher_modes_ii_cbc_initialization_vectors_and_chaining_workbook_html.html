@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 27: CBC, Initialization Vectors, and Chaining | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .mode-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .block-table,
+    .mode-table,
+    .chain-table,
+    .compare-table,
+    .xor-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .block-table th, .block-table td,
+    .mode-table th, .mode-table td,
+    .chain-table th, .chain-table td,
+    .compare-table th, .compare-table td,
+    .xor-table th, .xor-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .block-table th,
+    .mode-table th,
+    .chain-table th,
+    .compare-table th,
+    .xor-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .block-table th,
+    .block-table td,
+    .mode-table th,
+    .mode-table td,
+    .chain-table th,
+    .chain-table td,
+    .compare-table th,
+    .compare-table td,
+    .xor-table th,
+    .xor-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .block-table th,
+      .mode-table th,
+      .chain-table th,
+      .compare-table th,
+      .xor-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 27</div>
+      <h1>Block Cipher Modes II: CBC, Initialization Vectors, and Chaining</h1>
+      <p class="subtitle">
+        Printable practice for Cipher Block Chaining mode, IVs, chaining values, CBC encryption and decryption formulas, and why CBC improves on ECB.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="27-block-cipher-modes-ii-cbc-initialization-vectors-and-chaining.html">Tutorial 27</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            CBC is about dependency. For the first block, the plaintext is XORed with the IV. For every later block, the plaintext is XORed with the previous ciphertext block. Track the chaining value carefully.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">CBC encryption</div>
+            <div class="math-display">
+              \[
+                C_1=E_K(P_1\oplus IV)
+              \]
+              \[
+                C_i=E_K(P_i\oplus C_{i-1})\quad\text{for }i>1
+              \]
+            </div>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">CBC decryption</div>
+            <div class="math-display">
+              \[
+                P_1=D_K(C_1)\oplus IV
+              \]
+              \[
+                P_i=D_K(C_i)\oplus C_{i-1}\quad\text{for }i>1
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does CBC stand for?</td><td></td></tr>
+            <tr><td>A2. What is an initialization vector, or IV?</td><td></td></tr>
+            <tr><td>A3. Does the IV need to be secret?</td><td></td></tr>
+            <tr><td>A4. What is chaining?</td><td></td></tr>
+            <tr><td>A5. Why is the first CBC block special?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="formula-practice">
+        <h2>Part B: Formula practice</h2>
+
+        <div class="problem">
+          <div class="problem-title">B1. Write the CBC encryption formula for the first block.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Write the CBC encryption formula for block \(i>1\).</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B3. Write the CBC decryption formula for the first block.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B4. Write the CBC decryption formula for block \(i>1\).</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="chaining-values">
+        <h2>Part C: Chaining value table</h2>
+        <p>Complete the table showing what each plaintext block is XORed with before encryption.</p>
+
+        <table class="chain-table">
+          <thead><tr><th>Plaintext block</th><th>Chaining value used before encryption</th></tr></thead>
+          <tbody>
+            <tr><td>\(P_1\)</td><td></td></tr>
+            <tr><td>\(P_2\)</td><td></td></tr>
+            <tr><td>\(P_3\)</td><td></td></tr>
+            <tr><td>\(P_4\)</td><td></td></tr>
+            <tr><td>\(P_5\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ecb-vs-cbc">
+        <h2>Part D: ECB versus CBC</h2>
+        <p>Complete the comparison table.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Question</th><th>ECB</th><th>CBC</th></tr></thead>
+          <tbody>
+            <tr><td>Does each block depend on previous ciphertext?</td><td></td><td></td></tr>
+            <tr><td>Does it use an IV?</td><td></td><td></td></tr>
+            <tr><td>Formula for encryption input to block cipher</td><td></td><td></td></tr>
+            <tr><td>Do equal plaintext blocks automatically produce equal ciphertext blocks?</td><td></td><td></td></tr>
+            <tr><td>Is it generally safe for multi-block messages by itself?</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="xor-cancellation">
+        <h2>Part E: XOR cancellation</h2>
+        <p>For block \(i>1\), CBC encryption creates:</p>
+        <div class="math-display">
+          \[
+            C_i=E_K(P_i\oplus C_{i-1})
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E1. After decrypting \(C_i\), what value do we get?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. What do we XOR that value with to recover \(P_i\)?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. Complete the cancellation statement.</div>
+          <div class="math-display">
+            \[
+              (P_i\oplus C_{i-1})\oplus \underline{\hspace{2cm}} = P_i
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="toy-cbc-calculation">
+        <h2>Part F: Toy CBC calculation</h2>
+        <p>
+          This is not AES. It is a tiny 4-bit toy example to practice the CBC structure. Let the toy block cipher be \(E_K(x)=x\), meaning encryption returns the same value. This lets us focus only on chaining.
+        </p>
+
+        <p>Given:</p>
+        <pre><code>IV = 1010
+P1 = 1100
+P2 = 1100
+P3 = 0011</code></pre>
+
+        <table class="xor-table">
+          <thead><tr><th>Block</th><th>Plaintext</th><th>Chaining value</th><th>Plaintext XOR chaining value</th><th>Ciphertext</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>1100</code></td><td><code>1010</code></td><td></td><td></td></tr>
+            <tr><td>2</td><td><code>1100</code></td><td></td><td></td><td></td></tr>
+            <tr><td>3</td><td><code>0011</code></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Even though \(P_1=P_2\), are \(C_1\) and \(C_2\) the same in this toy CBC example?</div>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="iv-requirements">
+        <h2>Part G: IV requirements</h2>
+        <p>Complete the table.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>IV property</th><th>Meaning</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Block-sized</td><td></td><td></td></tr>
+            <tr><td>Fresh / not reused with same key</td><td></td><td></td></tr>
+            <tr><td>Unpredictable or random for CBC encryption</td><td></td><td></td></tr>
+            <tr><td>Not secret</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part H: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">H1. Explain why CBC reduces ECB-style repeated-block leakage.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. Why does CBC need the IV during decryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H3. Does CBC encryption alone authenticate a message? Explain.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H4. Summarize CBC in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>CBC stands for Cipher Block Chaining.</td><td></td></tr>
+            <tr><td>The first CBC block uses the IV as the chaining value.</td><td></td></tr>
+            <tr><td>For block 3, CBC uses \(C_2\) as the chaining value.</td><td></td></tr>
+            <tr><td>The IV must be kept secret like the key.</td><td></td></tr>
+            <tr><td>CBC encryption alone provides authentication.</td><td></td></tr>
+            <tr><td>CBC helps reduce ECB-style repeated-block leakage.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            CBC is easiest when you track the chaining value. Block 1 uses the IV. Every later block uses the previous ciphertext block.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does CBC stand for?</td><td>Cipher Block Chaining.</td></tr>
+            <tr><td>A2. What is an initialization vector, or IV?</td><td>A block-sized starting value used as the chaining value for the first block.</td></tr>
+            <tr><td>A3. Does the IV need to be secret?</td><td>No. It must be available for decryption, but the key must remain secret.</td></tr>
+            <tr><td>A4. What is chaining?</td><td>Making each block depend on earlier ciphertext output.</td></tr>
+            <tr><td>A5. Why is the first CBC block special?</td><td>It has no previous ciphertext block, so it uses the IV.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Formula practice</h3>
+        <div class="answer-step">
+          <p><strong>B1.</strong> \(C_1=E_K(P_1\oplus IV)\)</p>
+          <p><strong>B2.</strong> \(C_i=E_K(P_i\oplus C_{i-1})\quad\text{for }i>1\)</p>
+          <p><strong>B3.</strong> \(P_1=D_K(C_1)\oplus IV\)</p>
+          <p><strong>B4.</strong> \(P_i=D_K(C_i)\oplus C_{i-1}\quad\text{for }i>1\)</p>
+        </div>
+
+        <h3>Part C: Chaining value table</h3>
+        <table class="answer-table">
+          <thead><tr><th>Plaintext block</th><th>Chaining value used before encryption</th></tr></thead>
+          <tbody>
+            <tr><td>\(P_1\)</td><td>\(IV\)</td></tr>
+            <tr><td>\(P_2\)</td><td>\(C_1\)</td></tr>
+            <tr><td>\(P_3\)</td><td>\(C_2\)</td></tr>
+            <tr><td>\(P_4\)</td><td>\(C_3\)</td></tr>
+            <tr><td>\(P_5\)</td><td>\(C_4\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: ECB versus CBC</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>ECB</th><th>CBC</th></tr></thead>
+          <tbody>
+            <tr><td>Does each block depend on previous ciphertext?</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Does it use an IV?</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Formula for encryption input to block cipher</td><td>\(P_i\)</td><td>\(P_1\oplus IV\), then \(P_i\oplus C_{i-1}\)</td></tr>
+            <tr><td>Do equal plaintext blocks automatically produce equal ciphertext blocks?</td><td>Yes</td><td>No, not automatically</td></tr>
+            <tr><td>Is it generally safe for multi-block messages by itself?</td><td>No</td><td>Better than ECB for confidentiality, but still needs authentication</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: XOR cancellation</h3>
+        <div class="answer-step">
+          <p><strong>E1.</strong> After decrypting \(C_i\), we get \(P_i\oplus C_{i-1}\).</p>
+          <p><strong>E2.</strong> XOR that value with \(C_{i-1}\).</p>
+          <p><strong>E3.</strong> \((P_i\oplus C_{i-1})\oplus C_{i-1}=P_i\).</p>
+        </div>
+
+        <h3>Part F: Toy CBC calculation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Block</th><th>Plaintext</th><th>Chaining value</th><th>Plaintext XOR chaining value</th><th>Ciphertext</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>1100</code></td><td><code>1010</code></td><td><code>0110</code></td><td><code>0110</code></td></tr>
+            <tr><td>2</td><td><code>1100</code></td><td><code>0110</code></td><td><code>1010</code></td><td><code>1010</code></td></tr>
+            <tr><td>3</td><td><code>0011</code></td><td><code>1010</code></td><td><code>1001</code></td><td><code>1001</code></td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1.</strong> No. Even though \(P_1=P_2\), the chaining values are different, so \(C_1\ne C_2\) in this toy example.</p>
+        </div>
+
+        <h3>Part G: IV requirements</h3>
+        <table class="answer-table">
+          <thead><tr><th>IV property</th><th>Meaning</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Block-sized</td><td>Same size as the block, 128 bits for AES-CBC.</td><td>It must XOR with the first plaintext block.</td></tr>
+            <tr><td>Fresh / not reused with same key</td><td>Use a new IV for each encryption under the same key.</td><td>Reuse can reveal relationships between first blocks.</td></tr>
+            <tr><td>Unpredictable or random for CBC encryption</td><td>An attacker should not know it in advance.</td><td>Helps prevent first-block pattern leakage and chosen-plaintext tricks.</td></tr>
+            <tr><td>Not secret</td><td>It can travel with the ciphertext.</td><td>Decryption needs it, but secrecy belongs to the key.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> CBC reduces ECB-style leakage because the block cipher input is not just the plaintext block. It is the plaintext block XORed with a chaining value, so repeated plaintext blocks do not automatically create repeated ciphertext blocks.</p>
+          <p><strong>H2 sample answer.</strong> CBC needs the IV during decryption because the first plaintext block is recovered by decrypting \(C_1\) and XORing the result with the IV.</p>
+          <p><strong>H3 sample answer.</strong> No. CBC encryption hides content patterns better than ECB, but it does not prove the ciphertext has not been modified. Authentication requires another secure mechanism or an authenticated encryption mode.</p>
+          <p><strong>H4 sample answer.</strong> CBC encrypts each block by first XORing it with a chaining value. The first block uses an IV, and later blocks use the previous ciphertext block. This makes encryption depend on earlier output and reduces ECB-style repeated-block leakage, but CBC still needs proper IV handling and authentication.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>CBC stands for Cipher Block Chaining.</td><td>True</td><td>That is the full name.</td></tr>
+            <tr><td>The first CBC block uses the IV as the chaining value.</td><td>True</td><td>There is no previous ciphertext block yet.</td></tr>
+            <tr><td>For block 3, CBC uses \(C_2\) as the chaining value.</td><td>True</td><td>Block \(i\) uses \(C_{i-1}\).</td></tr>
+            <tr><td>The IV must be kept secret like the key.</td><td>False</td><td>The IV is needed for decryption, but does not need to be secret.</td></tr>
+            <tr><td>CBC encryption alone provides authentication.</td><td>False</td><td>Encryption is not the same as integrity/authenticity.</td></tr>
+            <tr><td>CBC helps reduce ECB-style repeated-block leakage.</td><td>True</td><td>Repeated plaintext blocks do not automatically feed identical inputs into AES.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 27: CBC, Initialization Vectors, and Chaining.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

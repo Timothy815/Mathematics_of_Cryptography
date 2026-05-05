@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polynomial Addition over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .xor-table,
+    .align-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .xor-table th,
+    .xor-table td,
+    .align-table th,
+    .align-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .xor-table th,
+    .align-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .xor-table td,
+    .xor-table th,
+    .align-table td,
+    .align-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .byte-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(58px, 1fr));
+      gap: 8px;
+      margin: 18px 0;
+      min-width: 560px;
+    }
+
+    .byte-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 10px 6px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .byte-cell.cancel { background: #fdeaea; border-color: #efb5b5; }
+    .byte-cell.keep { background: #eaf7ef; border-color: #b8dfc5; }
+    .byte-cell .power { font-weight: 900; color: #1f3763; }
+    .byte-cell .bit { font-size: 1.25rem; font-weight: 900; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .byte-strip { grid-template-columns: repeat(4, minmax(58px, 1fr)); min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .xor-table th, .align-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 9</div>
+      <h1>Polynomial Addition over \(\mathrm{GF}(2)\)</h1>
+      <p class="subtitle">
+        Why adding byte-polynomials is the same as XORing bytes, and why duplicate terms cancel instead of carrying.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="08-bytes-as-polynomials.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            In Tutorial 8, we learned to read bytes as polynomials. Now we learn the first operation on those polynomials: addition over \(\mathrm{GF}(2)\). This is the point where XOR stops being just a bit trick and becomes polynomial addition in a two-symbol arithmetic world.
+          </p>
+        </div>
+
+        <p class="lead">
+          The strange-looking rule is this: when the same term appears twice, it cancels. In ordinary algebra, \(x+x=2x\). In \(\mathrm{GF}(2)\), \(x+x=0\). That cancellation is the tiny hinge on which AES-style byte arithmetic begins to turn.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know how to convert bytes into polynomial form and back. You should also remember XOR truth tables from bitwise operations. You do not need polynomial multiplication or polynomial reduction yet.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          The notation is small, but the meaning changes from ordinary arithmetic. Each symbol gets pinned down before we use it.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\mathrm{GF}(2)\)</td>
+              <td>The arithmetic world with only 0 and 1.</td>
+              <td>The finite field with two elements.</td>
+            </tr>
+            <tr>
+              <td>coefficient</td>
+              <td>The bit that says whether a polynomial term is present.</td>
+              <td>A value multiplying a term, here always 0 or 1.</td>
+            </tr>
+            <tr>
+              <td>\(x^k\)</td>
+              <td>The term connected to bit position \(k\).</td>
+              <td>The \(k\)-th power of the indeterminate \(x\).</td>
+            </tr>
+            <tr>
+              <td>\(+\) over \(\mathrm{GF}(2)\)</td>
+              <td>Add coefficients, but wrap 2 back to 0.</td>
+              <td>Addition modulo 2.</td>
+            </tr>
+            <tr>
+              <td>\(\oplus\)</td>
+              <td>XOR: 1 when bits differ, 0 when bits match.</td>
+              <td>Exclusive OR, equivalent to addition modulo 2 for bits.</td>
+            </tr>
+            <tr>
+              <td>\(1+1=0\)</td>
+              <td>Two matching 1s cancel in this arithmetic world.</td>
+              <td>Because \(2\equiv0\pmod2\).</td>
+            </tr>
+            <tr>
+              <td>like terms</td>
+              <td>Terms with the same power of \(x\).</td>
+              <td>Polynomial terms with identical exponents.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Polynomial addition over \(\mathrm{GF}(2)\) is term-by-term cancellation. If a term appears in one polynomial but not the other, it survives. If it appears in both, it cancels out. This is exactly what XOR does to bits.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Polynomial addition over GF(2) as XOR">
+          <div class="diagram-title">Addition over \(\mathrm{GF}(2)\) is XOR</div>
+          <div class="flow-row">
+            <div class="flow-node">Polynomial A<br>coefficients</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Add coefficients<br>modulo 2</div>
+            <div class="flow-arrow">←</div>
+            <div class="flow-node">Polynomial B<br>coefficients</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Same result as<br>byte XOR</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gf2-addition">
+        <h2>Addition inside \(\mathrm{GF}(2)\)</h2>
+        <p>
+          \(\mathrm{GF}(2)\) has only two values: 0 and 1. Addition works modulo 2.
+        </p>
+
+        <table class="xor-table">
+          <thead>
+            <tr>
+              <th>Coefficient A</th>
+              <th>Coefficient B</th>
+              <th>Ordinary sum</th>
+              <th>Sum modulo 2</th>
+              <th>XOR result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>1</td><td>2</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: addition over \(\mathrm{GF}(2)\)</div>
+          <p>
+            Addition over \(\mathrm{GF}(2)\) means add the coefficients and reduce the result modulo 2. For bits, this is exactly XOR.
+          </p>
+        </div>
+      </section>
+
+      <section id="term-cancellation">
+        <h2>Why duplicate terms cancel</h2>
+        <p>
+          Consider the term \(x^4\). If both polynomials contain \(x^4\), then its coefficient becomes:
+        </p>
+        <div class="math-display">
+          \[
+            1+1=0\quad\text{in }\mathrm{GF}(2)
+          \]
+        </div>
+        <p>
+          So:
+        </p>
+        <div class="math-display">
+          \[
+            x^4+x^4=0
+          \]
+        </div>
+
+        <div class="diagram">
+          <div class="diagram-title">Duplicate terms cancel</div>
+          <div class="byte-strip">
+            <div class="byte-cell cancel"><div class="power">\(x^4\)</div><div class="bit">1 + 1 = 0</div></div>
+            <div class="byte-cell keep"><div class="power">\(x^2\)</div><div class="bit">1 + 0 = 1</div></div>
+            <div class="byte-cell keep"><div class="power">\(x\)</div><div class="bit">0 + 1 = 1</div></div>
+          </div>
+        </div>
+
+        <p>
+          This cancellation rule is not an exception. It is the rule.
+        </p>
+      </section>
+
+      <section id="worked-example-polynomial">
+        <h2>Worked example 1: add two polynomials</h2>
+        <p>
+          Add:
+        </p>
+        <div class="math-display">
+          \[
+            (x^6+x^4+x^2+x+1)+(x^7+x+1)
+          \]
+        </div>
+
+        <p>
+          First, align like terms:</p>
+        <table class="align-table">
+          <thead>
+            <tr>
+              <th>Power</th>
+              <th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>First polynomial</td>
+              <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td>
+            </tr>
+            <tr>
+              <td>Second polynomial</td>
+              <td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td>
+            </tr>
+            <tr>
+              <td>Sum mod 2</td>
+              <td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The \(x\) terms cancel, and the constant terms cancel. The result is:
+        </p>
+        <div class="math-display">
+          \[
+            x^7+x^6+x^4+x^2
+          \]
+        </div>
+      </section>
+
+      <section id="worked-example-byte">
+        <h2>Worked example 2: the same addition as byte XOR</h2>
+        <p>
+          The two polynomials from the previous example came from these bytes:
+        </p>
+        <div class="math-display">
+          \[
+            \texttt{0x57}=01010111_2=x^6+x^4+x^2+x+1
+          \]
+          \[
+            \texttt{0x83}=10000011_2=x^7+x+1
+          \]
+        </div>
+
+        <p>
+          XOR the bytes:
+        </p>
+        <table class="bit-table">
+          <tbody>
+            <tr><th>First byte</th><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><th>Second byte</th><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
+            <tr><th>XOR result</th><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            01010111_2\oplus10000011_2=11010100_2
+          \]
+          \[
+            \texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}
+          \]
+        </div>
+
+        <p>
+          Convert <code>0xD4</code> back to polynomial form:</p>
+        <div class="math-display">
+          \[
+            \texttt{0xD4}=11010100_2=x^7+x^6+x^4+x^2
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The bridge</div>
+          <p>
+            Polynomial addition over \(\mathrm{GF}(2)\) and byte XOR are the same operation viewed through two different lenses.
+          </p>
+        </div>
+      </section>
+
+      <section id="subtraction-same">
+        <h2>Subtraction is the same as addition</h2>
+        <p>
+          In ordinary arithmetic, addition and subtraction are different. In \(\mathrm{GF}(2)\), they behave the same because every element is its own additive inverse.
+        </p>
+
+        <div class="math-display">
+          \[
+            1+1=0
+          \]
+        </div>
+        <p>
+          This means adding 1 undoes adding 1. So subtraction over \(\mathrm{GF}(2)\) uses the same bitwise operation: XOR.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Technical version</div>
+          <p>
+            In \(\mathrm{GF}(2)\), \(-1=1\), so subtracting a coefficient is the same as adding it. Therefore polynomial subtraction and polynomial addition are identical over \(\mathrm{GF}(2)\).</p>
+        </div>
+      </section>
+
+      <section id="worked-example-cancel-all">
+        <h2>Worked example 3: adding a polynomial to itself</h2>
+        <p>
+          Add a polynomial to itself:</p>
+        <div class="math-display">
+          \[
+            (x^6+x^4+x^2+x+1)+(x^6+x^4+x^2+x+1)
+          \]
+        </div>
+        <p>
+          Every term appears twice, so every term cancels.</p>
+        <div class="math-display">
+          \[
+            x^6+x^6=0
+          \]
+          \[
+            x^4+x^4=0
+          \]
+          \[
+            x^2+x^2=0
+          \]
+          \[
+            x+x=0
+          \]
+          \[
+            1+1=0
+          \]
+        </div>
+        <p>
+          Therefore:</p>
+        <div class="math-display">
+          \[
+            (x^6+x^4+x^2+x+1)+(x^6+x^4+x^2+x+1)=0
+          \]
+        </div>
+
+        <p>
+          In byte language:</p>
+        <div class="math-display">
+          \[
+            \texttt{0x57}\oplus\texttt{0x57}=\texttt{0x00}
+          \]
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: using ordinary algebra and writing \(x+x=2x\)</div>
+          <p>
+            In ordinary algebra, yes. But over \(\mathrm{GF}(2)\), coefficients are reduced modulo 2, so \(x+x=0\).
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: carrying like ordinary binary addition</div>
+          <p>
+            XOR has no carrying. Polynomial addition over \(\mathrm{GF}(2)\) has no carrying either. Each coefficient position is handled independently.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: mixing integer value with polynomial representation</div>
+          <p>
+            The byte <code>0x57</code> has integer value 87, but polynomial addition does not mean adding 87 as an ordinary integer. It means XORing coefficients.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: jumping to multiplication rules</div>
+          <p>
+            Addition over \(\mathrm{GF}(2)\) is straightforward XOR. Multiplication needs a separate lesson because it creates higher powers of \(x\).</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Add \((x^4+x+1)+(x^3+x+1)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The \(x\) terms cancel and the constant terms cancel.</p>
+              <div class="math-display">
+                \[
+                  (x^4+x+1)+(x^3+x+1)=x^4+x^3
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Add \((x^7+x^2+1)+(x^7+x^5+x^2)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The \(x^7\) terms cancel, and the \(x^2\) terms cancel.</p>
+              <div class="math-display">
+                \[
+                  (x^7+x^2+1)+(x^7+x^5+x^2)=x^5+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute <code>0x57 XOR 0x83</code> and give the polynomial result.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}
+                \]
+                \[
+                  \texttt{0xD4}=11010100_2=x^7+x^6+x^4+x^2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            What is \((x^6+x^4+x^2+x+1)+(x^6+x^4+x^2+x+1)\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Every term cancels with itself, so the result is 0.</p>
+            </details>
+          </li>
+          <li>
+            Compute <code>0x1B XOR 0x03</code> and convert the result to polynomial form.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  \texttt{0x1B}=00011011_2
+                \]
+                \[
+                  \texttt{0x03}=00000011_2
+                \]
+                \[
+                  00011011_2\oplus00000011_2=00011000_2=\texttt{0x18}
+                \]
+                \[
+                  \texttt{0x18}=x^4+x^3
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Polynomial addition over \(\mathrm{GF}(2)\) explains why XOR appears so naturally in modern cryptography.
+        </p>
+        <ul>
+          <li>XOR is addition for bits.</li>
+          <li>Byte XOR is polynomial addition when bytes are read as polynomials over \(\mathrm{GF}(2)\).</li>
+          <li>No carrying means each bit position can be handled independently.</li>
+          <li>A value XORed with itself becomes zero, matching the cancellation rule.</li>
+          <li>This prepares us for polynomial multiplication, where terms combine and powers of \(x\) grow.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Polynomial addition over \(\mathrm{GF}(2)\) means add coefficients modulo 2.</li>
+            <li>Coefficient values are only 0 and 1.</li>
+            <li>\(0+0=0\), \(0+1=1\), \(1+0=1\), and \(1+1=0\).</li>
+            <li>This is exactly the XOR truth table.</li>
+            <li>Like terms with matching powers of \(x\) cancel if they appear twice.</li>
+            <li>There is no carrying.</li>
+            <li>Subtraction is the same as addition over \(\mathrm{GF}(2)\).</li>
+            <li>A byte XORed with itself is zero.</li>
+          </ul>
+        </div>
+
+        <table class="xor-table">
+          <thead>
+            <tr>
+              <th>A</th>
+              <th>B</th>
+              <th>\(A+B\pmod2\)</th>
+              <th>\(A\oplus B\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core examples</div>
+          <div class="math-display">
+            \[
+              x^4+x^4=0
+            \]
+            \[
+              (x^6+x^4+x^2+x+1)+(x^7+x+1)=x^7+x^6+x^4+x^2
+            \]
+            \[
+              \texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Polynomial Multiplication over \(\mathrm{GF}(2)\)</strong>. Addition cancels matching terms. Multiplication creates new powers of \(x\), which then leads us toward polynomial reduction and finally \(\mathrm{GF}(2^8)\) multiplication.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

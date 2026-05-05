@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linear Transformations and Matrices over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .matrix-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .matrix-table,
+    .truth-table,
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .matrix-table th,
+    .matrix-table td,
+    .truth-table th,
+    .truth-table td,
+    .compare-table th,
+    .compare-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .matrix-table th,
+    .truth-table th,
+    .compare-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .matrix-table td,
+    .matrix-table th,
+    .truth-table td,
+    .truth-table th,
+    .compare-table td,
+    .compare-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .vector-card-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .vector-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .vector-card.output { background: #eaf7ef; border-color: #b8dfc5; }
+    .vector-label { color: #1f3763; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .vector-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 1.45rem; font-weight: 900; margin-top: 6px; }
+
+    .binary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(80px, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .binary-cell {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 800;
+    }
+
+    .binary-cell.active { background: #eaf7ef; border-color: #b8dfc5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .vector-card-row, .binary-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .vector-card, .binary-cell { break-inside: avoid; }
+      .box, .diagram, details.solution, .vector-card, .binary-cell { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .truth-table th, .compare-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 16</div>
+      <h1>Linear Transformations and Matrices over \(\mathrm{GF}(2)\)</h1>
+      <p class="subtitle">
+        Matrices as bit machines: how XOR-based linear rules transform vectors, and why this matters for affine layers and AES-style diffusion.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="15-inverse-sbox-and-reversibility.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            AES and many other ciphers use structured bit mixing. The AES S-box affine transformation, MixColumns, linear diffusion layers, and many toy cipher components can all be described using vectors and matrices. This tutorial explains what matrices mean when the only numbers allowed are 0 and 1.
+          </p>
+        </div>
+
+        <p class="lead">
+          A matrix over \(\mathrm{GF}(2)\) is a rule table made of bits. It takes input bits, combines selected ones with XOR, and produces output bits. No carrying. No decimal arithmetic. Just structured XOR wiring with algebraic manners.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand binary bits, XOR, vectors as ordered lists, and the AES affine transformation idea from Tutorial 14. You do not need previous matrix mastery. This lesson builds the matrix idea from the ground up.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Matrices can look intimidating because they are written compactly. The symbols below are the small tool labels on the workbench.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\mathrm{GF}(2)\)</td>
+              <td>The arithmetic world with only 0 and 1.</td>
+              <td>The finite field with two elements.</td>
+            </tr>
+            <tr>
+              <td>vector</td>
+              <td>An ordered stack or list of bits.</td>
+              <td>An element of a vector space over a field.</td>
+            </tr>
+            <tr>
+              <td>matrix</td>
+              <td>A rectangular rule table that tells which input bits to combine.</td>
+              <td>An array of field elements representing a linear transformation.</td>
+            </tr>
+            <tr>
+              <td>\(A\)</td>
+              <td>The matrix rule.</td>
+              <td>A matrix over \(\mathrm{GF}(2)\).</td>
+            </tr>
+            <tr>
+              <td>\(v\)</td>
+              <td>The input bit vector.</td>
+              <td>A column vector over \(\mathrm{GF}(2)\).</td>
+            </tr>
+            <tr>
+              <td>\(Av\)</td>
+              <td>Apply matrix \(A\) to vector \(v\).</td>
+              <td>Matrix-vector multiplication over \(\mathrm{GF}(2)\).</td>
+            </tr>
+            <tr>
+              <td>linear transformation</td>
+              <td>A rule that combines inputs using only linear operations.</td>
+              <td>A function \(L\) satisfying \(L(u+v)=L(u)+L(v)\) and \(L(cv)=cL(v)\).</td>
+            </tr>
+            <tr>
+              <td>\(\oplus\)</td>
+              <td>XOR.</td>
+              <td>Addition modulo 2.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Each row of a matrix is a recipe for one output bit. A 1 means “include this input bit.” A 0 means “ignore this input bit.” The included bits are XORed together to produce the output bit.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Matrix over GF(2) as bit mixing machine">
+          <div class="diagram-title">A matrix as a bit-mixing machine</div>
+          <div class="flow-row">
+            <div class="flow-node">Input vector<br>bits</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Matrix rows<br>select and XOR</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Output vector<br>bits</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="vectors">
+        <h2>Vectors: columns of bits</h2>
+        <p>
+          A vector is an ordered list. In this course, we often write bit vectors vertically because that works naturally with matrix multiplication.
+        </p>
+
+        <div class="math-display">
+          \[
+            v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          Friendly meaning: this is the bit list \(1,0,1,1\). Technical meaning: it is a 4-dimensional vector over \(\mathrm{GF}(2)\).</p>
+
+        <div class="vector-card-row">
+          <div class="vector-card">
+            <div class="vector-label">Bit list</div>
+            <div class="vector-value">1011</div>
+          </div>
+          <div class="vector-card">
+            <div class="vector-label">Column vector</div>
+            <div class="math-display">
+              \[
+                \begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+              \]
+            </div>
+          </div>
+          <div class="vector-card output">
+            <div class="vector-label">Same data</div>
+            <div class="vector-value">ordered bits</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="gf2-arithmetic-review">
+        <h2>Arithmetic over \(\mathrm{GF}(2)\)</h2>
+        <p>
+          Matrix work over \(\mathrm{GF}(2)\) uses the same tiny arithmetic table we have used before.</p>
+
+        <table class="truth-table">
+          <thead>
+            <tr><th>Expression</th><th>Result</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(0+0\)</td><td>0</td><td>No selected 1s.</td></tr>
+            <tr><td>\(0+1\)</td><td>1</td><td>One selected 1.</td></tr>
+            <tr><td>\(1+0\)</td><td>1</td><td>One selected 1.</td></tr>
+            <tr><td>\(1+1\)</td><td>0</td><td>Two 1s cancel modulo 2.</td></tr>
+            <tr><td>\(1+1+1\)</td><td>1</td><td>Odd number of 1s gives 1.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Useful shortcut</div>
+          <p>
+            XORing a group of bits gives 1 if an odd number of the selected bits are 1. It gives 0 if an even number of the selected bits are 1.</p>
+        </div>
+      </section>
+
+      <section id="matrix-vector-multiplication">
+        <h2>Matrix-vector multiplication over \(\mathrm{GF}(2)\)</h2>
+        <p>
+          Let:</p>
+        <div class="math-display">
+          \[
+            A=\begin{bmatrix}
+            1&0&1&0\\
+            0&1&1&0\\
+            1&1&0&1\\
+            0&0&1&1
+            \end{bmatrix},\quad
+            v=\begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          To compute \(Av\), each row of \(A\) combines the input bits of \(v\).</p>
+
+        <table class="matrix-table">
+          <thead>
+            <tr><th>Output bit</th><th>Row recipe</th><th>Substitution</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(y_0\)</td><td>\(v_0\oplus v_2\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_1\)</td><td>\(v_1\oplus v_2\)</td><td>\(0\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(y_2\)</td><td>\(v_0\oplus v_1\oplus v_3\)</td><td>\(1\oplus0\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_3\)</td><td>\(v_2\oplus v_3\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            Av=\begin{bmatrix}0\\1\\0\\0\end{bmatrix}
+          \]
+        </div>
+      </section>
+
+      <section id="row-as-recipe">
+        <h2>Each matrix row is a recipe</h2>
+        <p>
+          Take the first row from the previous example:</p>
+        <div class="math-display">
+          \[
+            \begin{bmatrix}1&0&1&0\end{bmatrix}
+          \]
+        </div>
+        <p>
+          It means:</p>
+        <div class="math-display">
+          \[
+            y_0=1v_0\oplus0v_1\oplus1v_2\oplus0v_3
+          \]
+        </div>
+        <p>
+          Since multiplying by 0 ignores a bit and multiplying by 1 keeps it:</p>
+        <div class="math-display">
+          \[
+            y_0=v_0\oplus v_2
+          \]
+        </div>
+
+        <div class="binary-grid">
+          <div class="binary-cell active">include \(v_0\)</div>
+          <div class="binary-cell">ignore \(v_1\)</div>
+          <div class="binary-cell active">include \(v_2\)</div>
+          <div class="binary-cell">ignore \(v_3\)</div>
+        </div>
+      </section>
+
+      <section id="identity-matrix">
+        <h2>The identity matrix: the “do nothing” matrix</h2>
+        <p>
+          The identity matrix keeps each bit in its original position:</p>
+        <div class="math-display">
+          \[
+            I=\begin{bmatrix}
+            1&0&0&0\\
+            0&1&0&0\\
+            0&0&1&0\\
+            0&0&0&1
+            \end{bmatrix}
+          \]
+        </div>
+        <p>
+          For any 4-bit vector \(v\):</p>
+        <div class="math-display">
+          \[
+            Iv=v
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Friendly interpretation</div>
+          <p>
+            Each row selects exactly one input bit and sends it straight through. It is a perfect wire passthrough.</p>
+        </div>
+      </section>
+
+      <section id="permutation-matrix">
+        <h2>Permutation matrices: rearranging bits</h2>
+        <p>
+          A permutation matrix rearranges positions without mixing multiple bits together. For example:</p>
+        <div class="math-display">
+          \[
+            P=\begin{bmatrix}
+            0&0&0&1\\
+            0&0&1&0\\
+            0&1&0&0\\
+            1&0&0&0
+            \end{bmatrix}
+          \]
+        </div>
+        <p>
+          This reverses a 4-bit vector:</p>
+        <div class="math-display">
+          \[
+            P\begin{bmatrix}v_0\\v_1\\v_2\\v_3\end{bmatrix}=\begin{bmatrix}v_3\\v_2\\v_1\\v_0\end{bmatrix}
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: permutation matrix</div>
+          <p>
+            A permutation matrix has exactly one 1 in each row and exactly one 1 in each column. It rearranges vector positions and is always reversible.</p>
+        </div>
+      </section>
+
+      <section id="mixing-matrix">
+        <h2>Mixing matrices: combining bits</h2>
+        <p>
+          Some matrices do more than rearrange. They mix bits by XORing several inputs into one output.</p>
+
+        <div class="math-display">
+          \[
+            M=\begin{bmatrix}
+            1&1&0&0\\
+            0&1&1&0\\
+            0&0&1&1\\
+            1&0&0&1
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          This matrix creates:</p>
+        <div class="math-display">
+          \[
+            y_0=v_0\oplus v_1
+          \]
+          \[
+            y_1=v_1\oplus v_2
+          \]
+          \[
+            y_2=v_2\oplus v_3
+          \]
+          \[
+            y_3=v_0\oplus v_3
+          \]
+        </div>
+
+        <p>
+          This kind of structure is closer to a diffusion layer because each output can depend on more than one input.</p>
+      </section>
+
+      <section id="linear-transformation">
+        <h2>What makes a transformation linear?</h2>
+        <p>
+          A transformation \(L\) is linear when it respects addition and scaling. Over \(\mathrm{GF}(2)\), scaling only means multiplying by 0 or 1, so the most important property is:</p>
+        <div class="math-display">
+          \[
+            L(u\oplus v)=L(u)\oplus L(v)
+          \]
+        </div>
+
+        <p>
+          Friendly meaning: if you XOR two inputs first and then transform, you get the same result as transforming each input separately and then XORing the outputs.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why this matters</div>
+          <p>
+            Linear operations are predictable in a specific algebraic sense. That predictability is useful for diffusion, but dangerous if it is the only thing a cipher does. Strong ciphers combine linear layers with nonlinear layers like S-boxes.</p>
+        </div>
+      </section>
+
+      <section id="affine-vs-linear">
+        <h2>Linear versus affine</h2>
+        <p>
+          A linear transformation has the form:</p>
+        <div class="math-display">
+          \[
+            y=Av
+          \]
+        </div>
+        <p>
+          An affine transformation has the form:</p>
+        <div class="math-display">
+          \[
+            y=Av\oplus c
+          \]
+        </div>
+        <p>
+          The added constant \(c\) makes it affine instead of purely linear.</p>
+
+        <table class="compare-table">
+          <thead>
+            <tr><th>Type</th><th>Form</th><th>Plain-language meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Linear</td><td>\(y=Av\)</td><td>Mix the input bits using matrix rows.</td></tr>
+            <tr><td>Affine</td><td>\(y=Av\oplus c\)</td><td>Mix the input bits, then XOR a fixed constant.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box matrix-box">
+          <div class="box-title">Connection to the AES S-box</div>
+          <p>
+            The AES S-box uses a nonlinear inverse step first, then an affine transformation. That affine transformation is a matrix-based bit mix plus the constant <code>0x63</code>.</p>
+        </div>
+      </section>
+
+      <section id="invertible-matrices">
+        <h2>Invertible matrices</h2>
+        <p>
+          A matrix is invertible if there is another matrix that undoes it. If \(A\) is invertible, then there is a matrix \(A^{-1}\) such that:</p>
+        <div class="math-display">
+          \[
+            A^{-1}A=I
+          \]
+        </div>
+        <p>
+          Friendly meaning: apply \(A\), then apply \(A^{-1}\), and you get back where you started.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Why invertibility matters in block ciphers</div>
+          <p>
+            If a cipher layer must be undone during decryption, that layer must be invertible. AES uses invertible affine transformations, invertible S-box mappings, and invertible linear mixing layers.</p>
+        </div>
+      </section>
+
+      <section id="crypto-connection-aes">
+        <h2>Connection to AES</h2>
+        <p>
+          Matrix thinking appears in several AES ideas:</p>
+        <ul>
+          <li>The S-box affine transformation can be written as \(s=Ab\oplus c\).</li>
+          <li>The inverse S-box uses an inverse affine transformation.</li>
+          <li>MixColumns is a linear transformation on columns of bytes, though its entries are \(\mathrm{GF}(2^8)\) values rather than single bits.</li>
+          <li>Linear layers spread influence. Nonlinear layers disrupt simple algebraic patterns.</li>
+        </ul>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: using ordinary addition instead of XOR</div>
+          <p>
+            Over \(\mathrm{GF}(2)\), addition is XOR. So \(1+1=0\), not 2.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: reading matrix rows as columns</div>
+          <p>
+            In matrix-vector multiplication, each row of the matrix creates one output bit.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: assuming every matrix is reversible</div>
+          <p>
+            Some matrices collapse information. Only invertible matrices can be undone.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking linear means weak by itself</div>
+          <p>
+            Linear layers are useful for diffusion. They become dangerous only if a cipher relies on linear operations alone without nonlinear components.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does a 1 in a matrix row mean when multiplying over \(\mathrm{GF}(2)\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It means include the corresponding input bit in the XOR for that output bit.</p>
+            </details>
+          </li>
+          <li>
+            Compute \(1\oplus1\oplus0\oplus1\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>There are three 1s, so the result is 1.</p>
+            </details>
+          </li>
+          <li>
+            For the row \([1\ 0\ 1\ 1]\), what input bits are included?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Include \(v_0\), \(v_2\), and \(v_3\). Ignore \(v_1\).</p>
+            </details>
+          </li>
+          <li>
+            What is the difference between \(y=Av\) and \(y=Av\oplus c\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(y=Av\) is linear. \(y=Av\oplus c\) is affine because it adds a fixed constant vector.</p>
+            </details>
+          </li>
+          <li>
+            Why does AES need nonlinear layers in addition to linear layers?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Linear layers spread influence, but they preserve algebraic structure. Nonlinear layers disrupt simple relationships and help provide cryptographic confusion.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Linear transformations are the disciplined wiring of cryptography. They move influence around, spread changes, and make later nonlinear operations more effective.
+        </p>
+        <ul>
+          <li>Matrices provide compact descriptions of bit-mixing rules.</li>
+          <li>Over \(\mathrm{GF}(2)\), matrix addition and multiplication use XOR-based arithmetic.</li>
+          <li>Invertible matrices are essential when a layer must be reversed.</li>
+          <li>Affine transformations are linear transformations plus constants.</li>
+          <li>AES uses this kind of thinking in its S-box affine layer and in larger linear diffusion structures.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A vector is an ordered list of bits.</li>
+            <li>A matrix is a rule table for transforming vectors.</li>
+            <li>Over \(\mathrm{GF}(2)\), addition is XOR.</li>
+            <li>Each matrix row produces one output bit.</li>
+            <li>A 1 in a row means include that input bit.</li>
+            <li>A 0 in a row means ignore that input bit.</li>
+            <li>A linear transformation has the form \(y=Av\).</li>
+            <li>An affine transformation has the form \(y=Av\oplus c\).</li>
+            <li>An invertible matrix has an inverse matrix that undoes it.</li>
+            <li>Ciphers combine linear diffusion layers with nonlinear confusion layers.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr><th>Concept</th><th>Plain-language meaning</th><th>Crypto connection</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Vector</td><td>Bit list</td><td>Represents state bits or byte bits.</td></tr>
+            <tr><td>Matrix</td><td>Bit-mixing rule table</td><td>Defines structured transformations.</td></tr>
+            <tr><td>Linear transformation</td><td>XOR-based bit mixing</td><td>Diffusion layers.</td></tr>
+            <tr><td>Affine transformation</td><td>Bit mixing plus constant</td><td>AES S-box affine layer.</td></tr>
+            <tr><td>Invertible matrix</td><td>Reversible bit machine</td><td>Needed for decryption.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              y=Av
+            \]
+            \[
+              y=Av\oplus c
+            \]
+            \[
+              L(u\oplus v)=L(u)\oplus L(v)
+            \]
+            \[
+              A^{-1}A=I
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Diffusion, Branch Number, and Avalanche</strong>. Now that matrices make bit mixing concrete, we can study what good mixing is supposed to accomplish.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

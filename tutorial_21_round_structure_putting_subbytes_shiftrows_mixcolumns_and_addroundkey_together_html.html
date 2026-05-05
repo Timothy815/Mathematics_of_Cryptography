@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Round Structure: SubBytes, ShiftRows, MixColumns, and AddRoundKey | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .round-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .round-table,
+    .state-table,
+    .compare-table,
+    .layer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .round-table th,
+    .round-table td,
+    .state-table th,
+    .state-table td,
+    .compare-table th,
+    .compare-table td,
+    .layer-table th,
+    .layer-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .round-table th,
+    .state-table th,
+    .compare-table th,
+    .layer-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .round-table td,
+    .round-table th,
+    .state-table td,
+    .state-table th,
+    .compare-table td,
+    .compare-table th,
+    .layer-table td,
+    .layer-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .sub-node { background: #f0eafe; border-color: #d8c8f5; }
+    .shift-node { background: #fff4d8; border-color: #ead399; }
+    .mix-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .key-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .round-card-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .round-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .round-card-title { color: #1f3763; font-weight: 900; margin-bottom: 8px; }
+    .round-card p { font-size: 0.96rem; margin-bottom: 0; }
+
+    .state-grid-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 18px 0;
+    }
+
+    .state-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+    }
+
+    .state-card-title { color: #1f3763; font-weight: 900; margin-bottom: 10px; text-align: center; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .round-card-grid, .state-grid-pair { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .round-card, .state-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .round-card, .state-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .round-table th, .state-table th, .compare-table th, .layer-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 21</div>
+      <h1>Round Structure: Putting SubBytes, ShiftRows, MixColumns, and AddRoundKey Together</h1>
+      <p class="subtitle">
+        How the four major AES round layers work together as one repeated, reversible encryption machine.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="20-permutation-layers-shiftrows-bit-permutations-and-position-mixing.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We have studied the major AES round pieces separately: S-box substitution, ShiftRows, MixColumns, inverse layers, and finite-field arithmetic. This tutorial assembles those pieces into the AES round structure so the cipher begins to look like a complete machine instead of a tray of parts.
+          </p>
+        </div>
+
+        <p class="lead">
+          An AES round is a carefully ordered sequence of transformations. Each layer has a distinct job: substitute values, move positions, mix columns, and combine with a round key. Repeated together, these layers create confusion and diffusion across the whole state.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand bytes, XOR, the AES S-box, ShiftRows, MixColumns, inverse MixColumns, and the idea of diffusion. You do not need to know the full key schedule yet. For now, treat each round key as a 16-byte value supplied to the round.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          A round structure has several moving parts. The table below defines the terms before we use them.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>state</td>
+              <td>The 16-byte working grid AES keeps changing.</td>
+              <td>A 4 by 4 byte array representing the current block state.</td>
+            </tr>
+            <tr>
+              <td>round</td>
+              <td>One repeated cycle of AES transformations.</td>
+              <td>A sequence of round functions applied to the state.</td>
+            </tr>
+            <tr>
+              <td>SubBytes</td>
+              <td>Replace every byte using the AES S-box.</td>
+              <td>A nonlinear byte substitution layer.</td>
+            </tr>
+            <tr>
+              <td>ShiftRows</td>
+              <td>Move bytes sideways in each state row.</td>
+              <td>A byte-position permutation layer.</td>
+            </tr>
+            <tr>
+              <td>MixColumns</td>
+              <td>Mix bytes within each column.</td>
+              <td>An invertible linear transformation over \(\mathrm{GF}(2^8)\).</td>
+            </tr>
+            <tr>
+              <td>AddRoundKey</td>
+              <td>XOR the state with the round key.</td>
+              <td>Bytewise XOR of state and round key.</td>
+            </tr>
+            <tr>
+              <td>round key</td>
+              <td>The key material used for one round.</td>
+              <td>A 16-byte subkey derived from the cipher key.</td>
+            </tr>
+            <tr>
+              <td>final round</td>
+              <td>The last AES round.</td>
+              <td>The AES round that omits MixColumns.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Think of one AES round as a workshop line. SubBytes changes each part's shape. ShiftRows moves parts to new workstations. MixColumns combines nearby parts into stronger bundles. AddRoundKey stamps the result with secret key material.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Normal AES round flow">
+          <div class="diagram-title">A normal AES round</div>
+          <div class="flow-row">
+            <div class="flow-node">State</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node sub-node">SubBytes</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node shift-node">ShiftRows</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node mix-node">MixColumns</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node key-node">AddRoundKey</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">New state</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="aes-state-review">
+        <h2>The AES state</h2>
+        <p>
+          AES transforms a 16-byte block. It arranges those bytes into a 4 by 4 state. Each round changes that state.
+        </p>
+
+        <table class="state-table">
+          <thead><tr><th>Row</th><th>Column 0</th><th>Column 1</th><th>Column 2</th><th>Column 3</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>\(s_{0,0}\)</td><td>\(s_{0,1}\)</td><td>\(s_{0,2}\)</td><td>\(s_{0,3}\)</td></tr>
+            <tr><td>1</td><td>\(s_{1,0}\)</td><td>\(s_{1,1}\)</td><td>\(s_{1,2}\)</td><td>\(s_{1,3}\)</td></tr>
+            <tr><td>2</td><td>\(s_{2,0}\)</td><td>\(s_{2,1}\)</td><td>\(s_{2,2}\)</td><td>\(s_{2,3}\)</td></tr>
+            <tr><td>3</td><td>\(s_{3,0}\)</td><td>\(s_{3,1}\)</td><td>\(s_{3,2}\)</td><td>\(s_{3,3}\)</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Every round layer acts on this state in a different way.
+        </p>
+      </section>
+
+      <section id="four-layer-jobs">
+        <h2>The four layer jobs</h2>
+        <div class="round-card-grid">
+          <div class="round-card">
+            <div class="round-card-title">SubBytes</div>
+            <p>Replace each byte through the AES S-box. This provides nonlinearity.</p>
+          </div>
+          <div class="round-card">
+            <div class="round-card-title">ShiftRows</div>
+            <p>Move bytes sideways. This changes which bytes share columns.</p>
+          </div>
+          <div class="round-card">
+            <div class="round-card-title">MixColumns</div>
+            <p>Mix each column using finite-field matrix multiplication. This spreads influence.</p>
+          </div>
+          <div class="round-card">
+            <div class="round-card-title">AddRoundKey</div>
+            <p>XOR the state with a round key. This injects secret key material.</p>
+          </div>
+        </div>
+
+        <table class="layer-table">
+          <thead><tr><th>Layer</th><th>Main cryptographic job</th><th>Reversible?</th><th>How it is reversed</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>Confusion / nonlinearity</td><td>Yes</td><td>InvSubBytes</td></tr>
+            <tr><td>ShiftRows</td><td>Position movement</td><td>Yes</td><td>InvShiftRows</td></tr>
+            <tr><td>MixColumns</td><td>Diffusion / column mixing</td><td>Yes</td><td>InvMixColumns</td></tr>
+            <tr><td>AddRoundKey</td><td>Key mixing</td><td>Yes</td><td>AddRoundKey again</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="subbytes-layer">
+        <h2>Layer 1: SubBytes</h2>
+        <p>
+          SubBytes applies the AES S-box to each byte independently. If a byte is \(b\), the output is \(S(b)\).
+        </p>
+
+        <div class="math-display">
+          \[
+            b\longmapsto S(b)
+          \]
+        </div>
+
+        <p>
+          This layer is nonlinear. That matters because linear operations alone are too algebraically predictable. SubBytes bends the relationship between input and output.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Purpose of SubBytes</div>
+          <p>
+            SubBytes supplies the round's main source of confusion. It makes byte changes pass through a nonlinear substitution before later layers move and mix those effects.
+          </p>
+        </div>
+      </section>
+
+      <section id="shiftrows-layer">
+        <h2>Layer 2: ShiftRows</h2>
+        <p>
+          ShiftRows moves bytes sideways across the state rows. It does not change byte values. It changes their positions.
+        </p>
+
+        <ul>
+          <li>Row 0 shifts left by 0.</li>
+          <li>Row 1 shifts left by 1.</li>
+          <li>Row 2 shifts left by 2.</li>
+          <li>Row 3 shifts left by 3.</li>
+        </ul>
+
+        <div class="box definition-box">
+          <div class="box-title">Purpose of ShiftRows</div>
+          <p>
+            ShiftRows moves bytes into different columns so the next MixColumns step combines bytes that came from different previous columns.</p>
+        </div>
+      </section>
+
+      <section id="mixcolumns-layer">
+        <h2>Layer 3: MixColumns</h2>
+        <p>
+          MixColumns treats each column as a four-byte vector and multiplies it by the AES MixColumns matrix over \(\mathrm{GF}(2^8)\).
+        </p>
+
+        <div class="math-display">
+          \[
+            \begin{bmatrix}s'_0\\s'_1\\s'_2\\s'_3\end{bmatrix}
+            =
+            \begin{bmatrix}
+            \texttt{02}&\texttt{03}&\texttt{01}&\texttt{01}\\
+            \texttt{01}&\texttt{02}&\texttt{03}&\texttt{01}\\
+            \texttt{01}&\texttt{01}&\texttt{02}&\texttt{03}\\
+            \texttt{03}&\texttt{01}&\texttt{01}&\texttt{02}
+            \end{bmatrix}
+            \begin{bmatrix}s_0\\s_1\\s_2\\s_3\end{bmatrix}
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Purpose of MixColumns</div>
+          <p>
+            MixColumns spreads changes within each column. Combined with ShiftRows, it helps changes travel through the whole state across rounds.</p>
+        </div>
+      </section>
+
+      <section id="addroundkey-layer">
+        <h2>Layer 4: AddRoundKey</h2>
+        <p>
+          AddRoundKey XORs the state with the round key. If \(S\) is the state and \(K_r\) is the round key for round \(r\), then:</p>
+
+        <div class="math-display">
+          \[
+            S\longmapsto S\oplus K_r
+          \]
+        </div>
+
+        <p>
+          This is the layer that directly combines the changing state with key material.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Purpose of AddRoundKey</div>
+          <p>
+            AddRoundKey makes the transformation depend on the secret key. Without key mixing, the round structure would be public and identical for everyone.</p>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Why XOR is convenient here</div>
+          <p>
+            XOR undoes itself: \(x\oplus k\oplus k=x\). That means AddRoundKey is easy to reverse when the same round key is known.</p>
+        </div>
+      </section>
+
+      <section id="normal-round-vs-final-round">
+        <h2>Normal round versus final round</h2>
+        <p>
+          A normal AES round includes all four layers:</p>
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{MixColumns}\rightarrow\text{AddRoundKey}
+          \]
+        </div>
+
+        <p>
+          The final AES round omits MixColumns:</p>
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{AddRoundKey}
+          \]
+        </div>
+
+        <div class="box round-box">
+          <div class="box-title">For now, remember the structure</div>
+          <p>
+            The final round is slightly different: no MixColumns. We will study the full AES encryption flow in the next tutorial, including the initial AddRoundKey and the number of rounds.</p>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Round type</th><th>Layers included</th><th>MixColumns?</th></tr></thead>
+          <tbody>
+            <tr><td>Normal round</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey</td><td>Yes</td></tr>
+            <tr><td>Final round</td><td>SubBytes, ShiftRows, AddRoundKey</td><td>No</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="why-order-matters">
+        <h2>Why the order matters</h2>
+        <p>
+          The order is not decorative. Each layer prepares the state for the next layer.
+        </p>
+
+        <table class="round-table">
+          <thead><tr><th>Step</th><th>What happens</th><th>Why it prepares the next step</th></tr></thead>
+          <tbody>
+            <tr><td>1. SubBytes</td><td>Each byte is replaced nonlinearly.</td><td>The state now contains nonlinear substitutions.</td></tr>
+            <tr><td>2. ShiftRows</td><td>Bytes move sideways.</td><td>Bytes are placed into new columns.</td></tr>
+            <tr><td>3. MixColumns</td><td>Each column is mixed.</td><td>Moved bytes are now combined with new neighbors.</td></tr>
+            <tr><td>4. AddRoundKey</td><td>Round key is XORed in.</td><td>The state becomes key-dependent for the next round.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          If you changed the order, you would get a different cipher structure. It might still be a cipher-like construction, but it would not be AES.
+        </p>
+      </section>
+
+      <section id="rounds-build-effect">
+        <h2>Rounds build cumulative effect</h2>
+        <p>
+          One round does not carry the whole burden. AES repeats round transformations. Each pass adds more substitution, movement, mixing, and key interaction.
+        </p>
+
+        <div class="diagram" role="img" aria-label="Rounds building cumulative confusion and diffusion">
+          <div class="diagram-title">Repeated rounds build the cipher effect</div>
+          <div class="flow-row">
+            <div class="flow-node">Initial state</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Round 1</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Round 2</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Round 3</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">More scrambled state</div>
+          </div>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The repeating pattern</div>
+          <p>
+            SubBytes bends. ShiftRows relocates. MixColumns spreads. AddRoundKey binds the result to the key. Repeating that pattern turns local structure into wide, key-dependent structure.</p>
+        </div>
+      </section>
+
+      <section id="decryption-preview">
+        <h2>Decryption preview: reverse the layers</h2>
+        <p>
+          Because each layer is reversible, AES decryption can walk backward. But it must undo layers in reverse order.
+        </p>
+
+        <table class="compare-table">
+          <thead><tr><th>Forward layer</th><th>Inverse layer</th><th>Reason it can be reversed</th></tr></thead>
+          <tbody>
+            <tr><td>AddRoundKey</td><td>AddRoundKey</td><td>XOR undoes itself.</td></tr>
+            <tr><td>MixColumns</td><td>InvMixColumns</td><td>MixColumns matrix is invertible.</td></tr>
+            <tr><td>ShiftRows</td><td>InvShiftRows</td><td>It is a permutation.</td></tr>
+            <tr><td>SubBytes</td><td>InvSubBytes</td><td>The S-box is bijective.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Reverse-order rule</div>
+          <p>
+            A normal encryption round applies SubBytes, ShiftRows, MixColumns, then AddRoundKey. To undo that round, decryption must undo AddRoundKey first, then MixColumns, then ShiftRows, then SubBytes.</p>
+        </div>
+      </section>
+
+      <section id="toy-round">
+        <h2>Toy round analogy</h2>
+        <p>
+          Imagine a tiny toy cipher round on four symbols:</p>
+        <ol>
+          <li>Substitute each symbol using a small S-box.</li>
+          <li>Permute their positions.</li>
+          <li>Mix neighboring symbols.</li>
+          <li>XOR with a small round key.</li>
+        </ol>
+        <p>
+          The AES round is the grown-up version: byte substitutions, row shifts, column mixing over \(\mathrm{GF}(2^8)\), and round-key XOR on a 16-byte state.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating the layers as interchangeable</div>
+          <p>
+            The layer order matters. SubBytes, ShiftRows, MixColumns, and AddRoundKey each prepare the state differently.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting the final round omits MixColumns</div>
+          <p>
+            Normal AES rounds include MixColumns. The final round does not.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: thinking MixColumns provides nonlinearity</div>
+          <p>
+            MixColumns is linear. SubBytes provides the main nonlinearity.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking AddRoundKey is optional decoration</div>
+          <p>
+            AddRoundKey is what ties the public round operations to secret key material.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            List the four layers of a normal AES round in order.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>SubBytes, ShiftRows, MixColumns, AddRoundKey.</p>
+            </details>
+          </li>
+          <li>
+            Which layer provides the main nonlinearity?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>SubBytes.</p>
+            </details>
+          </li>
+          <li>
+            Which layer moves bytes sideways across rows?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>ShiftRows.</p>
+            </details>
+          </li>
+          <li>
+            Which layer mixes bytes within columns?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>MixColumns.</p>
+            </details>
+          </li>
+          <li>
+            What is different about the final AES round?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The final round omits MixColumns.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          The AES round is a compact example of modern block-cipher design. It combines nonlinear substitution, position movement, linear diffusion, and key mixing in a repeated structure.
+        </p>
+        <ul>
+          <li>SubBytes provides nonlinear confusion.</li>
+          <li>ShiftRows moves bytes into different columns.</li>
+          <li>MixColumns spreads influence through each column.</li>
+          <li>AddRoundKey makes each round depend on key material.</li>
+          <li>Repeating rounds builds strong cumulative confusion and diffusion.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A normal AES round has four layers.</li>
+            <li>The order is SubBytes, ShiftRows, MixColumns, AddRoundKey.</li>
+            <li>SubBytes replaces each byte using the AES S-box.</li>
+            <li>ShiftRows moves bytes sideways across rows.</li>
+            <li>MixColumns mixes bytes within each column.</li>
+            <li>AddRoundKey XORs the state with round-key material.</li>
+            <li>The final AES round omits MixColumns.</li>
+            <li>Each layer is reversible.</li>
+            <li>Decryption uses inverse layers in reverse order.</li>
+            <li>The full cipher effect comes from repeating the round structure.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Layer</th><th>Job</th><th>Inverse</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>Nonlinear substitution</td><td>InvSubBytes</td></tr>
+            <tr><td>ShiftRows</td><td>Position movement</td><td>InvShiftRows</td></tr>
+            <tr><td>MixColumns</td><td>Column diffusion</td><td>InvMixColumns</td></tr>
+            <tr><td>AddRoundKey</td><td>Key mixing with XOR</td><td>AddRoundKey again</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Normal versus final round</div>
+          <div class="math-display">
+            \[
+              \text{Normal round: SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{MixColumns}\rightarrow\text{AddRoundKey}
+            \]
+            \[
+              \text{Final round: SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{AddRoundKey}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>AES Encryption Flow: Initial Round, Main Rounds, and Final Round</strong>. We will zoom out from one round to the full AES-128 encryption process.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

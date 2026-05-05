@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES-GCM II: GHASH Inputs, Blocks, and the Authentication Tag | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .gcm-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .flow-table,
+    .gcm-table,
+    .component-table,
+    .block-table,
+    .length-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .gcm-table th,
+    .gcm-table td,
+    .component-table th,
+    .component-table td,
+    .block-table th,
+    .block-table td,
+    .length-table th,
+    .length-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .flow-table th,
+    .gcm-table th,
+    .component-table th,
+    .block-table th,
+    .length-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .flow-table td,
+    .flow-table th,
+    .gcm-table td,
+    .gcm-table th,
+    .component-table td,
+    .component-table th,
+    .block-table td,
+    .block-table th,
+    .length-table td,
+    .length-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .aad-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .cipher-node { background: #fff4d8; border-color: #ead399; }
+    .length-node { background: #f0eafe; border-color: #d8c8f5; }
+    .tag-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .block-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .block-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+      min-height: 78px;
+    }
+
+    .block-card.aad { background: #eaf7ef; border-color: #b8dfc5; }
+    .block-card.cipher { background: #fff4d8; border-color: #ead399; }
+    .block-card.length { background: #f0eafe; border-color: #d8c8f5; }
+    .block-label { color: #1f3763; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .block-strip { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .block-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .block-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .flow-table th, .gcm-table th, .component-table th, .block-table th, .length-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 32</div>
+      <h1>AES-GCM II: GHASH Inputs, Blocks, and the Authentication Tag</h1>
+      <p class="subtitle">
+        How GCM arranges associated data, ciphertext, length information, and the hash subkey so GHASH can help produce the authentication tag.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="31-aes-gcm-i-galois-counter-mode-at-a-high-level.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 31 introduced AES-GCM at a high level. This tutorial looks more closely at the authentication side: what goes into GHASH, how those inputs are divided into blocks, why length information is included, and how the GHASH result helps form the final authentication tag.</p>
+        </div>
+
+        <p class="lead">
+          GHASH is not merely hashing the ciphertext. It authenticates a carefully arranged record: associated data, ciphertext, and length information. The tag is the sealed summary that lets the receiver detect tampering.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AES-GCM is an AEAD mode, that AAD means Additional Authenticated Data, that ciphertext is the encrypted message body, and that the tag must verify before a message is accepted. You should also know that \(H=E_K(0^{128})\) is the GHASH hash subkey.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This tutorial introduces the basic GHASH input layout. We define every symbol first.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>GHASH</td><td>The GCM authentication mixer.</td><td>A polynomial hash over \(GF(2^{128})\).</td></tr>
+            <tr><td>\(H\)</td><td>The GHASH hash subkey.</td><td>\(H=E_K(0^{128})\).</td></tr>
+            <tr><td>AAD</td><td>Visible data protected from tampering.</td><td>Additional Authenticated Data.</td></tr>
+            <tr><td>\(A\)</td><td>The AAD input.</td><td>The associated data byte string.</td></tr>
+            <tr><td>\(C\)</td><td>The ciphertext input.</td><td>The encrypted message byte string.</td></tr>
+            <tr><td>\(len(A)\)</td><td>The length of AAD.</td><td>The bit length of \(A\) in the final GHASH length block.</td></tr>
+            <tr><td>\(len(C)\)</td><td>The length of ciphertext.</td><td>The bit length of \(C\) in the final GHASH length block.</td></tr>
+            <tr><td>zero padding</td><td>Zeros added only to fill GHASH blocks.</td><td>Padding used internally so AAD and ciphertext align to 128-bit GHASH blocks.</td></tr>
+            <tr><td>\(S\)</td><td>The GHASH output value.</td><td>The authentication accumulator result before the final AES mask is applied.</td></tr>
+            <tr><td>tag</td><td>The final authentication check value.</td><td>A value derived from GHASH and an AES-encrypted counter block.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Think of GHASH as a tamper-evident ledger. It records the visible header material, then the encrypted message, then the exact lengths of both. If any protected byte or length changes, the final tag should fail.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="GHASH input layout overview">
+          <div class="diagram-title">What GHASH authenticates</div>
+          <div class="flow-row">
+            <div class="flow-node aad-node">AAD<br>\(A\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node aad-node">AAD zero padding<br>if needed</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node cipher-node">Ciphertext<br>\(C\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node cipher-node">Ciphertext zero padding<br>if needed</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node length-node">Length block<br>\(len(A),len(C)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node tag-node">GHASH</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="what-goes-into-ghash">
+        <h2>What goes into GHASH?</h2>
+        <p>
+          GHASH processes three conceptual regions:</p>
+
+        <table class="gcm-table">
+          <thead><tr><th>Region</th><th>Contains</th><th>Why it is included</th></tr></thead>
+          <tbody>
+            <tr><td>AAD region</td><td>Associated data \(A\), padded to a full GHASH block if needed.</td><td>Protects visible metadata from tampering.</td></tr>
+            <tr><td>Ciphertext region</td><td>Ciphertext \(C\), padded to a full GHASH block if needed.</td><td>Protects encrypted message bytes from tampering.</td></tr>
+            <tr><td>Length block</td><td>Bit lengths of \(A\) and \(C\).</td><td>Prevents ambiguity about where one region ends and the other begins.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            GHASH zero padding is internal authentication formatting. It is not the same as PKCS#7 message padding from Tutorial 29. GHASH padding helps align authentication input to 128-bit blocks.</p>
+        </div>
+      </section>
+
+      <section id="ghash-block-size">
+        <h2>GHASH uses 128-bit blocks</h2>
+        <p>
+          GHASH works with 128-bit blocks, which is 16 bytes. AAD and ciphertext are split into 16-byte chunks. If either region does not end exactly on a 16-byte boundary, zeros are added internally for GHASH processing.</p>
+
+        <table class="block-table">
+          <thead><tr><th>Input region</th><th>Original length</th><th>GHASH block treatment</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td>16 bytes</td><td>One full block, no internal zero padding needed.</td></tr>
+            <tr><td>AAD</td><td>20 bytes</td><td>One full block plus 4 bytes, then 12 zero bytes for GHASH alignment.</td></tr>
+            <tr><td>Ciphertext</td><td>32 bytes</td><td>Two full blocks, no internal zero padding needed.</td></tr>
+            <tr><td>Ciphertext</td><td>37 bytes</td><td>Two full blocks plus 5 bytes, then 11 zero bytes for GHASH alignment.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="example-layout">
+        <h2>Example GHASH input layout</h2>
+        <p>
+          Suppose AAD is 20 bytes and ciphertext is 37 bytes. GHASH arranges them like this:</p>
+
+        <div class="block-strip" aria-label="Example GHASH block layout">
+          <div class="block-card aad"><div class="block-label">AAD block 1</div>16 bytes of AAD</div>
+          <div class="block-card aad"><div class="block-label">AAD block 2</div>4 AAD bytes + 12 zero bytes</div>
+          <div class="block-card cipher"><div class="block-label">Cipher block 1</div>16 bytes of ciphertext</div>
+          <div class="block-card cipher"><div class="block-label">Cipher block 2</div>16 bytes of ciphertext</div>
+          <div class="block-card cipher"><div class="block-label">Cipher block 3</div>5 cipher bytes + 11 zero bytes</div>
+          <div class="block-card length"><div class="block-label">Length block</div>len(A) and len(C), in bits</div>
+        </div>
+
+        <p>
+          The length block would record:</p>
+        <div class="math-display">
+          \[
+            len(A)=20\times 8=160\text{ bits}
+          \]
+          \[
+            len(C)=37\times 8=296\text{ bits}
+          \]
+        </div>
+      </section>
+
+      <section id="why-lengths-matter">
+        <h2>Why include the lengths?</h2>
+        <p>
+          The length block prevents ambiguity. Without length information, different combinations of AAD, ciphertext, and padding could potentially produce confusing internal layouts. Lengths pin down exactly how much original AAD and ciphertext were intended.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Friendly explanation</div>
+          <p>
+            The length block is the receipt at the bottom of the package: “This much visible metadata, this much encrypted cargo.” If someone alters the amount or arrangement, the receipt no longer matches.</p>
+        </div>
+
+        <table class="length-table">
+          <thead><tr><th>Field</th><th>Measured in</th><th>Included in GHASH?</th></tr></thead>
+          <tbody>
+            <tr><td>Length of AAD</td><td>Bits</td><td>Yes</td></tr>
+            <tr><td>Length of ciphertext</td><td>Bits</td><td>Yes</td></tr>
+            <tr><td>Length of plaintext</td><td>Not directly in this block</td><td>The ciphertext length corresponds to encrypted plaintext length.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ghash-accumulator-preview">
+        <h2>GHASH as an accumulator</h2>
+        <p>
+          Internally, GHASH processes the arranged blocks one at a time. It uses the hash subkey \(H\) and Galois-field multiplication to update an accumulator.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: accumulator</div>
+          <p>
+            An accumulator is a running value that gets updated as each block is processed. GHASH starts from zero and updates the accumulator with every input block.</p>
+        </div>
+
+        <p>
+          A simplified structural view is:</p>
+        <div class="math-display">
+          \[
+            Y_0=0
+          \]
+          \[
+            Y_i=(Y_{i-1}\oplus X_i)\cdot H
+          \]
+        </div>
+
+        <p>
+          Here \(X_i\) is one 128-bit GHASH input block, and multiplication by \(H\) happens in \(GF(2^{128})\). We will study that multiplication later. For now, focus on the flow: combine block, multiply by \(H\), carry the result forward.</p>
+      </section>
+
+      <section id="from-ghash-to-tag">
+        <h2>From GHASH output to authentication tag</h2>
+        <p>
+          GHASH produces an authentication value, often written here as \(S\). GCM then combines this with an AES-encrypted counter block to make the final tag.</p>
+
+        <div class="math-display">
+          \[
+            S=GHASH_H(A,C)
+          \]
+        </div>
+
+        <p>
+          High-level tag construction:</p>
+        <div class="math-display">
+          \[
+            tag=E_K(J_0)\oplus S
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: \(J_0\)</div>
+          <p>
+            \(J_0\) is the starting counter block derived from the nonce. In common 96-bit nonce cases, it is built efficiently from the nonce and a final counter value. For this tutorial, treat \(J_0\) as the special starting counter used to mask the GHASH output into the final tag.</p>
+        </div>
+      </section>
+
+      <section id="verification">
+        <h2>How verification uses the tag</h2>
+        <p>
+          The receiver takes the received nonce, AAD, ciphertext, and tag. It recomputes GHASH and the expected tag. If the expected tag does not match the received tag, the message is rejected.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step</th><th>Receiver action</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Arrange AAD, ciphertext, zero padding, and length block.</td><td>Rebuild the GHASH input.</td></tr>
+            <tr><td>2</td><td>Run GHASH with \(H\).</td><td>Recompute \(S\).</td></tr>
+            <tr><td>3</td><td>Compute expected tag.</td><td>Use \(E_K(J_0)\oplus S\).</td></tr>
+            <tr><td>4</td><td>Compare tags.</td><td>Accept if they match, reject if they do not.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking GHASH authenticates only ciphertext</div>
+          <p>
+            GHASH processes AAD, ciphertext, and a final length block. AAD matters.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: confusing GHASH zero padding with message padding</div>
+          <p>
+            GHASH zero padding is internal formatting for authentication blocks. It is not PKCS#7 padding and is not part of the decrypted plaintext.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: measuring lengths in bytes instead of bits in the length block</div>
+          <p>
+            GCM's final GHASH length block records lengths in bits.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: accepting plaintext when the tag fails</div>
+          <p>
+            If tag verification fails, reject the message. The tag is the tamper seal.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What three conceptual regions go into GHASH?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AAD region, ciphertext region, and length block.</p>
+            </details>
+          </li>
+          <li>
+            If AAD is 20 bytes, how many zero bytes are added internally to align it to 16-byte GHASH blocks?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>20 bytes is 16 + 4, so 12 zero bytes are added internally for GHASH alignment.</p>
+            </details>
+          </li>
+          <li>
+            If ciphertext is 37 bytes, what is \(len(C)\) in bits?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(37\times8=296\) bits.</p>
+            </details>
+          </li>
+          <li>
+            What is the simplified GHASH accumulator update formula shown in this tutorial?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(Y_i=(Y_{i-1}\oplus X_i)\cdot H\).</p>
+            </details>
+          </li>
+          <li>
+            What is the high-level tag formula shown in this tutorial?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(tag=E_K(J_0)\oplus S\).</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          AES-GCM's authentication is not a vague “checksum.” It is a structured mathematical process over precisely arranged data. AAD, ciphertext, padding for alignment, lengths, the hash subkey, and the final AES mask all have jobs. This is where cryptographic engineering starts to look like clockwork with teeth.</p>
+        <ul>
+          <li>GHASH authenticates AAD and ciphertext.</li>
+          <li>AAD and ciphertext are padded internally to 128-bit GHASH blocks.</li>
+          <li>The final length block records AAD and ciphertext lengths in bits.</li>
+          <li>GHASH uses an accumulator updated with \(H\).</li>
+          <li>The GHASH output helps form the authentication tag.</li>
+          <li>The receiver recomputes the tag and rejects the message if verification fails.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>GHASH is GCM's authentication mixer.</li>
+            <li>GHASH uses the hash subkey \(H=E_K(0^{128})\).</li>
+            <li>GHASH processes AAD, ciphertext, and a final length block.</li>
+            <li>AAD is authenticated but not encrypted.</li>
+            <li>Ciphertext is authenticated.</li>
+            <li>AAD and ciphertext are internally zero-padded only for GHASH block alignment.</li>
+            <li>GHASH uses 128-bit blocks.</li>
+            <li>The length block records lengths in bits.</li>
+            <li>The GHASH output is combined with \(E_K(J_0)\).</li>
+            <li>The final tag must verify or the message is rejected.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas from this tutorial</div>
+          <div class="math-display">
+            \[
+              Y_0=0
+            \]
+            \[
+              Y_i=(Y_{i-1}\oplus X_i)\cdot H
+            \]
+            \[
+              S=GHASH_H(A,C)
+            \]
+            \[
+              tag=E_K(J_0)\oplus S
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>GHASH input piece</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td>Authenticates visible metadata.</td></tr>
+            <tr><td>Ciphertext</td><td>Authenticates encrypted message bytes.</td></tr>
+            <tr><td>Zero padding</td><td>Aligns regions to 128-bit GHASH blocks.</td></tr>
+            <tr><td>Length block</td><td>Records exact bit lengths of AAD and ciphertext.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>AES-GCM III: GHASH Multiplication in \(GF(2^{128})\)</strong>. We will connect this layout to the field arithmetic that actually powers the authentication accumulator.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

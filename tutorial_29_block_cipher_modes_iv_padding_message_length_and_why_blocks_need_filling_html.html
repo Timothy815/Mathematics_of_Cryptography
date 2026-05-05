@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Block Cipher Modes IV: Padding, Message Length, and Why Blocks Need Filling | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .padding-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .block-table,
+    .padding-table,
+    .compare-table,
+    .length-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .block-table th,
+    .block-table td,
+    .padding-table th,
+    .padding-table td,
+    .compare-table th,
+    .compare-table td,
+    .length-table th,
+    .length-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .block-table th,
+    .padding-table th,
+    .compare-table th,
+    .length-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .block-table td,
+    .block-table th,
+    .padding-table td,
+    .padding-table th,
+    .compare-table td,
+    .compare-table th,
+    .length-table td,
+    .length-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .byte-strip {
+      display: grid;
+      grid-template-columns: repeat(16, minmax(32px, 1fr));
+      gap: 5px;
+      margin: 16px 0;
+    }
+
+    .byte-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 8px;
+      padding: 8px 4px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 0.78rem;
+      font-weight: 850;
+      background: #ffffff;
+    }
+
+    .byte-cell.data { background: #eaf7ef; border-color: #b8dfc5; }
+    .byte-cell.pad { background: #fff4d8; border-color: #ead399; }
+    .byte-cell.empty { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .byte-strip { grid-template-columns: repeat(8, minmax(32px, 1fr)); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .byte-cell, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, .byte-cell, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .block-table th, .padding-table th, .compare-table th, .length-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 29</div>
+      <h1>Block Cipher Modes IV: Padding, Message Length, and Why Blocks Need Filling</h1>
+      <p class="subtitle">
+        Why some block cipher modes need padding, how PKCS#7-style padding works, and why padding must be validated safely.</p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="28-block-cipher-modes-iii-ctr-mode-nonces-and-turning-a-block-cipher-into-a-stream.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            AES works on 16-byte blocks. But real messages are not always a perfect multiple of 16 bytes. Padding is a rule for filling the final block so a block cipher mode can process it correctly.</p>
+        </div>
+
+        <p class="lead">
+          Padding is the art of making the last box full without losing the ability to tell what was real message and what was filler. Done well, it is quiet housekeeping. Done badly, it can become a side-channel trapdoor.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AES has a 128-bit block size, which equals 16 bytes. You should also know that modes like ECB and CBC process data in full blocks, while CTR mode works more like a stream and does not need padding in the same way.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Padding uses message-length and block-size language. Here are the symbols before they appear in formulas.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>block size</td><td>The required size of each block.</td><td>For AES, 16 bytes or 128 bits.</td></tr>
+            <tr><td>message length</td><td>How many bytes the original message has.</td><td>The byte count before padding.</td></tr>
+            <tr><td>padding</td><td>Extra bytes added to fill the final block.</td><td>A reversible encoding that makes the plaintext length a multiple of the block size.</td></tr>
+            <tr><td>unpadded message</td><td>The original message after padding is removed.</td><td>The recovered plaintext before padding was added.</td></tr>
+            <tr><td>PKCS#7</td><td>A common padding rule.</td><td>A padding scheme where each padding byte equals the number of padding bytes added.</td></tr>
+            <tr><td>\(B\)</td><td>Block size in bytes.</td><td>For AES, \(B=16\).</td></tr>
+            <tr><td>\(L\)</td><td>Message length in bytes.</td><td>The number of original data bytes before padding.</td></tr>
+            <tr><td>\(r\)</td><td>Remainder after dividing by block size.</td><td>\(r=L\bmod B\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            A block cipher mode that requires full blocks cannot encrypt a half-filled final block. Padding adds carefully labeled filler bytes so the final block reaches the required size and can be removed later without confusion.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Padding fills the final AES block">
+          <div class="diagram-title">A 10-byte final chunk padded to a 16-byte block</div>
+          <div class="byte-strip">
+            <div class="byte-cell data">D1</div><div class="byte-cell data">D2</div><div class="byte-cell data">D3</div><div class="byte-cell data">D4</div>
+            <div class="byte-cell data">D5</div><div class="byte-cell data">D6</div><div class="byte-cell data">D7</div><div class="byte-cell data">D8</div>
+            <div class="byte-cell data">D9</div><div class="byte-cell data">D10</div><div class="byte-cell pad">06</div><div class="byte-cell pad">06</div>
+            <div class="byte-cell pad">06</div><div class="byte-cell pad">06</div><div class="byte-cell pad">06</div><div class="byte-cell pad">06</div>
+          </div>
+          <p>
+            Six bytes are missing, so PKCS#7-style padding adds six bytes, each with value <code>06</code>.</p>
+        </div>
+      </section>
+
+      <section id="why-padding-needed">
+        <h2>Why padding is needed</h2>
+        <p>
+          AES encrypts exactly 16 bytes at a time. If a message is 30 bytes long, it can be split into one full 16-byte block and one 14-byte final chunk. That final chunk is too short for modes that require complete blocks.</p>
+
+        <table class="length-table">
+          <thead><tr><th>Message length</th><th>Full 16-byte blocks</th><th>Remaining bytes</th><th>Needs padding?</th></tr></thead>
+          <tbody>
+            <tr><td>16 bytes</td><td>1</td><td>0</td><td>Yes, with PKCS#7 a full padding block is added.</td></tr>
+            <tr><td>30 bytes</td><td>1</td><td>14</td><td>Yes, add 2 padding bytes.</td></tr>
+            <tr><td>32 bytes</td><td>2</td><td>0</td><td>Yes, with PKCS#7 a full padding block is added.</td></tr>
+            <tr><td>37 bytes</td><td>2</td><td>5</td><td>Yes, add 11 padding bytes.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            Padding is needed for block-oriented modes such as ECB and CBC when the message is not naturally encoded into full blocks. CTR does not need this kind of padding because it can generate as much keystream as needed and XOR only the message bytes.</p>
+        </div>
+      </section>
+
+      <section id="pkcs7">
+        <h2>PKCS#7-style padding</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: PKCS#7-style padding</div>
+          <p>
+            PKCS#7-style padding fills the final block by adding \(n\) bytes, each with value \(n\), where \(n\) is the number of padding bytes needed.</p>
+        </div>
+
+        <p>
+          For AES, the block size is 16 bytes. If the final chunk is 14 bytes, it needs 2 padding bytes:</p>
+        <pre><code>... data data 02 02</code></pre>
+
+        <p>
+          If the final chunk is 10 bytes, it needs 6 padding bytes:</p>
+        <pre><code>... data data 06 06 06 06 06 06</code></pre>
+
+        <p>
+          If the message already ends exactly on a block boundary, PKCS#7 adds a full padding block:</p>
+        <pre><code>10 10 10 10 10 10 10 10 10 10 10 10 10 10 10 10</code></pre>
+
+        <div class="box padding-box">
+          <div class="box-title">Why add a full block when already aligned?</div>
+          <p>
+            Without a full padding block, the receiver could not always tell whether the final byte was real data or a padding length marker. The padding must be unambiguous.</p>
+        </div>
+      </section>
+
+      <section id="padding-length-formula">
+        <h2>How many padding bytes?</h2>
+        <p>
+          Let \(B\) be the block size in bytes and \(L\) be the message length in bytes. For AES, \(B=16\). First compute the remainder:</p>
+
+        <div class="math-display">
+          \[
+            r=L\bmod B
+          \]
+        </div>
+
+        <p>
+          Then the PKCS#7 padding length is:</p>
+
+        <div class="math-display">
+          \[
+            n=\begin{cases}
+            B-r, & \text{if }r\ne 0\\
+            B, & \text{if }r=0
+            \end{cases}
+          \]
+        </div>
+
+        <table class="padding-table">
+          <thead><tr><th>Message length \(L\)</th><th>Remainder \(r=L\bmod16\)</th><th>Padding length \(n\)</th><th>Padding bytes</th></tr></thead>
+          <tbody>
+            <tr><td>14</td><td>14</td><td>2</td><td><code>02 02</code></td></tr>
+            <tr><td>15</td><td>15</td><td>1</td><td><code>01</code></td></tr>
+            <tr><td>16</td><td>0</td><td>16</td><td><code>10</code> repeated 16 times</td></tr>
+            <tr><td>30</td><td>14</td><td>2</td><td><code>02 02</code></td></tr>
+            <tr><td>37</td><td>5</td><td>11</td><td><code>0B</code> repeated 11 times</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="removing-padding">
+        <h2>Removing padding</h2>
+        <p>
+          To remove PKCS#7-style padding after decryption, the receiver checks the final byte. That byte says how many padding bytes should be present.</p>
+
+        <table class="padding-table">
+          <thead><tr><th>Final bytes</th><th>Padding length indicated</th><th>Valid?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td><code>... 04 04 04 04</code></td><td>4</td><td>Yes</td><td>Last 4 bytes all equal <code>04</code>.</td></tr>
+            <tr><td><code>... 03 03 03</code></td><td>3</td><td>Yes</td><td>Last 3 bytes all equal <code>03</code>.</td></tr>
+            <tr><td><code>... 02 05</code></td><td>5</td><td>No</td><td>Last 5 bytes would need to all be <code>05</code>.</td></tr>
+            <tr><td><code>... 00</code></td><td>0</td><td>No</td><td>PKCS#7 padding length cannot be zero.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="padding-oracles">
+        <h2>Padding validation and padding oracles</h2>
+        <p>
+          Padding must be checked carefully. Some systems have accidentally revealed whether padding was valid through error messages, timing differences, or different server behavior. This can create a padding oracle.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Definition: padding oracle</div>
+          <p>
+            A padding oracle is a system behavior that tells an attacker whether decrypted padding was valid. Even a tiny yes/no signal can sometimes be used to learn information about the plaintext.</p>
+        </div>
+
+        <p>
+          For this beginner tutorial, the key lesson is not to implement your own padding checks casually. In real systems, use vetted cryptographic libraries and authenticated encryption modes when possible.</p>
+      </section>
+
+      <section id="padding-and-modes">
+        <h2>Which modes need padding?</h2>
+        <table class="compare-table">
+          <thead><tr><th>Mode or construction</th><th>Needs block padding?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>ECB</td><td>Usually yes</td><td>It encrypts complete blocks directly.</td></tr>
+            <tr><td>CBC</td><td>Usually yes</td><td>It encrypts complete blocks after XOR chaining.</td></tr>
+            <tr><td>CTR</td><td>No, not in the same way</td><td>It creates a keystream and can XOR only the needed bytes.</td></tr>
+            <tr><td>Stream cipher</td><td>No</td><td>It naturally processes byte or bit streams.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: adding zero bytes and hoping for the best</div>
+          <p>
+            Zero padding can be ambiguous if the original message may naturally end with zero bytes. Padding should be unambiguous.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting the full padding block</div>
+          <p>
+            With PKCS#7, a message that already fits perfectly still gets a full block of padding.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: assuming padding provides security</div>
+          <p>
+            Padding only makes the message fit the block size. It does not provide confidentiality, integrity, or authentication by itself.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: leaking padding errors</div>
+          <p>
+            Different error messages or timing behavior can create padding oracle vulnerabilities.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is the AES block size in bytes?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>16 bytes.</p>
+            </details>
+          </li>
+          <li>
+            A message is 30 bytes long. How many PKCS#7 padding bytes are needed for AES?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>30 mod 16 is 14, so 2 padding bytes are needed: <code>02 02</code>.</p>
+            </details>
+          </li>
+          <li>
+            A message is exactly 16 bytes long. How many PKCS#7 padding bytes are added?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>16 padding bytes are added, each with value <code>10</code> in hexadecimal.</p>
+            </details>
+          </li>
+          <li>
+            Why can zero padding be ambiguous?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>If the original message can end with real zero bytes, the receiver may not know which zeros are data and which are padding.</p>
+            </details>
+          </li>
+          <li>
+            Does CTR mode need PKCS#7-style padding?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. CTR can generate a keystream and XOR only the bytes needed.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Padding seems like a small formatting issue, but cryptography is full of small formatting issues that matter deeply. A block cipher mode may be mathematically sound, but message encoding, padding, validation, and error behavior must also be safe.</p>
+        <ul>
+          <li>AES has a 16-byte block size.</li>
+          <li>Some modes need complete blocks.</li>
+          <li>Padding fills the final block.</li>
+          <li>PKCS#7-style padding records the padding length in the padding bytes.</li>
+          <li>A full padding block is added when the message already fits exactly.</li>
+          <li>Bad padding validation can leak information.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AES block size is 16 bytes.</li>
+            <li>ECB and CBC usually need padding for messages that do not end on a block boundary.</li>
+            <li>CTR does not need PKCS#7-style padding because it acts like a keystream mode.</li>
+            <li>PKCS#7-style padding adds \(n\) bytes, each with value \(n\).</li>
+            <li>If 2 bytes are needed, add <code>02 02</code>.</li>
+            <li>If 6 bytes are needed, add <code>06 06 06 06 06 06</code>.</li>
+            <li>If the message already fits exactly, add a full block of padding.</li>
+            <li>Padding must be unambiguous.</li>
+            <li>Padding does not authenticate a message.</li>
+            <li>Padding validation mistakes can create padding oracles.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Padding length formula</div>
+          <div class="math-display">
+            \[
+              r=L\bmod B
+            \]
+            \[
+              n=\begin{cases}
+              B-r, & \text{if }r\ne 0\\
+              B, & \text{if }r=0
+              \end{cases}
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Needed padding length</th><th>Padding bytes</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>01</code></td></tr>
+            <tr><td>2</td><td><code>02 02</code></td></tr>
+            <tr><td>3</td><td><code>03 03 03</code></td></tr>
+            <tr><td>16</td><td><code>10</code> repeated 16 times</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Block Cipher Modes V: Authentication, AEAD, and Why Encryption Alone Is Not Enough</strong>. We will connect confidentiality with integrity and study why modern cryptography usually wants authenticated encryption.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

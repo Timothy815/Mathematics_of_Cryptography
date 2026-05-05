@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 12: Multiplication in GF(2^8) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .bit-table,
+    .xtime-table,
+    .poly-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .bit-table th, .bit-table td,
+    .xtime-table th, .xtime-table td,
+    .poly-table th, .poly-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .bit-table th,
+    .xtime-table th,
+    .poly-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table th,
+    .bit-table td,
+    .xtime-table th,
+    .xtime-table td,
+    .poly-table th,
+    .poly-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .bit-table th,
+      .xtime-table th,
+      .poly-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 12</div>
+      <h1>Multiplication in \(\mathrm{GF}(2^8)\)</h1>
+      <p class="subtitle">
+        Printable practice for AES-style byte multiplication, xtime, multiplication by <code>0x03</code>, repeated xtime, and polynomial checks.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="12-multiplication-in-gf-2-8.html">Tutorial 12</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Work carefully in layers. First convert bytes to polynomial meaning when needed. Use XOR for addition. Use \(\operatorname{xtime}\) for multiplication by <code>0x02</code>. If a left shift creates an overflow from the top bit, keep the low byte and XOR with <code>0x1B</code>.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">AES field rules</div>
+            <div class="math-display">
+              \[
+                m(x)=x^8+x^4+x^3+x+1
+              \]
+              \[
+                \texttt{0x11B}\longleftrightarrow m(x)
+              \]
+              \[
+                x^8\equiv x^4+x^3+x+1
+              \]
+              \[
+                x^4+x^3+x+1\longleftrightarrow\texttt{0x1B}
+              \]
+            </div>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Useful byte rules</div>
+            <div class="math-display">
+              \[
+                \operatorname{xtime}(a)=a\cdot\texttt{0x02}
+              \]
+              \[
+                a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a
+              \]
+            </div>
+            <p>
+              If the top bit was 0, \(\operatorname{xtime}(a)\) is just a left shift. If the top bit was 1, left shift, keep the low byte, then XOR with <code>0x1B</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. What is \(\mathrm{GF}(2^8)\) in friendly language?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What does \(\operatorname{xtime}(a)\) mean?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. What is the difference between <code>0x11B</code> and <code>0x1B</code>?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. Why is byte multiplication in \(\mathrm{GF}(2^8)\) not ordinary integer multiplication?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="xtime-basics">
+        <h2>Part B: xtime basics</h2>
+        <p>Compute \(\operatorname{xtime}(a)\). Show whether XOR with <code>0x1B</code> is needed.</p>
+
+        <table class="xtime-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Input byte</th>
+              <th>Top bit?</th>
+              <th>Left shift low byte</th>
+              <th>XOR with <code>0x1B</code>?</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td><code>0x57</code></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>B2</td><td><code>0x83</code></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>B3</td><td><code>0xAE</code></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>B4</td><td><code>0x47</code></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>B5</td><td><code>0x8E</code></td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>B6</td><td><code>0x01</code></td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="poly-xtime">
+        <h2>Part C: Polynomial view of xtime</h2>
+        <p>Use polynomial form to multiply by \(x\), then reduce if \(x^8\) appears.</p>
+
+        <div class="problem">
+          <div class="problem-title">C1. Compute \(\operatorname{xtime}(\texttt{0x57})\) using polynomial form.</div>
+          <p>Given: \(\texttt{0x57}=x^6+x^4+x^2+x+1\)</p>
+          <div class="work-space large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Compute \(\operatorname{xtime}(\texttt{0x83})\) using polynomial form.</div>
+          <p>Given: \(\texttt{0x83}=x^7+x+1\)</p>
+          <div class="work-space large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="multiply-by-03">
+        <h2>Part D: Multiply by <code>0x03</code></h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a
+          \]
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Input \(a\)</th>
+              <th>\(\operatorname{xtime}(a)\)</th>
+              <th>\(\operatorname{xtime}(a)\oplus a\)</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1</td><td><code>0x57</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D2</td><td><code>0x83</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D3</td><td><code>0xAE</code></td><td></td><td></td><td></td></tr>
+            <tr><td>D4</td><td><code>0x01</code></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="repeated-xtime">
+        <h2>Part E: Repeated xtime ladder</h2>
+        <p>Starting with \(a=\texttt{0x57}\), complete the ladder.</p>
+
+        <table class="xtime-table">
+          <thead>
+            <tr><th>Power</th><th>Meaning</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(a\)</td><td>Original byte</td><td><code>0x57</code></td></tr>
+            <tr><td>\(xa\)</td><td>\(\operatorname{xtime}(a)\)</td><td></td></tr>
+            <tr><td>\(x^2a\)</td><td>\(\operatorname{xtime}(xa)\)</td><td></td></tr>
+            <tr><td>\(x^3a\)</td><td>\(\operatorname{xtime}(x^2a)\)</td><td></td></tr>
+            <tr><td>\(x^4a\)</td><td>\(\operatorname{xtime}(x^3a)\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="classic-products">
+        <h2>Part F: Classic products</h2>
+
+        <div class="problem">
+          <div class="problem-title">F1. Compute \(\texttt{0x57}\cdot\texttt{0x03}\).</div>
+          <p>Use \(a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a\).</p>
+          <div class="work-space large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Compute \(\texttt{0x57}\cdot\texttt{0x13}\).</div>
+          <p>Use \(\texttt{0x13}=x^4+x+1\), so multiply with \(x^4a\oplus xa\oplus a\).</p>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="general-multiplication">
+        <h2>Part G: General multiplication by selected powers</h2>
+        <p>Break the multiplier byte into powers of \(x\), then XOR the required ladder values.</p>
+
+        <div class="problem">
+          <div class="problem-title">G1. Compute \(\texttt{0x57}\cdot\texttt{0x0B}\).</div>
+          <p>Hint: <code>0x0B</code> = \(x^3+x+1\).</p>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Compute \(\texttt{0x57}\cdot\texttt{0x0D}\).</div>
+          <p>Hint: <code>0x0D</code> = \(x^3+x^2+1\).</p>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. Compute \(\texttt{0x57}\cdot\texttt{0x09}\).</div>
+          <p>Hint: <code>0x09</code> = \(x^3+1\).</p>
+          <div class="work-space large-work-space"></div>
+          <p>Result:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="polynomial-check">
+        <h2>Part H: Polynomial check</h2>
+
+        <div class="problem">
+          <div class="problem-title">H1. Explain why \(\texttt{0x57}\cdot\texttt{0x13}=\texttt{0xFE}\) in polynomial language.</div>
+          <p>Use these polynomial forms:</p>
+          <div class="math-display">
+            \[
+              \texttt{0x57}=x^6+x^4+x^2+x+1
+            \]
+            \[
+              \texttt{0x13}=x^4+x+1
+            \]
+          </div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part I: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does multiplying by <code>0x02</code> sometimes require XORing with <code>0x1B</code>?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why does multiplying by <code>0x03</code> equal \(\operatorname{xtime}(a)\oplus a\)?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Why does the AES modulus keep multiplication byte-sized?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead>
+            <tr><th>Statement</th><th>True or False?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Multiplication in \(\mathrm{GF}(2^8)\) is ordinary integer multiplication.</td><td></td></tr>
+            <tr><td>In AES field multiplication, partial products are combined with XOR.</td><td></td></tr>
+            <tr><td><code>0x11B</code> is the full AES modulus polynomial.</td><td></td></tr>
+            <tr><td><code>0x1B</code> is used when an \(x^8\) term must be folded down.</td><td></td></tr>
+            <tr><td>\(a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a\).</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The most common mistake is mixing arithmetic worlds. Stay in the finite-field world: left shifts represent multiplication by \(x\), XOR represents addition, and <code>0x1B</code> appears when \(x^8\) must be folded down.
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> \(\mathrm{GF}(2^8)\) is the byte-sized finite-field arithmetic world used by AES. It has 256 possible elements, represented by bytes.</p>
+          <p><strong>A2.</strong> \(\operatorname{xtime}(a)\) means multiply byte \(a\) by \(x\), or by <code>0x02</code>, inside \(\mathrm{GF}(2^8)\).</p>
+          <p><strong>A3.</strong> <code>0x11B</code> is the full AES modulus \(x^8+x^4+x^3+x+1\). <code>0x1B</code> is the lower folded part \(x^4+x^3+x+1\).</p>
+          <p><strong>A4.</strong> It uses polynomial multiplication over \(\mathrm{GF}(2)\), XOR for addition, and reduction by the AES modulus. It is not decimal/integer multiplication.</p>
+        </div>
+
+        <h3>Part B: xtime basics</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Input</th><th>Top bit?</th><th>Low byte after shift</th><th>XOR?</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td><code>0x57</code></td><td>0</td><td><code>0xAE</code></td><td>No</td><td><code>0xAE</code></td></tr>
+            <tr><td>B2</td><td><code>0x83</code></td><td>1</td><td><code>0x06</code></td><td><code>0x06 XOR 0x1B</code></td><td><code>0x1D</code></td></tr>
+            <tr><td>B3</td><td><code>0xAE</code></td><td>1</td><td><code>0x5C</code></td><td><code>0x5C XOR 0x1B</code></td><td><code>0x47</code></td></tr>
+            <tr><td>B4</td><td><code>0x47</code></td><td>0</td><td><code>0x8E</code></td><td>No</td><td><code>0x8E</code></td></tr>
+            <tr><td>B5</td><td><code>0x8E</code></td><td>1</td><td><code>0x1C</code></td><td><code>0x1C XOR 0x1B</code></td><td><code>0x07</code></td></tr>
+            <tr><td>B6</td><td><code>0x01</code></td><td>0</td><td><code>0x02</code></td><td>No</td><td><code>0x02</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Polynomial view of xtime</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong></p>
+          <div class="math-display">
+            \[
+              x(x^6+x^4+x^2+x+1)=x^7+x^5+x^3+x^2+x
+            \]
+            \[
+              x^7+x^5+x^3+x^2+x=10101110_2=\texttt{0xAE}
+            \]
+          </div>
+          <p><strong>C2.</strong></p>
+          <div class="math-display">
+            \[
+              x(x^7+x+1)=x^8+x^2+x
+            \]
+            \[
+              x^8+x^2+x\equiv(x^4+x^3+x+1)+x^2+x
+            \]
+            \[
+              =x^4+x^3+x^2+1=00011101_2=\texttt{0x1D}
+            \]
+          </div>
+        </div>
+
+        <h3>Part D: Multiply by <code>0x03</code></h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Input</th><th>xtime</th><th>XOR</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td><code>0x57</code></td><td><code>0xAE</code></td><td><code>0xAE XOR 0x57</code></td><td><code>0xF9</code></td></tr>
+            <tr><td>D2</td><td><code>0x83</code></td><td><code>0x1D</code></td><td><code>0x1D XOR 0x83</code></td><td><code>0x9E</code></td></tr>
+            <tr><td>D3</td><td><code>0xAE</code></td><td><code>0x47</code></td><td><code>0x47 XOR 0xAE</code></td><td><code>0xE9</code></td></tr>
+            <tr><td>D4</td><td><code>0x01</code></td><td><code>0x02</code></td><td><code>0x02 XOR 0x01</code></td><td><code>0x03</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Repeated xtime ladder</h3>
+        <table class="answer-table">
+          <thead><tr><th>Power</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>\(a\)</td><td><code>0x57</code></td></tr>
+            <tr><td>\(xa\)</td><td><code>0xAE</code></td></tr>
+            <tr><td>\(x^2a\)</td><td><code>0x47</code></td></tr>
+            <tr><td>\(x^3a\)</td><td><code>0x8E</code></td></tr>
+            <tr><td>\(x^4a\)</td><td><code>0x07</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Classic products</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong></p>
+          <div class="math-display">
+            \[
+              \texttt{0x57}\cdot\texttt{0x03}=\operatorname{xtime}(\texttt{0x57})\oplus\texttt{0x57}
+            \]
+            \[
+              =\texttt{0xAE}\oplus\texttt{0x57}=\texttt{0xF9}
+            \]
+          </div>
+          <p><strong>F2.</strong></p>
+          <div class="math-display">
+            \[
+              \texttt{0x13}=x^4+x+1
+            \]
+            \[
+              \texttt{0x57}\cdot\texttt{0x13}=x^4a\oplus xa\oplus a
+            \]
+            \[
+              =\texttt{0x07}\oplus\texttt{0xAE}\oplus\texttt{0x57}=\texttt{0xFE}
+            \]
+          </div>
+        </div>
+
+        <h3>Part G: General multiplication by selected powers</h3>
+        <div class="answer-step">
+          <p>Using the ladder \(a=\texttt{0x57}\), \(xa=\texttt{0xAE}\), \(x^2a=\texttt{0x47}\), \(x^3a=\texttt{0x8E}\):</p>
+          <p><strong>G1.</strong></p>
+          <div class="math-display">
+            \[
+              \texttt{0x0B}=x^3+x+1
+            \]
+            \[
+              \texttt{0x57}\cdot\texttt{0x0B}=\texttt{0x8E}\oplus\texttt{0xAE}\oplus\texttt{0x57}=\texttt{0x77}
+            \]
+          </div>
+          <p><strong>G2.</strong></p>
+          <div class="math-display">
+            \[
+              \texttt{0x0D}=x^3+x^2+1
+            \]
+            \[
+              \texttt{0x57}\cdot\texttt{0x0D}=\texttt{0x8E}\oplus\texttt{0x47}\oplus\texttt{0x57}=\texttt{0x9E}
+            \]
+          </div>
+          <p><strong>G3.</strong></p>
+          <div class="math-display">
+            \[
+              \texttt{0x09}=x^3+1
+            \]
+            \[
+              \texttt{0x57}\cdot\texttt{0x09}=\texttt{0x8E}\oplus\texttt{0x57}=\texttt{0xD9}
+            \]
+          </div>
+        </div>
+
+        <h3>Part H: Polynomial check</h3>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong></p>
+          <div class="math-display">
+            \[
+              (x^6+x^4+x^2+x+1)(x^4+x+1)
+            \]
+          </div>
+          <p>The unreduced product is:</p>
+          <div class="math-display">
+            \[
+              x^{10}+x^8+x^7+x^5+x^4+x^3+1
+            \]
+          </div>
+          <p>Reducing by \(x^8+x^4+x^3+x+1\) gives:</p>
+          <div class="math-display">
+            \[
+              x^7+x^6+x^5+x^4+x^3+x^2+x
+            \]
+            \[
+              11111110_2=\texttt{0xFE}
+            \]
+          </div>
+        </div>
+
+        <h3>Part I: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Multiplying by <code>0x02</code> means multiplying by \(x\). If the original byte contains \(x^7\), the shift creates \(x^8\). AES folds \(x^8\) into \(x^4+x^3+x+1\), which is <code>0x1B</code>.</p>
+          <p><strong>I2 sample answer.</strong> <code>0x03</code> represents \(x+1\). Multiplying \(a\) by \(x+1\) gives \(xa+a\), which is \(\operatorname{xtime}(a)\oplus a\).</p>
+          <p><strong>I3 sample answer.</strong> The AES modulus provides a folding rule for high powers like \(x^8\), so products that grow beyond byte size are reduced back to degree at most 7.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Multiplication in \(\mathrm{GF}(2^8)\) is ordinary integer multiplication.</td><td>False</td><td>It is polynomial multiplication plus reduction.</td></tr>
+            <tr><td>In AES field multiplication, partial products are combined with XOR.</td><td>True</td><td>Addition over \(\mathrm{GF}(2)\) is XOR.</td></tr>
+            <tr><td><code>0x11B</code> is the full AES modulus polynomial.</td><td>True</td><td>It represents \(x^8+x^4+x^3+x+1\).</td></tr>
+            <tr><td><code>0x1B</code> is used when an \(x^8\) term must be folded down.</td><td>True</td><td>It represents \(x^4+x^3+x+1\).</td></tr>
+            <tr><td>\(a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a\).</td><td>True</td><td><code>0x03</code> represents \(x+1\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 12: Multiplication in GF(2^8).
+      </p>
+    </main>
+  </div>
+</body>
+</html>

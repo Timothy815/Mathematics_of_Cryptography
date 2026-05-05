@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES-GCM III: GHASH Multiplication in GF(2^128) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .field-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .flow-table,
+    .field-table,
+    .poly-table,
+    .bit-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .field-table th,
+    .field-table td,
+    .poly-table th,
+    .poly-table td,
+    .bit-table th,
+    .bit-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .flow-table th,
+    .field-table th,
+    .poly-table th,
+    .bit-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .flow-table td,
+    .flow-table th,
+    .field-table td,
+    .field-table th,
+    .poly-table td,
+    .poly-table th,
+    .bit-table td,
+    .bit-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .xor-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .multiply-node { background: #fff4d8; border-color: #ead399; }
+    .reduce-node { background: #f0eafe; border-color: #d8c8f5; }
+    .tag-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .bit-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(44px, 1fr));
+      gap: 6px;
+      margin: 16px 0;
+    }
+
+    .bit-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 10px;
+      padding: 10px 6px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 850;
+      background: #ffffff;
+    }
+
+    .bit-cell.on { background: #eaf7ef; border-color: #b8dfc5; }
+    .bit-cell.off { background: #f5f5f5; border-color: #d7d7d7; color: #777777; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .bit-strip { grid-template-columns: repeat(4, minmax(44px, 1fr)); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .bit-cell { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .bit-cell { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .flow-table th, .field-table th, .poly-table th, .bit-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 33</div>
+      <h1>AES-GCM III: GHASH Multiplication in \(GF(2^{128})\)</h1>
+      <p class="subtitle">
+        How GHASH treats 128-bit blocks as polynomials, multiplies them by the hash subkey, and reduces the result back into the finite field used by GCM.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="32-aes-gcm-ii-ghash-inputs-blocks-and-the-authentication-tag.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 32 showed the structure of GHASH inputs. This tutorial explains the arithmetic used inside the GHASH accumulator: multiplication in \(GF(2^{128})\). The goal is not to memorize implementation tricks yet, but to understand what kind of multiplication GHASH is doing.</p>
+        </div>
+
+        <p class="lead">
+          GHASH multiplication is not ordinary integer multiplication. It is polynomial multiplication over bits, followed by a reduction step that folds the result back into 128 bits. The machine is precise, but once the parts are named, it stops looking like a thundercloud with equations inside.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that a bitstring can represent a polynomial, that addition in \(GF(2)\) is XOR, and that AES-GCM's GHASH accumulator uses the update rule \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\). You should also remember that \(H=E_K(0^{128})\).</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This lesson uses finite-field notation. Every symbol below is defined before we use the formulas.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(GF(2^{128})\)</td><td>A field whose values fit in 128 bits.</td><td>The finite field with \(2^{128}\) elements used by GHASH.</td></tr>
+            <tr><td>\(GF(2)\)</td><td>The tiny bit field: only 0 and 1.</td><td>The field with two elements where addition is XOR.</td></tr>
+            <tr><td>polynomial</td><td>A sum of powers like \(x^7+x^2+1\).</td><td>An algebraic expression with coefficients from a field.</td></tr>
+            <tr><td>coefficient</td><td>The number in front of a power of \(x\).</td><td>In GHASH bit-polynomials, coefficients are bits: 0 or 1.</td></tr>
+            <tr><td>\(X_i\)</td><td>The current GHASH input block.</td><td>A 128-bit block interpreted as a polynomial.</td></tr>
+            <tr><td>\(Y_i\)</td><td>The accumulator after processing block \(i\).</td><td>The current GHASH running value.</td></tr>
+            <tr><td>\(H\)</td><td>The GHASH hash subkey.</td><td>\(H=E_K(0^{128})\).</td></tr>
+            <tr><td>\(\oplus\)</td><td>XOR.</td><td>Addition in characteristic 2 fields.</td></tr>
+            <tr><td>irreducible polynomial</td><td>A polynomial that cannot be factored into smaller field polynomials.</td><td>The modulus polynomial used to define finite-field reduction.</td></tr>
+            <tr><td>reduction</td><td>Folding a too-large polynomial back into the field.</td><td>Taking a polynomial remainder modulo the field's irreducible polynomial.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            GHASH multiplication has three layers. First, treat a 128-bit block as a polynomial. Second, multiply polynomials using XOR-style addition. Third, reduce the product so the answer is again a 128-bit field element.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="GHASH multiplication process">
+          <div class="diagram-title">GHASH multiplication as a three-stage machine</div>
+          <div class="flow-row">
+            <div class="flow-node">128-bit block</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node xor-node">View as polynomial</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node multiply-node">Multiply by \(H\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node reduce-node">Reduce modulo field polynomial</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">128-bit result</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="bitstrings-as-polynomials">
+        <h2>128-bit blocks as polynomials</h2>
+        <p>
+          A GHASH block is 128 bits. Mathematically, GHASH treats that block as a polynomial with bit coefficients. A bit of 1 means “include this power of \(x\).” A bit of 0 means “do not include it.”</p>
+
+        <p>
+          Tiny 8-bit example for memory:</p>
+        <div class="bit-strip" aria-label="8-bit polynomial example">
+          <div class="bit-cell on">1<br>\(x^7\)</div>
+          <div class="bit-cell off">0<br>\(x^6\)</div>
+          <div class="bit-cell on">1<br>\(x^5\)</div>
+          <div class="bit-cell off">0<br>\(x^4\)</div>
+          <div class="bit-cell off">0<br>\(x^3\)</div>
+          <div class="bit-cell on">1<br>\(x^2\)</div>
+          <div class="bit-cell on">1<br>\(x\)</div>
+          <div class="bit-cell on">1<br>\(1\)</div>
+        </div>
+
+        <div class="math-display">
+          \[
+            10100111_2=x^7+x^5+x^2+x+1
+          \]
+        </div>
+
+        <p>
+          GHASH does the same style of interpretation, but with 128 bits instead of 8 bits.</p>
+      </section>
+
+      <section id="field-definition">
+        <h2>What field does GHASH use?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: \(GF(2^{128})\)</div>
+          <p>
+            \(GF(2^{128})\) is a finite field with \(2^{128}\) possible elements. In GHASH, each element is represented by a 128-bit block interpreted as a polynomial over \(GF(2)\).</p>
+        </div>
+
+        <p>
+          The field is defined using the irreducible polynomial:</p>
+        <div class="math-display">
+          \[
+            p(x)=x^{128}+x^7+x^2+x+1
+          \]
+        </div>
+
+        <p>
+          That polynomial is the folding rule. Whenever multiplication creates terms with degree 128 or higher, the result is reduced modulo \(p(x)\) so it fits back into 128 bits.</p>
+      </section>
+
+      <section id="addition-is-xor">
+        <h2>Addition is XOR</h2>
+        <p>
+          In \(GF(2)\), coefficients are only 0 or 1. Adding coefficients follows this table:</p>
+
+        <table class="bit-table">
+          <thead><tr><th>Bit A</th><th>Bit B</th><th>A + B in \(GF(2)\)</th><th>A XOR B</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+            <tr><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box field-box">
+          <div class="box-title">Key idea</div>
+          <p>
+            In GHASH arithmetic, adding polynomial terms means XORing matching coefficients. If the same term appears twice, it cancels out.</p>
+        </div>
+      </section>
+
+      <section id="toy-multiplication">
+        <h2>Toy polynomial multiplication over bits</h2>
+        <p>
+          Before 128-bit GHASH multiplication, use a tiny example:</p>
+
+        <div class="math-display">
+          \[
+            A(x)=x+1
+          \]
+          \[
+            B(x)=x^2+x
+          \]
+        </div>
+
+        <p>
+          Multiply like ordinary polynomials first:</p>
+        <div class="math-display">
+          \[
+            (x+1)(x^2+x)=x^3+x^2+x^2+x
+          \]
+        </div>
+
+        <p>
+          The two \(x^2\) terms cancel because addition is XOR:</p>
+        <div class="math-display">
+          \[
+            x^3+x^2+x^2+x=x^3+x
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why cancellation happens</div>
+          <p>
+            In ordinary arithmetic, \(x^2+x^2=2x^2\). In bit arithmetic, \(1+1=0\), so the repeated term disappears.</p>
+        </div>
+      </section>
+
+      <section id="why-reduction-needed">
+        <h2>Why reduction is needed</h2>
+        <p>
+          Multiplying two 128-bit polynomials can produce terms as high as \(x^{254}\). But GHASH field elements must fit in 128 bits, which means the highest allowed degree is 127.</p>
+
+        <table class="field-table">
+          <thead><tr><th>Stage</th><th>Possible degree</th><th>Fits in 128-bit field element?</th></tr></thead>
+          <tbody>
+            <tr><td>Original GHASH block</td><td>At most 127</td><td>Yes</td></tr>
+            <tr><td>Raw product of two blocks</td><td>At most 254</td><td>No</td></tr>
+            <tr><td>Reduced product modulo \(p(x)\)</td><td>At most 127</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Reduction is the step that turns a too-large polynomial product back into a valid 128-bit field element.</p>
+      </section>
+
+      <section id="reduction-rule">
+        <h2>The GHASH reduction rule</h2>
+        <p>
+          GHASH uses:</p>
+        <div class="math-display">
+          \[
+            p(x)=x^{128}+x^7+x^2+x+1
+          \]
+        </div>
+
+        <p>
+          Since we reduce modulo \(p(x)\), this polynomial is treated as equivalent to zero:</p>
+        <div class="math-display">
+          \[
+            x^{128}+x^7+x^2+x+1=0
+          \]
+        </div>
+
+        <p>
+          Rearranging in characteristic 2 gives the folding rule:</p>
+        <div class="math-display">
+          \[
+            x^{128}\equiv x^7+x^2+x+1
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">What this means</div>
+          <p>
+            Whenever a term reaches \(x^{128}\), it can be folded back into lower-degree terms \(x^7+x^2+x+1\). Higher terms are folded similarly by multiplying this relationship by more powers of \(x\).</p>
+        </div>
+      </section>
+
+      <section id="ghash-update">
+        <h2>Where multiplication appears in GHASH</h2>
+        <p>
+          The GHASH accumulator update from Tutorial 32 was:</p>
+        <div class="math-display">
+          \[
+            Y_0=0
+          \]
+          \[
+            Y_i=(Y_{i-1}\oplus X_i)\cdot H
+          \]
+        </div>
+
+        <p>
+          Now we can interpret this more clearly:</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Part</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(Y_{i-1}\)</td><td>The previous running GHASH value.</td></tr>
+            <tr><td>\(X_i\)</td><td>The next 128-bit input block.</td></tr>
+            <tr><td>\(Y_{i-1}\oplus X_i\)</td><td>Add the new block into the running value using XOR.</td></tr>
+            <tr><td>\(\cdot H\)</td><td>Multiply in \(GF(2^{128})\) by the hash subkey.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Each block changes the accumulator, then multiplication by \(H\) spreads the effect through the field structure.</p>
+      </section>
+
+      <section id="implementation-preview">
+        <h2>Implementation preview: shift and conditional XOR</h2>
+        <p>
+          Real implementations often compute GHASH multiplication using shifts and conditional XORs rather than writing giant polynomials by hand. The idea is still the same: multiply bit-by-bit, and whenever a shifted value crosses the field boundary, apply the reduction rule.</p>
+
+        <div class="box field-box">
+          <div class="box-title">Mental model</div>
+          <p>
+            Think of the 128-bit value as moving along a conveyor belt. Shifts move powers of \(x\). When a term would fall off the high end, the reduction polynomial redirects it back into selected lower positions.</p>
+        </div>
+
+        <p>
+          Later, a workbook can practice this with tiny 4-bit or 8-bit fields first, then connect it back to GHASH's 128-bit field.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating GHASH multiplication like integer multiplication</div>
+          <p>
+            GHASH uses polynomial multiplication over bits, not ordinary base-10 or base-2 integer multiplication.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting that addition is XOR</div>
+          <p>
+            Matching terms cancel when they appear twice because \(1\oplus1=0\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: skipping reduction</div>
+          <p>
+            Raw products can be too large. Reduction modulo \(x^{128}+x^7+x^2+x+1\) brings the result back to 128 bits.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking \(H\) is arbitrary public data</div>
+          <p>
+            \(H\) is derived from the AES key as \(H=E_K(0^{128})\). It is part of the keyed authentication machinery.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            In GHASH, what field is used for multiplication?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(GF(2^{128})\).</p>
+            </details>
+          </li>
+          <li>
+            What is the GHASH field polynomial shown in this tutorial?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(p(x)=x^{128}+x^7+x^2+x+1\).</p>
+            </details>
+          </li>
+          <li>
+            Why does \(x^2+x^2\) cancel in bit-polynomial arithmetic?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because the coefficients add in \(GF(2)\), where \(1+1=0\), which is XOR cancellation.</p>
+            </details>
+          </li>
+          <li>
+            What is the highest possible degree of a raw product of two 128-bit field elements?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>At most 254.</p>
+            </details>
+          </li>
+          <li>
+            What does reduction do after multiplication?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It folds the raw product back into a polynomial of degree at most 127, so the result fits in 128 bits.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          GHASH multiplication is the mathematical heart of AES-GCM authentication. It is fast in software and hardware because bit operations naturally support XORs, shifts, and finite-field reduction. This is a beautiful example of cryptography choosing a mathematical world that computers can inhabit efficiently.</p>
+        <ul>
+          <li>GHASH treats 128-bit blocks as polynomials.</li>
+          <li>Coefficients are bits from \(GF(2)\).</li>
+          <li>Polynomial addition is XOR.</li>
+          <li>Raw multiplication can produce terms too large for 128 bits.</li>
+          <li>Reduction modulo \(x^{128}+x^7+x^2+x+1\) folds the result back into the field.</li>
+          <li>The accumulator update multiplies by \(H\) after each block is XORed in.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>GHASH multiplication happens in \(GF(2^{128})\).</li>
+            <li>A 128-bit block is treated as a polynomial with bit coefficients.</li>
+            <li>A coefficient of 1 includes a power of \(x\); a coefficient of 0 does not.</li>
+            <li>Addition in \(GF(2)\) is XOR.</li>
+            <li>Repeated polynomial terms cancel.</li>
+            <li>Raw products can have degree up to 254.</li>
+            <li>Field elements must have degree at most 127.</li>
+            <li>Reduction folds large products back into 128-bit values.</li>
+            <li>GHASH uses \(p(x)=x^{128}+x^7+x^2+x+1\).</li>
+            <li>The accumulator update is \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\).</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas from this tutorial</div>
+          <div class="math-display">
+            \[
+              p(x)=x^{128}+x^7+x^2+x+1
+            \]
+            \[
+              x^{128}\equiv x^7+x^2+x+1
+            \]
+            \[
+              Y_i=(Y_{i-1}\oplus X_i)\cdot H
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Operation</th><th>Meaning in GHASH</th></tr></thead>
+          <tbody>
+            <tr><td>XOR</td><td>Add polynomial coefficients in \(GF(2)\).</td></tr>
+            <tr><td>Polynomial multiplication</td><td>Combine powers of \(x\) from two 128-bit blocks.</td></tr>
+            <tr><td>Reduction</td><td>Fold high-degree terms back using the field polynomial.</td></tr>
+            <tr><td>Multiply by \(H\)</td><td>Update the GHASH accumulator with the hash subkey.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 33: GHASH Multiplication in \(GF(2^{128})\)</strong>. After that, the next tutorial can use a small toy field to walk through GHASH-style multiplication step by step before returning to the full 128-bit version.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

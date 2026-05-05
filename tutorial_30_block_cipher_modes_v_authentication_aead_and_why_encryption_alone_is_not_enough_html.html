@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Block Cipher Modes V: Authentication, AEAD, and Why Encryption Alone Is Not Enough | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .auth-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .auth-table,
+    .flow-table,
+    .mode-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .auth-table th,
+    .auth-table td,
+    .flow-table th,
+    .flow-table td,
+    .mode-table th,
+    .mode-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .auth-table th,
+    .flow-table th,
+    .mode-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .auth-table td,
+    .auth-table th,
+    .flow-table td,
+    .flow-table th,
+    .mode-table td,
+    .mode-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .enc-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .mac-node { background: #fff4d8; border-color: #ead399; }
+    .verify-node { background: #f0eafe; border-color: #d8c8f5; }
+    .danger-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .auth-table th, .flow-table th, .mode-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 30</div>
+      <h1>Block Cipher Modes V: Authentication, AEAD, and Why Encryption Alone Is Not Enough</h1>
+      <p class="subtitle">
+        Why confidentiality is only one part of secure communication, how authentication detects tampering, and why modern systems often use authenticated encryption.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="29-block-cipher-modes-iv-padding-message-length-and-why-blocks-need-filling.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            ECB, CBC, and CTR can provide confidentiality when used correctly. But confidentiality only means the message is hidden. It does not automatically mean the message has not been changed. This tutorial introduces authentication, Message Authentication Codes, and AEAD.</p>
+        </div>
+
+        <p class="lead">
+          Encryption is a curtain. Authentication is a tamper seal. A secure system often needs both: hide the message from outsiders and detect whether someone changed it in transit.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that block cipher modes such as CBC and CTR focus on encryption. You should also remember that CTR is malleable and CBC can be vulnerable if padding or errors are mishandled. These issues point toward a larger rule: encryption alone is not enough.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Authentication has its own vocabulary. Each term is defined here before it is used later.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>confidentiality</td><td>Keeping the message hidden.</td><td>Preventing unauthorized disclosure of plaintext.</td></tr>
+            <tr><td>integrity</td><td>Knowing the message was not changed.</td><td>Detecting unauthorized modification of data.</td></tr>
+            <tr><td>authentication</td><td>Knowing the message came from someone with the right secret.</td><td>Verifying message origin and integrity under a key.</td></tr>
+            <tr><td>MAC</td><td>A tamper-checking tag made with a secret key.</td><td>Message Authentication Code.</td></tr>
+            <tr><td>tag</td><td>The short authentication value attached to a message.</td><td>The MAC or authentication output checked during verification.</td></tr>
+            <tr><td>AEAD</td><td>Encryption plus authentication in one construction.</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>AAD</td><td>Data that is authenticated but not encrypted.</td><td>Additional Authenticated Data.</td></tr>
+            <tr><td>\(K\)</td><td>A secret key.</td><td>Secret material used by encryption and/or authentication algorithms.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Encryption answers, “Can outsiders read this?” Authentication answers, “Has this been changed, and was it produced by someone with the right secret?” These are related but different questions.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Encryption and authentication overview">
+          <div class="diagram-title">Confidentiality plus authentication</div>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node enc-node">Encrypt</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext</div>
+            <div class="flow-arrow">+</div>
+            <div class="machine-node mac-node">Authentication tag</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Protected message</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="confidentiality-integrity-authentication">
+        <h2>Confidentiality, integrity, and authentication</h2>
+        <p>
+          These three ideas are often mentioned together, but they are not identical.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Security property</th><th>Question it answers</th><th>Example failure</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>Can an attacker read the message?</td><td>An eavesdropper learns the plaintext.</td></tr>
+            <tr><td>Integrity</td><td>Was the message changed?</td><td>An attacker flips bits or rearranges blocks.</td></tr>
+            <tr><td>Authentication</td><td>Was this produced by someone with the right secret?</td><td>An attacker forges a message or tag.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Precise relationship</div>
+          <p>
+            Message authentication usually provides integrity and origin authentication under a shared secret key. It does not necessarily identify a human person by itself; it shows that the message was produced by someone who had the correct cryptographic key.</p>
+        </div>
+      </section>
+
+      <section id="encryption-alone-problem">
+        <h2>Why encryption alone is not enough</h2>
+        <p>
+          Some encryption modes allow meaningful changes to ciphertext. CTR is the easiest example: flipping a bit in the ciphertext flips the corresponding bit in the plaintext after decryption.</p>
+
+        <div class="math-display">
+          \[
+            C=P\oplus S
+          \]
+          \[
+            P=C\oplus S
+          \]
+        </div>
+
+        <p>
+          If an attacker changes \(C\) to \(C'\), the decrypted plaintext becomes \(P'=C'\oplus S\). Without authentication, the receiver may not know the ciphertext was modified.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Core warning</div>
+          <p>
+            Encryption without authentication can hide a message while still allowing tampering. Hidden does not mean trustworthy.</p>
+        </div>
+      </section>
+
+      <section id="mac">
+        <h2>Message Authentication Codes</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Message Authentication Code</div>
+          <p>
+            A Message Authentication Code, or MAC, is a short tag computed from a message and a secret key. The receiver recomputes the tag and checks whether it matches.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            tag=MAC_K(message)
+          \]
+        </div>
+
+        <p>
+          Friendly version: a MAC is a keyed tamper seal. If the message changes, the tag should no longer verify.</p>
+
+        <table class="auth-table">
+          <thead><tr><th>Step</th><th>Sender</th><th>Receiver</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Compute tag from message and key.</td><td>Receive message and tag.</td></tr>
+            <tr><td>2</td><td>Send message plus tag.</td><td>Recompute tag from received message and key.</td></tr>
+            <tr><td>3</td><td>Done.</td><td>Accept only if tags match.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="encrypt-then-mac">
+        <h2>Encrypt-then-MAC</h2>
+        <p>
+          A common safe design principle is encrypt-then-MAC: first encrypt the plaintext, then authenticate the ciphertext and relevant metadata.</p>
+
+        <div class="diagram" role="img" aria-label="Encrypt then MAC flow">
+          <div class="diagram-title">Encrypt-then-MAC concept</div>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node enc-node">Encrypt</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node mac-node">MAC ciphertext</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext + tag</div>
+          </div>
+        </div>
+
+        <p>
+          On receipt, the system should verify the tag before releasing plaintext. If verification fails, reject the message.</p>
+
+        <div class="box auth-box">
+          <div class="box-title">Plain-language rule</div>
+          <p>
+            Check the tamper seal before trusting the contents. In many designs, do not hand decrypted data to the application until authentication succeeds.</p>
+        </div>
+      </section>
+
+      <section id="aead">
+        <h2>Authenticated Encryption with Associated Data</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: AEAD</div>
+          <p>
+            Authenticated Encryption with Associated Data, or AEAD, is a construction that provides both encryption and authentication. It can also authenticate extra data that is not encrypted.</p>
+        </div>
+
+        <p>
+          AEAD usually takes:</p>
+        <ul>
+          <li>a secret key,</li>
+          <li>a nonce or IV,</li>
+          <li>plaintext to encrypt,</li>
+          <li>associated data to authenticate but not encrypt.</li>
+        </ul>
+
+        <p>
+          It outputs ciphertext and an authentication tag.</p>
+
+        <div class="math-display">
+          \[
+            (ciphertext,tag)=AEAD\_Encrypt_K(nonce,plaintext,AAD)
+          \]
+        </div>
+
+        <p>
+          During decryption, the tag must verify. If verification fails, the plaintext must be rejected.</p>
+      </section>
+
+      <section id="aad">
+        <h2>What is associated data?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Additional Authenticated Data</div>
+          <p>
+            Additional Authenticated Data, or AAD, is data that is not encrypted but is included in the authentication check. If AAD changes, verification fails.</p>
+        </div>
+
+        <p>
+          Example: A network packet may have a header that routers need to read. The header cannot be encrypted if the network must route it, but it can still be authenticated so tampering is detected.</p>
+
+        <table class="data-table">
+          <thead><tr><th>Data</th><th>Encrypted?</th><th>Authenticated?</th></tr></thead>
+          <tbody>
+            <tr><td>Message body</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Visible header / metadata</td><td>No</td><td>Yes, if included as AAD</td></tr>
+            <tr><td>Authentication tag</td><td>No</td><td>Used for verification</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="example-aead-modes">
+        <h2>Examples of authenticated encryption modes</h2>
+        <p>
+          Two common authenticated encryption designs are AES-GCM and ChaCha20-Poly1305.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>Construction</th><th>High-level idea</th><th>Important caution</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td>Uses AES in counter-like encryption plus a Galois-field authentication mechanism.</td><td>Nonce reuse is dangerous.</td></tr>
+            <tr><td>ChaCha20-Poly1305</td><td>Uses a stream cipher for encryption and Poly1305 for authentication.</td><td>Nonce reuse is dangerous.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important practical note</div>
+          <p>
+            In real systems, use well-reviewed library implementations. Do not assemble encryption and authentication from scratch unless you are studying in a controlled learning environment.</p>
+        </div>
+      </section>
+
+      <section id="order-of-operations">
+        <h2>Verify before trusting</h2>
+        <p>
+          In authenticated encryption, decryption is not just “decrypt and hope.” The authentication tag must be checked. If the tag is invalid, the message should be rejected.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Receive nonce, ciphertext, AAD, and tag.</td><td>Inputs for verification.</td></tr>
+            <tr><td>2</td><td>Check authentication tag.</td><td>Accept only if valid.</td></tr>
+            <tr><td>3</td><td>Release plaintext only after successful verification.</td><td>Tampered messages are rejected.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking encryption proves integrity</div>
+          <p>
+            Encryption hides content. It does not automatically prove that the ciphertext was not modified.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: ignoring the tag</div>
+          <p>
+            In authenticated encryption, the tag is essential. If tag verification fails, reject the message.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: authenticating only part of the needed data</div>
+          <p>
+            If visible metadata matters, include it as AAD so tampering is detected.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: nonce reuse in AEAD modes</div>
+          <p>
+            Many AEAD modes require nonce uniqueness. Reusing nonces with the same key can be catastrophic.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What security property means “outsiders cannot read the message”?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Confidentiality.</p>
+            </details>
+          </li>
+          <li>
+            What security property means “the message was not changed”?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Integrity.</p>
+            </details>
+          </li>
+          <li>
+            What does MAC stand for?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Message Authentication Code.</p>
+            </details>
+          </li>
+          <li>
+            What does AEAD stand for?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Authenticated Encryption with Associated Data.</p>
+            </details>
+          </li>
+          <li>
+            If an AEAD tag fails verification, what should happen?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The message should be rejected. The plaintext should not be trusted.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Modern cryptography is not only about hiding. It is also about detecting manipulation. Many historical and practical vulnerabilities came from treating encryption as if it automatically meant authenticity. AEAD reflects a more mature design principle: confidentiality and integrity should travel together.</p>
+        <ul>
+          <li>Encryption provides confidentiality.</li>
+          <li>Authentication helps provide integrity and origin assurance under a key.</li>
+          <li>A MAC produces a keyed tag.</li>
+          <li>AEAD combines encryption and authentication.</li>
+          <li>AAD is authenticated but not encrypted.</li>
+          <li>Invalid tags should cause rejection.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Confidentiality means the message is hidden.</li>
+            <li>Integrity means changes can be detected.</li>
+            <li>Authentication means the message verifies under the correct secret key.</li>
+            <li>Encryption alone does not guarantee integrity.</li>
+            <li>A MAC is a Message Authentication Code.</li>
+            <li>A tag is the authentication value checked by the receiver.</li>
+            <li>Encrypt-then-MAC is a common safe design pattern.</li>
+            <li>AEAD stands for Authenticated Encryption with Associated Data.</li>
+            <li>AAD is authenticated but not encrypted.</li>
+            <li>If tag verification fails, reject the message.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">MAC and AEAD formulas</div>
+          <div class="math-display">
+            \[
+              tag=MAC_K(message)
+            \]
+            \[
+              (ciphertext,tag)=AEAD\_Encrypt_K(nonce,plaintext,AAD)
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Goal</th><th>Tool</th></tr></thead>
+          <tbody>
+            <tr><td>Hide message contents</td><td>Encryption</td></tr>
+            <tr><td>Detect tampering</td><td>MAC or AEAD tag</td></tr>
+            <tr><td>Protect visible metadata</td><td>AAD inside AEAD</td></tr>
+            <tr><td>Reject modified messages</td><td>Verify tag before accepting</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>AES-GCM I: Galois Counter Mode at a High Level</strong>. We will connect CTR-like encryption with Galois-field authentication and see why GCM became so widely used.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

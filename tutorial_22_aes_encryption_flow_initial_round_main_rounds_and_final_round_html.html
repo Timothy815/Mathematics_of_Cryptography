@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AES Encryption Flow: Initial Round, Main Rounds, and Final Round | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .flow-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .flow-table,
+    .round-table,
+    .compare-table,
+    .key-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .flow-table th,
+    .flow-table td,
+    .round-table th,
+    .round-table td,
+    .compare-table th,
+    .compare-table td,
+    .key-table th,
+    .key-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .flow-table th,
+    .round-table th,
+    .compare-table th,
+    .key-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .flow-table td,
+    .flow-table th,
+    .round-table td,
+    .round-table th,
+    .compare-table td,
+    .compare-table th,
+    .key-table td,
+    .key-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 150px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .initial-node { background: #fdeaea; border-color: #efb5b5; }
+    .main-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .final-node { background: #fff4d8; border-color: #ead399; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .timeline-step {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 14px;
+      align-items: center;
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .timeline-label {
+      font-weight: 900;
+      color: #1f3763;
+      text-align: center;
+      background: #eef3ff;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .timeline-body { font-weight: 650; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .timeline-step { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .timeline-step { break-inside: avoid; }
+      .box, .diagram, details.solution, .timeline-step, .timeline-label { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .flow-table th, .round-table th, .compare-table th, .key-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 22</div>
+      <h1>AES Encryption Flow: Initial Round, Main Rounds, and Final Round</h1>
+      <p class="subtitle">
+        How AES-128 turns one plaintext block into ciphertext using an initial key addition, nine full main rounds, and one final round without MixColumns.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="21-round-structure-putting-subbytes-shiftrows-mixcolumns-and-addroundkey-together.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 21 explained the structure of one AES round. This tutorial zooms out and shows the full AES-128 encryption flow: how the plaintext state enters, how round keys are used, how the nine main rounds repeat, and how the final round differs.
+          </p>
+        </div>
+
+        <p class="lead">
+          AES-128 is not one giant mysterious spell. It is a staged machine: key-whiten the input, run nine full rounds, then run a final round that leaves out MixColumns. The rhythm matters.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know the four AES round layers: SubBytes, ShiftRows, MixColumns, and AddRoundKey. You should also know that the final round omits MixColumns. You do not need to know how the round keys are generated yet. That comes in the key expansion tutorials.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Full AES flow uses round numbers and round-key notation. Here are the symbols before they appear in the machinery.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>plaintext</td><td>The original 16-byte message block entering AES.</td><td>The input block before encryption.</td></tr>
+            <tr><td>ciphertext</td><td>The encrypted 16-byte block leaving AES.</td><td>The output block after encryption.</td></tr>
+            <tr><td>state</td><td>The changing 16-byte grid inside AES.</td><td>A 4 by 4 byte array transformed during encryption.</td></tr>
+            <tr><td>\(K_0\)</td><td>The first round key used before the main rounds begin.</td><td>The initial AddRoundKey subkey.</td></tr>
+            <tr><td>\(K_1, K_2, \ldots, K_9\)</td><td>Round keys for the nine main rounds.</td><td>Subkeys used in AES-128 rounds 1 through 9.</td></tr>
+            <tr><td>\(K_{10}\)</td><td>The final round key.</td><td>The subkey used in AES-128 round 10.</td></tr>
+            <tr><td>main round</td><td>A full AES round with all four layers.</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey.</td></tr>
+            <tr><td>final round</td><td>The last AES round, missing MixColumns.</td><td>SubBytes, ShiftRows, AddRoundKey.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The full AES-128 flow</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            AES-128 uses 11 round keys: one for the initial key addition, nine for the full main rounds, and one for the final round. The original 128-bit key is expanded into these round keys by the key schedule.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="AES-128 encryption flow overview">
+          <div class="diagram-title">AES-128 encryption overview</div>
+          <div class="flow-row">
+            <div class="flow-node">Plaintext block</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node initial-node">Initial<br>AddRoundKey<br>\(K_0\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node main-node">Rounds 1-9<br>full rounds</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node final-node">Round 10<br>final round</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext block</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="aes-128-counts">
+        <h2>AES-128 round counts</h2>
+        <p>
+          AES comes in different key sizes. This tutorial focuses on AES-128.
+        </p>
+
+        <table class="key-table">
+          <thead><tr><th>AES version</th><th>Key size</th><th>Number of rounds</th><th>Round keys used</th></tr></thead>
+          <tbody>
+            <tr><td>AES-128</td><td>128 bits</td><td>10 rounds</td><td>11 round keys, \(K_0\) through \(K_{10}\)</td></tr>
+            <tr><td>AES-192</td><td>192 bits</td><td>12 rounds</td><td>13 round keys</td></tr>
+            <tr><td>AES-256</td><td>256 bits</td><td>14 rounds</td><td>15 round keys</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Scope note</div>
+          <p>
+            We are focusing on AES-128 because it is the cleanest starting point: 128-bit block, 128-bit key, 10 rounds, and 11 round keys.</p>
+        </div>
+      </section>
+
+      <section id="initial-round">
+        <h2>Step 1: Initial AddRoundKey</h2>
+        <p>
+          AES begins by XORing the plaintext state with the first round key, \(K_0\). This happens before any SubBytes, ShiftRows, or MixColumns step.</p>
+
+        <div class="math-display">
+          \[
+            \text{State}_0=\text{Plaintext}\oplus K_0
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Why start with AddRoundKey?</div>
+          <p>
+            The initial AddRoundKey makes the state key-dependent before the repeated round transformations begin. This first key mixing is sometimes called key whitening.</p>
+        </div>
+      </section>
+
+      <section id="main-rounds">
+        <h2>Step 2: Nine main rounds</h2>
+        <p>
+          AES-128 then performs nine full main rounds. Each main round uses all four layers:</p>
+
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{MixColumns}\rightarrow\text{AddRoundKey}
+          \]
+        </div>
+
+        <p>
+          Main round \(r\) uses round key \(K_r\), where \(r\) runs from 1 through 9.</p>
+
+        <table class="round-table">
+          <thead><tr><th>Round</th><th>Layers</th><th>Round key</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey</td><td>\(K_1\)</td></tr>
+            <tr><td>2</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey</td><td>\(K_2\)</td></tr>
+            <tr><td>⋮</td><td>Same full-round structure</td><td>⋮</td></tr>
+            <tr><td>9</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey</td><td>\(K_9\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="final-round">
+        <h2>Step 3: Final round</h2>
+        <p>
+          Round 10 is the final round. It uses SubBytes, ShiftRows, and AddRoundKey, but it omits MixColumns.</p>
+
+        <div class="math-display">
+          \[
+            \text{SubBytes}\rightarrow\text{ShiftRows}\rightarrow\text{AddRoundKey}
+          \]
+        </div>
+
+        <p>
+          The final round uses \(K_{10}\). Its output is the ciphertext block.</p>
+
+        <div class="math-display">
+          \[
+            \text{Ciphertext}=\text{FinalRound}(\text{State},K_{10})
+          \]
+        </div>
+
+        <div class="box flow-box">
+          <div class="box-title">The final-round difference</div>
+          <p>
+            The easiest beginner rule is: main rounds have MixColumns; the final round does not.</p>
+        </div>
+      </section>
+
+      <section id="timeline">
+        <h2>AES-128 timeline</h2>
+        <p>
+          Here is the whole AES-128 encryption flow as a timeline.</p>
+
+        <div class="timeline">
+          <div class="timeline-step">
+            <div class="timeline-label">Input</div>
+            <div class="timeline-body">Load the 16-byte plaintext block into the AES state.</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Initial</div>
+            <div class="timeline-body">Apply AddRoundKey using \(K_0\).</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Rounds 1-9</div>
+            <div class="timeline-body">Repeat SubBytes, ShiftRows, MixColumns, AddRoundKey using \(K_1\) through \(K_9\).</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Round 10</div>
+            <div class="timeline-body">Apply SubBytes, ShiftRows, AddRoundKey using \(K_{10}\). No MixColumns.</div>
+          </div>
+          <div class="timeline-step">
+            <div class="timeline-label">Output</div>
+            <div class="timeline-body">Read the resulting state as the ciphertext block.</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="pseudocode">
+        <h2>AES-128 encryption pseudocode</h2>
+        <p>
+          In plain pseudocode, AES-128 encryption looks like this:</p>
+
+        <div class="box technical-box">
+          <pre><code>state = plaintext
+state = AddRoundKey(state, K0)
+
+for round = 1 to 9:
+    state = SubBytes(state)
+    state = ShiftRows(state)
+    state = MixColumns(state)
+    state = AddRoundKey(state, K_round)
+
+state = SubBytes(state)
+state = ShiftRows(state)
+state = AddRoundKey(state, K10)
+
+ciphertext = state</code></pre>
+        </div>
+
+        <p>
+          This is not implementation-ready code. It is a readable map of the flow.</p>
+      </section>
+
+      <section id="why-final-round-no-mixcolumns">
+        <h2>Why no MixColumns in the final round?</h2>
+        <p>
+          For a beginner, the safest first understanding is structural: AES is defined so the final round omits MixColumns. This keeps encryption and decryption layer structure aligned in a useful way and avoids ending the cipher with an extra linear mixing layer after the last key addition.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Practical memory hook</div>
+          <p>
+            AES starts with key mixing, spends nine rounds substituting, shifting, mixing, and keying, then ends with substitution, shifting, and keying. The final key addition is the last operation.</p>
+        </div>
+      </section>
+
+      <section id="round-keys-preview">
+        <h2>Round keys preview</h2>
+        <p>
+          AES-128 begins with one 128-bit key, but the encryption flow needs 11 round keys. The key schedule expands the original key into \(K_0\) through \(K_{10}\).</p>
+
+        <table class="key-table">
+          <thead><tr><th>Round key</th><th>Used where?</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>\(K_0\)</td><td>Initial AddRoundKey</td><td>Key the state before main rounds.</td></tr>
+            <tr><td>\(K_1\) through \(K_9\)</td><td>Main rounds 1 through 9</td><td>Inject key material each full round.</td></tr>
+            <tr><td>\(K_{10}\)</td><td>Final round</td><td>Final key mixing before ciphertext output.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          We will soon study how those round keys are generated.</p>
+      </section>
+
+      <section id="confusion-diffusion-across-flow">
+        <h2>Confusion and diffusion across the full flow</h2>
+        <p>
+          The full AES flow repeatedly combines the same design roles:</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Layer</th><th>Role</th><th>How repetition helps</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>Nonlinear confusion</td><td>Repeated nonlinear substitution makes relationships harder to model simply.</td></tr>
+            <tr><td>ShiftRows</td><td>Position movement</td><td>Repeated movement changes which bytes interact.</td></tr>
+            <tr><td>MixColumns</td><td>Linear diffusion</td><td>Repeated mixing spreads local changes through more of the state.</td></tr>
+            <tr><td>AddRoundKey</td><td>Key dependence</td><td>Repeated key injection binds the state to key material throughout encryption.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: calling the initial AddRoundKey “round 1”</div>
+          <p>
+            AES starts with an initial AddRoundKey before the numbered main rounds. Round 1 comes after that.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: putting MixColumns in the final round</div>
+          <p>
+            The final AES round omits MixColumns. This is one of the most important flow details.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using the same round key every time</div>
+          <p>
+            AES uses different round keys generated by the key schedule: \(K_0\) through \(K_{10}\) for AES-128.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: forgetting the output is the final state</div>
+          <p>
+            After the final AddRoundKey, the state is read as the ciphertext block.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            How many rounds does AES-128 have?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES-128 has 10 rounds.</p>
+            </details>
+          </li>
+          <li>
+            How many round keys does AES-128 use?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES-128 uses 11 round keys: \(K_0\) through \(K_{10}\).</p>
+            </details>
+          </li>
+          <li>
+            What is the first transformation applied to the plaintext state?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Initial AddRoundKey using \(K_0\).</p>
+            </details>
+          </li>
+          <li>
+            Which rounds include MixColumns in AES-128?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Rounds 1 through 9 include MixColumns. Round 10 does not.</p>
+            </details>
+          </li>
+          <li>
+            What is the final transformation applied before ciphertext is produced?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AddRoundKey using \(K_{10}\).</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          AES-128 encryption is a disciplined repeated structure. The initial key addition, nine full rounds, and final reduced round work together to build a reversible but highly scrambled transformation from plaintext to ciphertext.
+        </p>
+        <ul>
+          <li>The plaintext is first made key-dependent with \(K_0\).</li>
+          <li>Nine main rounds perform substitution, movement, mixing, and key addition.</li>
+          <li>The final round omits MixColumns.</li>
+          <li>Each round key is different.</li>
+          <li>The ciphertext is the state after the final AddRoundKey.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AES-128 encrypts one 128-bit block at a time.</li>
+            <li>The internal state is 16 bytes arranged as a 4 by 4 grid.</li>
+            <li>AES-128 has 10 rounds.</li>
+            <li>AES-128 uses 11 round keys: \(K_0\) through \(K_{10}\).</li>
+            <li>Encryption starts with initial AddRoundKey using \(K_0\).</li>
+            <li>Rounds 1 through 9 are full main rounds.</li>
+            <li>Main rounds use SubBytes, ShiftRows, MixColumns, AddRoundKey.</li>
+            <li>Round 10 is the final round.</li>
+            <li>The final round uses SubBytes, ShiftRows, AddRoundKey.</li>
+            <li>The final round omits MixColumns.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Stage</th><th>Operation</th><th>Round key</th></tr></thead>
+          <tbody>
+            <tr><td>Initial</td><td>AddRoundKey</td><td>\(K_0\)</td></tr>
+            <tr><td>Rounds 1-9</td><td>SubBytes, ShiftRows, MixColumns, AddRoundKey</td><td>\(K_1\) through \(K_9\)</td></tr>
+            <tr><td>Round 10</td><td>SubBytes, ShiftRows, AddRoundKey</td><td>\(K_{10}\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">AES-128 pseudocode map</div>
+          <pre><code>state = plaintext
+state = AddRoundKey(state, K0)
+
+for round = 1 to 9:
+    state = SubBytes(state)
+    state = ShiftRows(state)
+    state = MixColumns(state)
+    state = AddRoundKey(state, K_round)
+
+state = SubBytes(state)
+state = ShiftRows(state)
+state = AddRoundKey(state, K10)
+
+ciphertext = state</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>AES Decryption Flow: Walking the Cipher Backward</strong>. We will reverse the full encryption map and see how inverse layers and round keys are applied in the correct order.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

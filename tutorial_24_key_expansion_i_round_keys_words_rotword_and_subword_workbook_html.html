@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 24: Key Expansion I | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .key-box { background: var(--purple-soft); border-color: #d8c8f5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .word-table,
+    .key-table,
+    .process-table,
+    .xor-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .word-table th, .word-table td,
+    .key-table th, .key-table td,
+    .process-table th, .process-table td,
+    .xor-table th, .xor-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .word-table th,
+    .key-table th,
+    .process-table th,
+    .xor-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .word-table th,
+    .word-table td,
+    .key-table th,
+    .key-table td,
+    .process-table th,
+    .process-table td,
+    .xor-table th,
+    .xor-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .word-table th,
+      .key-table th,
+      .process-table th,
+      .xor-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 24</div>
+      <h1>Key Expansion I: Round Keys, Words, RotWord, and SubWord</h1>
+      <p class="subtitle">
+        Printable practice for AES-128 key-schedule foundations: words, round keys, RotWord, SubWord, key-schedule core structure, and XOR chaining.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="24-key-expansion-i-round-keys-words-rotword-and-subword.html">Tutorial 24</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the building blocks. A word is four bytes. A round key is four words. RotWord moves bytes inside a word. SubWord substitutes each byte through the AES S-box. The full Rcon calculation comes next, but this workbook prepares the machinery.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">AES-128 key expansion counts</div>
+            <ul>
+              <li>Original key: 16 bytes</li>
+              <li>One word: 4 bytes</li>
+              <li>One round key: 4 words = 16 bytes</li>
+              <li>Total round keys: 11</li>
+              <li>Total words: 44</li>
+              <li>Total round-key material: 176 bytes</li>
+            </ul>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Core transformations</div>
+            <div class="math-display">
+              \[
+                \operatorname{RotWord}([a_0,a_1,a_2,a_3])=[a_1,a_2,a_3,a_0]
+              \]
+              \[
+                \operatorname{SubWord}([a,b,c,d])=[S(a),S(b),S(c),S(d)]
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up facts</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. How many bytes are in one AES key-schedule word?</td><td></td></tr>
+            <tr><td>A2. How many bits are in one word?</td><td></td></tr>
+            <tr><td>A3. How many words are in one AES-128 round key?</td><td></td></tr>
+            <tr><td>A4. How many round keys does AES-128 need?</td><td></td></tr>
+            <tr><td>A5. How many words are generated total in AES-128 key expansion?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="word-splitting">
+        <h2>Part B: Split a key into words</h2>
+        <p>Split this 16-byte AES-128 key into four 4-byte words.</p>
+        <pre><code>2B 7E 15 16  28 AE D2 A6  AB F7 15 88  09 CF 4F 3C</code></pre>
+
+        <table class="word-table">
+          <thead><tr><th>Word</th><th>Bytes</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_0\)</td><td></td></tr>
+            <tr><td>\(w_1\)</td><td></td></tr>
+            <tr><td>\(w_2\)</td><td></td></tr>
+            <tr><td>\(w_3\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Which round key do these four words form?</div>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="round-key-grouping">
+        <h2>Part C: Round keys from words</h2>
+        <p>Complete the word groupings.</p>
+
+        <table class="key-table">
+          <thead><tr><th>Round key</th><th>Words used</th></tr></thead>
+          <tbody>
+            <tr><td>\(K_0\)</td><td></td></tr>
+            <tr><td>\(K_1\)</td><td></td></tr>
+            <tr><td>\(K_2\)</td><td></td></tr>
+            <tr><td>\(K_3\)</td><td></td></tr>
+            <tr><td>\(K_{10}\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="rotword-practice">
+        <h2>Part D: RotWord practice</h2>
+        <p>Rotate each word left by one byte.</p>
+
+        <table class="process-table">
+          <thead><tr><th>Problem</th><th>Input word</th><th>After RotWord</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td><code>09 CF 4F 3C</code></td><td></td></tr>
+            <tr><td>D2</td><td><code>AA BB CC DD</code></td><td></td></tr>
+            <tr><td>D3</td><td><code>00 11 22 33</code></td><td></td></tr>
+            <tr><td>D4</td><td><code>FE DC BA 98</code></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D5. Is RotWord a byte rotation or a bit rotation?</div>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="subword-practice">
+        <h2>Part E: SubWord practice</h2>
+        <p>Use the given S-box lookup results to apply SubWord.</p>
+
+        <table class="data-table">
+          <thead><tr><th>Input byte</th><th>S-box output</th></tr></thead>
+          <tbody>
+            <tr><td><code>CF</code></td><td><code>8A</code></td></tr>
+            <tr><td><code>4F</code></td><td><code>84</code></td></tr>
+            <tr><td><code>3C</code></td><td><code>EB</code></td></tr>
+            <tr><td><code>09</code></td><td><code>01</code></td></tr>
+            <tr><td><code>AA</code></td><td><code>AC</code></td></tr>
+            <tr><td><code>BB</code></td><td><code>EA</code></td></tr>
+            <tr><td><code>CC</code></td><td><code>4B</code></td></tr>
+            <tr><td><code>DD</code></td><td><code>C1</code></td></tr>
+          </tbody>
+        </table>
+
+        <table class="process-table">
+          <thead><tr><th>Problem</th><th>Input word</th><th>After SubWord</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td><code>CF 4F 3C 09</code></td><td></td></tr>
+            <tr><td>E2</td><td><code>AA BB CC DD</code></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E3. Does SubWord apply the S-box to one byte or all four bytes?</div>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="core-order">
+        <h2>Part F: Key-schedule core order</h2>
+        <p>Fill in the order of the special key-schedule core used when the word index is a multiple of 4.</p>
+
+        <table class="process-table">
+          <thead><tr><th>Step</th><th>Operation</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td></td></tr>
+            <tr><td>2</td><td></td></tr>
+            <tr><td>3</td><td></td></tr>
+            <tr><td>4</td><td>XOR with \(w_{i-4}\) to produce \(w_i\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Write the key-schedule core formula for AES-128 when \(i\) is a multiple of 4.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="partial-w4-prep">
+        <h2>Part G: Preparing to compute \(w_4\)</h2>
+        <p>Use \(w_3=\)<code>09 CF 4F 3C</code>.</p>
+
+        <table class="process-table">
+          <thead><tr><th>Step</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Start with \(w_3\)</td><td><code>09 CF 4F 3C</code></td></tr>
+            <tr><td>RotWord</td><td></td></tr>
+            <tr><td>SubWord</td><td></td></tr>
+            <tr><td>Rcon step</td><td>Next tutorial</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="xor-chaining">
+        <h2>Part H: XOR-chain reasoning</h2>
+        <p>After the first word of a new round key is generated, the next words use XOR chaining.</p>
+
+        <table class="xor-table">
+          <thead><tr><th>Word</th><th>Formula</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_5\)</td><td></td></tr>
+            <tr><td>\(w_6\)</td><td></td></tr>
+            <tr><td>\(w_7\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why does the first word of each new round key receive special treatment?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part I: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does AES-128 need 176 bytes of round-key material?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why is SubWord important in the key schedule?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Explain the difference between the cipher key and round keys.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>In AES key expansion, a word is four bytes.</td><td></td></tr>
+            <tr><td>RotWord rotates a word left by one bit.</td><td></td></tr>
+            <tr><td>SubWord applies the AES S-box to every byte in a word.</td><td></td></tr>
+            <tr><td>AES-128 produces 44 words total in key expansion.</td><td></td></tr>
+            <tr><td>Every AES-128 round key is made of four words.</td><td></td></tr>
+            <tr><td>The first word of every new round key uses the special key-schedule core.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The goal of this workbook is not to finish the full key expansion yet. The goal is to make the parts familiar enough that the full walkthrough feels like assembly, not sorcery.
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up facts</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. How many bytes are in one AES key-schedule word?</td><td>4 bytes.</td></tr>
+            <tr><td>A2. How many bits are in one word?</td><td>32 bits.</td></tr>
+            <tr><td>A3. How many words are in one AES-128 round key?</td><td>4 words.</td></tr>
+            <tr><td>A4. How many round keys does AES-128 need?</td><td>11 round keys.</td></tr>
+            <tr><td>A5. How many words are generated total in AES-128 key expansion?</td><td>44 words.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Split a key into words</h3>
+        <table class="answer-table">
+          <thead><tr><th>Word</th><th>Bytes</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_0\)</td><td><code>2B 7E 15 16</code></td></tr>
+            <tr><td>\(w_1\)</td><td><code>28 AE D2 A6</code></td></tr>
+            <tr><td>\(w_2\)</td><td><code>AB F7 15 88</code></td></tr>
+            <tr><td>\(w_3\)</td><td><code>09 CF 4F 3C</code></td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>B1.</strong> These four words form \(K_0\), the initial round key.</p>
+        </div>
+
+        <h3>Part C: Round keys from words</h3>
+        <table class="answer-table">
+          <thead><tr><th>Round key</th><th>Words used</th></tr></thead>
+          <tbody>
+            <tr><td>\(K_0\)</td><td>\(w_0,w_1,w_2,w_3\)</td></tr>
+            <tr><td>\(K_1\)</td><td>\(w_4,w_5,w_6,w_7\)</td></tr>
+            <tr><td>\(K_2\)</td><td>\(w_8,w_9,w_{10},w_{11}\)</td></tr>
+            <tr><td>\(K_3\)</td><td>\(w_{12},w_{13},w_{14},w_{15}\)</td></tr>
+            <tr><td>\(K_{10}\)</td><td>\(w_{40},w_{41},w_{42},w_{43}\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: RotWord practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Input word</th><th>After RotWord</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td><code>09 CF 4F 3C</code></td><td><code>CF 4F 3C 09</code></td></tr>
+            <tr><td>D2</td><td><code>AA BB CC DD</code></td><td><code>BB CC DD AA</code></td></tr>
+            <tr><td>D3</td><td><code>00 11 22 33</code></td><td><code>11 22 33 00</code></td></tr>
+            <tr><td>D4</td><td><code>FE DC BA 98</code></td><td><code>DC BA 98 FE</code></td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D5.</strong> RotWord is a byte rotation, not a bit rotation.</p>
+        </div>
+
+        <h3>Part E: SubWord practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Input word</th><th>After SubWord</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td><code>CF 4F 3C 09</code></td><td><code>8A 84 EB 01</code></td></tr>
+            <tr><td>E2</td><td><code>AA BB CC DD</code></td><td><code>AC EA 4B C1</code></td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E3.</strong> SubWord applies the S-box to all four bytes.</p>
+        </div>
+
+        <h3>Part F: Key-schedule core order</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Operation</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>RotWord</td></tr>
+            <tr><td>2</td><td>SubWord</td></tr>
+            <tr><td>3</td><td>XOR with Rcon</td></tr>
+            <tr><td>4</td><td>XOR with \(w_{i-4}\) to produce \(w_i\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1.</strong></p>
+          <div class="math-display">
+            \[
+              w_i=w_{i-4}\oplus\operatorname{SubWord}(\operatorname{RotWord}(w_{i-1}))\oplus Rcon
+            \]
+          </div>
+          <p>This special form is used in AES-128 when \(i\) is a multiple of 4.</p>
+        </div>
+
+        <h3>Part G: Preparing to compute \(w_4\)</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Start with \(w_3\)</td><td><code>09 CF 4F 3C</code></td></tr>
+            <tr><td>RotWord</td><td><code>CF 4F 3C 09</code></td></tr>
+            <tr><td>SubWord</td><td><code>8A 84 EB 01</code></td></tr>
+            <tr><td>Rcon step</td><td>Next tutorial</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: XOR-chain reasoning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Word</th><th>Formula</th></tr></thead>
+          <tbody>
+            <tr><td>\(w_5\)</td><td>\(w_5=w_1\oplus w_4\)</td></tr>
+            <tr><td>\(w_6\)</td><td>\(w_6=w_2\oplus w_5\)</td></tr>
+            <tr><td>\(w_7\)</td><td>\(w_7=w_3\oplus w_6\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> The first word of each new round key receives special treatment so the key schedule introduces rotation, S-box nonlinearity, and round constants before the rest of the words chain forward by XOR.</p>
+        </div>
+
+        <h3>Part I: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> AES-128 needs 11 round keys, and each round key is 16 bytes. Therefore it needs \(11\times16=176\) bytes of round-key material.</p>
+          <p><strong>I2 sample answer.</strong> SubWord introduces nonlinearity into the key schedule by applying the AES S-box to each byte of a word.</p>
+          <p><strong>I3 sample answer.</strong> The cipher key is the original secret key supplied to AES. Round keys are 16-byte subkeys derived from that cipher key and used at different stages of encryption and decryption.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>In AES key expansion, a word is four bytes.</td><td>True</td><td>A word is 32 bits.</td></tr>
+            <tr><td>RotWord rotates a word left by one bit.</td><td>False</td><td>It rotates left by one byte.</td></tr>
+            <tr><td>SubWord applies the AES S-box to every byte in a word.</td><td>True</td><td>All four bytes are substituted.</td></tr>
+            <tr><td>AES-128 produces 44 words total in key expansion.</td><td>True</td><td>11 round keys times 4 words each.</td></tr>
+            <tr><td>Every AES-128 round key is made of four words.</td><td>True</td><td>4 words = 16 bytes.</td></tr>
+            <tr><td>The first word of every new round key uses the special key-schedule core.</td><td>True</td><td>In AES-128, this happens when the word index is a multiple of 4.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 24: Key Expansion I.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polynomial Multiplication over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .term-table,
+    .multiply-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .term-table th,
+    .term-table td,
+    .multiply-table th,
+    .multiply-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .term-table th,
+    .multiply-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .term-table td,
+    .term-table th,
+    .multiply-table td,
+    .multiply-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .grid-multiply {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .grid-cell {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      background: #ffffff;
+      font-weight: 800;
+    }
+
+    .grid-cell.cancel { background: #fdeaea; border-color: #efb5b5; }
+    .grid-cell.keep { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .conversion-stack {
+      display: grid;
+      gap: 10px;
+      margin: 18px 0;
+    }
+
+    .conversion-card {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .conversion-card.final {
+      background: #eaf7ef;
+      border-color: #b8dfc5;
+      font-weight: 800;
+    }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .grid-multiply { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .conversion-card { break-inside: avoid; }
+      .box, .diagram, details.solution, .conversion-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .term-table th, .multiply-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 10</div>
+      <h1>Polynomial Multiplication over \(\mathrm{GF}(2)\)</h1>
+      <p class="subtitle">
+        Multiplying byte-polynomials before reduction: distribute terms, add exponents, and cancel duplicate powers modulo 2.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="09-polynomial-addition-over-gf2.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            In Tutorial 9, we learned that adding byte-polynomials over \(\mathrm{GF}(2)\) is XOR. Now we learn how to multiply those polynomials. This is the last major step before polynomial reduction, where high powers of \(x\) will be folded back into byte-sized form.
+          </p>
+        </div>
+
+        <p class="lead">
+          Polynomial multiplication over \(\mathrm{GF}(2)\) looks like ordinary polynomial multiplication at first: distribute every term against every term. The twist comes when like powers combine: matching terms cancel in pairs because coefficients are added modulo 2.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know how to read bytes as polynomials, how coefficient addition over \(\mathrm{GF}(2)\) works, and why duplicate terms cancel. You do not need polynomial reduction yet. This tutorial intentionally stops before AES's folding rule.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Multiplication introduces a few familiar-looking rules. We define them carefully so the notation does not become fog with a hat on.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\mathrm{GF}(2)\)</td>
+              <td>The arithmetic world with only 0 and 1.</td>
+              <td>The finite field with two elements.</td>
+            </tr>
+            <tr>
+              <td>\(x^i\cdot x^j\)</td>
+              <td>Multiply powers by adding their exponents.</td>
+              <td>\(x^i\cdot x^j=x^{i+j}\).</td>
+            </tr>
+            <tr>
+              <td>distribute</td>
+              <td>Multiply every term in one group by every term in the other group.</td>
+              <td>Use the distributive property of multiplication over addition.</td>
+            </tr>
+            <tr>
+              <td>like terms</td>
+              <td>Terms with the same power of \(x\).</td>
+              <td>Terms with identical exponents.</td>
+            </tr>
+            <tr>
+              <td>combine like terms over \(\mathrm{GF}(2)\)</td>
+              <td>Cancel pairs of matching terms.</td>
+              <td>Add coefficients modulo 2.</td>
+            </tr>
+            <tr>
+              <td>degree</td>
+              <td>The highest power of \(x\) that appears.</td>
+              <td>The largest exponent with nonzero coefficient.</td>
+            </tr>
+            <tr>
+              <td>unreduced product</td>
+              <td>The multiplication result before folding it back into byte size.</td>
+              <td>A polynomial product not yet reduced modulo an irreducible polynomial.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Multiplying polynomials is a pairing process. Every term in the first polynomial shakes hands with every term in the second polynomial. Each handshake creates a new power of \(x\). Then matching powers cancel in pairs if they appear an even number of times.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Polynomial multiplication over GF(2) process">
+          <div class="diagram-title">Multiply, collect, cancel</div>
+          <div class="flow-row">
+            <div class="flow-node">Polynomial A</div>
+            <div class="flow-arrow">×</div>
+            <div class="flow-node">Polynomial B</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Distribute<br>all terms</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Combine like powers<br>mod 2</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Unreduced product</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="term-rule">
+        <h2>Multiplying single terms</h2>
+        <p>
+          The basic rule is the same exponent rule you may remember from algebra:
+        </p>
+        <div class="math-display">
+          \[
+            x^i\cdot x^j=x^{i+j}
+          \]
+        </div>
+
+        <table class="term-table">
+          <thead>
+            <tr>
+              <th>Multiplication</th>
+              <th>Exponent addition</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>\(x^3\cdot x^2\)</td><td>\(3+2=5\)</td><td>\(x^5\)</td></tr>
+            <tr><td>\(x^7\cdot x\)</td><td>\(7+1=8\)</td><td>\(x^8\)</td></tr>
+            <tr><td>\(x^4\cdot1\)</td><td>\(4+0=4\)</td><td>\(x^4\)</td></tr>
+            <tr><td>\(1\cdot1\)</td><td>\(0+0=0\)</td><td>\(1\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Why \(1\) acts like \(x^0\)</div>
+          <p>
+            The constant term \(1\) can be thought of as \(x^0\). That is why \(x^4\cdot1=x^4\cdot x^0=x^4\).</p>
+        </div>
+      </section>
+
+      <section id="coefficients">
+        <h2>Coefficient multiplication over \(\mathrm{GF}(2)\)</h2>
+        <p>
+          Coefficients are still bits, so multiplying coefficients is simple.
+        </p>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>A</th><th>B</th><th>\(A\cdot B\)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>0</td><td>0</td><td>0</td></tr>
+            <tr><td>0</td><td>1</td><td>0</td></tr>
+            <tr><td>1</td><td>0</td><td>0</td></tr>
+            <tr><td>1</td><td>1</td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          In practice, a term only contributes to the product if it appears in both selected positions. A 0 coefficient is like a silent switch: it contributes nothing.
+        </p>
+      </section>
+
+      <section id="worked-example-small">
+        <h2>Worked example 1: multiply two small polynomials</h2>
+        <p>
+          Multiply:
+        </p>
+        <div class="math-display">
+          \[
+            (x+1)(x^2+x+1)
+          \]
+        </div>
+
+        <h3>Step 1: Distribute every term</h3>
+        <div class="math-display">
+          \[
+            x(x^2+x+1)+1(x^2+x+1)
+          \]
+          \[
+            x^3+x^2+x+x^2+x+1
+          \]
+        </div>
+
+        <h3>Step 2: Cancel duplicates over \(\mathrm{GF}(2)\)</h3>
+        <p>
+          The \(x^2\) terms appear twice, so they cancel. The \(x\) terms also appear twice, so they cancel.
+        </p>
+        <div class="math-display">
+          \[
+            x^3+\cancel{x^2}+\cancel{x}+\cancel{x^2}+\cancel{x}+1=x^3+1
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Result</div>
+          <div class="math-display">
+            \[
+              (x+1)(x^2+x+1)=x^3+1\quad\text{over }\mathrm{GF}(2)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="grid-example">
+        <h2>Worked example 2: grid view</h2>
+        <p>
+          Multiply:
+        </p>
+        <div class="math-display">
+          \[
+            (x^2+x+1)(x^3+x)
+          \]
+        </div>
+
+        <p>
+          Pair every term in the first polynomial with every term in the second polynomial:</p>
+
+        <div class="grid-multiply">
+          <div class="grid-cell keep">\(x^2\cdot x^3=x^5\)</div>
+          <div class="grid-cell keep">\(x^2\cdot x=x^3\)</div>
+          <div class="grid-cell keep">\(x\cdot x^3=x^4\)</div>
+          <div class="grid-cell cancel">\(x\cdot x=x^2\)</div>
+          <div class="grid-cell keep">\(1\cdot x^3=x^3\)</div>
+          <div class="grid-cell keep">\(1\cdot x=x\)</div>
+        </div>
+
+        <p>
+          Write all terms:
+        </p>
+        <div class="math-display">
+          \[
+            x^5+x^3+x^4+x^2+x^3+x
+          \]
+        </div>
+        <p>
+          Now combine like terms. The \(x^3\) terms appear twice, so they cancel:</p>
+        <div class="math-display">
+          \[
+            x^5+x^4+x^2+x
+          \]
+        </div>
+      </section>
+
+      <section id="byte-example">
+        <h2>Worked example 3: multiplying byte-polynomials</h2>
+        <p>
+          Let us multiply two familiar byte-polynomials, but remember: this is still the unreduced product.
+        </p>
+        <div class="math-display">
+          \[
+            \texttt{0x57}=x^6+x^4+x^2+x+1
+          \]
+          \[
+            \texttt{0x03}=x+1
+          \]
+        </div>
+
+        <p>
+          Multiply:</p>
+        <div class="math-display">
+          \[
+            (x^6+x^4+x^2+x+1)(x+1)
+          \]
+        </div>
+
+        <h3>Step 1: Multiply by \(x\)</h3>
+        <div class="math-display">
+          \[
+            x(x^6+x^4+x^2+x+1)=x^7+x^5+x^3+x^2+x
+          \]
+        </div>
+
+        <h3>Step 2: Multiply by \(1\)</h3>
+        <div class="math-display">
+          \[
+            1(x^6+x^4+x^2+x+1)=x^6+x^4+x^2+x+1
+          \]
+        </div>
+
+        <h3>Step 3: Add the two partial products over \(\mathrm{GF}(2)\)</h3>
+        <div class="math-display">
+          \[
+            (x^7+x^5+x^3+x^2+x)+(x^6+x^4+x^2+x+1)
+          \]
+        </div>
+        <p>
+          The \(x^2\) terms cancel, and the \(x\) terms cancel.</p>
+        <div class="math-display">
+          \[
+            x^7+x^6+x^5+x^4+x^3+1
+          \]
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important boundary</div>
+          <p>
+            This is the unreduced polynomial product. It happens to fit within degree 7, but many products will create \(x^8\), \(x^9\), or higher. Reducing those high powers back into byte form comes in the next tutorial.</p>
+        </div>
+      </section>
+
+      <section id="high-powers">
+        <h2>Why high powers appear</h2>
+        <p>
+          When multiplying byte-polynomials, the highest possible term in each byte is \(x^7\). If two \(x^7\) terms multiply, the result is:</p>
+        <div class="math-display">
+          \[
+            x^7\cdot x^7=x^{14}
+          \]
+        </div>
+        <p>
+          That is much larger than a byte-polynomial, which only has powers \(x^7\) down to \(1\). This is why polynomial multiplication alone is not yet \(\mathrm{GF}(2^8)\) multiplication.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">The next problem</div>
+          <p>
+            Multiplication can push us above byte size. The next tutorial will explain the folding rule that brings high powers back down.</p>
+        </div>
+      </section>
+
+      <section id="compare-add-multiply">
+        <h2>Addition versus multiplication</h2>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Operation</th>
+              <th>What happens?</th>
+              <th>Can powers grow?</th>
+              <th>Byte-sized automatically?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Addition over \(\mathrm{GF}(2)\)</td>
+              <td>Combine matching powers by XORing coefficients.</td>
+              <td>No</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Multiplication over \(\mathrm{GF}(2)\)</td>
+              <td>Distribute terms and add exponents.</td>
+              <td>Yes</td>
+              <td>No, not always</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: forgetting to distribute every term</div>
+          <p>
+            Every term in the first polynomial must multiply every term in the second polynomial. Missing one pairing changes the product.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: combining like terms using ordinary coefficients</div>
+          <p>
+            Over \(\mathrm{GF}(2)\), \(x^3+x^3=0\), not \(2x^3\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: reducing too early</div>
+          <p>
+            This tutorial stops at the unreduced product. Do not fold high powers yet. That rule requires an irreducible polynomial, which comes next.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: treating \(x\) like the number 2</div>
+          <p>
+            We are not evaluating the polynomial at \(x=2\). The symbol \(x\) remains a formal polynomial placeholder.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Multiply \((x+1)(x+1)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  (x+1)(x+1)=x^2+x+x+1=x^2+1
+                \]
+              </div>
+              <p>The two \(x\) terms cancel.</p>
+            </details>
+          </li>
+          <li>
+            Multiply \((x+1)(x^2+x+1)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  (x+1)(x^2+x+1)=x^3+x^2+x+x^2+x+1=x^3+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Multiply \((x^2+x+1)(x^3+x)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x^2(x^3+x)+x(x^3+x)+1(x^3+x)
+                \]
+                \[
+                  =x^5+x^3+x^4+x^2+x^3+x
+                \]
+                \[
+                  =x^5+x^4+x^2+x
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Multiply \((x^7+1)(x+1)\) over \(\mathrm{GF}(2)\). Leave the result unreduced.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  (x^7+1)(x+1)=x^8+x^7+x+1
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Multiply \((x^6+x^4+x^2+x+1)(x+1)\) over \(\mathrm{GF}(2)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  x(x^6+x^4+x^2+x+1)=x^7+x^5+x^3+x^2+x
+                \]
+                \[
+                  1(x^6+x^4+x^2+x+1)=x^6+x^4+x^2+x+1
+                \]
+                \[
+                  \text{sum}=x^7+x^6+x^5+x^4+x^3+1
+                \]
+              </div>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Polynomial multiplication over \(\mathrm{GF}(2)\) is the engine underneath byte multiplication in finite fields.
+        </p>
+        <ul>
+          <li>AES treats bytes as polynomials with binary coefficients.</li>
+          <li>Adding partial products uses XOR, not ordinary integer addition.</li>
+          <li>Multiplication can create powers higher than \(x^7\).</li>
+          <li>Those high powers must be reduced by a special polynomial rule to stay byte-sized.</li>
+          <li>This prepares us for multiplication in \(\mathrm{GF}(2^8)\).</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Multiply powers by adding exponents: \(x^i\cdot x^j=x^{i+j}\).</li>
+            <li>Distribute every term in one polynomial across every term in the other.</li>
+            <li>Coefficient multiplication uses 0 and 1.</li>
+            <li>Combine like terms by adding coefficients modulo 2.</li>
+            <li>Duplicate terms cancel in pairs.</li>
+            <li>The result of multiplication may have powers higher than \(x^7\).</li>
+            <li>This tutorial gives the unreduced product only.</li>
+            <li>Reduction comes next.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Rule</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Multiply powers by adding exponents</td>
+              <td>\(x^3\cdot x^2=x^5\)</td>
+            </tr>
+            <tr>
+              <td>Duplicate terms cancel</td>
+              <td>\(x^4+x^4=0\)</td>
+            </tr>
+            <tr>
+              <td>Distribute terms</td>
+              <td>\((x+1)(x^2+1)=x^3+x^2+x+1\)</td>
+            </tr>
+            <tr>
+              <td>High powers may appear</td>
+              <td>\(x^7\cdot x^7=x^{14}\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core example</div>
+          <div class="math-display">
+            \[
+              (x+1)(x^2+x+1)=x^3+1
+            \]
+            \[
+              (x^6+x^4+x^2+x+1)(x+1)=x^7+x^6+x^5+x^4+x^3+1
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Polynomial Reduction and Irreducible Polynomials</strong>. Multiplication can create powers beyond \(x^7\), so we need a rule for folding high powers back into byte-sized form.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

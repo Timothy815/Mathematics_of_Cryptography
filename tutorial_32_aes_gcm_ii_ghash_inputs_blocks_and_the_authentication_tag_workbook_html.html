@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 32: GHASH Inputs, Blocks, and the Authentication Tag | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .gcm-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .block-table,
+    .layout-table,
+    .length-table,
+    .flow-table,
+    .formula-table,
+    .valid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .block-table th, .block-table td,
+    .layout-table th, .layout-table td,
+    .length-table th, .length-table td,
+    .flow-table th, .flow-table td,
+    .formula-table th, .formula-table td,
+    .valid-table th, .valid-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .block-table th,
+    .layout-table th,
+    .length-table th,
+    .flow-table th,
+    .formula-table th,
+    .valid-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .block-table th,
+    .block-table td,
+    .layout-table th,
+    .layout-table td,
+    .length-table th,
+    .length-table td,
+    .flow-table th,
+    .flow-table td,
+    .formula-table th,
+    .formula-table td,
+    .valid-table th,
+    .valid-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .block-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .block-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+      min-height: 78px;
+    }
+
+    .block-card.aad { background: #eaf7ef; border-color: #b8dfc5; }
+    .block-card.cipher { background: #fff4d8; border-color: #ead399; }
+    .block-card.length { background: #f0eafe; border-color: #d8c8f5; }
+    .block-label { color: #1f3763; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid, .block-strip { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .block-card { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .block-card {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .block-table th,
+      .layout-table th,
+      .length-table th,
+      .flow-table th,
+      .formula-table th,
+      .valid-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 32</div>
+      <h1>AES-GCM II: GHASH Inputs, Blocks, and the Authentication Tag</h1>
+      <p class="subtitle">
+        Printable practice for GHASH input layout, 128-bit block alignment, AAD and ciphertext length calculations, accumulator notation, and tag construction.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="32-aes-gcm-ii-ghash-inputs-blocks-and-the-authentication-tag.html">Tutorial 32</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            This workbook focuses on GHASH structure, not yet the full field multiplication. Track the order of inputs, how many 16-byte GHASH blocks are needed, how many internal zero bytes are added, and why the final length block matters.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">GHASH input order</div>
+            <ol>
+              <li>AAD \(A\)</li>
+              <li>Zero padding for AAD alignment, if needed</li>
+              <li>Ciphertext \(C\)</li>
+              <li>Zero padding for ciphertext alignment, if needed</li>
+              <li>Length block: \(len(A)\), \(len(C)\)</li>
+            </ol>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Core formulas</div>
+            <div class="math-display">
+              \[
+                Y_0=0
+              \]
+              \[
+                Y_i=(Y_{i-1}\oplus X_i)\cdot H
+              \]
+              \[
+                tag=E_K(J_0)\oplus S
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is GHASH?</td><td></td></tr>
+            <tr><td>A2. What is \(H\)?</td><td></td></tr>
+            <tr><td>A3. What is AAD?</td><td></td></tr>
+            <tr><td>A4. What does \(S\) represent in this tutorial?</td><td></td></tr>
+            <tr><td>A5. What does \(J_0\) represent at this level?</td><td></td></tr>
+            <tr><td>A6. What should happen if the tag fails verification?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="input-order">
+        <h2>Part B: GHASH input order</h2>
+        <p>Number the GHASH input pieces in their correct order.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Input piece</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext zero padding, if needed</td><td></td><td></td></tr>
+            <tr><td>AAD \(A\)</td><td></td><td></td></tr>
+            <tr><td>Length block containing \(len(A)\) and \(len(C)\)</td><td></td><td></td></tr>
+            <tr><td>AAD zero padding, if needed</td><td></td><td></td></tr>
+            <tr><td>Ciphertext \(C\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="block-alignment">
+        <h2>Part C: 16-byte GHASH block alignment</h2>
+        <p>GHASH uses 128-bit blocks, or 16-byte blocks. Complete the table.</p>
+
+        <table class="block-table">
+          <thead><tr><th>Input region</th><th>Original length</th><th>Full 16-byte blocks</th><th>Remaining bytes</th><th>Internal zero bytes needed</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td>16 bytes</td><td></td><td></td><td></td></tr>
+            <tr><td>AAD</td><td>20 bytes</td><td></td><td></td><td></td></tr>
+            <tr><td>Ciphertext</td><td>32 bytes</td><td></td><td></td><td></td></tr>
+            <tr><td>Ciphertext</td><td>37 bytes</td><td></td><td></td><td></td></tr>
+            <tr><td>AAD</td><td>7 bytes</td><td></td><td></td><td></td></tr>
+            <tr><td>Ciphertext</td><td>48 bytes</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="example-layout">
+        <h2>Part D: Example layout</h2>
+        <p>Suppose AAD is 20 bytes and ciphertext is 37 bytes. Fill in the block layout.</p>
+
+        <table class="layout-table">
+          <thead><tr><th>GHASH block</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td>Block 1</td><td></td></tr>
+            <tr><td>Block 2</td><td></td></tr>
+            <tr><td>Block 3</td><td></td></tr>
+            <tr><td>Block 4</td><td></td></tr>
+            <tr><td>Block 5</td><td></td></tr>
+            <tr><td>Block 6</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="block-strip" aria-label="Blank GHASH layout cards">
+          <div class="block-card aad"><div class="block-label">Block 1</div></div>
+          <div class="block-card aad"><div class="block-label">Block 2</div></div>
+          <div class="block-card cipher"><div class="block-label">Block 3</div></div>
+          <div class="block-card cipher"><div class="block-label">Block 4</div></div>
+          <div class="block-card cipher"><div class="block-label">Block 5</div></div>
+          <div class="block-card length"><div class="block-label">Block 6</div></div>
+        </div>
+      </section>
+
+      <section id="length-calculations">
+        <h2>Part E: Length calculations</h2>
+        <p>GHASH's final length block records lengths in bits. Complete the table.</p>
+
+        <table class="length-table">
+          <thead><tr><th>Input</th><th>Length in bytes</th><th>Length in bits</th></tr></thead>
+          <tbody>
+            <tr><td>AAD \(A\)</td><td>20</td><td></td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>37</td><td></td></tr>
+            <tr><td>AAD \(A\)</td><td>16</td><td></td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>32</td><td></td></tr>
+            <tr><td>AAD \(A\)</td><td>7</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why are lengths included in the final GHASH length block?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="accumulator-practice">
+        <h2>Part F: GHASH accumulator notation</h2>
+
+        <div class="problem">
+          <div class="problem-title">F1. What value does the GHASH accumulator start with?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. In the formula \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\), what does \(X_i\) represent?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. What does \(H\) do in the accumulator update?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F4. Rewrite the accumulator update formula from memory.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="tag-construction">
+        <h2>Part G: From GHASH output to tag</h2>
+
+        <div class="problem">
+          <div class="problem-title">G1. Write the formula for GHASH output \(S\).</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Write the high-level tag formula.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. What is the role of \(E_K(J_0)\) in the tag formula?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="valid-statements">
+        <h2>Part H: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH authenticates AAD and ciphertext.</td><td></td><td></td></tr>
+            <tr><td>GHASH zero padding is the same as PKCS#7 plaintext padding.</td><td></td><td></td></tr>
+            <tr><td>The final GHASH length block records lengths in bits.</td><td></td><td></td></tr>
+            <tr><td>If tag verification fails, the receiver should still inspect the plaintext manually.</td><td></td><td></td></tr>
+            <tr><td>Changing AAD should cause tag verification to fail.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part I: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain the difference between GHASH zero padding and PKCS#7 padding.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why does GHASH include AAD if AAD is not encrypted?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Why does the receiver recompute the tag?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I4. Summarize GHASH input layout in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH uses 128-bit blocks.</td><td></td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td></td></tr>
+            <tr><td>Ciphertext is authenticated by GCM.</td><td></td></tr>
+            <tr><td>GHASH's final length block records byte lengths, not bit lengths.</td><td></td></tr>
+            <tr><td>The GHASH accumulator starts at zero.</td><td></td></tr>
+            <tr><td>The high-level tag formula shown is \(tag=E_K(J_0)\oplus S\).</td><td></td></tr>
+            <tr><td>If the expected tag does not match the received tag, the message should be rejected.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            GHASH is structure before arithmetic. Know the layout first: AAD, AAD padding, ciphertext, ciphertext padding, length block. The field multiplication becomes easier once the conveyor belt is clear.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is GHASH?</td><td>The GCM authentication mixer, a polynomial hash over \(GF(2^{128})\).</td></tr>
+            <tr><td>A2. What is \(H\)?</td><td>The GHASH hash subkey, \(H=E_K(0^{128})\).</td></tr>
+            <tr><td>A3. What is AAD?</td><td>Additional Authenticated Data, visible data that is authenticated but not encrypted.</td></tr>
+            <tr><td>A4. What does \(S\) represent in this tutorial?</td><td>The GHASH output value before it is combined into the final tag.</td></tr>
+            <tr><td>A5. What does \(J_0\) represent at this level?</td><td>The starting counter block derived from the nonce, used to mask the GHASH output into the final tag.</td></tr>
+            <tr><td>A6. What should happen if the tag fails verification?</td><td>The message should be rejected.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: GHASH input order</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input piece</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext zero padding, if needed</td><td>4</td><td>Aligns ciphertext region to a 128-bit GHASH block.</td></tr>
+            <tr><td>AAD \(A\)</td><td>1</td><td>Authenticates visible associated data.</td></tr>
+            <tr><td>Length block containing \(len(A)\) and \(len(C)\)</td><td>5</td><td>Records exact bit lengths and prevents ambiguity.</td></tr>
+            <tr><td>AAD zero padding, if needed</td><td>2</td><td>Aligns AAD region to a 128-bit GHASH block.</td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>3</td><td>Authenticates encrypted message bytes.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: 16-byte GHASH block alignment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input region</th><th>Original length</th><th>Full 16-byte blocks</th><th>Remaining bytes</th><th>Internal zero bytes needed</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td>16 bytes</td><td>1</td><td>0</td><td>0</td></tr>
+            <tr><td>AAD</td><td>20 bytes</td><td>1</td><td>4</td><td>12</td></tr>
+            <tr><td>Ciphertext</td><td>32 bytes</td><td>2</td><td>0</td><td>0</td></tr>
+            <tr><td>Ciphertext</td><td>37 bytes</td><td>2</td><td>5</td><td>11</td></tr>
+            <tr><td>AAD</td><td>7 bytes</td><td>0</td><td>7</td><td>9</td></tr>
+            <tr><td>Ciphertext</td><td>48 bytes</td><td>3</td><td>0</td><td>0</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Example layout</h3>
+        <table class="answer-table">
+          <thead><tr><th>GHASH block</th><th>Contents</th></tr></thead>
+          <tbody>
+            <tr><td>Block 1</td><td>16 bytes of AAD</td></tr>
+            <tr><td>Block 2</td><td>4 AAD bytes + 12 zero bytes</td></tr>
+            <tr><td>Block 3</td><td>16 bytes of ciphertext</td></tr>
+            <tr><td>Block 4</td><td>16 bytes of ciphertext</td></tr>
+            <tr><td>Block 5</td><td>5 ciphertext bytes + 11 zero bytes</td></tr>
+            <tr><td>Block 6</td><td>Length block containing \(len(A)\) and \(len(C)\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Length calculations</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Length in bytes</th><th>Length in bits</th></tr></thead>
+          <tbody>
+            <tr><td>AAD \(A\)</td><td>20</td><td>160</td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>37</td><td>296</td></tr>
+            <tr><td>AAD \(A\)</td><td>16</td><td>128</td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>32</td><td>256</td></tr>
+            <tr><td>AAD \(A\)</td><td>7</td><td>56</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> Lengths are included to remove ambiguity about how much original AAD and ciphertext were present before internal zero padding was added.</p>
+        </div>
+
+        <h3>Part F: GHASH accumulator notation</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong> The accumulator starts at \(Y_0=0\).</p>
+          <p><strong>F2.</strong> \(X_i\) represents the current 128-bit GHASH input block.</p>
+          <p><strong>F3 sample answer.</strong> \(H\) is the hash subkey used in the Galois-field multiplication step that updates the accumulator.</p>
+          <p><strong>F4.</strong> \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\)</p>
+        </div>
+
+        <h3>Part G: From GHASH output to tag</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> \(S=GHASH_H(A,C)\)</p>
+          <p><strong>G2.</strong> \(tag=E_K(J_0)\oplus S\)</p>
+          <p><strong>G3 sample answer.</strong> \(E_K(J_0)\) masks the GHASH output to produce the final authentication tag.</p>
+        </div>
+
+        <h3>Part H: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH authenticates AAD and ciphertext.</td><td>Valid</td><td>Both are included in GHASH input.</td></tr>
+            <tr><td>GHASH zero padding is the same as PKCS#7 plaintext padding.</td><td>Mistaken</td><td>GHASH zero padding is internal authentication formatting.</td></tr>
+            <tr><td>The final GHASH length block records lengths in bits.</td><td>Valid</td><td>Lengths are represented as bit lengths.</td></tr>
+            <tr><td>If tag verification fails, the receiver should still inspect the plaintext manually.</td><td>Mistaken</td><td>Failed tag means reject the message.</td></tr>
+            <tr><td>Changing AAD should cause tag verification to fail.</td><td>Valid</td><td>AAD is authenticated.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> GHASH zero padding is internal formatting used to align AAD and ciphertext to 128-bit authentication blocks. PKCS#7 padding is message padding used by some encryption modes to fill plaintext blocks. They are not the same.</p>
+          <p><strong>I2 sample answer.</strong> AAD may need to remain visible, such as a header, but it should still be protected from tampering. GHASH includes AAD so changes to it cause tag verification to fail.</p>
+          <p><strong>I3 sample answer.</strong> The receiver recomputes the tag to check whether the received AAD and ciphertext match what was originally protected. If the recomputed tag differs, something is wrong.</p>
+          <p><strong>I4 sample answer.</strong> GHASH processes AAD first, then internal zero padding if needed, then ciphertext, then ciphertext zero padding if needed, and finally a length block containing the bit lengths of AAD and ciphertext. This arrangement lets GCM authenticate both visible metadata and encrypted message bytes.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH uses 128-bit blocks.</td><td>True</td><td>GHASH operates on 128-bit input blocks.</td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td>True</td><td>That is the purpose of AAD.</td></tr>
+            <tr><td>Ciphertext is authenticated by GCM.</td><td>True</td><td>Ciphertext is included in GHASH.</td></tr>
+            <tr><td>GHASH's final length block records byte lengths, not bit lengths.</td><td>False</td><td>It records bit lengths.</td></tr>
+            <tr><td>The GHASH accumulator starts at zero.</td><td>True</td><td>\(Y_0=0\).</td></tr>
+            <tr><td>The high-level tag formula shown is \(tag=E_K(J_0)\oplus S\).</td><td>True</td><td>That is the formula in this tutorial.</td></tr>
+            <tr><td>If the expected tag does not match the received tag, the message should be rejected.</td><td>True</td><td>Tag failure means the protected data did not verify.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 32: GHASH Inputs, Blocks, and the Authentication Tag.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

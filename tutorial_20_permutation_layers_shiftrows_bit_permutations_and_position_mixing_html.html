@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Permutation Layers: ShiftRows, Bit Permutations, and Position Mixing | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .perm-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .bit-table,
+    .perm-table,
+    .state-table,
+    .compare-table,
+    .layer-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .bit-table th,
+    .bit-table td,
+    .perm-table th,
+    .perm-table td,
+    .state-table th,
+    .state-table td,
+    .compare-table th,
+    .compare-table td,
+    .layer-table th,
+    .layer-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .bit-table th,
+    .perm-table th,
+    .state-table th,
+    .compare-table th,
+    .layer-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .bit-table td,
+    .bit-table th,
+    .perm-table td,
+    .perm-table th,
+    .state-table td,
+    .state-table th,
+    .compare-table td,
+    .compare-table th,
+    .layer-table td,
+    .layer-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 170px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .bit-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(54px, 1fr));
+      gap: 8px;
+      margin: 12px 0;
+      min-width: 520px;
+    }
+
+    .bit-cell {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 10px 4px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .bit-cell.move { background: #f0eafe; border-color: #d8c8f5; }
+    .bit-cell.same { background: #eaf7ef; border-color: #b8dfc5; }
+
+    .state-grid-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 18px 0;
+    }
+
+    .state-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 16px;
+      background: #ffffff;
+    }
+
+    .state-card.shifted { background: #f0eafe; border-color: #d8c8f5; }
+    .state-card-title { color: #1f3763; font-weight: 900; margin-bottom: 10px; text-align: center; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .state-grid-pair { grid-template-columns: 1fr; }
+      .bit-row { grid-template-columns: repeat(4, minmax(54px, 1fr)); min-width: 0; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .state-card, .bit-cell { break-inside: avoid; }
+      .box, .diagram, details.solution, .state-card, .bit-cell { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .bit-table th, .perm-table th, .state-table th, .compare-table th, .layer-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 20</div>
+      <h1>Permutation Layers: ShiftRows, Bit Permutations, and Position Mixing</h1>
+      <p class="subtitle">
+        How cryptographic layers move data positions without changing values, and why movement is essential for spreading influence across a cipher state.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="19-inverse-mixcolumns-and-decryption-layers.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            We have studied substitution, linear mixing, MixColumns, and inverse layers. Now we study a simpler-looking operation that does a vital job: moving positions. Permutation layers do not change values by themselves, but they move those values so later layers combine different parts of the state.
+          </p>
+        </div>
+
+        <p class="lead">
+          A permutation layer is the cipher's seating chart. It does not rewrite the students, but it changes who sits next to whom. That matters because the next group activity, the mixing layer, depends on those new neighbors.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should understand vectors, matrices, XOR, diffusion, the AES state grid, MixColumns, and the idea that decryption uses inverse operations. No new field arithmetic is introduced here.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Permutation notation is compact, so we define the symbols before using them.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>permutation</td>
+              <td>A rearrangement with nothing lost and nothing duplicated.</td>
+              <td>A bijection from a set to itself.</td>
+            </tr>
+            <tr>
+              <td>permutation layer</td>
+              <td>A cipher step that moves positions around.</td>
+              <td>A bijective position-mapping transformation.</td>
+            </tr>
+            <tr>
+              <td>\(P\)</td>
+              <td>A position-moving rule.</td>
+              <td>A permutation function or permutation matrix.</td>
+            </tr>
+            <tr>
+              <td>\(P^{-1}\)</td>
+              <td>The rule that moves everything back.</td>
+              <td>The inverse permutation.</td>
+            </tr>
+            <tr>
+              <td>ShiftRows</td>
+              <td>AES row-shifting step.</td>
+              <td>A byte-position permutation of the AES state rows.</td>
+            </tr>
+            <tr>
+              <td>InvShiftRows</td>
+              <td>The AES row-shift undo step.</td>
+              <td>The inverse byte-position permutation used in AES decryption.</td>
+            </tr>
+            <tr>
+              <td>bit permutation</td>
+              <td>A rearrangement of bit positions.</td>
+              <td>A permutation applied to individual bits.</td>
+            </tr>
+            <tr>
+              <td>byte permutation</td>
+              <td>A rearrangement of byte positions.</td>
+              <td>A permutation applied to byte-sized state components.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            A permutation does not create new values. It only relocates existing values. Its power comes from where it sends them. If a mixing layer only mixes within a column, then a permutation can move bytes between columns so the next mixing step reaches new territory.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Permutation layer moves positions before mixing">
+          <div class="diagram-title">Position movement supports diffusion</div>
+          <div class="flow-row">
+            <div class="flow-node">Local changes</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Permutation layer<br>move positions</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Mixing layer<br>combine new neighbors</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Wider spread</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="permutation-definition">
+        <h2>What is a permutation?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: permutation</div>
+          <p>
+            A permutation is a rearrangement of positions where every original position appears exactly once. Nothing is dropped, and nothing is copied twice.
+          </p>
+        </div>
+
+        <p>
+          Example: the bit string <code>abcd</code> could be permuted to <code>cadb</code>. The symbols are the same. Only the positions changed.
+        </p>
+
+        <table class="perm-table">
+          <thead>
+            <tr><th>Original position</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Original value</td><td>a</td><td>b</td><td>c</td><td>d</td></tr>
+            <tr><td>New order</td><td>c</td><td>a</td><td>d</td><td>b</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="bit-permutation">
+        <h2>Bit permutations</h2>
+        <p>
+          A bit permutation rearranges individual bit positions. Suppose we start with:</p>
+
+        <div class="diagram">
+          <div class="diagram-title">Original 8-bit positions</div>
+          <div class="bit-row">
+            <div class="bit-cell">b0</div><div class="bit-cell">b1</div><div class="bit-cell">b2</div><div class="bit-cell">b3</div><div class="bit-cell">b4</div><div class="bit-cell">b5</div><div class="bit-cell">b6</div><div class="bit-cell">b7</div>
+          </div>
+        </div>
+
+        <p>
+          A reverse permutation sends it to:</p>
+        <div class="diagram">
+          <div class="diagram-title">After reversing positions</div>
+          <div class="bit-row">
+            <div class="bit-cell move">b7</div><div class="bit-cell move">b6</div><div class="bit-cell move">b5</div><div class="bit-cell move">b4</div><div class="bit-cell move">b3</div><div class="bit-cell move">b2</div><div class="bit-cell move">b1</div><div class="bit-cell move">b0</div>
+          </div>
+        </div>
+
+        <p>
+          The bits themselves are not changed from 0 to 1 or 1 to 0. They are moved to new positions.</p>
+      </section>
+
+      <section id="permutation-notation">
+        <h2>Permutation notation</h2>
+        <p>
+          One useful way to describe a permutation is to list where each output position gets its input from. For example:</p>
+        <div class="math-display">
+          \[
+            P=[2,0,3,1]
+          \]
+        </div>
+        <p>
+          This means:</p>
+        <table class="perm-table">
+          <thead>
+            <tr><th>Output position</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Gets input from position</td><td>2</td><td>0</td><td>3</td><td>1</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          So if the input is \([a,b,c,d]\), then the output is:</p>
+        <div class="math-display">
+          \[
+            [c,a,d,b]
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Notation warning</div>
+          <p>
+            Different books and software libraries may describe permutations in opposite directions: “input goes to output” versus “output gets input from.” Always define the convention before using the list.</p>
+        </div>
+      </section>
+
+      <section id="inverse-permutation">
+        <h2>Inverse permutation</h2>
+        <p>
+          Since a permutation only rearranges positions, it can be reversed. If:</p>
+        <div class="math-display">
+          \[
+            P([a,b,c,d])=[c,a,d,b]
+          \]
+        </div>
+        <p>
+          then the inverse permutation sends \([c,a,d,b]\) back to \([a,b,c,d]\).</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: inverse permutation</div>
+          <p>
+            The inverse permutation \(P^{-1}\) is the position-moving rule that undoes \(P\). Applying \(P\) and then \(P^{-1}\) returns the original order.
+          </p>
+        </div>
+
+        <div class="math-display">
+          \[
+            P^{-1}(P(x))=x
+          \]
+        </div>
+      </section>
+
+      <section id="shiftrows-overview">
+        <h2>AES ShiftRows overview</h2>
+        <p>
+          AES ShiftRows is a byte permutation. It moves bytes within each row of the AES state:</p>
+        <ul>
+          <li>Row 0 shifts left by 0 positions.</li>
+          <li>Row 1 shifts left by 1 position.</li>
+          <li>Row 2 shifts left by 2 positions.</li>
+          <li>Row 3 shifts left by 3 positions.</li>
+        </ul>
+
+        <div class="box perm-box">
+          <div class="box-title">Key idea</div>
+          <p>
+            ShiftRows does not change byte values. It changes which column each byte belongs to before the next MixColumns step.</p>
+        </div>
+      </section>
+
+      <section id="shiftrows-example">
+        <h2>ShiftRows example</h2>
+        <p>
+          Let the AES state contain symbolic bytes:</p>
+
+        <div class="state-grid-pair">
+          <div class="state-card">
+            <div class="state-card-title">Before ShiftRows</div>
+            <table class="state-table">
+              <tbody>
+                <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+                <tr><td>b0</td><td>b1</td><td>b2</td><td>b3</td></tr>
+                <tr><td>c0</td><td>c1</td><td>c2</td><td>c3</td></tr>
+                <tr><td>d0</td><td>d1</td><td>d2</td><td>d3</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="state-card shifted">
+            <div class="state-card-title">After ShiftRows</div>
+            <table class="state-table">
+              <tbody>
+                <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+                <tr><td>b1</td><td>b2</td><td>b3</td><td>b0</td></tr>
+                <tr><td>c2</td><td>c3</td><td>c0</td><td>c1</td></tr>
+                <tr><td>d3</td><td>d0</td><td>d1</td><td>d2</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p>
+          Notice that every row still has the same four bytes. They have simply moved sideways.
+        </p>
+      </section>
+
+      <section id="invshiftrows">
+        <h2>Inverse ShiftRows</h2>
+        <p>
+          InvShiftRows reverses ShiftRows by shifting rows to the right:</p>
+        <ul>
+          <li>Row 0 shifts right by 0 positions.</li>
+          <li>Row 1 shifts right by 1 position.</li>
+          <li>Row 2 shifts right by 2 positions.</li>
+          <li>Row 3 shifts right by 3 positions.</li>
+        </ul>
+
+        <div class="math-display">
+          \[
+            \operatorname{InvShiftRows}(\operatorname{ShiftRows}(S))=S
+          \]
+        </div>
+
+        <p>
+          This is the same inverse-operation principle we saw with inverse S-box and inverse MixColumns.</p>
+      </section>
+
+      <section id="why-shiftrows-matters">
+        <h2>Why ShiftRows matters</h2>
+        <p>
+          MixColumns only mixes bytes within the same column. If bytes never moved between columns, each column could remain too isolated. ShiftRows moves bytes sideways so the next MixColumns step mixes bytes from different previous columns.</p>
+
+        <div class="diagram" role="img" aria-label="ShiftRows and MixColumns cooperate">
+          <div class="diagram-title">ShiftRows and MixColumns cooperate</div>
+          <div class="flow-row">
+            <div class="flow-node">Bytes in columns</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">ShiftRows<br>move across columns</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">MixColumns<br>mix each new column</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Wider diffusion</div>
+          </div>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Plain-language version</div>
+          <p>
+            ShiftRows changes the teams. MixColumns makes each team work together. Round after round, information gets forced into new teams and mixed again.</p>
+        </div>
+      </section>
+
+      <section id="permutation-vs-mixing">
+        <h2>Permutation versus mixing</h2>
+        <p>
+          It is useful to separate these two ideas:</p>
+        <table class="compare-table">
+          <thead>
+            <tr><th>Layer type</th><th>What it does</th><th>Does it change values?</th><th>Example</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Permutation layer</td><td>Moves positions</td><td>No</td><td>ShiftRows, bit permutation</td></tr>
+            <tr><td>Mixing layer</td><td>Combines values</td><td>Yes</td><td>MixColumns</td></tr>
+            <tr><td>Substitution layer</td><td>Replaces values</td><td>Yes</td><td>SubBytes</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          A permutation layer by itself does not create confusion or avalanche. Its job is to place values where later layers can combine them more effectively.
+        </p>
+      </section>
+
+      <section id="permutation-matrix">
+        <h2>Permutation matrices</h2>
+        <p>
+          A permutation can also be written as a matrix. A permutation matrix has exactly one 1 in each row and exactly one 1 in each column.</p>
+
+        <div class="math-display">
+          \[
+            P=
+            \begin{bmatrix}
+            0&0&1&0\\
+            1&0&0&0\\
+            0&0&0&1\\
+            0&1&0&0
+            \end{bmatrix}
+          \]
+        </div>
+
+        <p>
+          This matrix maps \([a,b,c,d]^T\) to \([c,a,d,b]^T\).</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why exactly one 1 per row and column?</div>
+          <p>
+            One 1 per row means every output position receives exactly one input. One 1 per column means every input position is used exactly once. That prevents loss and duplication.</p>
+        </div>
+      </section>
+
+      <section id="permutation-and-diffusion">
+        <h2>Permutation layers and diffusion</h2>
+        <p>
+          A permutation does not increase the number of active bytes by itself. If one byte is active before a permutation, one byte is active afterward. But it can move that active byte into a position where the next mixing layer spreads it more widely.</p>
+
+        <table class="layer-table">
+          <thead><tr><th>Step</th><th>Activity pattern</th><th>What changed?</th></tr></thead>
+          <tbody>
+            <tr><td>Before permutation</td><td>One active byte in column 0</td><td>Local activity</td></tr>
+            <tr><td>After ShiftRows</td><td>Active byte may move to another column</td><td>Position changed</td></tr>
+            <tr><td>After MixColumns</td><td>Activity spreads within the new column</td><td>Number of active bytes can grow</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="spn-connection">
+        <h2>Connection to substitution-permutation networks</h2>
+        <p>
+          A substitution-permutation network, or SPN, alternates substitution layers and permutation or mixing layers. The substitution layer adds nonlinearity. The permutation or mixing layer spreads the effects to new positions.</p>
+
+        <div class="math-display">
+          \[
+            \text{Substitution}\rightarrow\text{Permutation or Mixing}\rightarrow\text{Substitution}\rightarrow\text{Permutation or Mixing}\rightarrow\cdots
+          \]
+        </div>
+
+        <p>
+          AES is often described as SPN-like because it repeatedly combines S-box substitution with position movement and linear mixing.
+        </p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking a permutation changes values</div>
+          <p>
+            A permutation moves values. It does not alter the values themselves.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking movement is unimportant</div>
+          <p>
+            Movement is crucial because it changes which values get mixed together in later layers.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: confusing ShiftRows with MixColumns</div>
+          <p>
+            ShiftRows moves bytes sideways. MixColumns combines bytes within columns.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: assuming every rearrangement is reversible</div>
+          <p>
+            A true permutation is reversible only if no position is dropped and no position is duplicated.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does a permutation layer do?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It rearranges positions without changing the values themselves.</p>
+            </details>
+          </li>
+          <li>
+            If \(P([a,b,c,d])=[c,a,d,b]\), what does \(P^{-1}\) do to \([c,a,d,b]\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It returns \([a,b,c,d]\).</p>
+            </details>
+          </li>
+          <li>
+            In AES ShiftRows, how far does row 2 shift left?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Row 2 shifts left by 2 positions.</p>
+            </details>
+          </li>
+          <li>
+            Why does ShiftRows help MixColumns spread information?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>ShiftRows moves bytes into different columns, so the next MixColumns step mixes bytes that came from different previous columns.</p>
+            </details>
+          </li>
+          <li>
+            What condition makes a permutation matrix valid?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It must have exactly one 1 in each row and exactly one 1 in each column.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Permutation layers often look too simple to matter. But in a round-based cipher, position movement determines which pieces of data interact in later layers. Good movement helps local nonlinear effects spread across the entire state.
+        </p>
+        <ul>
+          <li>Permutation layers move positions without changing values.</li>
+          <li>They are reversible when every position is used exactly once.</li>
+          <li>ShiftRows is AES's byte-position permutation.</li>
+          <li>ShiftRows and MixColumns work together to spread activity across the state.</li>
+          <li>Permutation ideas are central to substitution-permutation networks.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A permutation is a rearrangement with no missing or duplicated positions.</li>
+            <li>A permutation layer moves positions but does not change values.</li>
+            <li>A bit permutation rearranges bits.</li>
+            <li>A byte permutation rearranges bytes.</li>
+            <li>AES ShiftRows is a byte-position permutation.</li>
+            <li>ShiftRows shifts row 0 by 0, row 1 by 1, row 2 by 2, and row 3 by 3.</li>
+            <li>InvShiftRows shifts rows back to the right.</li>
+            <li>ShiftRows helps MixColumns by moving bytes across columns.</li>
+            <li>A permutation matrix has exactly one 1 in each row and column.</li>
+            <li>In SPN-style ciphers, substitutions add nonlinearity while permutations and mixing layers spread effects.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Layer</th><th>Main job</th><th>AES example</th></tr></thead>
+          <tbody>
+            <tr><td>Substitution</td><td>Replace values nonlinearly</td><td>SubBytes</td></tr>
+            <tr><td>Permutation</td><td>Move positions</td><td>ShiftRows</td></tr>
+            <tr><td>Mixing</td><td>Combine values</td><td>MixColumns</td></tr>
+            <tr><td>Key addition</td><td>Mix state with round key</td><td>AddRoundKey</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core identities</div>
+          <div class="math-display">
+            \[
+              P^{-1}(P(x))=x
+            \]
+            \[
+              \operatorname{InvShiftRows}(\operatorname{ShiftRows}(S))=S
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Round Structure: Putting SubBytes, ShiftRows, MixColumns, and AddRoundKey Together</strong>. We will assemble the AES round as a complete reversible machine.
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

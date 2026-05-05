@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 4: Modular Arithmetic | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .mod-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .mod-table th, .mod-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .mod-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .mod-table th,
+    .mod-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .clock-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 12px 0;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .clock-slot {
+      width: 38px;
+      height: 38px;
+      border: 1px solid #c7d2ea;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      background: #ffffff;
+    }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .mod-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 4</div>
+      <h1>Modular Arithmetic</h1>
+      <p class="subtitle">
+        Printable practice for remainders, congruence, wraparound arithmetic, negative numbers, multiplication modulo n, and Caesar shifts.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="04-modular-arithmetic.html">Tutorial 4</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            For each modular arithmetic problem, think in two layers: ordinary arithmetic first, then wrap back into the allowed range. Show division or wraparound work when the problem asks for it.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core ideas</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Idea</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Modulus \(n\)</td><td>The wraparound size.</td></tr>
+                <tr><td>\(a\bmod n\)</td><td>The remainder after dividing \(a\) by \(n\).</td></tr>
+                <tr><td>Residues modulo \(n\)</td><td>Usually \(0,1,2,\dots,n-1\).</td></tr>
+                <tr><td>\(a\equiv b\pmod n\)</td><td>\(a\) and \(b\) have the same remainder modulo \(n\).</td></tr>
+                <tr><td>Congruence test</td><td>\(a\equiv b\pmod n\) means \(n\mid(a-b)\).</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">Core formulas</div>
+            <div class="math-display">
+              \[
+                a=qn+r,\qquad 0\le r<n
+              \]
+              \[
+                a\bmod n=r
+              \]
+              \[
+                a\equiv b\pmod n \iff n\mid(a-b)
+              \]
+              \[
+                C\equiv P+K\pmod{26}
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. Define modulus in friendly language.</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What does \(a\bmod n\) ask for?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. What does \(a\equiv b\pmod n\) mean?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. Why are the standard residues modulo \(n\) usually \(0\) through \(n-1\), not 1 through \(n\)?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="remainders">
+        <h2>Part B: Remainders</h2>
+        <p>Write each number in the form \(a=qn+r\), then give the remainder.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Expression</th>
+              <th>Division form \(a=qn+r\)</th>
+              <th>Remainder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td>\(17\bmod 5\)</td><td></td><td></td></tr>
+            <tr><td>B2</td><td>\(41\bmod 12\)</td><td></td><td></td></tr>
+            <tr><td>B3</td><td>\(58\bmod 7\)</td><td></td><td></td></tr>
+            <tr><td>B4</td><td>\(100\bmod 9\)</td><td></td><td></td></tr>
+            <tr><td>B5</td><td>\(255\bmod 16\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="clock-arithmetic">
+        <h2>Part C: Clock arithmetic</h2>
+        <p>Use modulo 12. The standard residues are 0 through 11.</p>
+
+        <div class="box quick-reference-box">
+          <div class="box-title">Modulo 12 positions</div>
+          <div class="clock-line">
+            <span class="clock-slot">0</span>
+            <span class="clock-slot">1</span>
+            <span class="clock-slot">2</span>
+            <span class="clock-slot">3</span>
+            <span class="clock-slot">4</span>
+            <span class="clock-slot">5</span>
+            <span class="clock-slot">6</span>
+            <span class="clock-slot">7</span>
+            <span class="clock-slot">8</span>
+            <span class="clock-slot">9</span>
+            <span class="clock-slot">10</span>
+            <span class="clock-slot">11</span>
+          </div>
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Expression</th>
+              <th>Ordinary result</th>
+              <th>Modulo 12 result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>C1</td><td>\(7+8\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>C2</td><td>\(9+8\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>C3</td><td>\(3-8\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>C4</td><td>\(4-9\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>C5</td><td>\(10+17\pmod{12}\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="congruence">
+        <h2>Part D: Congruence checks</h2>
+        <p>Decide whether each statement is true. Show either matching remainders or the divisibility test.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Statement</th>
+              <th>True?</th>
+              <th>Reason/work</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1</td><td>\(17\equiv5\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>D2</td><td>\(38\equiv2\pmod{12}\)</td><td></td><td></td></tr>
+            <tr><td>D3</td><td>\(29\equiv3\pmod{13}\)</td><td></td><td></td></tr>
+            <tr><td>D4</td><td>\(44\equiv8\pmod{9}\)</td><td></td><td></td></tr>
+            <tr><td>D5</td><td>\(101\equiv1\pmod{10}\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="modular-operations">
+        <h2>Part E: Modular addition, subtraction, and multiplication</h2>
+        <p>Do ordinary arithmetic first, then reduce modulo \(n\).</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Expression</th>
+              <th>Ordinary arithmetic</th>
+              <th>Reduced answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>E1</td><td>\(19+11\pmod{26}\)</td><td></td><td></td></tr>
+            <tr><td>E2</td><td>\(8+25\pmod{26}\)</td><td></td><td></td></tr>
+            <tr><td>E3</td><td>\(4-13\pmod{26}\)</td><td></td><td></td></tr>
+            <tr><td>E4</td><td>\(7\cdot9\pmod{26}\)</td><td></td><td></td></tr>
+            <tr><td>E5</td><td>\(8\cdot7\pmod{26}\)</td><td></td><td></td></tr>
+            <tr><td>E6</td><td>\(15\cdot15\pmod{26}\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="zn">
+        <h2>Part F: Working in \(\mathbb{Z}_n\)</h2>
+
+        <div class="problem">
+          <div class="problem-title">F1. List the standard residues in \(\mathbb{Z}_5\).</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. List the standard residues in \(\mathbb{Z}_8\).</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. In \(\mathbb{Z}_{12}\), which standard residue does 49 land on?</div>
+          <div class="work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F4. In \(\mathbb{Z}_{16}\), which standard residue does 255 land on?</div>
+          <div class="work-space"></div>
+          <p>Answer:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="caesar-practice">
+        <h2>Part G: Caesar cipher preview</h2>
+        <p>Use \(A=0, B=1, C=2, \dots, Z=25\). Caesar encryption uses:</p>
+        <div class="math-display">
+          \[
+            C\equiv P+K\pmod{26}
+          \]
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Plain letter</th>
+              <th>\(P\)</th>
+              <th>Key \(K\)</th>
+              <th>Work</th>
+              <th>Encrypted letter</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>G1</td><td>A</td><td>0</td><td>3</td><td></td><td></td></tr>
+            <tr><td>G2</td><td>H</td><td>7</td><td>5</td><td></td><td></td></tr>
+            <tr><td>G3</td><td>Y</td><td>24</td><td>5</td><td></td><td></td></tr>
+            <tr><td>G4</td><td>Z</td><td>25</td><td>2</td><td></td><td></td></tr>
+            <tr><td>G5</td><td>M</td><td>12</td><td>19</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="challenge">
+        <h2>Part H: Challenge problems</h2>
+        <div class="box challenge-box">
+          <div class="box-title">Stretch the concept</div>
+          <p>
+            These problems ask you to explain or connect ideas. A correct answer should show the wraparound reasoning clearly.
+          </p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. Explain why \(12\equiv0\pmod{12}\), but 12 is not one of the standard residues modulo 12.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. Explain why \(-1\equiv25\pmod{26}\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H3. A byte has 256 possible values. Explain how unsigned byte wraparound is related to modulo 256 arithmetic.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Statement</th>
+              <th>True or False?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>\(a\bmod n\) asks for the quotient after division.</td><td></td></tr>
+            <tr><td>Modulo 12 standard residues are usually 0 through 11.</td><td></td></tr>
+            <tr><td>\(17\equiv5\pmod{12}\) means 17 and 5 are the same ordinary integer.</td><td></td></tr>
+            <tr><td>In modular arithmetic, subtraction can produce a negative intermediate result that wraps back into range.</td><td></td></tr>
+            <tr><td>Caesar cipher shifts can be modeled with addition modulo 26.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            When unsure, write \(a=qn+r\). The remainder \(r\) is the modular result when \(0\le r<n\).
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> The modulus is the wraparound size, like the number of positions on a clock.</p>
+          <p><strong>A2.</strong> \(a\bmod n\) asks for the remainder after dividing \(a\) by \(n\).</p>
+          <p><strong>A3.</strong> \(a\equiv b\pmod n\) means \(a\) and \(b\) have the same remainder modulo \(n\). Technically, \(n\mid(a-b)\).</p>
+          <p><strong>A4.</strong> There are \(n\) residues. Counting from 0 through \(n-1\) gives exactly \(n\) positions, and \(n\) itself wraps back to 0.</p>
+        </div>
+
+        <h3>Part B: Remainders</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Division form</th><th>Remainder</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\(17=3\cdot5+2\)</td><td>2</td></tr>
+            <tr><td>B2</td><td>\(41=3\cdot12+5\)</td><td>5</td></tr>
+            <tr><td>B3</td><td>\(58=8\cdot7+2\)</td><td>2</td></tr>
+            <tr><td>B4</td><td>\(100=11\cdot9+1\)</td><td>1</td></tr>
+            <tr><td>B5</td><td>\(255=15\cdot16+15\)</td><td>15</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Clock arithmetic</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Work</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>C1</td><td>\(7+8=15\), \(15\bmod12=3\)</td><td>3</td></tr>
+            <tr><td>C2</td><td>\(9+8=17\), \(17\bmod12=5\)</td><td>5</td></tr>
+            <tr><td>C3</td><td>\(3-8=-5\), \(-5+12=7\)</td><td>7</td></tr>
+            <tr><td>C4</td><td>\(4-9=-5\), \(-5+12=7\)</td><td>7</td></tr>
+            <tr><td>C5</td><td>\(10+17=27\), \(27\bmod12=3\)</td><td>3</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Congruence checks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>True?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td>True</td><td>\(17\bmod12=5\), and \(5\bmod12=5\).</td></tr>
+            <tr><td>D2</td><td>True</td><td>\(38\bmod12=2\), and \(2\bmod12=2\).</td></tr>
+            <tr><td>D3</td><td>True</td><td>\(29-3=26\), and 26 is divisible by 13.</td></tr>
+            <tr><td>D4</td><td>True</td><td>\(44-8=36\), and 36 is divisible by 9.</td></tr>
+            <tr><td>D5</td><td>True</td><td>\(101\bmod10=1\).</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Modular operations</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Ordinary arithmetic</th><th>Reduced answer</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td>\(19+11=30\)</td><td>\(30\bmod26=4\)</td></tr>
+            <tr><td>E2</td><td>\(8+25=33\)</td><td>\(33\bmod26=7\)</td></tr>
+            <tr><td>E3</td><td>\(4-13=-9\)</td><td>\(-9+26=17\)</td></tr>
+            <tr><td>E4</td><td>\(7\cdot9=63\)</td><td>\(63\bmod26=11\)</td></tr>
+            <tr><td>E5</td><td>\(8\cdot7=56\)</td><td>\(56\bmod26=4\)</td></tr>
+            <tr><td>E6</td><td>\(15\cdot15=225\)</td><td>\(225\bmod26=17\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Working in \(\mathbb{Z}_n\)</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong> \(\mathbb{Z}_5=\{0,1,2,3,4\}\).</p>
+          <p><strong>F2.</strong> \(\mathbb{Z}_8=\{0,1,2,3,4,5,6,7\}\).</p>
+          <p><strong>F3.</strong> \(49=4\cdot12+1\), so 49 lands on 1 in \(\mathbb{Z}_{12}\).</p>
+          <p><strong>F4.</strong> \(255=15\cdot16+15\), so 255 lands on 15 in \(\mathbb{Z}_{16}\).</p>
+        </div>
+
+        <h3>Part G: Caesar cipher preview</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Work</th><th>Encrypted letter</th></tr></thead>
+          <tbody>
+            <tr><td>G1</td><td>\(0+3=3\)</td><td>D</td></tr>
+            <tr><td>G2</td><td>\(7+5=12\)</td><td>M</td></tr>
+            <tr><td>G3</td><td>\(24+5=29\), \(29\bmod26=3\)</td><td>D</td></tr>
+            <tr><td>G4</td><td>\(25+2=27\), \(27\bmod26=1\)</td><td>B</td></tr>
+            <tr><td>G5</td><td>\(12+19=31\), \(31\bmod26=5\)</td><td>F</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: Challenge problems</h3>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> \(12\equiv0\pmod{12}\) because 12 leaves remainder 0 when divided by 12. But the standard residues modulo 12 are 0 through 11, so 12 wraps back to 0 instead of appearing as its own standard residue.</p>
+          <p><strong>H2 sample answer.</strong> \(-1\equiv25\pmod{26}\) because adding 26 to \(-1\) gives 25. Also, \(-1-25=-26\), and \(-26\) is divisible by 26.</p>
+          <p><strong>H3 sample answer.</strong> An unsigned byte has 256 possible values, 0 through 255. If arithmetic overflows past 255 and wraps around, it behaves like arithmetic modulo 256 because values are reduced back into the range 0 through 255.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>\(a\bmod n\) asks for the quotient after division.</td><td>False</td><td>It asks for the remainder.</td></tr>
+            <tr><td>Modulo 12 standard residues are usually 0 through 11.</td><td>True</td><td>That gives 12 total positions.</td></tr>
+            <tr><td>\(17\equiv5\pmod{12}\) means 17 and 5 are the same ordinary integer.</td><td>False</td><td>It means they have the same remainder modulo 12.</td></tr>
+            <tr><td>In modular arithmetic, subtraction can produce a negative intermediate result that wraps back into range.</td><td>True</td><td>For example, \(3-8=-5\equiv7\pmod{12}\).</td></tr>
+            <tr><td>Caesar cipher shifts can be modeled with addition modulo 26.</td><td>True</td><td>The alphabet has 26 letters.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 4: Modular Arithmetic.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

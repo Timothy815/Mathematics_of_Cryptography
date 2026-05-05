@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 20: Permutation Layers, ShiftRows, and Position Mixing | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .perm-box { background: var(--purple-soft); border-color: #d8c8f5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .perm-table,
+    .state-table,
+    .layer-table,
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .perm-table th, .perm-table td,
+    .state-table th, .state-table td,
+    .layer-table th, .layer-table td,
+    .matrix-table th, .matrix-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .perm-table th,
+    .state-table th,
+    .layer-table th,
+    .matrix-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .perm-table th,
+    .perm-table td,
+    .state-table th,
+    .state-table td,
+    .layer-table th,
+    .layer-table td,
+    .matrix-table th,
+    .matrix-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space { break-inside: avoid; }
+
+      .box, .problem, .work-space {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .perm-table th,
+      .state-table th,
+      .layer-table th,
+      .matrix-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 20</div>
+      <h1>Permutation Layers: ShiftRows, Bit Permutations, and Position Mixing</h1>
+      <p class="subtitle">
+        Printable practice for permutation rules, inverse permutations, AES ShiftRows, permutation matrices, and how position movement supports diffusion.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="20-permutation-layers-shiftrows-bit-permutations-and-position-mixing.html">Tutorial 20</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Track positions carefully. A permutation moves values without changing them. Nothing should disappear, and nothing should appear twice. For ShiftRows, move each row left by its row number, then use InvShiftRows to move it back.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Permutation rules</div>
+            <ul>
+              <li>A permutation rearranges positions.</li>
+              <li>No position is lost.</li>
+              <li>No position is duplicated.</li>
+              <li>Every true permutation has an inverse.</li>
+            </ul>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">AES ShiftRows</div>
+            <ul>
+              <li>Row 0 shifts left by 0.</li>
+              <li>Row 1 shifts left by 1.</li>
+              <li>Row 2 shifts left by 2.</li>
+              <li>Row 3 shifts left by 3.</li>
+              <li>InvShiftRows shifts right by the same amounts.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. What is a permutation?</div>
+          <span class="blank-line"></span>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What does a permutation layer do in a cipher?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. Does a permutation layer change byte values? Explain.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. What is an inverse permutation?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="permutation-notation">
+        <h2>Part B: Permutation notation</h2>
+        <p>Use the convention: output position gets input from the listed position.</p>
+
+        <div class="problem">
+          <div class="problem-title">B1. Apply \(P=[2,0,3,1]\) to input \([a,b,c,d]\).</div>
+          <table class="perm-table">
+            <thead><tr><th>Output position</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead>
+            <tbody><tr><td>Gets input from</td><td>2</td><td>0</td><td>3</td><td>1</td></tr></tbody>
+          </table>
+          <p>Output:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Apply \(P=[3,2,1,0]\) to input \([w,x,y,z]\).</div>
+          <p>Output:</p>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B3. Apply \(P=[1,3,0,2]\) to input \([10,20,30,40]\).</div>
+          <p>Output:</p>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="valid-permutations">
+        <h2>Part C: Is it a valid permutation?</h2>
+        <p>A valid 4-position permutation must use each number 0, 1, 2, and 3 exactly once.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Problem</th><th>Rule</th><th>Valid permutation?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>C1</td><td><code>[2,0,3,1]</code></td><td></td><td></td></tr>
+            <tr><td>C2</td><td><code>[0,1,1,3]</code></td><td></td><td></td></tr>
+            <tr><td>C3</td><td><code>[3,2,1,0]</code></td><td></td><td></td></tr>
+            <tr><td>C4</td><td><code>[0,2,3]</code></td><td></td><td></td></tr>
+            <tr><td>C5</td><td><code>[1,0,3,2]</code></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="inverse-permutations">
+        <h2>Part D: Inverse permutations</h2>
+        <p>Find the inverse output for each mapping.</p>
+
+        <div class="problem">
+          <div class="problem-title">D1. If \(P([a,b,c,d])=[c,a,d,b]\), what does \(P^{-1}\) do to \([c,a,d,b]\)?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. If a permutation maps <code>ABCD</code> to <code>CADB</code>, what should the inverse permutation do to <code>CADB</code>?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. Explain why every true permutation has an inverse.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="shiftrows-practice">
+        <h2>Part E: AES ShiftRows practice</h2>
+        <p>Apply ShiftRows to this symbolic AES state.</p>
+
+        <table class="state-table">
+          <caption><strong>Before ShiftRows</strong></caption>
+          <tbody>
+            <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+            <tr><td>b0</td><td>b1</td><td>b2</td><td>b3</td></tr>
+            <tr><td>c0</td><td>c1</td><td>c2</td><td>c3</td></tr>
+            <tr><td>d0</td><td>d1</td><td>d2</td><td>d3</td></tr>
+          </tbody>
+        </table>
+
+        <table class="state-table">
+          <caption><strong>After ShiftRows</strong></caption>
+          <tbody>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="invshiftrows-practice">
+        <h2>Part F: InvShiftRows practice</h2>
+        <p>Apply InvShiftRows to recover the original state.</p>
+
+        <table class="state-table">
+          <caption><strong>Before InvShiftRows</strong></caption>
+          <tbody>
+            <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+            <tr><td>b1</td><td>b2</td><td>b3</td><td>b0</td></tr>
+            <tr><td>c2</td><td>c3</td><td>c0</td><td>c1</td></tr>
+            <tr><td>d3</td><td>d0</td><td>d1</td><td>d2</td></tr>
+          </tbody>
+        </table>
+
+        <table class="state-table">
+          <caption><strong>After InvShiftRows</strong></caption>
+          <tbody>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+            <tr><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="permutation-matrix">
+        <h2>Part G: Permutation matrices</h2>
+        <p>Answer the questions about the matrix below.</p>
+        <div class="math-display">
+          \[
+            P=
+            \begin{bmatrix}
+            0&0&1&0\\
+            1&0&0&0\\
+            0&0&0&1\\
+            0&1&0&0
+            \end{bmatrix}
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. How many 1s are in each row?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. How many 1s are in each column?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. Apply the matrix to \([a,b,c,d]^T\).</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G4. Why does exactly one 1 per row and column matter?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="layer-comparison">
+        <h2>Part H: Layer comparison</h2>
+        <p>Classify each AES-style layer.</p>
+
+        <table class="layer-table">
+          <thead><tr><th>Problem</th><th>Layer</th><th>Main job</th><th>Changes values?</th></tr></thead>
+          <tbody>
+            <tr><td>H1</td><td>SubBytes</td><td></td><td></td></tr>
+            <tr><td>H2</td><td>ShiftRows</td><td></td><td></td></tr>
+            <tr><td>H3</td><td>MixColumns</td><td></td><td></td></tr>
+            <tr><td>H4</td><td>AddRoundKey</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="diffusion-connection">
+        <h2>Part I: Diffusion connection</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does ShiftRows help MixColumns spread information across the AES state?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Does ShiftRows increase the number of active bytes by itself? Explain.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. In an SPN-style cipher, why alternate substitution and permutation/mixing layers?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A permutation changes values from 0 to 1 or 1 to 0.</td><td></td></tr>
+            <tr><td>A true permutation uses every position exactly once.</td><td></td></tr>
+            <tr><td>ShiftRows moves bytes sideways in the AES state.</td><td></td></tr>
+            <tr><td>MixColumns and ShiftRows do exactly the same job.</td><td></td></tr>
+            <tr><td>InvShiftRows undoes ShiftRows.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            A permutation is not powerful because it changes data. It is powerful because it changes where data goes next.
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> A permutation is a rearrangement where every original position appears exactly once.</p>
+          <p><strong>A2.</strong> A permutation layer moves values to new positions in the cipher state.</p>
+          <p><strong>A3.</strong> No. It moves values but does not alter the values themselves.</p>
+          <p><strong>A4.</strong> An inverse permutation is the position-moving rule that returns the permuted order back to the original order.</p>
+        </div>
+
+        <h3>Part B: Permutation notation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\([c,a,d,b]\)</td></tr>
+            <tr><td>B2</td><td>\([z,y,x,w]\)</td></tr>
+            <tr><td>B3</td><td>\([20,40,10,30]\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Is it a valid permutation?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Valid?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>C1</td><td>Yes</td><td>Uses 0, 1, 2, and 3 exactly once.</td></tr>
+            <tr><td>C2</td><td>No</td><td>1 is duplicated and 2 is missing.</td></tr>
+            <tr><td>C3</td><td>Yes</td><td>Uses 0, 1, 2, and 3 exactly once.</td></tr>
+            <tr><td>C4</td><td>No</td><td>Only has three entries; position 1 is missing for a 4-position permutation.</td></tr>
+            <tr><td>C5</td><td>Yes</td><td>Uses 0, 1, 2, and 3 exactly once.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Inverse permutations</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> It returns \([a,b,c,d]\).</p>
+          <p><strong>D2.</strong> It returns <code>ABCD</code>.</p>
+          <p><strong>D3 sample answer.</strong> A true permutation has no missing or duplicated positions, so each moved value has exactly one original location to return to.</p>
+        </div>
+
+        <h3>Part E: AES ShiftRows practice</h3>
+        <table class="answer-table">
+          <caption><strong>After ShiftRows</strong></caption>
+          <tbody>
+            <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+            <tr><td>b1</td><td>b2</td><td>b3</td><td>b0</td></tr>
+            <tr><td>c2</td><td>c3</td><td>c0</td><td>c1</td></tr>
+            <tr><td>d3</td><td>d0</td><td>d1</td><td>d2</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: InvShiftRows practice</h3>
+        <table class="answer-table">
+          <caption><strong>After InvShiftRows</strong></caption>
+          <tbody>
+            <tr><td>a0</td><td>a1</td><td>a2</td><td>a3</td></tr>
+            <tr><td>b0</td><td>b1</td><td>b2</td><td>b3</td></tr>
+            <tr><td>c0</td><td>c1</td><td>c2</td><td>c3</td></tr>
+            <tr><td>d0</td><td>d1</td><td>d2</td><td>d3</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: Permutation matrices</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> Each row has exactly one 1.</p>
+          <p><strong>G2.</strong> Each column has exactly one 1.</p>
+          <p><strong>G3.</strong> \([a,b,c,d]^T\) maps to \([c,a,d,b]^T\).</p>
+          <p><strong>G4 sample answer.</strong> One 1 per row means every output receives one input. One 1 per column means every input is used once. This prevents loss and duplication.</p>
+        </div>
+
+        <h3>Part H: Layer comparison</h3>
+        <table class="answer-table">
+          <thead><tr><th>Layer</th><th>Main job</th><th>Changes values?</th></tr></thead>
+          <tbody>
+            <tr><td>SubBytes</td><td>Substitution / nonlinear replacement</td><td>Yes</td></tr>
+            <tr><td>ShiftRows</td><td>Permutation / position movement</td><td>No</td></tr>
+            <tr><td>MixColumns</td><td>Mixing / diffusion within columns</td><td>Yes</td></tr>
+            <tr><td>AddRoundKey</td><td>Mix state with round key using XOR</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Diffusion connection</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> ShiftRows moves bytes into different columns, so the next MixColumns step combines bytes that came from different previous columns.</p>
+          <p><strong>I2 sample answer.</strong> No. ShiftRows moves active bytes but does not increase their number by itself. The next mixing layer can increase activity.</p>
+          <p><strong>I3 sample answer.</strong> Substitution adds nonlinearity, while permutation or mixing layers spread those effects to new positions so later substitutions affect more of the state.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A permutation changes values from 0 to 1 or 1 to 0.</td><td>False</td><td>It moves positions only.</td></tr>
+            <tr><td>A true permutation uses every position exactly once.</td><td>True</td><td>No missing or duplicated positions.</td></tr>
+            <tr><td>ShiftRows moves bytes sideways in the AES state.</td><td>True</td><td>Rows are cyclically shifted left.</td></tr>
+            <tr><td>MixColumns and ShiftRows do exactly the same job.</td><td>False</td><td>ShiftRows moves positions; MixColumns combines values.</td></tr>
+            <tr><td>InvShiftRows undoes ShiftRows.</td><td>True</td><td>It shifts rows back to the right.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 20: Permutation Layers: ShiftRows, Bit Permutations, and Position Mixing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

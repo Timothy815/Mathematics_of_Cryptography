@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modular Arithmetic | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --gray-soft: #f1f1f1;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .mod-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .mod-table th,
+    .mod-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .mod-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .mod-table td,
+    .mod-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 130px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .clock-wrap {
+      display: grid;
+      grid-template-columns: minmax(260px, 360px) 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .clock-face {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      border: 3px solid #334e7d;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #ffffff 0%, #ffffff 55%, #eef3ff 56%, #eef3ff 100%);
+      margin: 0 auto;
+    }
+
+    .clock-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #334e7d;
+    }
+
+    .clock-num {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 42px;
+      height: 42px;
+      margin-left: -21px;
+      margin-top: -21px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      border-radius: 50%;
+      background: #ffffff;
+      color: #16243d;
+      font-weight: 900;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .clock-num.n0 { transform: rotate(-90deg) translate(132px) rotate(90deg); }
+    .clock-num.n1 { transform: rotate(-60deg) translate(132px) rotate(60deg); }
+    .clock-num.n2 { transform: rotate(-30deg) translate(132px) rotate(30deg); }
+    .clock-num.n3 { transform: rotate(0deg) translate(132px) rotate(0deg); }
+    .clock-num.n4 { transform: rotate(30deg) translate(132px) rotate(-30deg); }
+    .clock-num.n5 { transform: rotate(60deg) translate(132px) rotate(-60deg); }
+    .clock-num.n6 { transform: rotate(90deg) translate(132px) rotate(-90deg); }
+    .clock-num.n7 { transform: rotate(120deg) translate(132px) rotate(-120deg); }
+    .clock-num.n8 { transform: rotate(150deg) translate(132px) rotate(-150deg); }
+    .clock-num.n9 { transform: rotate(180deg) translate(132px) rotate(-180deg); }
+    .clock-num.n10 { transform: rotate(210deg) translate(132px) rotate(-210deg); }
+    .clock-num.n11 { transform: rotate(240deg) translate(132px) rotate(-240deg); }
+
+    .walk-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 18px 0;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+
+    .walk-step {
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      border-radius: 999px;
+      min-width: 42px;
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .walk-step.start { background: #eaf7ef; border-color: #b8dfc5; }
+    .walk-step.end { background: #fff4d8; border-color: #ead399; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .clock-wrap { grid-template-columns: 1fr; }
+      .clock-face { width: 280px; height: 280px; }
+      .clock-num.n0 { transform: rotate(-90deg) translate(115px) rotate(90deg); }
+      .clock-num.n1 { transform: rotate(-60deg) translate(115px) rotate(60deg); }
+      .clock-num.n2 { transform: rotate(-30deg) translate(115px) rotate(30deg); }
+      .clock-num.n3 { transform: rotate(0deg) translate(115px) rotate(0deg); }
+      .clock-num.n4 { transform: rotate(30deg) translate(115px) rotate(-30deg); }
+      .clock-num.n5 { transform: rotate(60deg) translate(115px) rotate(-60deg); }
+      .clock-num.n6 { transform: rotate(90deg) translate(115px) rotate(-90deg); }
+      .clock-num.n7 { transform: rotate(120deg) translate(115px) rotate(-120deg); }
+      .clock-num.n8 { transform: rotate(150deg) translate(115px) rotate(-150deg); }
+      .clock-num.n9 { transform: rotate(180deg) translate(115px) rotate(-180deg); }
+      .clock-num.n10 { transform: rotate(210deg) translate(115px) rotate(-210deg); }
+      .clock-num.n11 { transform: rotate(240deg) translate(115px) rotate(-240deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details { break-inside: avoid; }
+      .box, .diagram, details.solution { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .mod-table th { background: #eeeeee !important; }
+      .clock-face { width: 260px; height: 260px; }
+      .clock-num { border-color: #777777; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 4</div>
+      <h1>Modular Arithmetic</h1>
+      <p class="subtitle">
+        Understanding wraparound arithmetic, remainders, congruence, and why “mod” is one of the central rhythms of cryptography.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="03-functions-as-machines.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Modular arithmetic is arithmetic with wraparound. It appears in classical ciphers, RSA, Diffie-Hellman,
+            elliptic curve cryptography, finite fields, block cipher internals, checksums, hash functions, and random number generators.
+            If ordinary arithmetic is a straight road, modular arithmetic is a circular track.
+          </p>
+        </div>
+
+        <p class="lead">
+          The goal of this tutorial is to make “mod” feel concrete. We will start with clocks and remainders,
+          then move toward the notation used in cryptography.
+        </p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should be comfortable with basic division, remainders, and the idea of a function as a rule. You do not need advanced algebra.
+        </p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          Modular notation is compact. This table defines the symbols before we use them.
+        </p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr>
+              <th>Symbol or notation</th>
+              <th>Friendly meaning</th>
+              <th>Technical meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(a\)</td>
+              <td>A number we are reducing or comparing.</td>
+              <td>An integer.</td>
+            </tr>
+            <tr>
+              <td>\(b\)</td>
+              <td>Another number we may compare with \(a\).</td>
+              <td>An integer.</td>
+            </tr>
+            <tr>
+              <td>\(n\)</td>
+              <td>The wraparound size, like the number of positions on a clock.</td>
+              <td>A positive integer called the modulus.</td>
+            </tr>
+            <tr>
+              <td>\(a \bmod n\)</td>
+              <td>The remainder after dividing \(a\) by \(n\).</td>
+              <td>The least nonnegative residue of \(a\) modulo \(n\), unless otherwise stated.</td>
+            </tr>
+            <tr>
+              <td>\(\equiv\)</td>
+              <td>“Has the same remainder as.”</td>
+              <td>Congruence relation.</td>
+            </tr>
+            <tr>
+              <td>\(a \equiv b \pmod n\)</td>
+              <td>\(a\) and \(b\) land on the same position after wrapping by \(n\).</td>
+              <td>\(a\) is congruent to \(b\) modulo \(n\), meaning \(n\) divides \(a-b\).</td>
+            </tr>
+            <tr>
+              <td>residue</td>
+              <td>A landing position after wrapping around.</td>
+              <td>A representative value of a congruence class modulo \(n\).</td>
+            </tr>
+            <tr>
+              <td>\(\mathbb{Z}_n\)</td>
+              <td>The number system made of the wraparound positions 0 through \(n-1\).</td>
+              <td>The integers modulo \(n\), usually represented by \(\{0,1,2,\dots,n-1\}\).</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-idea">
+        <h2>The big idea</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            Modular arithmetic answers this question: after moving by some amount on a circular track, where do you land?
+            The size of the track is the modulus. The landing position is the remainder.
+          </p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="Clock diagram showing modulo 12 positions">
+          <div class="diagram-title">Modulo 12 as a clock</div>
+          <div class="clock-wrap">
+            <div class="clock-face">
+              <div class="clock-num n0">0</div>
+              <div class="clock-num n1">1</div>
+              <div class="clock-num n2">2</div>
+              <div class="clock-num n3">3</div>
+              <div class="clock-num n4">4</div>
+              <div class="clock-num n5">5</div>
+              <div class="clock-num n6">6</div>
+              <div class="clock-num n7">7</div>
+              <div class="clock-num n8">8</div>
+              <div class="clock-num n9">9</div>
+              <div class="clock-num n10">10</div>
+              <div class="clock-num n11">11</div>
+              <div class="clock-center"></div>
+            </div>
+            <div>
+              <p>
+                On a 12-position clock, moving 15 steps from 0 lands at 3.
+              </p>
+              <div class="math-display">
+                \[
+                  15 \bmod 12 = 3
+                \]
+              </div>
+              <p>
+                Why? Because 15 is one full lap of 12, plus 3 extra steps.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="remainders">
+        <h2>Remainders: the doorway into mod</h2>
+        <p>
+          When we divide one integer by another, we can describe the result using a quotient and a remainder.
+          The quotient tells how many full groups fit. The remainder tells what is left over.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: remainder</div>
+          <p>
+            If \(a\) is divided by \(n\), the remainder \(r\) is the amount left after removing as many full copies of \(n\) as possible, with \(0\le r<n\).
+          </p>
+          <div class="math-display">
+            \[
+              a = qn + r
+            \]
+          </div>
+          <p>
+            Here \(q\) is the quotient and \(r\) is the remainder.
+          </p>
+        </div>
+
+        <h3>Example</h3>
+        <div class="math-display">
+          \[
+            17 = 3\cdot 5 + 2
+          \]
+        </div>
+        <p>
+          So:
+        </p>
+        <div class="math-display">
+          \[
+            17 \bmod 5 = 2
+          \]
+        </div>
+      </section>
+
+      <section id="mod-operation">
+        <h2>The mod operation</h2>
+        <p>
+          The expression \(a\bmod n\) asks for the remainder after dividing \(a\) by \(n\). In many programming languages,
+          this is written with a percent sign, like <code>a % n</code>, but in mathematics we usually write \(a\bmod n\).
+        </p>
+
+        <table class="mod-table">
+          <thead>
+            <tr>
+              <th>Expression</th>
+              <th>Division picture</th>
+              <th>Remainder</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(14\bmod 5\)</td>
+              <td>\(14=2\cdot5+4\)</td>
+              <td>4</td>
+            </tr>
+            <tr>
+              <td>\(21\bmod 6\)</td>
+              <td>\(21=3\cdot6+3\)</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>\(32\bmod 8\)</td>
+              <td>\(32=4\cdot8+0\)</td>
+              <td>0</td>
+            </tr>
+            <tr>
+              <td>\(255\bmod 16\)</td>
+              <td>\(255=15\cdot16+15\)</td>
+              <td>15</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="congruence">
+        <h2>Congruence: having the same landing place</h2>
+        <p>
+          The mod operation gives a remainder. Congruence compares remainders.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: congruence modulo \(n\)</div>
+          <p>
+            We write \(a\equiv b\pmod n\) when \(a\) and \(b\) have the same remainder after division by \(n\).
+          </p>
+          <div class="math-display">
+            \[
+              a\equiv b\pmod n
+            \]
+          </div>
+          <p>
+            Technically, this means \(n\) divides \(a-b\).
+          </p>
+          <div class="math-display">
+            \[
+              n\mid(a-b)
+            \]
+          </div>
+        </div>
+
+        <h3>Example</h3>
+        <p>
+          Compare 17 and 5 modulo 12:
+        </p>
+        <div class="math-display">
+          \[
+            17\bmod 12=5
+          \]
+          \[
+            5\bmod 12=5
+          \]
+        </div>
+        <p>
+          Therefore:
+        </p>
+        <div class="math-display">
+          \[
+            17\equiv 5\pmod{12}
+          \]
+        </div>
+
+        <p>
+          Also, \(17-5=12\), and 12 is divisible by 12. That matches the technical definition.
+        </p>
+      </section>
+
+      <section id="walking-around">
+        <h2>Walking around the circle</h2>
+        <p>
+          To compute \(7+8\pmod{12}\), start at 7 and walk 8 steps around a 12-position clock.
+        </p>
+
+        <div class="diagram">
+          <div class="diagram-title">Start at 7 and walk 8 steps modulo 12</div>
+          <div class="walk-strip" aria-label="Modulo 12 walking sequence">
+            <span class="walk-step start">7</span>
+            <span>→</span>
+            <span class="walk-step">8</span>
+            <span>→</span>
+            <span class="walk-step">9</span>
+            <span>→</span>
+            <span class="walk-step">10</span>
+            <span>→</span>
+            <span class="walk-step">11</span>
+            <span>→</span>
+            <span class="walk-step">0</span>
+            <span>→</span>
+            <span class="walk-step">1</span>
+            <span>→</span>
+            <span class="walk-step">2</span>
+            <span>→</span>
+            <span class="walk-step end">3</span>
+          </div>
+        </div>
+
+        <div class="math-display">
+          \[
+            7+8=15
+          \]
+          \[
+            15\bmod 12=3
+          \]
+          \[
+            7+8\equiv 3\pmod{12}
+          \]
+        </div>
+      </section>
+
+      <section id="modular-addition">
+        <h2>Modular addition</h2>
+        <p>
+          Modular addition means add normally first, then reduce by the modulus.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Rule</div>
+          <div class="math-display">
+            \[
+              (a+b)\bmod n
+            \]
+          </div>
+          <p>
+            Add \(a\) and \(b\), then keep only the remainder after division by \(n\).
+          </p>
+        </div>
+
+        <h3>Worked example</h3>
+        <p>
+          Compute \(19+11\pmod{26}\).
+        </p>
+        <div class="math-display">
+          \[
+            19+11=30
+          \]
+          \[
+            30\bmod 26=4
+          \]
+          \[
+            19+11\equiv 4\pmod{26}
+          \]
+        </div>
+
+        <p>
+          This is exactly the kind of wraparound used in Caesar-style letter shifts.
+        </p>
+      </section>
+
+      <section id="modular-subtraction">
+        <h2>Modular subtraction and negative numbers</h2>
+        <p>
+          Modular subtraction works the same way: subtract normally, then reduce back into the allowed range.
+        </p>
+
+        <h3>Example</h3>
+        <p>
+          Compute \(3-8\pmod{12}\).
+        </p>
+        <div class="math-display">
+          \[
+            3-8=-5
+          \]
+        </div>
+        <p>
+          The number \(-5\) is not one of the usual representatives \(0\) through \(11\), so add 12 until it lands in range.
+        </p>
+        <div class="math-display">
+          \[
+            -5+12=7
+          \]
+          \[
+            3-8\equiv 7\pmod{12}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Walking backward</div>
+          <p>
+            On a clock, subtracting means walking backward. Starting at 3 and walking back 8 steps lands at 7.
+            Modular arithmetic lets negative numbers wrap back into the circle.
+          </p>
+        </div>
+      </section>
+
+      <section id="modular-multiplication">
+        <h2>Modular multiplication</h2>
+        <p>
+          Modular multiplication means multiply normally first, then reduce by the modulus.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Rule</div>
+          <div class="math-display">
+            \[
+              (ab)\bmod n
+            \]
+          </div>
+          <p>
+            Multiply \(a\) and \(b\), then keep the remainder after division by \(n\).
+          </p>
+        </div>
+
+        <h3>Worked example</h3>
+        <p>
+          Compute \(7\cdot 9\pmod{26}\).
+        </p>
+        <div class="math-display">
+          \[
+            7\cdot 9=63
+          \]
+          \[
+            63=2\cdot 26+11
+          \]
+          \[
+            7\cdot 9\equiv 11\pmod{26}
+          \]
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important warning</div>
+          <p>
+            Modular multiplication is not always reversible. Whether multiplication by a number can be undone depends on whether that number has a modular inverse. That is the topic of the next major tutorial after modular arithmetic.
+          </p>
+        </div>
+      </section>
+
+      <section id="zn">
+        <h2>The world of \(\mathbb{Z}_n\)</h2>
+        <p>
+          The notation \(\mathbb{Z}_n\) means the integers modulo \(n\). For beginner purposes, think of it as the set of standard landing positions:
+        </p>
+        <div class="math-display">
+          \[
+            \mathbb{Z}_n=\{0,1,2,\dots,n-1\}
+          \]
+        </div>
+
+        <p>
+          For example:
+        </p>
+        <div class="math-display">
+          \[
+            \mathbb{Z}_{12}=\{0,1,2,3,4,5,6,7,8,9,10,11\}
+          \]
+        </div>
+
+        <p>
+          In \(\mathbb{Z}_{12}\), the numbers 12, 24, and 36 all land at 0. The number 13 lands at 1.
+          The number 25 also lands at 1.
+        </p>
+      </section>
+
+      <section id="caesar-preview">
+        <h2>Cryptography preview: the Caesar cipher</h2>
+        <p>
+          A Caesar cipher shifts letters by a fixed amount. If we label A as 0, B as 1, C as 2, and so on through Z as 25,
+          then shifting letters becomes modular addition modulo 26.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Letter-number map</div>
+          <p>
+            We use 26 positions because the English alphabet has 26 letters.
+          </p>
+          <div class="math-display">
+            \[
+              A=0,\;B=1,\;C=2,\;\dots,\;Z=25
+            \]
+          </div>
+        </div>
+
+        <p>
+          Caesar encryption with key \(K\) can be written as:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv P+K\pmod{26}
+          \]
+        </div>
+
+        <p>
+          Here \(P\) is the plaintext letter number, \(K\) is the shift amount, and \(C\) is the ciphertext letter number.
+        </p>
+
+        <h3>Example</h3>
+        <p>
+          Encrypt Y using a shift of 5. Since Y is 24:
+        </p>
+        <div class="math-display">
+          \[
+            C\equiv 24+5\pmod{26}
+          \]
+          \[
+            C\equiv 29\pmod{26}
+          \]
+          \[
+            C\equiv 3\pmod{26}
+          \]
+        </div>
+        <p>
+          The number 3 corresponds to D. So Y shifted by 5 becomes D.
+        </p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking mod means “divide”</div>
+          <p>
+            Mod does not ask for the quotient. It asks for the remainder. In \(17\bmod 5\), the answer is 2, not 3.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: forgetting the allowed range</div>
+          <p>
+            In modulo \(n\), the standard representatives are usually \(0\) through \(n-1\). In modulo 12, the standard answers are 0 through 11, not 1 through 12.
+          </p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: treating congruence as ordinary equality</div>
+          <p>
+            The statement \(17\equiv5\pmod{12}\) does not say 17 and 5 are the same ordinary integer. It says they have the same remainder modulo 12.
+          </p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Compute \(17\bmod 5\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  17=3\cdot5+2
+                \]
+                \[
+                  17\bmod5=2
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute \(41\bmod 12\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  41=3\cdot12+5
+                \]
+                \[
+                  41\bmod12=5
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute \(9+8\pmod{12}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  9+8=17
+                \]
+                \[
+                  17\bmod12=5
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute \(4-9\pmod{12}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  4-9=-5
+                \]
+                \[
+                  -5+12=7
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Compute \(8\cdot7\pmod{26}\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[
+                  8\cdot7=56
+                \]
+                \[
+                  56=2\cdot26+4
+                \]
+                \[
+                  8\cdot7\equiv4\pmod{26}
+                \]
+              </div>
+            </details>
+          </li>
+          <li>
+            Is \(38\equiv 2\pmod{12}\)? Explain.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Yes. Both numbers have remainder 2 modulo 12.</p>
+              <div class="math-display">
+                \[
+                  38\bmod12=2
+                \]
+              </div>
+              <p>Also, \(38-2=36\), and 36 is divisible by 12.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Modular arithmetic gives cryptography its wraparound worlds. Many cryptographic systems work inside a fixed mathematical space instead of ordinary unbounded arithmetic.
+        </p>
+        <ul>
+          <li>Classical ciphers use modulo 26 for letters.</li>
+          <li>RSA uses modular exponentiation with very large moduli.</li>
+          <li>Diffie-Hellman uses powers modulo a prime.</li>
+          <li>Elliptic curve cryptography uses modular arithmetic over finite fields.</li>
+          <li>Finite-field arithmetic, including AES-style arithmetic, is a more advanced cousin of modular thinking.</li>
+          <li>Fixed-width computer arithmetic often wraps around modulo powers of 2, such as \(2^8\), \(2^{16}\), or \(2^{32}\).</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Modular arithmetic is wraparound arithmetic.</li>
+            <li>The modulus \(n\) is the wraparound size.</li>
+            <li>\(a\bmod n\) means the remainder after dividing \(a\) by \(n\).</li>
+            <li>The standard residues modulo \(n\) are usually \(0\) through \(n-1\).</li>
+            <li>\(a\equiv b\pmod n\) means \(a\) and \(b\) have the same remainder modulo \(n\).</li>
+            <li>Technically, \(a\equiv b\pmod n\) means \(n\) divides \(a-b\).</li>
+            <li>Modular addition: add first, then reduce.</li>
+            <li>Modular subtraction: subtract first, then reduce.</li>
+            <li>Modular multiplication: multiply first, then reduce.</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Meaning</th>
+              <th>Example</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Modulus</td>
+              <td>Wraparound size</td>
+              <td>Modulo 12 uses positions 0 through 11</td>
+            </tr>
+            <tr>
+              <td>Remainder</td>
+              <td>What is left after full groups are removed</td>
+              <td>\(17\bmod5=2\)</td>
+            </tr>
+            <tr>
+              <td>Congruence</td>
+              <td>Same remainder</td>
+              <td>\(17\equiv5\pmod{12}\)</td>
+            </tr>
+            <tr>
+              <td>\(\mathbb{Z}_n\)</td>
+              <td>Integers modulo \(n\)</td>
+              <td>\(\mathbb{Z}_5=\{0,1,2,3,4\}\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              a=qn+r,\qquad 0\le r<n
+            \]
+            \[
+              a\bmod n=r
+            \]
+            \[
+              a\equiv b\pmod n \quad \text{means} \quad n\mid(a-b)
+            \]
+            \[
+              C\equiv P+K\pmod{26}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Multiplicative Inverses Modulo \(n\)</strong>. Modular addition is easy to undo with subtraction, but modular multiplication raises a deeper question: when can multiplication be reversed?
+        </p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

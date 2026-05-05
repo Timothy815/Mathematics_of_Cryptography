@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Block Cipher Modes III: CTR Mode, Nonces, and Turning a Block Cipher into a Stream | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .mode-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .block-table,
+    .mode-table,
+    .compare-table,
+    .counter-table,
+    .xor-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .block-table th,
+    .block-table td,
+    .mode-table th,
+    .mode-table td,
+    .compare-table th,
+    .compare-table td,
+    .counter-table th,
+    .counter-table td,
+    .xor-table th,
+    .xor-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .block-table th,
+    .mode-table th,
+    .compare-table th,
+    .counter-table th,
+    .xor-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .block-table td,
+    .block-table th,
+    .mode-table td,
+    .mode-table th,
+    .compare-table td,
+    .compare-table th,
+    .counter-table td,
+    .counter-table th,
+    .xor-table td,
+    .xor-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .nonce-node { background: #fff4d8; border-color: #ead399; }
+    .cipher-node { background: #f0eafe; border-color: #d8c8f5; }
+    .xor-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .warn-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .block-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .block-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      background: #ffffff;
+      padding: 12px;
+      text-align: center;
+      font-weight: 850;
+      min-height: 78px;
+    }
+
+    .block-card.same { background: #fdeaea; border-color: #efb5b5; }
+    .block-card.diff { background: #eaf7ef; border-color: #b8dfc5; }
+    .block-label { color: #1f3763; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .block-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 0.92rem; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .block-row { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, .block-card, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, .block-card, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .block-table th, .mode-table th, .compare-table th, .counter-table th, .xor-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 28</div>
+      <h1>Block Cipher Modes III: CTR Mode, Nonces, and Turning a Block Cipher into a Stream</h1>
+      <p class="subtitle">
+        How Counter mode uses encrypted nonce-counter blocks as a keystream, why encryption and decryption both use XOR, and why nonce reuse is dangerous.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="27-block-cipher-modes-ii-cbc-initialization-vectors-and-chaining.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorials 26 and 27 studied ECB and CBC. This tutorial introduces Counter mode, or CTR. CTR uses a block cipher such as AES to generate a stream of pseudorandom-looking blocks. Those blocks are XORed with the plaintext to produce ciphertext.</p>
+        </div>
+
+        <p class="lead">
+          CTR mode turns AES into a keystream generator. Instead of encrypting the plaintext block directly, AES encrypts a nonce-plus-counter value. The result becomes a keystream block, and the keystream is XORed with the message.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AES encrypts 128-bit blocks, that XOR undoes itself, and that modes of operation define how a block cipher is used on longer messages. You should also remember that IVs and nonces are not usually secret, but they must be handled correctly.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          CTR notation introduces nonce, counter, and keystream symbols. Here they are before we use them.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or notation</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>CTR</td><td>A mode that encrypts counters to make a stream.</td><td>Counter mode.</td></tr>
+            <tr><td>nonce</td><td>A value used once with a key.</td><td>A non-repeating value used to make keystream generation unique.</td></tr>
+            <tr><td>counter</td><td>A number that increases for each block.</td><td>A block index or incrementing value combined with the nonce.</td></tr>
+            <tr><td>\(P_i\)</td><td>The plaintext block at position \(i\).</td><td>The \(i\)-th input block.</td></tr>
+            <tr><td>\(C_i\)</td><td>The ciphertext block at position \(i\).</td><td>The \(i\)-th encrypted output block.</td></tr>
+            <tr><td>\(S_i\)</td><td>The keystream block for position \(i\).</td><td>The output of encrypting the nonce-counter input.</td></tr>
+            <tr><td>\(E_K(X)\)</td><td>Encrypt block \(X\) with key \(K\).</td><td>The block cipher encryption function under key \(K\).</td></tr>
+            <tr><td>\(\oplus\)</td><td>XOR.</td><td>Bitwise addition modulo 2.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            In CBC, plaintext is mixed before encryption. In CTR, plaintext is not sent into AES at all. AES encrypts a sequence of nonce-counter blocks to create a keystream. The plaintext is then XORed with that keystream.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="CTR encryption overview">
+          <div class="diagram-title">CTR encryption for one block</div>
+          <div class="flow-row">
+            <div class="flow-node nonce-node">Nonce + Counter<br>\(N\|i\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node cipher-node">AES encrypt<br>\(E_K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Keystream block<br>\(S_i\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node">Plaintext block<br>\(P_i\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node xor-node">XOR</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Ciphertext block<br>\(C_i\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ctr-formulas">
+        <h2>CTR encryption formulas</h2>
+        <p>
+          A nonce is combined with a counter value to create a unique input block for AES. We will write this as \(N\|i\), meaning “nonce \(N\) combined with counter \(i\).”</p>
+
+        <div class="math-display">
+          \[
+            S_i=E_K(N\|i)
+          \]
+          \[
+            C_i=P_i\oplus S_i
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: nonce</div>
+          <p>
+            A nonce is a value used once with a given key. In CTR mode, the nonce helps ensure that the same counter sequence does not create the same keystream under the same key.</p>
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: keystream</div>
+          <p>
+            A keystream is a sequence of bits or blocks that are XORed with plaintext to produce ciphertext. In CTR, the keystream is made by encrypting nonce-counter blocks.</p>
+        </div>
+      </section>
+
+      <section id="ctr-decryption">
+        <h2>CTR decryption uses the same keystream</h2>
+        <p>
+          CTR decryption regenerates the same keystream block and XORs it with the ciphertext:</p>
+
+        <div class="math-display">
+          \[
+            S_i=E_K(N\|i)
+          \]
+          \[
+            P_i=C_i\oplus S_i
+          \]
+        </div>
+
+        <p>
+          Notice that CTR decryption uses the block cipher's encryption function \(E_K\), not the block cipher's decryption function \(D_K\). The block cipher is being used to generate the keystream.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why XOR makes this work</div>
+          <p>
+            Encryption computes \(C_i=P_i\oplus S_i\). Decryption computes \(C_i\oplus S_i=(P_i\oplus S_i)\oplus S_i=P_i\). The same keystream block cancels itself out.</p>
+        </div>
+      </section>
+
+      <section id="counter-sequence">
+        <h2>The counter sequence</h2>
+        <p>
+          CTR mode changes the counter for each block. The nonce stays the same for one message, while the counter increases.</p>
+
+        <table class="counter-table">
+          <thead><tr><th>Block</th><th>Nonce</th><th>Counter</th><th>AES input</th><th>Keystream block</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(N\)</td><td>0</td><td>\(N\|0\)</td><td>\(S_1=E_K(N\|0)\)</td></tr>
+            <tr><td>2</td><td>\(N\)</td><td>1</td><td>\(N\|1\)</td><td>\(S_2=E_K(N\|1)\)</td></tr>
+            <tr><td>3</td><td>\(N\)</td><td>2</td><td>\(N\|2\)</td><td>\(S_3=E_K(N\|2)\)</td></tr>
+            <tr><td>4</td><td>\(N\)</td><td>3</td><td>\(N\|3\)</td><td>\(S_4=E_K(N\|3)\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mode-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            CTR is a numbered ticket machine for keystream blocks: same key, same nonce, new counter value for each block.</p>
+        </div>
+      </section>
+
+      <section id="toy-example">
+        <h2>Toy CTR example</h2>
+        <p>
+          Here is a small 4-bit toy example. This is not AES; it only demonstrates the XOR structure.</p>
+
+        <table class="xor-table">
+          <thead><tr><th>Block</th><th>Plaintext \(P_i\)</th><th>Keystream \(S_i\)</th><th>Ciphertext \(C_i=P_i\oplus S_i\)</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>1100</code></td><td><code>1010</code></td><td><code>0110</code></td></tr>
+            <tr><td>2</td><td><code>1100</code></td><td><code>0011</code></td><td><code>1111</code></td></tr>
+            <tr><td>3</td><td><code>0101</code></td><td><code>1110</code></td><td><code>1011</code></td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Notice that \(P_1\) and \(P_2\) are the same, but the keystream blocks are different, so the ciphertext blocks are different.</p>
+      </section>
+
+      <section id="nonce-reuse-danger">
+        <h2>The danger of nonce reuse</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Golden rule</div>
+          <p>
+            Never reuse the same nonce with the same key in CTR mode. Reusing the nonce repeats the keystream. Repeating the keystream can expose relationships between plaintexts.</p>
+        </div>
+
+        <p>
+          If two messages use the same key and nonce, then they generate the same keystream:</p>
+        <div class="math-display">
+          \[
+            C_i=P_i\oplus S_i
+          \]
+          \[
+            C'_i=P'_i\oplus S_i
+          \]
+        </div>
+
+        <p>
+          XOR the two ciphertext blocks together:</p>
+        <div class="math-display">
+          \[
+            C_i\oplus C'_i=(P_i\oplus S_i)\oplus(P'_i\oplus S_i)=P_i\oplus P'_i
+          \]
+        </div>
+
+        <p>
+          The keystream cancels out. That does not automatically reveal both plaintexts, but it leaks a dangerous relationship between them. If one plaintext is known or guessable, the other can often be recovered.</p>
+      </section>
+
+      <section id="ctr-vs-cbc">
+        <h2>CTR versus CBC</h2>
+        <table class="compare-table">
+          <thead><tr><th>Question</th><th>CBC</th><th>CTR</th></tr></thead>
+          <tbody>
+            <tr><td>Does encryption use AES encryption?</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Does decryption use AES decryption?</td><td>Yes</td><td>No, it uses AES encryption to regenerate keystream.</td></tr>
+            <tr><td>Can blocks be processed independently?</td><td>Encryption is chained.</td><td>Yes, counter blocks can be generated independently.</td></tr>
+            <tr><td>Main freshness value</td><td>IV</td><td>Nonce</td></tr>
+            <tr><td>Main catastrophic misuse</td><td>IV misuse and no authentication.</td><td>Nonce reuse with same key.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="what-ctr-does-not-solve">
+        <h2>What CTR does not solve by itself</h2>
+        <p>
+          CTR mode provides confidentiality when used correctly, but it does not authenticate the message. An attacker who flips a bit in the ciphertext flips the corresponding bit in the decrypted plaintext.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Malleability warning</div>
+          <p>
+            CTR encryption is malleable. That means ciphertext changes can cause predictable plaintext changes after decryption. Modern systems usually pair CTR-like encryption with authentication, or use an authenticated encryption mode such as GCM.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: encrypting the plaintext directly with AES in CTR</div>
+          <p>
+            CTR encrypts nonce-counter blocks to make a keystream. The plaintext is XORed with the keystream.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: using AES decryption during CTR decryption</div>
+          <p>
+            CTR decryption uses AES encryption again to regenerate the same keystream.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: reusing a nonce with the same key</div>
+          <p>
+            Nonce reuse repeats the keystream. That is one of the most dangerous CTR mistakes.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: assuming CTR authenticates data</div>
+          <p>
+            CTR provides encryption, not authentication. It must be paired with integrity protection or used inside an authenticated encryption mode.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does CTR stand for?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Counter mode.</p>
+            </details>
+          </li>
+          <li>
+            What is the CTR keystream formula?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(S_i=E_K(N\|i)\).</p>
+            </details>
+          </li>
+          <li>
+            What is the CTR encryption formula?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(C_i=P_i\oplus S_i\).</p>
+            </details>
+          </li>
+          <li>
+            Does CTR decryption use AES encryption or AES decryption to regenerate the keystream?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It uses AES encryption.</p>
+            </details>
+          </li>
+          <li>
+            Why is nonce reuse dangerous in CTR?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Nonce reuse with the same key repeats the keystream, which can reveal relationships between plaintexts and may allow recovery if one plaintext is known or guessed.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          CTR mode is powerful because it turns a block cipher into a stream-like construction. It is efficient, parallelizable, and elegant. But it also shows a recurring cryptographic law: freshness values are not decorative. If a nonce is reused with the same key, the safety of the keystream collapses.</p>
+        <ul>
+          <li>CTR encrypts nonce-counter blocks, not plaintext blocks.</li>
+          <li>The AES outputs become keystream blocks.</li>
+          <li>Plaintext is XORed with the keystream to make ciphertext.</li>
+          <li>Decryption regenerates the same keystream and XORs again.</li>
+          <li>Nonce reuse with the same key repeats the keystream.</li>
+          <li>CTR needs authentication for integrity.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>CTR stands for Counter mode.</li>
+            <li>CTR turns a block cipher into a keystream generator.</li>
+            <li>A nonce is a value used once with a key.</li>
+            <li>A counter changes for each block.</li>
+            <li>CTR encrypts nonce-counter blocks.</li>
+            <li>The output of AES becomes keystream.</li>
+            <li>Encryption is \(C_i=P_i\oplus S_i\).</li>
+            <li>Decryption is \(P_i=C_i\oplus S_i\).</li>
+            <li>CTR decryption uses AES encryption to regenerate the keystream.</li>
+            <li>Never reuse the same nonce with the same key.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">CTR formulas</div>
+          <div class="math-display">
+            \[
+              S_i=E_K(N\|i)
+            \]
+            \[
+              C_i=P_i\oplus S_i
+            \]
+            \[
+              P_i=C_i\oplus S_i
+            \]
+          </div>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Nonce-reuse danger</div>
+          <div class="math-display">
+            \[
+              C_i\oplus C'_i=P_i\oplus P'_i
+            \]
+          </div>
+          <p>If the same keystream is reused, it cancels out when ciphertexts are XORed together.</p>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next tutorial should be <strong>Block Cipher Modes IV: Padding, Message Length, and Why Blocks Need Filling</strong>. We will study why some modes need padding and how padding mistakes can create vulnerabilities.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

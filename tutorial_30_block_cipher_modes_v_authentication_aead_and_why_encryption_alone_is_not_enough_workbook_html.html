@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 30: Authentication, AEAD, and Why Encryption Alone Is Not Enough | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .auth-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .auth-table,
+    .flow-table,
+    .mode-table,
+    .aead-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .auth-table th, .auth-table td,
+    .flow-table th, .flow-table td,
+    .mode-table th, .mode-table td,
+    .aead-table th, .aead-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .auth-table th,
+    .flow-table th,
+    .mode-table th,
+    .aead-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .auth-table th,
+    .auth-table td,
+    .flow-table th,
+    .flow-table td,
+    .mode-table th,
+    .mode-table td,
+    .aead-table th,
+    .aead-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .auth-table th,
+      .flow-table th,
+      .mode-table th,
+      .aead-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 30</div>
+      <h1>Block Cipher Modes V: Authentication, AEAD, and Why Encryption Alone Is Not Enough</h1>
+      <p class="subtitle">
+        Printable practice for confidentiality, integrity, authentication, MACs, tags, AEAD, AAD, and verify-before-trusting reasoning.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="30-block-cipher-modes-v-authentication-aead-and-why-encryption-alone-is-not-enough.html">Tutorial 30</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Keep the security goals separate. Encryption gives confidentiality. Authentication helps detect tampering and confirms the message verifies under the correct secret key. Modern secure designs usually want both.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">MAC formula</div>
+            <div class="math-display">
+              \[
+                tag=MAC_K(message)
+              \]
+            </div>
+            <p>A keyed tag used to detect modification.</p>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">AEAD formula</div>
+            <div class="math-display">
+              \[
+                (ciphertext,tag)=AEAD\_Encrypt_K(nonce,plaintext,AAD)
+              \]
+            </div>
+            <p>Encryption plus authentication, including optional associated data.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is confidentiality?</td><td></td></tr>
+            <tr><td>A2. What is integrity?</td><td></td></tr>
+            <tr><td>A3. What is authentication in this cryptographic context?</td><td></td></tr>
+            <tr><td>A4. What does MAC stand for?</td><td></td></tr>
+            <tr><td>A5. What does AEAD stand for?</td><td></td></tr>
+            <tr><td>A6. What does AAD stand for?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="property-matching">
+        <h2>Part B: Match the security property</h2>
+        <p>Complete the table.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Scenario</th><th>Primary property involved</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>An eavesdropper should not read the message.</td><td></td><td></td></tr>
+            <tr><td>The receiver should detect if a bit was changed.</td><td></td><td></td></tr>
+            <tr><td>The receiver should know the message verifies under the right secret key.</td><td></td><td></td></tr>
+            <tr><td>A visible packet header should not be modifiable without detection.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mac-practice">
+        <h2>Part C: MAC and tag practice</h2>
+
+        <div class="problem">
+          <div class="problem-title">C1. In the formula \(tag=MAC_K(message)\), what does \(K\) represent?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. What should the receiver do with the received message and tag?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. If the recomputed tag does not match the received tag, what should happen?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C4. Why is a MAC like a keyed tamper seal?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="encrypt-alone">
+        <h2>Part D: Why encryption alone is not enough</h2>
+        <p>Answer the questions below.</p>
+
+        <div class="problem">
+          <div class="problem-title">D1. What does encryption hide?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. What does encryption alone usually not prove?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. In CTR mode, why can changing ciphertext bits be dangerous if there is no authentication?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="encrypt-then-mac">
+        <h2>Part E: Encrypt-then-MAC order</h2>
+        <p>Put the steps in the correct order by numbering them 1 through 5.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step description</th><th>Order number</th></tr></thead>
+          <tbody>
+            <tr><td>Send ciphertext plus tag.</td><td></td></tr>
+            <tr><td>Encrypt the plaintext.</td><td></td></tr>
+            <tr><td>Receiver verifies the tag.</td><td></td></tr>
+            <tr><td>Compute a MAC over the ciphertext and needed metadata.</td><td></td></tr>
+            <tr><td>Receiver accepts/reveals plaintext only if verification succeeds.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="aead-practice">
+        <h2>Part F: AEAD and AAD practice</h2>
+        <p>Complete the table.</p>
+
+        <table class="aead-table">
+          <thead><tr><th>Item</th><th>Encrypted?</th><th>Authenticated?</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Plaintext / message body</td><td></td><td></td><td></td></tr>
+            <tr><td>AAD / visible metadata</td><td></td><td></td><td></td></tr>
+            <tr><td>Authentication tag</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why would a system authenticate data that it does not encrypt?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="verify-before-trusting">
+        <h2>Part G: Verify before trusting</h2>
+        <p>Complete the receive-side workflow.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Receive nonce, ciphertext, AAD, and tag.</td><td></td></tr>
+            <tr><td>2</td><td>Check authentication tag.</td><td></td></tr>
+            <tr><td>3</td><td>If tag is valid...</td><td></td></tr>
+            <tr><td>4</td><td>If tag is invalid...</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mode-identification">
+        <h2>Part H: Identify the tool</h2>
+        <p>Choose the most appropriate tool or concept.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>Need</th><th>Best matching concept/tool</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Hide message contents.</td><td></td><td></td></tr>
+            <tr><td>Detect whether ciphertext was altered.</td><td></td><td></td></tr>
+            <tr><td>Encrypt and authenticate in one construction.</td><td></td><td></td></tr>
+            <tr><td>Authenticate a readable header without encrypting it.</td><td></td><td></td></tr>
+            <tr><td>Reject modified messages before trusting plaintext.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part I: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain the difference between confidentiality and integrity.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why is “hidden” not the same thing as “trustworthy”?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. Why do modern systems often prefer AEAD modes?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality means outsiders cannot read the message.</td><td></td></tr>
+            <tr><td>Encryption alone always proves integrity.</td><td></td></tr>
+            <tr><td>A MAC is computed using a secret key.</td><td></td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td></td></tr>
+            <tr><td>AEAD combines encryption and authentication.</td><td></td></tr>
+            <tr><td>If tag verification fails, the message should still be trusted if decryption looks readable.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The core distinction is simple but powerful: encryption hides; authentication checks. Secure systems often need both jobs done correctly.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is confidentiality?</td><td>Keeping message contents hidden from unauthorized readers.</td></tr>
+            <tr><td>A2. What is integrity?</td><td>Detecting whether data has been changed.</td></tr>
+            <tr><td>A3. What is authentication in this cryptographic context?</td><td>Verifying that a message or tag was produced by someone with the correct secret key.</td></tr>
+            <tr><td>A4. What does MAC stand for?</td><td>Message Authentication Code.</td></tr>
+            <tr><td>A5. What does AEAD stand for?</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>A6. What does AAD stand for?</td><td>Additional Authenticated Data.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Match the security property</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Primary property involved</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>An eavesdropper should not read the message.</td><td>Confidentiality</td><td>The goal is hiding contents.</td></tr>
+            <tr><td>The receiver should detect if a bit was changed.</td><td>Integrity</td><td>The goal is detecting modification.</td></tr>
+            <tr><td>The receiver should know the message verifies under the right secret key.</td><td>Authentication</td><td>The goal is verifying production by someone with the key.</td></tr>
+            <tr><td>A visible packet header should not be modifiable without detection.</td><td>Integrity / authentication through AAD</td><td>The header remains readable but tampering should be detected.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: MAC and tag practice</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> \(K\) represents the secret key used to compute the MAC.</p>
+          <p><strong>C2 sample answer.</strong> The receiver recomputes the tag from the received message and the shared key, then compares it to the received tag.</p>
+          <p><strong>C3 sample answer.</strong> The message should be rejected.</p>
+          <p><strong>C4 sample answer.</strong> A MAC is like a keyed tamper seal because changing the message should make the tag fail unless the attacker can compute a valid new tag with the secret key.</p>
+        </div>
+
+        <h3>Part D: Why encryption alone is not enough</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> Encryption hides message contents.</p>
+          <p><strong>D2 sample answer.</strong> Encryption alone usually does not prove that the ciphertext was not modified or that it came from someone with the correct key.</p>
+          <p><strong>D3 sample answer.</strong> In CTR, flipping ciphertext bits can flip corresponding plaintext bits after decryption. Without authentication, the receiver may not detect that the ciphertext was changed.</p>
+        </div>
+
+        <h3>Part E: Encrypt-then-MAC order</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step description</th><th>Order number</th></tr></thead>
+          <tbody>
+            <tr><td>Send ciphertext plus tag.</td><td>3</td></tr>
+            <tr><td>Encrypt the plaintext.</td><td>1</td></tr>
+            <tr><td>Receiver verifies the tag.</td><td>4</td></tr>
+            <tr><td>Compute a MAC over the ciphertext and needed metadata.</td><td>2</td></tr>
+            <tr><td>Receiver accepts/reveals plaintext only if verification succeeds.</td><td>5</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: AEAD and AAD practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Item</th><th>Encrypted?</th><th>Authenticated?</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Plaintext / message body</td><td>Yes</td><td>Yes</td><td>Private message content</td></tr>
+            <tr><td>AAD / visible metadata</td><td>No</td><td>Yes</td><td>Packet header or protocol version</td></tr>
+            <tr><td>Authentication tag</td><td>No</td><td>Used for verification</td><td>Tag sent with ciphertext</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> Some data must remain visible, such as routing or protocol metadata, but it still should not be modifiable without detection. AAD lets that visible data be authenticated.</p>
+        </div>
+
+        <h3>Part G: Verify before trusting</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Receive nonce, ciphertext, AAD, and tag.</td><td>Inputs for verification.</td></tr>
+            <tr><td>2</td><td>Check authentication tag.</td><td>Determine whether message verifies.</td></tr>
+            <tr><td>3</td><td>If tag is valid...</td><td>Accept and release/decrypt plaintext according to the mode's API.</td></tr>
+            <tr><td>4</td><td>If tag is invalid...</td><td>Reject the message.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: Identify the tool</h3>
+        <table class="answer-table">
+          <thead><tr><th>Need</th><th>Best matching concept/tool</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Hide message contents.</td><td>Encryption</td><td>Encryption provides confidentiality.</td></tr>
+            <tr><td>Detect whether ciphertext was altered.</td><td>MAC/tag or AEAD</td><td>Authentication detects tampering.</td></tr>
+            <tr><td>Encrypt and authenticate in one construction.</td><td>AEAD</td><td>AEAD combines confidentiality and authentication.</td></tr>
+            <tr><td>Authenticate a readable header without encrypting it.</td><td>AAD</td><td>AAD is authenticated but not encrypted.</td></tr>
+            <tr><td>Reject modified messages before trusting plaintext.</td><td>Tag verification</td><td>Invalid tags indicate tampering or wrong key/material.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Confidentiality means the content is hidden from unauthorized readers. Integrity means changes to the data can be detected.</p>
+          <p><strong>I2 sample answer.</strong> A message can be hidden but still altered. Encryption may prevent reading, but without authentication the receiver may not know if the ciphertext was modified.</p>
+          <p><strong>I3 sample answer.</strong> AEAD modes are preferred because they provide encryption and authentication together, reducing the chance of combining primitives incorrectly.</p>
+          <p><strong>I4 sample answer.</strong> Encryption alone provides confidentiality, but it does not automatically prove that a message was not changed. A MAC creates a keyed tag that can be verified, and AEAD combines encryption and authentication in one construction. AAD lets visible metadata be authenticated without encrypting it. If tag verification fails, the message should be rejected.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality means outsiders cannot read the message.</td><td>True</td><td>That is the goal of confidentiality.</td></tr>
+            <tr><td>Encryption alone always proves integrity.</td><td>False</td><td>Encryption hides content but does not automatically detect tampering.</td></tr>
+            <tr><td>A MAC is computed using a secret key.</td><td>True</td><td>MACs are keyed authentication tags.</td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td>False</td><td>AAD is authenticated but not encrypted.</td></tr>
+            <tr><td>AEAD combines encryption and authentication.</td><td>True</td><td>That is the purpose of AEAD.</td></tr>
+            <tr><td>If tag verification fails, the message should still be trusted if decryption looks readable.</td><td>False</td><td>Invalid tags mean reject.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 30: Authentication, AEAD, and Why Encryption Alone Is Not Enough.
+      </p>
+    </main>
+  </div>
+</body>
+</html>
