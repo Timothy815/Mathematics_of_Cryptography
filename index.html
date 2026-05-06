@@ -64,6 +64,47 @@
             display: flex;
             gap: 15px;
             margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        /* Search Bar Styles */
+        .search-container {
+            margin-top: 30px;
+            position: relative;
+            max-width: 500px;
+        }
+        #moduleSearch {
+            width: 100%;
+            padding: 14px 20px 14px 45px;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #ffffff;
+        }
+        #moduleSearch:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-soft);
+        }
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            pointer-events: none;
+        }
+        .no-results {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: var(--accent-soft);
+            border-radius: var(--radius);
+            margin-top: 20px;
+            color: var(--accent);
+            font-weight: 600;
         }
     </style>
 </head>
@@ -80,9 +121,15 @@
             <a href="Mathematics Of Cryptography Tutorial Roadmap.pdf" class="nav-link" target="_blank">📚 View Roadmap</a>
             <a href="Galois Field Multiplication Gentle Tutorial (5).pdf" class="nav-link" target="_blank">🧠 Galois Field Deep-Dive</a>
         </div>
+
+        <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="moduleSearch" placeholder="Search modules by title or number (e.g., 'AES', 'Module 05')..." aria-label="Search modules">
+        </div>
     </header>
 
     <main>
+        <div id="noResults" class="no-results">No modules found matching your search.</div>
         <section>
             <div class="box purpose-box">
                 <div class="box-title">Overview</div>
@@ -536,6 +583,45 @@
         </section>
     </main>
 </div>
+
+<script>
+    const searchInput = document.getElementById('moduleSearch');
+    const moduleCards = document.querySelectorAll('.module-card');
+    const sections = document.querySelectorAll('main > section:not(.footer-note)');
+    const noResults = document.getElementById('noResults');
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        let totalVisible = 0;
+
+        sections.forEach(section => {
+            const cardsInSection = section.querySelectorAll('.module-card');
+            let visibleInSection = 0;
+
+            cardsInSection.forEach(card => {
+                const title = card.querySelector('.module-title').textContent.toLowerCase();
+                const num = card.querySelector('.module-num').textContent.toLowerCase();
+                
+                if (title.includes(query) || num.includes(query)) {
+                    card.style.display = 'flex';
+                    visibleInSection++;
+                    totalVisible++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Hide section if no cards are visible, but keep the overview box visible if search is empty
+            if (section.querySelector('.purpose-box')) {
+                section.style.display = query === '' ? 'block' : 'none';
+            } else {
+                section.style.display = visibleInSection > 0 ? 'block' : 'none';
+            }
+        });
+
+        noResults.style.display = (totalVisible === 0 && query !== '') ? 'block' : 'none';
+    });
+</script>
 
 </body>
 </html>
