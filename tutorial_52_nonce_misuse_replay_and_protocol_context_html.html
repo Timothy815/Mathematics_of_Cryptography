@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nonce Misuse, Replay, and Protocol Context | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .protocol-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .mode-table,
+    .danger-table,
+    .math-table,
+    .replay-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .mode-table th,
+    .mode-table td,
+    .danger-table th,
+    .danger-table td,
+    .math-table th,
+    .math-table td,
+    .replay-table th,
+    .replay-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .mode-table th,
+    .danger-table th,
+    .math-table th,
+    .replay-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .step-table td,
+    .step-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th,
+    .mode-table td,
+    .mode-table th,
+    .danger-table td,
+    .danger-table th,
+    .math-table td,
+    .math-table th,
+    .replay-table td,
+    .replay-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .key-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .nonce-node { background: #fff4d8; border-color: #ead399; }
+    .context-node { background: #f0eafe; border-color: #d8c8f5; }
+    .danger-node { background: #fdeaea; border-color: #efb5b5; }
+    .message-node { background: #eef3ff; border-color: #c7d2ea; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .mode-table th, .danger-table th, .math-table th, .replay-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 52</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Nonce Misuse, Replay, and Protocol Context</h1>
+      <p class="subtitle">
+        Why “unique,” “fresh,” and “bound to context” are not decorative protocol words: how nonce reuse breaks modes, how replay reuses old truth, and how associated data ties messages to the right situation.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="51-aead-case-study-aes-gcm-and-the-mathematics-of-ghash.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 51 showed that AES-GCM can fail badly when a nonce is reused. This tutorial widens that lesson. Real protocols do not only need strong primitives. They need messages that are unique, fresh, ordered when necessary, and bound to the correct protocol context.</p>
+        </div>
+
+        <p class="lead">
+          A cryptographic message is not just a sealed envelope. It is a sealed envelope with a date stamp, a serial number, a destination, a sender role, and a warning label saying which ceremony it belongs to. Without that context, an old honest message can become tomorrow’s counterfeit ghost.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AEAD modes authenticate ciphertext and associated data, and that many modes require a nonce that must not repeat with the same key. You should also know that a MAC or AEAD tag proves that a message was valid under a key, but does not automatically prove that the message is new.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(K\)</td><td>Secret key.</td><td>The key used by a MAC, cipher, or AEAD mode.</td></tr>
+            <tr><td>\(N\)</td><td>Nonce.</td><td>A number or value intended to be used once under a key.</td></tr>
+            <tr><td>\(P\)</td><td>Plaintext.</td><td>The readable message before encryption.</td></tr>
+            <tr><td>\(C\)</td><td>Ciphertext.</td><td>The encrypted message.</td></tr>
+            <tr><td>\(T\)</td><td>Tag.</td><td>Authentication tag.</td></tr>
+            <tr><td>\(AAD\)</td><td>Visible authenticated context.</td><td>Associated Authenticated Data.</td></tr>
+            <tr><td>Replay</td><td>Old valid message sent again.</td><td>Reuse of a previously valid message, ciphertext, or tag.</td></tr>
+            <tr><td>Freshness</td><td>Not old or reused.</td><td>A property showing a message is new enough for this context.</td></tr>
+            <tr><td>Sequence number</td><td>Message counter.</td><td>A monotonic value used to order messages and reject repeats.</td></tr>
+            <tr><td>Domain separation</td><td>Do not mix ceremonies.</td><td>Context labels that keep cryptographic uses distinct.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonce-definition">
+        <h2>What is a nonce?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: nonce</div>
+          <p>
+            A nonce is a value intended to be used once in a particular cryptographic context, usually under a specific key.</p>
+        </div>
+
+        <p>
+          The word “nonce” often means “number used once,” but the important phrase is <strong>under the same key and same purpose</strong>. A nonce may be random, counter-based, or constructed from protocol fields, but it must satisfy the uniqueness requirements of the mode.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Nonce type</th><th>How it works</th><th>Main risk</th></tr></thead>
+          <tbody>
+            <tr><td>Counter nonce</td><td>Increase a counter for every message.</td><td>Resetting the counter under the same key.</td></tr>
+            <tr><td>Random nonce</td><td>Choose a random value large enough to avoid collisions.</td><td>Collision if too short or random source fails.</td></tr>
+            <tr><td>Structured nonce</td><td>Combine fields such as device ID and counter.</td><td>Bad field design or overlapping ranges.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonce-unique-not-secret">
+        <h2>Unique does not mean secret</h2>
+        <p>
+          A nonce usually does not need to be secret. It usually needs to be unique under the key.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Property</th><th>Nonce requirement</th></tr></thead>
+          <tbody>
+            <tr><td>Secret?</td><td>Usually no.</td></tr>
+            <tr><td>Unique under same key?</td><td>Usually yes, and often absolutely required.</td></tr>
+            <tr><td>Unpredictable?</td><td>Sometimes, depending on the scheme.</td></tr>
+            <tr><td>Authenticated?</td><td>Often included in tag computation or AEAD processing.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            A nonce is less like a password and more like a ticket number. Everyone can see it, but disaster begins when the same ticket number is used twice at the same counter.</p>
+        </div>
+      </section>
+
+      <section id="what-breaks-when-reused">
+        <h2>What breaks when a nonce is reused?</h2>
+        <p>
+          The exact failure depends on the construction. In stream-cipher-like modes and counter modes, nonce reuse can reuse the keystream. In AEAD modes such as AES-GCM, nonce reuse can damage both confidentiality and authentication.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Mode or construction</th><th>Nonce reuse danger</th></tr></thead>
+          <tbody>
+            <tr><td>CTR mode</td><td>Same nonce/counter can repeat keystream.</td></tr>
+            <tr><td>Stream cipher modes</td><td>Repeated keystream can expose relationships between plaintexts.</td></tr>
+            <tr><td>AES-GCM</td><td>Can break confidentiality and authentication.</td></tr>
+            <tr><td>ChaCha20-Poly1305</td><td>Can repeat keystream and break authentication assumptions.</td></tr>
+            <tr><td>Misuse-resistant AEAD</td><td>Designed to reduce harm, but not a license for carelessness.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="two-time-pad">
+        <h2>The two-time pad pattern</h2>
+        <p>
+          If the same keystream \(S\) is used to encrypt two plaintexts, then:</p>
+
+        <div class="math-display">
+          \[
+            C_1=P_1\oplus S
+          \]
+          \[
+            C_2=P_2\oplus S
+          \]
+        </div>
+
+        <p>
+          XORing the two ciphertexts cancels the keystream:</p>
+
+        <div class="math-display">
+          \[
+            C_1\oplus C_2=(P_1\oplus S)\oplus(P_2\oplus S)
+          \]
+          \[
+            C_1\oplus C_2=P_1\oplus P_2
+          \]
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Why this is bad</div>
+          <p>
+            The attacker may not immediately know both plaintexts, but they now have a relationship between them. If one plaintext is guessed or partially known, the other can leak. The keystream was supposed to vanish from sight, but reuse makes it cancel like a magician’s trapdoor.</p>
+        </div>
+      </section>
+
+      <section id="replay-definition">
+        <h2>Replay attacks</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: replay attack</div>
+          <p>
+            A replay attack occurs when an attacker records a valid message, ciphertext, or message-tag pair and sends it again later in a context where it is incorrectly accepted as fresh.</p>
+        </div>
+
+        <table class="replay-table">
+          <thead><tr><th>Example</th><th>Why dangerous?</th></tr></thead>
+          <tbody>
+            <tr><td>Repeat “transfer $100” message</td><td>Payment may happen twice.</td></tr>
+            <tr><td>Repeat “unlock door” command</td><td>Old authorization may open the door again.</td></tr>
+            <tr><td>Replay login token</td><td>Attacker may reuse a captured session artifact.</td></tr>
+            <tr><td>Replay protocol handshake data</td><td>May confuse state or downgrade context if not protected.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            Replay is not the same as forging a new tag. The old tag may be completely valid. The failure is that the receiver lacks a freshness rule.</p>
+        </div>
+      </section>
+
+      <section id="freshness-tools">
+        <h2>Freshness tools</h2>
+        <p>
+          Protocols use freshness mechanisms to reject old or repeated messages.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Tool</th><th>Purpose</th><th>Typical check</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce</td><td>Ensure value is used once.</td><td>Reject repeated nonce under same key/context.</td></tr>
+            <tr><td>Sequence number</td><td>Order messages.</td><td>Reject old, repeated, or out-of-window numbers.</td></tr>
+            <tr><td>Timestamp</td><td>Limit validity period.</td><td>Reject messages outside allowed time window.</td></tr>
+            <tr><td>Challenge-response</td><td>Prove liveness.</td><td>Respond to a fresh challenge from verifier.</td></tr>
+            <tr><td>Session ID</td><td>Bind message to a session.</td><td>Reject messages from another session.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="protocol-context">
+        <h2>Protocol context</h2>
+        <p>
+          A message should often be authenticated together with the context that gives it meaning. This prevents attackers from moving a valid message into the wrong place.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Context field</th><th>Why bind it?</th></tr></thead>
+          <tbody>
+            <tr><td>Protocol name</td><td>Prevents using a message from one protocol in another.</td></tr>
+            <tr><td>Protocol version</td><td>Prevents downgrade or version confusion.</td></tr>
+            <tr><td>Sender and receiver roles</td><td>Prevents reflection or role-confusion attacks.</td></tr>
+            <tr><td>Session ID</td><td>Prevents moving messages between sessions.</td></tr>
+            <tr><td>Message type</td><td>Prevents treating one kind of message as another.</td></tr>
+            <tr><td>Sequence number</td><td>Prevents replay and reordering.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box protocol-box">
+          <div class="box-title">Key principle</div>
+          <p>
+            Authenticate not only the bytes, but the meaning of the bytes.</p>
+        </div>
+      </section>
+
+      <section id="aad-as-context-binding">
+        <h2>AAD as context binding</h2>
+        <p>
+          In AEAD systems, associated authenticated data is the natural place to bind visible protocol context.</p>
+
+        <div class="math-display">
+          \[
+            (C,T)=AEAD.Enc_K(N,AAD,P)
+          \]
+        </div>
+
+        <p>
+          The plaintext \(P\) is encrypted. The associated data \(AAD\) remains visible, but the tag protects it from undetected tampering.</p>
+
+        <pre><code>AAD might include:
+  protocol = "example-secure-channel-v2"
+  session_id = 7F2A...
+  sender_role = client
+  receiver_role = server
+  sequence_number = 1042
+  message_type = application_data</code></pre>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            AAD is the message’s passport. It does not hide the traveler, but it binds the traveler to a name, place, role, and route.</p>
+        </div>
+      </section>
+
+      <section id="domain-separation">
+        <h2>Domain separation</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: domain separation</div>
+          <p>
+            Domain separation means including labels, constants, or context values so that cryptographic outputs for one purpose cannot be confused with outputs for another purpose.</p>
+        </div>
+
+        <p>
+          Without domain separation, the same key or primitive might accidentally produce values that can be reused in another context. Labels help keep ceremonies separate.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Without label</th><th>With label</th></tr></thead>
+          <tbody>
+            <tr><td>\(MAC_K(data)\)</td><td>\(MAC_K("login"\,\|\,data)\)</td></tr>
+            <tr><td>\(MAC_K(data)\)</td><td>\(MAC_K("payment"\,\|\,data)\)</td></tr>
+            <tr><td>\(Hash(data)\)</td><td>\(Hash("transcript"\,\|\,data)\)</td></tr>
+            <tr><td>\(KDF(secret)\)</td><td>\(KDF(secret,"encryption-key")\), \(KDF(secret,"mac-key")\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="state-management">
+        <h2>State management</h2>
+        <p>
+          Many nonce and replay protections depend on state. The system must remember what has been used, what counter comes next, or what sequence numbers are acceptable.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>State failure</th><th>Consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Counter resets after reboot</td><td>Nonce reuse under same key.</td></tr>
+            <tr><td>Multiple devices share key and counter range</td><td>Two devices may emit same nonce.</td></tr>
+            <tr><td>No replay cache</td><td>Old valid messages may be accepted again.</td></tr>
+            <tr><td>Loose timestamp window</td><td>Replay may remain possible inside the window.</td></tr>
+            <tr><td>Out-of-order handling too permissive</td><td>Attackers may replay older sequence numbers.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Engineering truth</div>
+          <p>
+            Cryptography is not only equations. It is also bookkeeping. Bad bookkeeping can make good equations cry in hexadecimal.</p>
+        </div>
+      </section>
+
+      <section id="toy-protocol">
+        <h2>Toy protocol example</h2>
+        <p>
+          Suppose a secure channel sends this AEAD-protected message:</p>
+
+        <pre><code>AAD:
+  protocol = "ToyChannel-v1"
+  session_id = 91B4
+  sender = client
+  receiver = server
+  sequence_number = 0007
+  message_type = transfer_request
+
+Plaintext:
+  amount=100; recipient=Alice</code></pre>
+
+        <p>
+          The associated data is not secret, but it is authenticated. If an attacker changes the sequence number, role, session ID, protocol version, or message type, verification should fail.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Attacker changes...</th><th>Should receiver accept?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>sequence_number from 0007 to 0005</td><td>No</td><td>AAD changed and may indicate replay.</td></tr>
+            <tr><td>receiver from server to admin</td><td>No</td><td>Role/context changed.</td></tr>
+            <tr><td>message_type from transfer_request to balance_check</td><td>No</td><td>Message meaning changed.</td></tr>
+            <tr><td>nothing</td><td>Yes, if tag verifies and sequence is fresh</td><td>Authenticated and fresh message.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking nonces must be secret</div>
+          <p>
+            Nonces usually need uniqueness, not secrecy.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: authenticating the message but not the context</div>
+          <p>
+            A valid message in the wrong context can still be dangerous.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: treating replay as forgery</div>
+          <p>
+            Replay reuses old truth. Forgery creates new falsehood. Both can be dangerous, but the defenses differ.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: resetting counters under the same key</div>
+          <p>
+            Counter reset is a common path to nonce reuse.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is a nonce?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A nonce is a value intended to be used once in a particular cryptographic context, usually under a specific key.</p>
+            </details>
+          </li>
+          <li>
+            Does a nonce usually need to be secret?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. It usually needs to be unique under the same key, not secret.</p>
+            </details>
+          </li>
+          <li>
+            What is a replay attack?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A replay attack occurs when an attacker records a valid message or message-tag pair and sends it again later where it is incorrectly accepted as fresh.</p>
+            </details>
+          </li>
+          <li>
+            Name three freshness tools.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Nonces, sequence numbers, timestamps, challenge-response values, or session IDs.</p>
+            </details>
+          </li>
+          <li>
+            What is domain separation?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Using labels, constants, or context values to prevent cryptographic outputs from one purpose being confused with outputs for another purpose.</p>
+            </details>
+          </li>
+          <li>
+            Why include protocol context in AAD?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>So visible context such as version, session ID, roles, and sequence number is protected from undetected tampering.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Nonce management, replay protection, and context binding are where cryptographic theory meets protocol engineering. A cipher can be mathematically strong and still fail if nonces repeat, old messages are accepted, or authenticated data is detached from its intended meaning.</p>
+        <ul>
+          <li>Nonces are usually public but must be unique under the relevant key.</li>
+          <li>Nonce reuse can break stream-like encryption and AEAD modes.</li>
+          <li>Replay attacks reuse old valid messages.</li>
+          <li>Freshness mechanisms reject old or repeated messages.</li>
+          <li>AAD binds visible protocol context into authentication.</li>
+          <li>Domain separation prevents cross-purpose confusion.</li>
+          <li>Good cryptography requires good state management.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A nonce is a value intended to be used once under a key and context.</li>
+            <li>Nonces usually need uniqueness, not secrecy.</li>
+            <li>Counter nonces fail if counters reset under the same key.</li>
+            <li>Random nonces fail if collisions become likely or randomness fails.</li>
+            <li>Nonce reuse in stream-like encryption can reuse keystream.</li>
+            <li>If \(C_1=P_1\oplus S\) and \(C_2=P_2\oplus S\), then \(C_1\oplus C_2=P_1\oplus P_2\).</li>
+            <li>A replay attack resends an old valid message.</li>
+            <li>Replay is not necessarily forgery, but it can still be dangerous.</li>
+            <li>Freshness tools include nonces, sequence numbers, timestamps, challenge-response, and session IDs.</li>
+            <li>Protocol context should be authenticated.</li>
+            <li>AAD is a natural place to bind visible context.</li>
+            <li>Domain separation keeps cryptographic purposes from being confused.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              C_1=P_1\oplus S
+            \]
+            \[
+              C_2=P_2\oplus S
+            \]
+            \[
+              C_1\oplus C_2=P_1\oplus P_2
+            \]
+            \[
+              (C,T)=AEAD.Enc_K(N,AAD,P)
+            \]
+            \[
+              AAD=\text{protocol context}\,\|\,\text{session}\,\|\,\text{roles}\,\|\,\text{sequence number}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 52: Nonce Misuse, Replay, and Protocol Context</strong>. After that, the next tutorial can move into <strong>Key Derivation Functions: Turning Secrets into Separate Keys</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

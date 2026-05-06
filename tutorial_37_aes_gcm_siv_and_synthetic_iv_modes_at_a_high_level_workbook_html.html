@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 37: AES-GCM-SIV and Synthetic IV Modes at a High Level | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .siv-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .flow-table,
+    .mode-table,
+    .polyval-table,
+    .valid-table,
+    .risk-table,
+    .scenario-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .flow-table th, .flow-table td,
+    .mode-table th, .mode-table td,
+    .polyval-table th, .polyval-table td,
+    .valid-table th, .valid-table td,
+    .risk-table th, .risk-table td,
+    .scenario-table th, .scenario-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .flow-table th,
+    .mode-table th,
+    .polyval-table th,
+    .valid-table th,
+    .risk-table th,
+    .scenario-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .mode-table th,
+    .mode-table td,
+    .polyval-table th,
+    .polyval-table td,
+    .valid-table th,
+    .valid-table td,
+    .risk-table th,
+    .risk-table td,
+    .scenario-table th,
+    .scenario-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .flow-list {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(130px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .flow-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+      min-height: 80px;
+    }
+
+    .flow-card.input { background: #eaf7ef; border-color: #b8dfc5; }
+    .flow-card.hash { background: #fff4d8; border-color: #ead399; }
+    .flow-card.siv { background: #f0eafe; border-color: #d8c8f5; }
+    .flow-card.cipher { background: #fdeaea; border-color: #efb5b5; }
+    .flow-label { color: #1f3763; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid, .flow-list { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .flow-card { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .flow-card {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .flow-table th,
+      .mode-table th,
+      .polyval-table th,
+      .valid-table th,
+      .risk-table th,
+      .scenario-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 37</div>
+      <h1>AES-GCM-SIV and Synthetic IV Modes at a High Level</h1>
+      <p class="subtitle">
+        Printable practice for synthetic IV concepts, AES-GCM versus AES-GCM-SIV, POLYVAL basics, nonce-misuse resistance, deterministic repetition warnings, and AEAD design tradeoffs.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="37-aes-gcm-siv-and-synthetic-iv-modes-at-a-high-level.html">Tutorial 37</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            This workbook is conceptual. The goal is to understand why AES-GCM-SIV exists, what a synthetic IV is, how AES-GCM-SIV differs from AES-GCM, and why misuse resistance means “more forgiving,” not “mistake proof.”</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">AES-GCM-SIV high-level idea</div>
+            <pre><code>key + nonce + AAD + plaintext
+        ↓
+POLYVAL / keyed authentication processing
+        ↓
+synthetic IV / tag
+        ↓
+counter-style encryption
+        ↓
+ciphertext + tag</code></pre>
+          </div>
+
+          <div class="box warning-box">
+            <div class="box-title">Careful wording</div>
+            <p>
+              AES-GCM-SIV is nonce-misuse resistant, not nonce-misuse proof. Nonce reuse is still not recommended.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AEAD stand for?</td><td></td></tr>
+            <tr><td>A2. What does SIV stand for?</td><td></td></tr>
+            <tr><td>A3. What is a synthetic IV?</td><td></td></tr>
+            <tr><td>A4. What is misuse resistance?</td><td></td></tr>
+            <tr><td>A5. What is AES-GCM-SIV trying to reduce?</td><td></td></tr>
+            <tr><td>A6. What is POLYVAL?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="problem-review">
+        <h2>Part B: Review the AES-GCM nonce-reuse problem</h2>
+        <p>Fill in the missing pieces of the reuse equation.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Step</th><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(C_1=P_1\oplus S\)</td><td></td></tr>
+            <tr><td>2</td><td>\(C_2=P_2\oplus S\)</td><td></td></tr>
+            <tr><td>3</td><td>\(C_1\oplus C_2=\)</td><td></td></tr>
+            <tr><td>4</td><td>What happened to \(S\)?</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why is this problem one reason AES-GCM-SIV exists?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="normal-vs-synthetic">
+        <h2>Part C: Normal IV versus synthetic IV</h2>
+        <p>Complete the table.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>Normal IV / nonce idea</th><th>Synthetic IV idea</th></tr></thead>
+          <tbody>
+            <tr><td>Where does it come from?</td><td></td><td></td></tr>
+            <tr><td>Does it depend on the message?</td><td></td><td></td></tr>
+            <tr><td>Beginner analogy</td><td></td><td></td></tr>
+            <tr><td>Main safety idea</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Explain “synthetic IV” in plain English.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="flow-practice">
+        <h2>Part D: AES-GCM-SIV flow practice</h2>
+        <p>Number the high-level steps in order.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Step description</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Use counter-style encryption.</td><td></td><td></td></tr>
+            <tr><td>Take key, nonce, AAD, and plaintext as inputs.</td><td></td><td></td></tr>
+            <tr><td>Output ciphertext and tag.</td><td></td><td></td></tr>
+            <tr><td>Use POLYVAL/keyed processing to compute a synthetic IV/tag value.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="flow-list" aria-label="Blank AES-GCM-SIV flow cards">
+          <div class="flow-card input"><div class="flow-label">Inputs</div>Key + nonce + AAD + plaintext</div>
+          <div class="flow-card hash"><div class="flow-label">Process</div>POLYVAL / keyed processing</div>
+          <div class="flow-card siv"><div class="flow-label">Create</div>Synthetic IV / tag</div>
+          <div class="flow-card cipher"><div class="flow-label">Encrypt</div>Ciphertext + tag</div>
+        </div>
+      </section>
+
+      <section id="gcm-vs-gcmsiv">
+        <h2>Part E: AES-GCM versus AES-GCM-SIV</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>Feature</th><th>AES-GCM</th><th>AES-GCM-SIV</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD?</td><td></td><td></td></tr>
+            <tr><td>Uses AES?</td><td></td><td></td></tr>
+            <tr><td>Main authentication function</td><td></td><td></td></tr>
+            <tr><td>Nonce reuse behavior</td><td></td><td></td></tr>
+            <tr><td>High-level order</td><td></td><td></td></tr>
+            <tr><td>Main design personality</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="polyval-basics">
+        <h2>Part F: POLYVAL basics</h2>
+        <p>Complete the table.</p>
+
+        <table class="polyval-table">
+          <thead><tr><th>Function</th><th>Used in</th><th>Role</th><th>Beginner mental model</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH</td><td></td><td></td><td></td></tr>
+            <tr><td>POLYVAL</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why should the detailed POLYVAL math be saved for a later tutorial?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="nonce-reuse-behavior">
+        <h2>Part G: Nonce reuse behavior</h2>
+        <p>Complete the table.</p>
+
+        <table class="risk-table">
+          <thead><tr><th>Situation</th><th>AES-GCM risk</th><th>AES-GCM-SIV behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Same key and nonce, different plaintexts</td><td></td><td></td></tr>
+            <tr><td>Same key, nonce, plaintext, and AAD</td><td></td><td></td></tr>
+            <tr><td>Unique nonces</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. What information may be revealed if the same key, nonce, plaintext, and AAD are repeated in AES-GCM-SIV?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="design-tradeoffs">
+        <h2>Part H: Design tradeoffs</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Design goal</th><th>AES-GCM</th><th>AES-GCM-SIV</th></tr></thead>
+          <tbody>
+            <tr><td>Maximum common support</td><td></td><td></td></tr>
+            <tr><td>Speed in common deployments</td><td></td><td></td></tr>
+            <tr><td>Nonce misuse tolerance</td><td></td><td></td></tr>
+            <tr><td>Ease of safe use</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why might a system choose AES-GCM even though AES-GCM-SIV has better nonce-misuse resistance?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-reasoning">
+        <h2>Part I: Scenario reasoning</h2>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Better fit: AES-GCM, AES-GCM-SIV, or either?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>A single well-managed server uses a vetted library and a persistent counter.</td><td></td><td></td></tr>
+            <tr><td>A distributed system has several encrypting nodes and nonce coordination is difficult.</td><td></td><td></td></tr>
+            <tr><td>A protocol requires maximum compatibility with existing systems.</td><td></td><td></td></tr>
+            <tr><td>A storage system may accidentally repeat inputs after snapshot rollback.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part J: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV means nonces do not matter.</td><td></td><td></td></tr>
+            <tr><td>Misuse resistant means misuse proof.</td><td></td><td></td></tr>
+            <tr><td>A synthetic IV is computed from cryptographic inputs.</td><td></td><td></td></tr>
+            <tr><td>POLYVAL is related to GHASH at a high level.</td><td></td><td></td></tr>
+            <tr><td>AES-GCM-SIV is just AES-GCM with a different nonce size.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part K: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">K1. Explain the design philosophy difference between AES-GCM and AES-GCM-SIV.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K2. Why does computing a synthetic IV from the message help reduce nonce-reuse damage?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K3. Why is deterministic repeated-output behavior still a caution?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV is an AEAD mode.</td><td></td></tr>
+            <tr><td>SIV stands for Synthetic Initialization Vector.</td><td></td></tr>
+            <tr><td>A synthetic IV is simply a random IV.</td><td></td></tr>
+            <tr><td>AES-GCM-SIV uses POLYVAL in its construction.</td><td></td></tr>
+            <tr><td>AES-GCM-SIV is designed to be more nonce-misuse resistant than AES-GCM.</td><td></td></tr>
+            <tr><td>Nonce reuse is recommended in AES-GCM-SIV.</td><td></td></tr>
+            <tr><td>Misuse resistance means damage reduction, not complete safety.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            AES-GCM-SIV is best understood as a guarded design response to GCM's nonce fragility: authenticate/hash first to create a synthetic IV, then encrypt.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AEAD stand for?</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>A2. What does SIV stand for?</td><td>Synthetic Initialization Vector.</td></tr>
+            <tr><td>A3. What is a synthetic IV?</td><td>An IV-like value computed from cryptographic inputs rather than simply supplied from outside.</td></tr>
+            <tr><td>A4. What is misuse resistance?</td><td>Safer or less catastrophic behavior under certain common mistakes.</td></tr>
+            <tr><td>A5. What is AES-GCM-SIV trying to reduce?</td><td>The catastrophic risk caused by nonce reuse in AES-GCM.</td></tr>
+            <tr><td>A6. What is POLYVAL?</td><td>A GHASH-like finite-field authenticator used by AES-GCM-SIV.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Review the AES-GCM nonce-reuse problem</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(C_1=P_1\oplus S\)</td><td>First plaintext encrypted with keystream \(S\).</td></tr>
+            <tr><td>2</td><td>\(C_2=P_2\oplus S\)</td><td>Second plaintext encrypted with the same reused keystream \(S\).</td></tr>
+            <tr><td>3</td><td>\(C_1\oplus C_2=P_1\oplus P_2\)</td><td>The ciphertext XOR reveals a relationship between the plaintexts.</td></tr>
+            <tr><td>4</td><td>What happened to \(S\)?</td><td>\(S\oplus S=0\), so the keystream cancels.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> AES-GCM-SIV exists partly to reduce this catastrophic nonce-reuse problem. It computes a synthetic IV from the data being protected so repeated nonces do not automatically repeat keystream in the same way.</p>
+        </div>
+
+        <h3>Part C: Normal IV versus synthetic IV</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>Normal IV / nonce idea</th><th>Synthetic IV idea</th></tr></thead>
+          <tbody>
+            <tr><td>Where does it come from?</td><td>Supplied from outside by the system/user/API.</td><td>Computed from cryptographic inputs.</td></tr>
+            <tr><td>Does it depend on the message?</td><td>Usually no.</td><td>Yes, it depends on protected inputs.</td></tr>
+            <tr><td>Beginner analogy</td><td>Being handed a starting address.</td><td>Inspecting the package first, then generating the starting address.</td></tr>
+            <tr><td>Main safety idea</td><td>Requires careful external nonce management.</td><td>Builds more safety into the mode itself.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> A synthetic IV is an initialization value that the cryptographic mode computes from the key, nonce, plaintext, and AAD instead of simply trusting an externally supplied IV.</p>
+        </div>
+
+        <h3>Part D: AES-GCM-SIV flow practice</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step description</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Use counter-style encryption.</td><td>3</td><td>Encrypt using the synthetic IV/tag-derived starting value.</td></tr>
+            <tr><td>Take key, nonce, AAD, and plaintext as inputs.</td><td>1</td><td>Gather the values that will be protected and used for SIV computation.</td></tr>
+            <tr><td>Output ciphertext and tag.</td><td>4</td><td>Produce the AEAD result.</td></tr>
+            <tr><td>Use POLYVAL/keyed processing to compute a synthetic IV/tag value.</td><td>2</td><td>Create the synthetic IV from authenticated inputs.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: AES-GCM versus AES-GCM-SIV</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>AES-GCM</th><th>AES-GCM-SIV</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD?</td><td>Yes.</td><td>Yes.</td></tr>
+            <tr><td>Uses AES?</td><td>Yes.</td><td>Yes.</td></tr>
+            <tr><td>Main authentication function</td><td>GHASH.</td><td>POLYVAL.</td></tr>
+            <tr><td>Nonce reuse behavior</td><td>Can be catastrophic.</td><td>Designed not to fail catastrophically.</td></tr>
+            <tr><td>High-level order</td><td>Encrypt with nonce/counter, then authenticate.</td><td>Compute synthetic IV/authentication value, then encrypt.</td></tr>
+            <tr><td>Main design personality</td><td>Fast but nonce-fragile.</td><td>More defensive against nonce misuse.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: POLYVAL basics</h3>
+        <table class="answer-table">
+          <thead><tr><th>Function</th><th>Used in</th><th>Role</th><th>Beginner mental model</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH</td><td>AES-GCM</td><td>Authenticates AAD and ciphertext.</td><td>GCM authentication mixer.</td></tr>
+            <tr><td>POLYVAL</td><td>AES-GCM-SIV</td><td>Helps compute the synthetic IV/authentication value.</td><td>SIV authentication mixer.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> POLYVAL is related to GHASH but has its own field and bit-order details. This tutorial is only meant to establish the high-level role before opening the math.</p>
+        </div>
+
+        <h3>Part G: Nonce reuse behavior</h3>
+        <table class="answer-table">
+          <thead><tr><th>Situation</th><th>AES-GCM risk</th><th>AES-GCM-SIV behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Same key and nonce, different plaintexts</td><td>Can repeat keystream and fail badly.</td><td>Designed to avoid catastrophic nonce-reuse failure.</td></tr>
+            <tr><td>Same key, nonce, plaintext, and AAD</td><td>Same nonce is still a serious misuse.</td><td>May reveal repeated identical inputs through deterministic output.</td></tr>
+            <tr><td>Unique nonces</td><td>Normal intended use.</td><td>Normal intended use.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> It may reveal that the exact same protected input was repeated, because the output can be deterministic for the same key, nonce, plaintext, and AAD.</p>
+        </div>
+
+        <h3>Part H: Design tradeoffs</h3>
+        <table class="answer-table">
+          <thead><tr><th>Design goal</th><th>AES-GCM</th><th>AES-GCM-SIV</th></tr></thead>
+          <tbody>
+            <tr><td>Maximum common support</td><td>Very strong.</td><td>Less universal.</td></tr>
+            <tr><td>Speed in common deployments</td><td>Excellent.</td><td>May be somewhat more costly.</td></tr>
+            <tr><td>Nonce misuse tolerance</td><td>Weak.</td><td>Strongly improved.</td></tr>
+            <tr><td>Ease of safe use</td><td>Requires strict nonce discipline.</td><td>More forgiving, but still requires correct use.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> A system might choose AES-GCM because it is widely supported, extremely fast, compatible with many protocols, and safe when nonce uniqueness is carefully managed.</p>
+        </div>
+
+        <h3>Part I: Scenario reasoning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Better fit: AES-GCM, AES-GCM-SIV, or either?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>A single well-managed server uses a vetted library and a persistent counter.</td><td>Either, often AES-GCM is reasonable.</td><td>Nonce uniqueness can be managed well.</td></tr>
+            <tr><td>A distributed system has several encrypting nodes and nonce coordination is difficult.</td><td>AES-GCM-SIV may be a better fit.</td><td>Nonce-misuse resistance provides extra guardrails.</td></tr>
+            <tr><td>A protocol requires maximum compatibility with existing systems.</td><td>AES-GCM may be a better fit.</td><td>It is more universally supported.</td></tr>
+            <tr><td>A storage system may accidentally repeat inputs after snapshot rollback.</td><td>AES-GCM-SIV may be a better fit.</td><td>Rollback can cause nonce reuse, so misuse resistance is valuable.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV means nonces do not matter.</td><td>Mistaken</td><td>Nonces still matter; the mode is more forgiving, not magical.</td></tr>
+            <tr><td>Misuse resistant means misuse proof.</td><td>Mistaken</td><td>Misuse resistance limits damage from some mistakes.</td></tr>
+            <tr><td>A synthetic IV is computed from cryptographic inputs.</td><td>Valid</td><td>That is the core synthetic IV idea.</td></tr>
+            <tr><td>POLYVAL is related to GHASH at a high level.</td><td>Valid</td><td>Both are finite-field authentication/hash mechanisms.</td></tr>
+            <tr><td>AES-GCM-SIV is just AES-GCM with a different nonce size.</td><td>Mistaken</td><td>The construction changes the order and logic.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> AES-GCM is fast and effective but strongly depends on external nonce uniqueness. AES-GCM-SIV is more defensive because it computes a synthetic IV from the protected data, reducing the damage from nonce mistakes.</p>
+          <p><strong>K2 sample answer.</strong> If the synthetic IV depends on the message and AAD, then reusing the external nonce does not automatically mean the same encryption starting value is reused for different plaintexts.</p>
+          <p><strong>K3 sample answer.</strong> If exactly the same key, nonce, plaintext, and AAD are used again, the output can repeat. That may reveal that the same protected message was sent or stored again.</p>
+          <p><strong>K4 sample answer.</strong> AES-GCM-SIV is a nonce-misuse-resistant AEAD mode. It is related to AES-GCM but changes the construction by computing a synthetic IV/authentication value before encryption. POLYVAL plays a GHASH-like role in this process. Nonce reuse is still not recommended, but AES-GCM-SIV is designed to fail less catastrophically than AES-GCM when nonce mistakes occur.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV is an AEAD mode.</td><td>True</td><td>It provides authenticated encryption with associated data.</td></tr>
+            <tr><td>SIV stands for Synthetic Initialization Vector.</td><td>True</td><td>That is the meaning of SIV.</td></tr>
+            <tr><td>A synthetic IV is simply a random IV.</td><td>False</td><td>It is computed from cryptographic inputs.</td></tr>
+            <tr><td>AES-GCM-SIV uses POLYVAL in its construction.</td><td>True</td><td>POLYVAL helps compute the synthetic IV/authentication value.</td></tr>
+            <tr><td>AES-GCM-SIV is designed to be more nonce-misuse resistant than AES-GCM.</td><td>True</td><td>That is the main design motivation.</td></tr>
+            <tr><td>Nonce reuse is recommended in AES-GCM-SIV.</td><td>False</td><td>Nonce reuse is still not recommended.</td></tr>
+            <tr><td>Misuse resistance means damage reduction, not complete safety.</td><td>True</td><td>It reduces some failure damage but does not make misuse harmless.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 37: AES-GCM-SIV and Synthetic IV Modes at a High Level.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Birthday Paradox and Why Hash Length Matters | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .birthday-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .probability-table,
+    .hash-length-table,
+    .security-table,
+    .example-table,
+    .lesson-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .probability-table th,
+    .probability-table td,
+    .hash-length-table th,
+    .hash-length-table td,
+    .security-table th,
+    .security-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .probability-table th,
+    .hash-length-table th,
+    .security-table th,
+    .example-table th,
+    .lesson-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .probability-table td,
+    .probability-table th,
+    .hash-length-table td,
+    .hash-length-table th,
+    .security-table td,
+    .security-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .person-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .pair-node { background: #fff4d8; border-color: #ead399; }
+    .hash-node { background: #f0eafe; border-color: #d8c8f5; }
+    .warning-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .number-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .number-card .big {
+      font-size: 1.55rem;
+      font-weight: 900;
+      color: #1f3763;
+      margin-bottom: 6px;
+    }
+
+    .number-card.green { background: #eaf7ef; border-color: #b8dfc5; }
+    .number-card.gold { background: #fff4d8; border-color: #ead399; }
+    .number-card.purple { background: #f0eafe; border-color: #d8c8f5; }
+    .number-card.red { background: #fdeaea; border-color: #efb5b5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .number-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .number-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .number-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .number-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .probability-table th, .hash-length-table th, .security-table th, .example-table th, .lesson-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 43</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>The Birthday Paradox and Why Hash Length Matters</h1>
+      <p class="subtitle">
+        Why finding any two matching hash outputs is much easier than aiming at one specific output, and why an \(n\)-bit hash gives roughly \(n/2\) bits of collision security.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="42-collision-resistance-preimage-resistance-and-second-preimage-resistance.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 42 showed that collision resistance is different from preimage resistance. This tutorial explains why collision attacks are surprisingly easier than they first appear. The reason is the birthday paradox: when you compare many items against each other, matches appear much sooner than intuition expects.</p>
+        </div>
+
+        <p class="lead">
+          The birthday paradox is one of cryptography’s little trapdoors. It says that a room does not need 183 people before a shared birthday becomes likely. Around 23 people is already enough for about a coin-flip chance. Hash collisions behave with the same sneaky mathematics.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that a hash function maps messages to fixed-length digests, that collisions must exist, and that collision resistance means it should be infeasible to find any two different messages \(M_1\ne M_2\) such that \(H(M_1)=H(M_2)\).</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This tutorial uses a little probability notation. We will keep it gentle and name each piece.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(n\)</td><td>Number of output bits.</td><td>Digest length in bits.</td></tr>
+            <tr><td>\(N\)</td><td>Number of possible outputs.</td><td>For an \(n\)-bit hash, \(N=2^n\).</td></tr>
+            <tr><td>\(k\)</td><td>Number of samples tried.</td><td>Number of messages hashed or people in the birthday example.</td></tr>
+            <tr><td>\(H(M)\)</td><td>Hash of message \(M\).</td><td>The digest produced by applying hash function \(H\) to \(M\).</td></tr>
+            <tr><td>collision</td><td>Two different inputs with the same digest.</td><td>\(M_1\ne M_2\), \(H(M_1)=H(M_2)\).</td></tr>
+            <tr><td>birthday paradox</td><td>Matches appear sooner than expected.</td><td>The probability of at least one pairwise match grows quickly with the number of samples.</td></tr>
+            <tr><td>birthday bound</td><td>Rough collision-search scale.</td><td>For \(N\) possible outputs, collisions become likely after about \(\sqrt{N}\) samples.</td></tr>
+            <tr><td>\(2^{n/2}\)</td><td>Square-root scale for an \(n\)-bit hash.</td><td>Approximate work for a generic collision attack on an ideal \(n\)-bit hash.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="birthday-paradox-basic">
+        <h2>The birthday paradox</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: birthday paradox</div>
+          <p>
+            The birthday paradox is the surprising fact that in a group of about 23 people, there is roughly a 50% chance that at least two people share the same birthday, assuming birthdays are evenly distributed across 365 days.</p>
+        </div>
+
+        <p>
+          The surprise comes from the question being about <strong>any matching pair</strong>, not about matching one specific birthday.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Question</th><th>What it asks</th><th>Why it differs</th></tr></thead>
+          <tbody>
+            <tr><td>Does someone share my birthday?</td><td>Everyone is compared to one fixed target.</td><td>Harder, because only one birthday counts.</td></tr>
+            <tr><td>Do any two people share a birthday?</td><td>Every person is compared to every other person.</td><td>Easier, because any matching pair counts.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Target matching is a dart thrown at one bullseye. Collision matching is a room full of darts where any two hitting the same square count.</p>
+        </div>
+      </section>
+
+      <section id="pair-counting">
+        <h2>Why pairs grow quickly</h2>
+        <p>
+          In a group of \(k\) people, the number of pairs is:</p>
+
+        <div class="math-display">
+          \[
+            \frac{k(k-1)}{2}
+          \]
+        </div>
+
+        <p>
+          This grows roughly like \(k^2/2\). That is the core reason matches appear sooner than expected. Every new person is not just one more person; they create many new comparisons with everyone already in the room.</p>
+
+        <table class="probability-table">
+          <thead><tr><th>People \(k\)</th><th>Number of pairs \(k(k-1)/2\)</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>10</td><td>Even small groups create multiple comparisons.</td></tr>
+            <tr><td>10</td><td>45</td><td>Pairs grow faster than people.</td></tr>
+            <tr><td>23</td><td>253</td><td>Enough pairwise comparisons for birthday matches to become likely.</td></tr>
+            <tr><td>50</td><td>1225</td><td>A lot of pairwise chances for a match.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="birthday-to-hashes">
+        <h2>From birthdays to hash collisions</h2>
+        <p>
+          A birthday is like a digest. People are like messages. A shared birthday is like a collision.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Birthday example</th><th>Hash example</th></tr></thead>
+          <tbody>
+            <tr><td>Person</td><td>Message \(M\)</td></tr>
+            <tr><td>Birthday</td><td>Digest \(H(M)\)</td></tr>
+            <tr><td>365 possible birthdays</td><td>\(2^n\) possible \(n\)-bit digests</td></tr>
+            <tr><td>Two people share a birthday</td><td>Two messages share a digest</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="Birthday paradox mapped to hash collisions">
+          <div class="diagram-title">Birthday collision translated to hash collision</div>
+          <div class="flow-row">
+            <div class="flow-node person-node">Many messages</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node hash-node">Hash function</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node pair-node">Many digests</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node warning-node">Any matching pair = collision</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="square-root-rule">
+        <h2>The square-root rule</h2>
+        <p>
+          If there are \(N\) possible outputs, then collisions become likely after roughly \(\sqrt{N}\) random samples.</p>
+
+        <div class="math-display">
+          \[
+            \text{collision search scale} \approx \sqrt{N}
+          \]
+        </div>
+
+        <p>
+          For an \(n\)-bit hash, there are \(2^n\) possible outputs:</p>
+
+        <div class="math-display">
+          \[
+            N=2^n
+          \]
+          \[
+            \sqrt{N}=\sqrt{2^n}=2^{n/2}
+          \]
+        </div>
+
+        <div class="box birthday-box">
+          <div class="box-title">The key result</div>
+          <p>
+            An ideal \(n\)-bit hash gives roughly \(n\) bits of preimage resistance but only roughly \(n/2\) bits of collision resistance.</p>
+        </div>
+      </section>
+
+      <section id="hash-length-examples">
+        <h2>Hash length examples</h2>
+        <p>
+          This is why output length matters so much. Collision resistance is roughly half the digest length.</p>
+
+        <table class="hash-length-table">
+          <thead><tr><th>Digest length</th><th>Possible outputs</th><th>Rough preimage work</th><th>Rough collision work</th></tr></thead>
+          <tbody>
+            <tr><td>64 bits</td><td>\(2^{64}\)</td><td>\(2^{64}\)</td><td>\(2^{32}\)</td></tr>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>\(2^{128}\)</td><td>\(2^{64}\)</td></tr>
+            <tr><td>160 bits</td><td>\(2^{160}\)</td><td>\(2^{160}\)</td><td>\(2^{80}\)</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>\(2^{256}\)</td><td>\(2^{128}\)</td></tr>
+            <tr><td>512 bits</td><td>\(2^{512}\)</td><td>\(2^{512}\)</td><td>\(2^{256}\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            For collision resistance, a hash’s security strength is roughly half its output length. A 256-bit digest is not “256-bit collision security.” It is roughly 128-bit collision security.</p>
+        </div>
+      </section>
+
+      <section id="why-256-is-common">
+        <h2>Why 256-bit hashes are common</h2>
+        <p>
+          A 256-bit hash output gives a very large preimage search space and roughly 128-bit collision security under ideal assumptions. That is a major reason 256-bit digests are common in modern systems.</p>
+
+        <div class="number-grid">
+          <div class="number-card green">
+            <div class="big">256-bit</div>
+            <div>Digest length</div>
+          </div>
+          <div class="number-card gold">
+            <div class="big">\(2^{256}\)</div>
+            <div>Possible digests</div>
+          </div>
+          <div class="number-card purple">
+            <div class="big">\(2^{256}\)</div>
+            <div>Rough preimage work</div>
+          </div>
+          <div class="number-card red">
+            <div class="big">\(2^{128}\)</div>
+            <div>Rough collision work</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="not-exact-formula">
+        <h2>The rough probability formula</h2>
+        <p>
+          The exact birthday calculation can be written in terms of the probability that no pair matches. For \(k\) samples and \(N\) possible outputs, an approximation for the chance of at least one collision is:</p>
+
+        <div class="math-display">
+          \[
+            P(\text{collision})\approx 1-e^{-k(k-1)/(2N)}
+          \]
+        </div>
+
+        <p>
+          You do not need to master this formula yet. The important lesson is that the exponent contains \(k(k-1)\), which comes from pair counting. Collision probability grows because the number of pairs grows quickly.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Gentle interpretation</div>
+          <p>
+            When \(k\) becomes about \(\sqrt{N}\), the fraction \(k(k-1)/(2N)\) becomes large enough that collisions stop being surprising.</p>
+        </div>
+      </section>
+
+      <section id="target-vs-any-pair">
+        <h2>Target matching versus any-pair matching</h2>
+        <p>
+          The birthday effect helps collision attacks because the attacker is looking for any matching pair. It does not help in the same way when the attacker must hit one specific digest.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Attack type</th><th>Target</th><th>Rough work for ideal \(n\)-bit hash</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage</td><td>Specific digest \(h\)</td><td>\(2^n\)</td><td>Only one target digest counts.</td></tr>
+            <tr><td>Second preimage</td><td>Specific message’s digest</td><td>\(2^n\)</td><td>Must match a fixed digest.</td></tr>
+            <tr><td>Collision</td><td>Any matching pair</td><td>\(2^{n/2}\)</td><td>Any pair among many samples counts.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box hash-box">
+          <div class="box-title">Tiny phrase that helps</div>
+          <p>
+            Preimage is target hunting. Collision is pair hunting.</p>
+        </div>
+      </section>
+
+      <section id="toy-16-bit-example">
+        <h2>Toy example: 16-bit hash</h2>
+        <p>
+          A toy 16-bit hash has:</p>
+
+        <div class="math-display">
+          \[
+            2^{16}=65,536
+          \]
+        </div>
+
+        <p>
+          possible outputs. A preimage search against a specific digest might require on the order of \(2^{16}\) tries. But a collision search becomes plausible around:</p>
+
+        <div class="math-display">
+          \[
+            2^{16/2}=2^8=256
+          \]
+        </div>
+
+        <p>
+          That does not mean the 256th try guarantees a collision. It means this is the rough scale where collisions become unsurprising.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Toy hash length</th><th>Preimage scale</th><th>Collision scale</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>16 bits</td><td>\(2^{16}=65,536\)</td><td>\(2^8=256\)</td><td>Collision search is much easier than target search.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking 256-bit hash means 256-bit collision security</div>
+          <p>
+            For ideal hashes, collision security is roughly half the output length. A 256-bit hash gives roughly 128-bit collision security.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: confusing target matching with pair matching</div>
+          <p>
+            Matching one specific digest is much harder than finding any two matching digests.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: treating the birthday bound as an exact guarantee</div>
+          <p>
+            Birthday estimates describe probability scales, not exact promises about the precise attempt number.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: ignoring output length</div>
+          <p>
+            Short digests can be dangerous because collision search gets easier quickly.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Why is the birthday paradox relevant to hash collisions?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because hash collision search is about finding any matching pair, just like the birthday paradox is about any two people sharing a birthday.</p>
+            </details>
+          </li>
+          <li>
+            If a hash has \(N\) possible outputs, what is the rough collision-search scale?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>About \(\sqrt{N}\) samples.</p>
+            </details>
+          </li>
+          <li>
+            If a hash has \(n\)-bit outputs, how many possible outputs does it have?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It has \(2^n\) possible outputs.</p>
+            </details>
+          </li>
+          <li>
+            Why is the rough collision scale for an \(n\)-bit hash \(2^{n/2}\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because \(N=2^n\), and \(\sqrt{N}=\sqrt{2^n}=2^{n/2}\).</p>
+            </details>
+          </li>
+          <li>
+            What is the rough collision security of a 256-bit hash?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Roughly 128 bits, because \(2^{256/2}=2^{128}\).</p>
+            </details>
+          </li>
+          <li>
+            Why does the birthday phenomenon not reduce preimage search in the same way?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Preimage search targets one specific digest. Collision search allows any matching pair, giving many more chances to succeed.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          The birthday paradox explains why digest length is not just a storage detail. It is a security parameter. If a system needs about 128-bit collision security, a 128-bit hash output is not enough under ideal birthday-bound thinking. You need around 256 bits of output. This lesson echoes through digital signatures, certificates, file integrity systems, Merkle trees, commitments, and protocol design.</p>
+        <ul>
+          <li>Collision attacks look for any matching pair.</li>
+          <li>Any-pair matching is easier than target matching.</li>
+          <li>For \(N\) outputs, collision search appears around \(\sqrt{N}\).</li>
+          <li>For an \(n\)-bit hash, \(N=2^n\).</li>
+          <li>Therefore generic collision search is about \(2^{n/2}\).</li>
+          <li>Hash length determines practical security margins.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>The birthday paradox is about any matching pair.</li>
+            <li>In a group of about 23 people, a shared birthday is already roughly 50% likely.</li>
+            <li>The number of pairs in \(k\) samples is \(k(k-1)/2\).</li>
+            <li>Pair counts grow roughly like \(k^2\).</li>
+            <li>Hash collisions are like shared birthdays.</li>
+            <li>Messages are like people.</li>
+            <li>Digests are like birthdays.</li>
+            <li>If there are \(N\) possible outputs, collisions become likely around \(\sqrt{N}\).</li>
+            <li>For an \(n\)-bit hash, \(N=2^n\).</li>
+            <li>So generic collision search is about \(2^{n/2}\).</li>
+            <li>A 256-bit hash gives roughly 128-bit collision security.</li>
+            <li>Preimage search still targets a specific digest and is roughly \(2^n\) for an ideal \(n\)-bit hash.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core equations</div>
+          <div class="math-display">
+            \[
+              \text{pairs} = \frac{k(k-1)}{2}
+            \]
+            \[
+              N=2^n
+            \]
+            \[
+              \sqrt{N}=2^{n/2}
+            \]
+          </div>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Hash length</th><th>Rough preimage work</th><th>Rough collision work</th></tr></thead>
+          <tbody>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>\(2^{64}\)</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>\(2^{128}\)</td></tr>
+            <tr><td>512 bits</td><td>\(2^{512}\)</td><td>\(2^{256}\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 43: The Birthday Paradox and Why Hash Length Matters</strong>. After that, the next tutorial can move into <strong>Toy Hash Functions: Building and Breaking a Tiny Hash</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Padding, Length Encoding, and Length Extension Attacks | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .attack-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .step-table,
+    .state-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .block-table,
+    .padding-table,
+    .attack-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .state-table th,
+    .state-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .block-table th,
+    .block-table td,
+    .padding-table th,
+    .padding-table td,
+    .attack-table th,
+    .attack-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .step-table th,
+    .state-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .block-table th,
+    .padding-table th,
+    .attack-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .step-table td,
+    .step-table th,
+    .state-table td,
+    .state-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th,
+    .block-table td,
+    .block-table th,
+    .padding-table td,
+    .padding-table th,
+    .attack-table td,
+    .attack-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .message-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .padding-node { background: #fff4d8; border-color: #ead399; }
+    .state-node { background: #f0eafe; border-color: #d8c8f5; }
+    .attack-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .chain-row {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(90px, 1fr));
+      gap: 8px;
+      align-items: center;
+      margin: 18px 0;
+    }
+
+    .chain-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+      font-weight: 800;
+      background: #ffffff;
+      min-height: 58px;
+    }
+
+    .chain-item.iv { background: #eaf7ef; border-color: #b8dfc5; }
+    .chain-item.block { background: #fff4d8; border-color: #ead399; }
+    .chain-item.f { background: #eef3ff; border-color: #c7d2ea; }
+    .chain-item.cv { background: #f0eafe; border-color: #d8c8f5; }
+    .chain-item.digest { background: #fdeaea; border-color: #efb5b5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .chain-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .chain-item { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .chain-item { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .step-table th, .state-table th, .property-table th, .example-table th, .lesson-table th, .block-table th, .padding-table th, .attack-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 47</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Padding, Length Encoding, and Length Extension Attacks</h1>
+      <p class="subtitle">
+        Why Merkle-Damgård padding includes message length, how the final digest can behave like a resumable internal state, and why naive constructions such as <code>Hash(secret || message)</code> can be dangerous.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="46-merkle-damgard-construction.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 46 introduced Merkle-Damgård construction. This tutorial zooms in on two details that are easy to underestimate: padding and length encoding. Then it shows one of the most important consequences of the Merkle-Damgård chaining structure: length extension attacks.</p>
+        </div>
+
+        <p class="lead">
+          Length extension attacks feel strange at first because the attacker does not “reverse the hash.” They do something subtler: they continue the hash from the visible digest as though it were an internal chaining value. The locked door is not opened; the hallway is extended from the last visible room.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that Merkle-Damgård-style hashes process padded message blocks using a chaining value:</p>
+        <div class="math-display">
+          \[
+            CV_0=IV
+          \]
+          \[
+            CV_i=f(CV_{i-1},M_i)
+          \]
+          \[
+            H(M)=CV_t
+          \]
+        </div>
+        <p>
+          You should also know that the final digest is often the final chaining value, or closely related to it, in the basic construction.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(M\)</td><td>The original message.</td><td>The message before padding.</td></tr>
+            <tr><td>\(pad(M)\)</td><td>The padded message.</td><td>The message after adding a marker, zeros, and length information.</td></tr>
+            <tr><td>\(\text{len}(M)\)</td><td>The original length.</td><td>The length of \(M\), often encoded into the final padded block.</td></tr>
+            <tr><td>\(\|\)</td><td>Stick together.</td><td>Concatenation.</td></tr>
+            <tr><td>\(CV_i\)</td><td>Running state.</td><td>The chaining value after block \(i\).</td></tr>
+            <tr><td>\(h\)</td><td>Digest.</td><td>The final hash output.</td></tr>
+            <tr><td>extension</td><td>Extra data added after a message.</td><td>An attacker-chosen suffix appended after the original padded message.</td></tr>
+            <tr><td>MAC</td><td>Message proof with a secret.</td><td>Message Authentication Code.</td></tr>
+            <tr><td>HMAC</td><td>Safe keyed hash construction.</td><td>Hash-based Message Authentication Code.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="padding-review">
+        <h2>Padding review</h2>
+        <p>
+          Merkle-Damgård-style padding often follows this conceptual shape:</p>
+
+        <div class="math-display">
+          \[
+            pad(M)=M\,\|\,1\,\|\,0\ldots0\,\|\,\text{len}(M)
+          \]
+        </div>
+
+        <table class="padding-table">
+          <thead><tr><th>Piece</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>\(M\)</td><td>The original message.</td></tr>
+            <tr><td>\(1\)</td><td>Marks where padding begins.</td></tr>
+            <tr><td>\(0\ldots0\)</td><td>Fills enough space to align the final length field.</td></tr>
+            <tr><td>\(\text{len}(M)\)</td><td>Records the original message length.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Padding is not packing peanuts. It is part of the machine-readable grammar of the message.</p>
+        </div>
+      </section>
+
+      <section id="why-length-encoding-matters">
+        <h2>Why length encoding matters</h2>
+        <p>
+          Length encoding helps bind the padded block sequence to the original message length. Without length information, different messages may be easier to interpret ambiguously after padding.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Padding feature</th><th>What it helps prevent</th></tr></thead>
+          <tbody>
+            <tr><td>End marker</td><td>Confusion about where the original message stops.</td></tr>
+            <tr><td>Zeros</td><td>Misalignment with required block size.</td></tr>
+            <tr><td>Original length</td><td>Ambiguity about which message produced the padded block sequence.</td></tr>
+            <tr><td>Precise rule</td><td>Different implementations disagreeing about the exact input.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            Length encoding helps support the Merkle-Damgård collision-resistance argument. It does not, by itself, prevent length extension attacks in naive keyed uses.</p>
+        </div>
+      </section>
+
+      <section id="toy-padding-example">
+        <h2>Toy padding example</h2>
+        <p>
+          Suppose we use tiny 8-bit blocks and a tiny 4-bit length field just for learning.</p>
+
+        <pre><code>Original message: 101
+Original length:  3 bits
+Padding shape:    M | 1 | zeros | len(M)
+Padded message:   101 1 0000 0011</code></pre>
+
+        <table class="block-table">
+          <thead><tr><th>Part</th><th>Bits</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Original message</td><td><code>101</code></td><td>The data being hashed.</td></tr>
+            <tr><td>Padding marker</td><td><code>1</code></td><td>Marks the start of padding.</td></tr>
+            <tr><td>Zeros</td><td><code>0000</code></td><td>Fills space.</td></tr>
+            <tr><td>Length</td><td><code>0011</code></td><td>Records original length 3.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="digest-as-state">
+        <h2>The final digest as a visible state</h2>
+        <p>
+          In a basic Merkle-Damgård construction, the final digest is the final chaining value:</p>
+
+        <div class="math-display">
+          \[
+            H(M)=CV_t
+          \]
+        </div>
+
+        <p>
+          That means the public digest may reveal enough information to continue the compression process from that point, if the attacker also knows or can guess the length of the original hidden prefix.</p>
+
+        <div class="box attack-box">
+          <div class="box-title">Central length-extension insight</div>
+          <p>
+            If the digest acts like the final chaining value, an attacker may be able to continue hashing extra blocks from that digest without knowing the original message contents.</p>
+        </div>
+      </section>
+
+      <section id="what-is-length-extension">
+        <h2>What is a length extension attack?</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: length extension attack</div>
+          <p>
+            A length extension attack is an attack against certain Merkle-Damgård-style hashes where, given a hash of an unknown message and the length of that message or a good guess of it, an attacker can compute the hash of the unknown message plus valid padding plus attacker-chosen extra data.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            \text{Given } H(M), \text{ compute } H(M\,\|\,pad(M)\,\|\,X)
+          \]
+        </div>
+
+        <p>
+          Here \(X\) is attacker-chosen extension data. The attacker does not need to know \(M\) itself if they can continue from the digest state and correctly account for padding length.</p>
+      </section>
+
+      <section id="attack-shape">
+        <h2>The attack shape</h2>
+        <p>
+          A length extension attack has this shape:</p>
+
+        <table class="attack-table">
+          <thead><tr><th>Attacker knows</th><th>Attacker wants</th><th>Why it may work</th></tr></thead>
+          <tbody>
+            <tr><td>Digest \(H(M)\)</td><td>Digest of a longer message</td><td>The digest can act as a resumable chaining value.</td></tr>
+            <tr><td>Message length or guessed length</td><td>Correct padding placement</td><td>Padding depends on the total original length.</td></tr>
+            <tr><td>Compression function behavior</td><td>Continue processing blocks</td><td>Hash algorithms are public.</td></tr>
+            <tr><td>Chosen extension \(X\)</td><td>Append attacker data</td><td>The attacker controls the new suffix.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="Length extension attack conceptual flow">
+          <div class="diagram-title">Conceptual length extension flow</div>
+          <div class="flow-row">
+            <div class="flow-node state-node">Known digest<br>\(h=H(M)\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">Treat as state<br>\(CV_t\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node padding-node">Guessed padding</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node attack-node">Extension \(X\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node attack-node">New digest</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="naive-mac-danger">
+        <h2>The classic danger: naive secret-prefix MAC</h2>
+        <p>
+          Suppose someone tries to authenticate a message like this:</p>
+
+        <div class="math-display">
+          \[
+            tag=H(secret\,\|\,message)
+          \]
+        </div>
+
+        <p>
+          This is called a secret-prefix construction. With Merkle-Damgård-style hashes, it can be vulnerable to length extension. The attacker may not know the secret, but if they know or can guess the secret length, they may be able to compute a valid tag for:</p>
+
+        <div class="math-display">
+          \[
+            secret\,\|\,message\,\|\,pad(secret\,\|\,message)\,\|\,extension
+          \]
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Security warning</div>
+          <p>
+            Do not use <code>Hash(secret || message)</code> as a home-made MAC with Merkle-Damgård-style hashes. Use a standard construction such as HMAC.</p>
+        </div>
+      </section>
+
+      <section id="what-attacker-does-not-get">
+        <h2>What the attacker does not get</h2>
+        <p>
+          A length extension attack is often misunderstood. The attacker does not recover the secret and does not reverse the hash.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Misunderstanding</th><th>Correction</th></tr></thead>
+          <tbody>
+            <tr><td>The attacker finds the secret.</td><td>No. The secret remains unknown.</td></tr>
+            <tr><td>The attacker reverses the hash.</td><td>No. The attacker continues the hash state forward.</td></tr>
+            <tr><td>The attacker removes padding.</td><td>No. The padding becomes part of the forged longer message.</td></tr>
+            <tr><td>The attacker breaks all uses of hashes.</td><td>No. The issue affects certain constructions and misuse patterns.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Length extension is not rewinding the film. It is splicing on another scene after the visible final frame.</p>
+        </div>
+      </section>
+
+      <section id="why-padding-appears-in-forgery">
+        <h2>Why padding appears inside the forged message</h2>
+        <p>
+          In a length extension attack, the forged message often contains the original message, then padding bytes, then attacker-chosen data. This looks strange, but it follows directly from the hash construction.</p>
+
+        <pre><code>Original authenticated data:
+message
+
+What attacker forges conceptually:
+message || glue_padding || extension</code></pre>
+
+        <p>
+          The “glue padding” is the padding that the original hash would have added after the hidden prefix and message. The attacker includes it so the hash continuation lines up correctly.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why “glue”?</div>
+          <p>
+            It glues the original hashed content to the attacker’s extension while preserving the internal block boundary expected by the Merkle-Damgård process.</p>
+        </div>
+      </section>
+
+      <section id="safe-constructions">
+        <h2>Safer constructions</h2>
+        <p>
+          The usual answer is not “never use hashes.” The answer is “use the right construction for the job.”</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Need</th><th>Use</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Plain integrity fingerprint</td><td>Hash function</td><td>Detects changes when the expected digest is trusted.</td></tr>
+            <tr><td>Message authentication with a secret key</td><td>HMAC</td><td>Designed to use a hash safely with a key.</td></tr>
+            <tr><td>Password storage</td><td>Password hashing function</td><td>Uses salts and deliberate slowness or memory hardness.</td></tr>
+            <tr><td>Digital signature input</td><td>Hash then sign according to a standard scheme</td><td>Uses signature schemes designed around digest handling.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box attack-box">
+          <div class="box-title">Key lesson</div>
+          <p>
+            A hash function is a building block. Authentication requires an authentication construction, not just a raw hash with a secret pasted beside it.</p>
+        </div>
+      </section>
+
+      <section id="hmac-preview">
+        <h2>HMAC preview</h2>
+        <p>
+          HMAC stands for Hash-based Message Authentication Code. It is designed to avoid the naive secret-prefix problem by using the key in a more careful two-layer structure.</p>
+
+        <div class="math-display">
+          \[
+            HMAC(K,M)=H((K'\oplus opad)\,\|\,H((K'\oplus ipad)\,\|\,M))
+          \]
+        </div>
+
+        <p>
+          Do not worry if that formula looks crowded. The important idea is that HMAC does not simply compute \(H(K\,\|\,M)\). It wraps the message in an inner hash and an outer hash using derived key pads.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Coming next</div>
+          <p>
+            The next tutorial will unpack HMAC slowly and show why this structure avoids the naive length-extension problem.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking padding is irrelevant</div>
+          <p>
+            Padding controls the exact block sequence processed by the hash. It is part of the cryptographic structure.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking length extension reverses the hash</div>
+          <p>
+            It does not reverse the hash. It continues the hash from a known digest state.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using <code>Hash(secret || message)</code> as a MAC</div>
+          <p>
+            This can be vulnerable with Merkle-Damgård-style hashes. Use HMAC instead.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking all hash uses are broken</div>
+          <p>
+            Length extension is about specific constructions and misuse patterns, not every use of every hash.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What are the major pieces of Merkle-Damgård-style padding?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The original message, a 1 bit marker, enough 0 bits to align the final length field, and an encoding of the original message length.</p>
+            </details>
+          </li>
+          <li>
+            Why is the original message length encoded?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It helps bind the padded block sequence to the original message length and avoids ambiguity.</p>
+            </details>
+          </li>
+          <li>
+            What is the central insight behind length extension attacks?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The digest can act like a final chaining value, allowing an attacker to continue hashing extra blocks from that state.</p>
+            </details>
+          </li>
+          <li>
+            Does length extension reveal the secret in \(H(secret\,\|\,message)\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. The attacker does not learn the secret. They continue the hash state forward to compute a valid tag for a longer message.</p>
+            </details>
+          </li>
+          <li>
+            Why does glue padding appear in the forged message?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It represents the padding that the original hash computation would have inserted before the attacker’s extension, so the continuation lines up with the block structure.</p>
+            </details>
+          </li>
+          <li>
+            What should be used instead of a naive secret-prefix hash MAC?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Use HMAC or another standard message authentication code construction.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Length extension attacks are a perfect example of why cryptographic primitives must be used in the right construction. A hash function may be excellent at producing digests and still be unsafe when used in a naive homemade authentication scheme. This lesson is the bridge from hash functions to MACs and prepares us directly for HMAC.</p>
+        <ul>
+          <li>Padding defines the exact block sequence.</li>
+          <li>Length encoding binds padding to the original message length.</li>
+          <li>Merkle-Damgård digests can expose a resumable final state.</li>
+          <li>Length extension continues the hash; it does not reverse it.</li>
+          <li>Naive <code>Hash(secret || message)</code> constructions can be dangerous.</li>
+          <li>HMAC is the standard safe direction for keyed hashing.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Merkle-Damgård padding commonly has the shape \(M\,\|\,1\,\|\,0\ldots0\,\|\,\text{len}(M)\).</li>
+            <li>The 1 bit marks where padding begins.</li>
+            <li>The 0 bits fill space before the length field.</li>
+            <li>The length field records the original message length.</li>
+            <li>Padding is part of the cryptographic grammar, not decoration.</li>
+            <li>In basic Merkle-Damgård, the digest is the final chaining value.</li>
+            <li>That final digest may let an attacker continue hashing additional blocks.</li>
+            <li>Length extension computes a digest for \(M\,\|\,pad(M)\,\|\,X\) from \(H(M)\), given the needed length information.</li>
+            <li>Length extension does not recover the secret and does not reverse the hash.</li>
+            <li>Naive \(H(secret\,\|\,message)\) authentication can be vulnerable.</li>
+            <li>Use HMAC for keyed hash-based authentication.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              pad(M)=M\,\|\,1\,\|\,0\ldots0\,\|\,\text{len}(M)
+            \]
+            \[
+              H(M)=CV_t
+            \]
+            \[
+              \text{Given } H(M), \text{ compute } H(M\,\|\,pad(M)\,\|\,X)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 47: Padding, Length Encoding, and Length Extension Attacks</strong>. After that, the next tutorial can move into <strong>HMAC: Safe Keyed Hashing</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

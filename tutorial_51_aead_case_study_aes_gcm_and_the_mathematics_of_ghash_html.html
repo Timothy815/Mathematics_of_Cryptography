@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEAD Case Study: AES-GCM and the Mathematics of GHASH | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .gcm-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .mode-table,
+    .danger-table,
+    .math-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .mode-table th,
+    .mode-table td,
+    .danger-table th,
+    .danger-table td,
+    .math-table th,
+    .math-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .mode-table th,
+    .danger-table th,
+    .math-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .step-table td,
+    .step-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th,
+    .mode-table td,
+    .mode-table th,
+    .danger-table td,
+    .danger-table th,
+    .math-table td,
+    .math-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .key-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .plain-node { background: #fff4d8; border-color: #ead399; }
+    .cipher-node { background: #f0eafe; border-color: #d8c8f5; }
+    .tag-node { background: #fdeaea; border-color: #efb5b5; }
+    .field-node { background: #eef3ff; border-color: #c7d2ea; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .mini-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+    }
+
+    .mini-card.green { background: #eaf7ef; border-color: #b8dfc5; }
+    .mini-card.gold { background: #fff4d8; border-color: #ead399; }
+    .mini-card.purple { background: #f0eafe; border-color: #d8c8f5; }
+    .mini-card.red { background: #fdeaea; border-color: #efb5b5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .two-column { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .mini-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .mini-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .mode-table th, .danger-table th, .math-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 51</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>AEAD Case Study: AES-GCM and the Mathematics of GHASH</h1>
+      <p class="subtitle">
+        A guided look inside AES-GCM: AES counter mode provides confidentiality, GHASH provides authentication over ciphertext and associated data, and finite-field arithmetic ties the whole design together.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="50-authenticated-encryption-encrypt-then-mac-and-aead.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 50 introduced authenticated encryption and AEAD. This tutorial studies AES-GCM as a concrete case. AES-GCM is useful because it shows two major cryptographic ideas working together: counter-mode encryption for secrecy and Galois-field hashing for authentication.</p>
+        </div>
+
+        <p class="lead">
+          AES-GCM is a two-engine machine. One engine turns counters into keystream blocks and hides the plaintext. The other engine stirs associated data and ciphertext through finite-field multiplication to build an authentication value. One side wears the cloak; the other checks the wax seal.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know the goals of AEAD: confidentiality, integrity, and authenticity. You should also know the basic idea of finite-field arithmetic from earlier tutorials: elements can be represented as bit strings, added by XOR, and multiplied modulo an irreducible polynomial.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>AES</td><td>The block cipher engine.</td><td>Advanced Encryption Standard, a 128-bit block cipher.</td></tr>
+            <tr><td>GCM</td><td>The AEAD mode.</td><td>Galois/Counter Mode.</td></tr>
+            <tr><td>CTR</td><td>Counter mode.</td><td>A mode that encrypts counters to create keystream blocks.</td></tr>
+            <tr><td>GHASH</td><td>The authentication hash.</td><td>A polynomial-style hash over \(GF(2^{128})\).</td></tr>
+            <tr><td>\(K\)</td><td>The AES key.</td><td>The secret key used by AES.</td></tr>
+            <tr><td>\(N\)</td><td>The nonce.</td><td>A value that must be unique under the same key.</td></tr>
+            <tr><td>\(P\)</td><td>Plaintext.</td><td>The readable message before encryption.</td></tr>
+            <tr><td>\(C\)</td><td>Ciphertext.</td><td>The encrypted message.</td></tr>
+            <tr><td>\(A\)</td><td>Associated data.</td><td>Authenticated but not encrypted data.</td></tr>
+            <tr><td>\(H\)</td><td>Hash subkey.</td><td>\(H=AES_K(0^{128})\), used by GHASH.</td></tr>
+            <tr><td>\(T\)</td><td>Tag.</td><td>The final authentication tag.</td></tr>
+            <tr><td>\(J_0\)</td><td>Initial counter block.</td><td>A counter block derived from the nonce.</td></tr>
+            <tr><td>\(GF(2^{128})\)</td><td>128-bit Galois field.</td><td>The finite field used by GHASH multiplication.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="aes-gcm-big-picture">
+        <h2>AES-GCM big picture</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: AES-GCM</div>
+          <p>
+            AES-GCM is an AEAD mode that combines AES in counter mode for encryption with GHASH over associated data and ciphertext for authentication.</p>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Part</th><th>Job</th><th>What it protects</th></tr></thead>
+          <tbody>
+            <tr><td>AES-CTR</td><td>Confidentiality</td><td>Plaintext becomes ciphertext.</td></tr>
+            <tr><td>GHASH</td><td>Authentication math</td><td>Associated data and ciphertext are bound into a hash value.</td></tr>
+            <tr><td>Final tag mask</td><td>Keyed finalization</td><td>GHASH result is combined with encrypted counter value.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="AES-GCM big picture flow">
+          <div class="diagram-title">AES-GCM has two cooperating paths</div>
+          <div class="flow-row">
+            <div class="flow-node plain-node">Plaintext<br>\(P\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="machine-node">AES-CTR</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node cipher-node">Ciphertext<br>\(C\)</div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-node field-node">AAD<br>\(A\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node cipher-node">Ciphertext<br>\(C\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">GHASH</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node tag-node">Authentication<br>value</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="counter-mode-review">
+        <h2>Counter mode review</h2>
+        <p>
+          AES-GCM encrypts using AES in counter mode. Instead of encrypting the plaintext directly, AES encrypts counter blocks to make keystream blocks. The keystream is XORed with plaintext.</p>
+
+        <div class="math-display">
+          \[
+            S_i=AES_K(ctr_i)
+          \]
+          \[
+            C_i=P_i\oplus S_i
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Build counter block \(ctr_i\).</td><td>Nonce plus counter information.</td></tr>
+            <tr><td>2</td><td>Compute \(S_i=AES_K(ctr_i)\).</td><td>AES produces a keystream block.</td></tr>
+            <tr><td>3</td><td>Compute \(C_i=P_i\oplus S_i\).</td><td>XOR hides plaintext.</td></tr>
+            <tr><td>4</td><td>Decrypt using \(P_i=C_i\oplus S_i\).</td><td>XOR with same keystream reverses encryption.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">CTR mode warning</div>
+          <p>
+            Reusing the same nonce and key can reuse keystream blocks. Reused keystream can expose relationships between plaintexts. This is one reason nonce uniqueness matters so fiercely in AES-GCM.</p>
+        </div>
+      </section>
+
+      <section id="ghash-purpose">
+        <h2>What GHASH does</h2>
+        <p>
+          GHASH authenticates the associated data and ciphertext. It does not encrypt. Instead, it combines blocks using XOR and multiplication in \(GF(2^{128})\).</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: GHASH</div>
+          <p>
+            GHASH is a finite-field hash function used inside GCM. It processes associated data, ciphertext, and length information using multiplication by a hash subkey \(H\) in \(GF(2^{128})\).</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            H=AES_K(0^{128})
+          \]
+        </div>
+
+        <p>
+          The value \(H\) is called the hash subkey. It is secret in practice because it is derived from the AES key.</p>
+      </section>
+
+      <section id="galois-field-connection">
+        <h2>The finite-field connection</h2>
+        <p>
+          GHASH treats 128-bit blocks as elements of \(GF(2^{128})\). Addition is XOR. Multiplication is polynomial multiplication reduced modulo a fixed irreducible polynomial.</p>
+
+        <table class="math-table">
+          <thead><tr><th>Operation</th><th>In GHASH</th><th>Earlier course connection</th></tr></thead>
+          <tbody>
+            <tr><td>Addition</td><td>XOR of 128-bit blocks</td><td>Same as addition in binary polynomial fields.</td></tr>
+            <tr><td>Multiplication</td><td>Carryless multiply then reduce</td><td>Same idea as \(GF(2^8)\), scaled to 128 bits.</td></tr>
+            <tr><td>Reduction</td><td>Modulo a fixed irreducible polynomial</td><td>Keeps result inside the field.</td></tr>
+            <tr><td>Hash subkey</td><td>\(H=AES_K(0^{128})\)</td><td>Used as the multiplier in the field hash.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            GHASH is like a 128-bit polynomial mixing bowl. Each block is stirred in with XOR, then folded through multiplication by \(H\).</p>
+        </div>
+      </section>
+
+      <section id="ghash-recurrence">
+        <h2>The GHASH recurrence</h2>
+        <p>
+          After the associated data and ciphertext are formatted into blocks \(X_1,X_2,\ldots,X_m\), GHASH can be described with a recurrence:</p>
+
+        <div class="math-display">
+          \[
+            Y_0=0
+          \]
+          \[
+            Y_i=(Y_{i-1}\oplus X_i)\cdot H
+          \]
+          \[
+            GHASH_H(X_1,\ldots,X_m)=Y_m
+          \]
+        </div>
+
+        <p>
+          This is the authentication-side cousin of the chaining-value idea we saw in hash functions. The state \(Y_i\) keeps absorbing blocks, but the arithmetic is field multiplication by \(H\).</p>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(Y_0=0\)</td><td>Start from zero.</td></tr>
+            <tr><td>Absorb block</td><td>\(Y_{i-1}\oplus X_i\)</td><td>XOR the next block into the state.</td></tr>
+            <tr><td>Mix</td><td>\((Y_{i-1}\oplus X_i)\cdot H\)</td><td>Multiply by hash subkey in \(GF(2^{128})\).</td></tr>
+            <tr><td>Finish</td><td>\(Y_m\)</td><td>Output GHASH value.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="what-goes-into-ghash">
+        <h2>What goes into GHASH?</h2>
+        <p>
+          GHASH does not only process ciphertext. It also processes associated data and length information.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Input to GHASH</th><th>Why included?</th></tr></thead>
+          <tbody>
+            <tr><td>Associated data \(A\)</td><td>Visible context must be protected from tampering.</td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>Encrypted message must be authenticated.</td></tr>
+            <tr><td>Lengths of \(A\) and \(C\)</td><td>Prevents ambiguity in how blocks are interpreted.</td></tr>
+            <tr><td>Padding to block boundary</td><td>GHASH processes 128-bit blocks.</td></tr>
+          </tbody>
+        </table>
+
+        <pre><code>Conceptual GHASH input:
+AAD blocks || ciphertext blocks || length block</code></pre>
+      </section>
+
+      <section id="tag-computation">
+        <h2>How the final tag is made</h2>
+        <p>
+          GHASH produces an authentication value, but the final tag is masked using AES output on the initial counter block \(J_0\).</p>
+
+        <div class="math-display">
+          \[
+            S=GHASH_H(A,C)
+          \]
+          \[
+            T=AES_K(J_0)\oplus S
+          \]
+        </div>
+
+        <p>
+          The final tag is therefore tied both to the GHASH result and to AES under the secret key.</p>
+
+        <div class="diagram" role="img" aria-label="AES-GCM tag computation flow">
+          <div class="diagram-title">AES-GCM tag computation</div>
+          <div class="flow-row">
+            <div class="flow-node field-node">AAD and ciphertext</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">GHASH</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node tag-node">\(S\)</div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-node key-node">\(J_0\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">AES</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node cipher-node">\(AES_K(J_0)\)</div>
+            <div class="flow-arrow">\(\oplus\)</div>
+            <div class="flow-node tag-node">\(S\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node tag-node">Tag \(T\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="decryption-verification">
+        <h2>Decryption and verification</h2>
+        <p>
+          AES-GCM decryption should verify the tag. If the tag is wrong, the receiver rejects. If it is correct, the ciphertext can be decrypted with AES-CTR.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Receiver step</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Receive nonce \(N\), associated data \(A\), ciphertext \(C\), and tag \(T\).</td></tr>
+            <tr><td>2</td><td>Recompute GHASH over \(A\), \(C\), and length information.</td></tr>
+            <tr><td>3</td><td>Recompute expected tag using \(AES_K(J_0)\oplus GHASH\).</td></tr>
+            <tr><td>4</td><td>If tag does not match, reject.</td></tr>
+            <tr><td>5</td><td>If tag matches, decrypt ciphertext using AES-CTR.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonce-reuse-catastrophe">
+        <h2>Why nonce reuse is catastrophic</h2>
+        <p>
+          AES-GCM requires nonce uniqueness under the same key. Reusing the same nonce with the same key can damage both confidentiality and authentication.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Failure</th><th>What can go wrong?</th></tr></thead>
+          <tbody>
+            <tr><td>CTR keystream reuse</td><td>Two ciphertexts may reveal relationships between two plaintexts.</td></tr>
+            <tr><td>GHASH structure exposure</td><td>Repeated nonces can help attackers derive information about authentication equations.</td></tr>
+            <tr><td>Forgery risk</td><td>Authentication security may collapse under serious nonce misuse.</td></tr>
+            <tr><td>Protocol failure</td><td>The mode may no longer provide its promised AEAD security.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Design warning</div>
+          <p>
+            AES-GCM is powerful, but it is not forgiving. Reusing a nonce under the same key is not a scratch on the paint; it is a crack through the engine block.</p>
+        </div>
+      </section>
+
+      <section id="toy-ghash">
+        <h2>Toy GHASH over a tiny field</h2>
+        <p>
+          Real GHASH uses \(GF(2^{128})\), which is too large for hand practice. We can see the structure with a tiny toy recurrence over 4-bit values.</p>
+
+        <div class="math-display">
+          \[
+            Y_0=0
+          \]
+          \[
+            Y_i=(Y_{i-1}\oplus X_i)\cdot H
+          \]
+        </div>
+
+        <p>
+          Suppose \(H=3\), and our toy multiplication is ordinary multiplication modulo 16 just for demonstration. This is not real GHASH field arithmetic, but it shows the absorb-then-multiply rhythm.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Step</th><th>Block \(X_i\)</th><th>Compute</th><th>State</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>none</td><td>\(Y_0=0\)</td><td>0</td></tr>
+            <tr><td>1</td><td>5</td><td>\((0\oplus5)\cdot3=15\bmod16\)</td><td>15</td></tr>
+            <tr><td>2</td><td>6</td><td>\((15\oplus6)\cdot3=(9)\cdot3=27\equiv11\bmod16\)</td><td>11</td></tr>
+            <tr><td>3</td><td>2</td><td>\((11\oplus2)\cdot3=(9)\cdot3=27\equiv11\bmod16\)</td><td>11</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Toy warning</div>
+          <p>
+            This example is not real GHASH arithmetic. Real GHASH uses carryless multiplication in \(GF(2^{128})\), not ordinary multiplication modulo 16. The toy example only illustrates the state update pattern.</p>
+        </div>
+      </section>
+
+      <section id="why-ghash-is-fast">
+        <h2>Why GHASH is fast</h2>
+        <p>
+          GHASH was designed to be efficient on modern processors. Its operations are XOR and carryless multiplication, both of which can be implemented very quickly with hardware support.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Feature</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>XOR addition</td><td>Fast bitwise operation.</td></tr>
+            <tr><td>Carryless multiplication</td><td>Efficient on processors with dedicated instructions.</td></tr>
+            <tr><td>Parallelizable encryption</td><td>CTR blocks can be generated independently.</td></tr>
+            <tr><td>Block-based authentication</td><td>Processes 128-bit chunks cleanly.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking GCM is only encryption</div>
+          <p>
+            GCM is authenticated encryption. It provides both encryption and authentication when used correctly.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: ignoring AAD</div>
+          <p>
+            Associated data is not encrypted, but it is authenticated. Changing it should break verification.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: reusing nonces</div>
+          <p>
+            Nonce reuse under the same key can destroy AES-GCM security.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: treating GHASH as a normal cryptographic hash</div>
+          <p>
+            GHASH is a keyed authentication component inside GCM, not a standalone replacement for SHA-256 or HMAC.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does GCM stand for?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Galois/Counter Mode.</p>
+            </details>
+          </li>
+          <li>
+            Which part of AES-GCM provides confidentiality?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES in counter mode provides confidentiality.</p>
+            </details>
+          </li>
+          <li>
+            Which part of AES-GCM authenticates associated data and ciphertext?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>GHASH, together with the final AES mask, supports authentication.</p>
+            </details>
+          </li>
+          <li>
+            What is the hash subkey \(H\)?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(H=AES_K(0^{128})\).</p>
+            </details>
+          </li>
+          <li>
+            What field does GHASH use?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(GF(2^{128})\).</p>
+            </details>
+          </li>
+          <li>
+            Why is nonce reuse dangerous in AES-GCM?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It can reuse CTR keystream and damage GHASH-based authentication, potentially breaking confidentiality and authenticity.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          AES-GCM is a beautiful meeting point between block ciphers, stream-like encryption, authentication, and finite-field arithmetic. It also teaches a practical lesson that appears throughout real-world cryptography: strong primitives can fail when their usage rules are violated, especially nonce uniqueness.</p>
+        <ul>
+          <li>AES-GCM is an AEAD mode.</li>
+          <li>AES-CTR hides the plaintext.</li>
+          <li>GHASH authenticates associated data and ciphertext.</li>
+          <li>GHASH works over \(GF(2^{128})\).</li>
+          <li>The hash subkey is \(H=AES_K(0^{128})\).</li>
+          <li>The tag combines GHASH with \(AES_K(J_0)\).</li>
+          <li>Nonce uniqueness under the same key is essential.</li>
+          <li>GHASH is not a general-purpose hash like SHA-256.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AES-GCM stands for AES in Galois/Counter Mode.</li>
+            <li>It is an AEAD mode.</li>
+            <li>AES-CTR provides confidentiality.</li>
+            <li>GHASH contributes authentication over AAD and ciphertext.</li>
+            <li>GHASH uses arithmetic in \(GF(2^{128})\).</li>
+            <li>Addition in GHASH is XOR.</li>
+            <li>Multiplication is carryless multiplication reduced in the field.</li>
+            <li>The GHASH subkey is \(H=AES_K(0^{128})\).</li>
+            <li>The GHASH recurrence is \(Y_i=(Y_{i-1}\oplus X_i)\cdot H\).</li>
+            <li>The final tag is \(T=AES_K(J_0)\oplus GHASH_H(A,C)\).</li>
+            <li>AAD is authenticated but not encrypted.</li>
+            <li>Nonce reuse with the same key can be catastrophic.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              S_i=AES_K(ctr_i)
+            \]
+            \[
+              C_i=P_i\oplus S_i
+            \]
+            \[
+              H=AES_K(0^{128})
+            \]
+            \[
+              Y_0=0
+            \]
+            \[
+              Y_i=(Y_{i-1}\oplus X_i)\cdot H
+            \]
+            \[
+              T=AES_K(J_0)\oplus GHASH_H(A,C)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 51: AEAD Case Study: AES-GCM and the Mathematics of GHASH</strong>. After that, the next tutorial can move into <strong>Nonce Misuse, Replay, and Protocol Context</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

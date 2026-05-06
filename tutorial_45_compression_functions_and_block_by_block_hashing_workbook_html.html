@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 45: Compression Functions and Block-by-Block Hashing | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .compression-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .step-table,
+    .state-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .block-table,
+    .valid-table,
+    .scenario-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .state-table th, .state-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .block-table th, .block-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .step-table th,
+    .state-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .block-table th,
+    .valid-table th,
+    .scenario-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .state-table th,
+    .state-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .block-table th,
+    .block-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .block-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .block-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #ffffff;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .block-card.green { background: #eaf7ef; border-color: #b8dfc5; }
+    .block-card.gold { background: #fff4d8; border-color: #ead399; }
+    .block-card.purple { background: #f0eafe; border-color: #d8c8f5; }
+    .block-card.red { background: #fdeaea; border-color: #efb5b5; }
+    .small-label { display:block; font-family: system-ui, sans-serif; font-size: 0.78rem; color:#1f3763; text-transform: uppercase; letter-spacing:0.04em; margin-bottom:6px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .block-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid, .block-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .block-card { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .block-card {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .step-table th,
+      .state-table th,
+      .property-table th,
+      .example-table th,
+      .lesson-table th,
+      .block-table th,
+      .valid-table th,
+      .scenario-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 45</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Compression Functions and Block-by-Block Hashing</h1>
+      <p class="subtitle">
+        Printable practice for splitting messages into blocks, updating chaining values, identifying the role of the IV, understanding padding, and preparing for Merkle-Damgård construction.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="45-compression-functions-and-block-by-block-hashing.html">Tutorial 45</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the structure: a message is split into blocks, each block is combined with a chaining value, and the compression function creates the next chaining value. Keep asking, “What is the current block? What is the previous state? What becomes the new state?”</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core pattern</div>
+            <div class="math-display">
+              \[
+                CV_0=IV
+              \]
+              \[
+                CV_i=f(CV_{i-1},M_i)
+              \]
+              \[
+                H(M)=CV_t
+              \]
+            </div>
+          </div>
+
+          <div class="box compression-box">
+            <div class="box-title">Memory phrase</div>
+            <pre><code>Old state + current block → compression function → new state
+
+The chaining value is the running memory of the hash.</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(M_i\) represent?</td><td></td></tr>
+            <tr><td>A3. What is a block?</td><td></td></tr>
+            <tr><td>A4. What does \(CV_i\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(IV\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(f\) represent?</td><td></td></tr>
+            <tr><td>A7. What is a digest?</td><td></td></tr>
+            <tr><td>A8. What does iteration mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="basic-definition">
+        <h2>Part B: Compression function definition</h2>
+
+        <div class="problem">
+          <div class="problem-title">B1. Define a compression function in your own words.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Explain what \(CV_i=f(CV_{i-1},M_i)\) means.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Input / output</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(CV_{i-1}\)</td><td></td></tr>
+            <tr><td>\(M_i\)</td><td></td></tr>
+            <tr><td>\(f\)</td><td></td></tr>
+            <tr><td>\(CV_i\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="long-messages">
+        <h2>Part C: Why block-by-block hashing exists</h2>
+        <p>Complete the table.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Input</th><th>Problem</th><th>Hashing strategy</th></tr></thead>
+          <tbody>
+            <tr><td><code>Hi</code></td><td></td><td></td></tr>
+            <tr><td>A paragraph</td><td></td><td></td></tr>
+            <tr><td>A 100 MB file</td><td></td><td></td></tr>
+            <tr><td>A disk image</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is block-by-block hashing useful for long messages?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="block-splitting">
+        <h2>Part D: Splitting messages into blocks</h2>
+        <p>Use 4-character blocks. Complete the block tables.</p>
+
+        <table class="block-table">
+          <thead><tr><th>Message</th><th>Block size</th><th>Blocks</th></tr></thead>
+          <tbody>
+            <tr><td><code>ATTACKATDAWN</code></td><td>4 characters</td><td></td></tr>
+            <tr><td><code>MEETMEATNOON</code></td><td>4 characters</td><td></td></tr>
+            <tr><td><code>HELLOWORLD</code></td><td>4 characters</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Which messages above divide evenly into 4-character blocks? Which require padding?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="chaining-values">
+        <h2>Part E: Chaining values</h2>
+        <p>Complete the sequence for three blocks.</p>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=\)</td><td></td></tr>
+            <tr><td>Block 1</td><td>\(CV_1=f(\_,\_)\)</td><td></td></tr>
+            <tr><td>Block 2</td><td>\(CV_2=f(\_,\_)\)</td><td></td></tr>
+            <tr><td>Block 3</td><td>\(CV_3=f(\_,\_)\)</td><td></td></tr>
+            <tr><td>Final</td><td>\(H(M)=\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is the chaining value described as the running memory of the hash?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="iv-practice">
+        <h2>Part F: Initialization value</h2>
+        <table class="compare-table">
+          <thead><tr><th>Term</th><th>Role</th><th>Secret?</th></tr></thead>
+          <tbody>
+            <tr><td>\(IV\)</td><td></td><td></td></tr>
+            <tr><td>\(CV_i\)</td><td></td><td></td></tr>
+            <tr><td>Digest</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why does the first block need an initialization value?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="toy-compression">
+        <h2>Part G: Tiny worked compression example</h2>
+        <p>Use the toy compression function:</p>
+        <div class="math-display">
+          \[
+            f(CV,M)=((CV\oplus M)\lll 1+M)\bmod 256
+          \]
+        </div>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Input state</th><th>Message block</th><th>Output state</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=0x00\)</td><td>none</td><td></td></tr>
+            <tr><td>1</td><td>\(CV_0=0x00\)</td><td>\(M_1=0x41\)</td><td></td></tr>
+            <tr><td>2</td><td>\(CV_1=0xC3\)</td><td>\(M_2=0x42\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Explain why this toy example is useful but not secure.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="padding-preview">
+        <h2>Part H: Padding preview</h2>
+        <p>Use 4-character blocks and identify whether padding is required.</p>
+
+        <table class="block-table">
+          <thead><tr><th>Message</th><th>Length</th><th>Block size</th><th>Padding needed?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td><code>ATTACK</code></td><td>6</td><td>4</td><td></td><td></td></tr>
+            <tr><td><code>DAWN</code></td><td>4</td><td>4</td><td></td><td></td></tr>
+            <tr><td><code>RETREAT</code></td><td>7</td><td>4</td><td></td><td></td></tr>
+            <tr><td><code>SENDHELP</code></td><td>8</td><td>4</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why are padding and length encoding more than boring bookkeeping?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="block-order">
+        <h2>Part I: Why block order matters</h2>
+        <p>Complete the expected effects.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Change</th><th>Expected effect</th></tr></thead>
+          <tbody>
+            <tr><td>Change \(M_1\)</td><td></td></tr>
+            <tr><td>Change \(M_2\)</td><td></td></tr>
+            <tr><td>Reorder blocks</td><td></td></tr>
+            <tr><td>Append a block</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain why changing an early block should affect later chaining values.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="not-automatically-secure">
+        <h2>Part J: Compression is not automatically secure</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Requirement</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Strong diffusion</td><td></td></tr>
+            <tr><td>Nonlinearity</td><td></td></tr>
+            <tr><td>Large state and output</td><td></td></tr>
+            <tr><td>Careful padding and length handling</td><td></td></tr>
+            <tr><td>Studied construction</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Explain why a weak compression function wrapped in a neat loop is still weak cryptography.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="merkle-damgard-bridge">
+        <h2>Part K: Bridge to Merkle-Damgård</h2>
+        <p>Complete the Merkle-Damgård-like pattern.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Line</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=\)</td><td></td></tr>
+            <tr><td>Iterate</td><td>\(CV_i=\)</td><td></td></tr>
+            <tr><td>Finish</td><td>\(H(M)=\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why does this tutorial prepare us for Merkle-Damgård construction?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part L: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A compression function combines a previous chaining value and a message block.</td><td></td><td></td></tr>
+            <tr><td>Compression in hash design means ZIP-style file compression.</td><td></td><td></td></tr>
+            <tr><td>The IV is usually a public fixed starting value in ordinary hashing.</td><td></td><td></td></tr>
+            <tr><td>Padding is irrelevant to hash construction.</td><td></td><td></td></tr>
+            <tr><td>A secure-looking block loop can rescue a bad compression function.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part M: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">M1. Explain block-by-block hashing in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">M2. Explain the role of the chaining value.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">M3. Why should changing \(M_1\) affect the final digest?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">M4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Long messages can be split into blocks before hashing.</td><td></td></tr>
+            <tr><td>A compression function takes \(CV_{i-1}\) and \(M_i\) as input.</td><td></td></tr>
+            <tr><td>A compression function outputs a new chaining value.</td><td></td></tr>
+            <tr><td>The first chaining value is usually written \(CV_0=IV\).</td><td></td></tr>
+            <tr><td>The IV is normally a secret key in ordinary hashing.</td><td></td></tr>
+            <tr><td>Padding is needed when messages do not fit evenly into blocks.</td><td></td></tr>
+            <tr><td>A strong hash needs both a strong compression function and a sound construction.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The big idea is that an iterated hash carries a chaining value forward. Each block changes the state, and the final state becomes the digest or helps produce it.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td>The whole message.</td></tr>
+            <tr><td>A2. What does \(M_i\) represent?</td><td>The \(i\)-th message block.</td></tr>
+            <tr><td>A3. What is a block?</td><td>A fixed-size chunk of the message.</td></tr>
+            <tr><td>A4. What does \(CV_i\) represent?</td><td>The chaining value after processing block \(i\).</td></tr>
+            <tr><td>A5. What does \(IV\) represent?</td><td>The initialization value, or starting chaining value.</td></tr>
+            <tr><td>A6. What does \(f\) represent?</td><td>The compression function.</td></tr>
+            <tr><td>A7. What is a digest?</td><td>The final hash output or fingerprint.</td></tr>
+            <tr><td>A8. What does iteration mean?</td><td>Repeating the same update rule block after block.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Compression function definition</h3>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> A compression function combines a previous chaining value and a current message block to produce a new fixed-size chaining value.</p>
+          <p><strong>B2 sample answer.</strong> \(CV_i=f(CV_{i-1},M_i)\) means that the new chaining value is made by applying compression function \(f\) to the previous chaining value and the current message block.</p>
+        </div>
+        <table class="answer-table">
+          <thead><tr><th>Input / output</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(CV_{i-1}\)</td><td>Previous chaining value.</td></tr>
+            <tr><td>\(M_i\)</td><td>Current message block.</td></tr>
+            <tr><td>\(f\)</td><td>Compression function.</td></tr>
+            <tr><td>\(CV_i\)</td><td>New chaining value.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Why block-by-block hashing exists</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Problem</th><th>Hashing strategy</th></tr></thead>
+          <tbody>
+            <tr><td><code>Hi</code></td><td>Very small.</td><td>Pad and process as one or more blocks.</td></tr>
+            <tr><td>A paragraph</td><td>Medium length.</td><td>Split into fixed-size blocks.</td></tr>
+            <tr><td>A 100 MB file</td><td>Too large to treat as one simple input.</td><td>Process block by block.</td></tr>
+            <tr><td>A disk image</td><td>Huge.</td><td>Stream blocks through the hash function.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> Block-by-block hashing lets the same repeated compression function process messages of many different sizes without needing to handle the entire message at once.</p>
+        </div>
+
+        <h3>Part D: Splitting messages into blocks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Message</th><th>Block size</th><th>Blocks</th></tr></thead>
+          <tbody>
+            <tr><td><code>ATTACKATDAWN</code></td><td>4 characters</td><td><code>ATTA | CKAT | DAWN</code></td></tr>
+            <tr><td><code>MEETMEATNOON</code></td><td>4 characters</td><td><code>MEET | MEAT | NOON</code></td></tr>
+            <tr><td><code>HELLOWORLD</code></td><td>4 characters</td><td><code>HELL | OWOR | LD</code>, final block needs padding.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> <code>ATTACKATDAWN</code> and <code>MEETMEATNOON</code> divide evenly into 4-character blocks. <code>HELLOWORLD</code> has 10 characters, so it needs padding for the final 2-character partial block.</p>
+        </div>
+
+        <h3>Part E: Chaining values</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=IV\)</td><td>Start from the initialization value.</td></tr>
+            <tr><td>Block 1</td><td>\(CV_1=f(CV_0,M_1)\)</td><td>Process the first block.</td></tr>
+            <tr><td>Block 2</td><td>\(CV_2=f(CV_1,M_2)\)</td><td>Process the second block using the previous state.</td></tr>
+            <tr><td>Block 3</td><td>\(CV_3=f(CV_2,M_3)\)</td><td>Process the third block using the previous state.</td></tr>
+            <tr><td>Final</td><td>\(H(M)=CV_3\)</td><td>The final chaining value becomes the digest in this simplified model.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> The chaining value is the running memory because it carries the effect of all previously processed blocks into the next compression step.</p>
+        </div>
+
+        <h3>Part F: Initialization value</h3>
+        <table class="answer-table">
+          <thead><tr><th>Term</th><th>Role</th><th>Secret?</th></tr></thead>
+          <tbody>
+            <tr><td>\(IV\)</td><td>Starting chaining value.</td><td>No, usually public and fixed.</td></tr>
+            <tr><td>\(CV_i\)</td><td>Running chaining value after block \(i\).</td><td>No, internal but not secret in ordinary hashing.</td></tr>
+            <tr><td>Digest</td><td>Final output.</td><td>No, usually public.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> The first block needs a previous chaining value, but no previous block exists yet. The initialization value provides the starting state.</p>
+        </div>
+
+        <h3>Part G: Tiny worked compression example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Input state</th><th>Message block</th><th>Output state</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=0x00\)</td><td>none</td><td>\(0x00\)</td></tr>
+            <tr><td>1</td><td>\(CV_0=0x00\)</td><td>\(M_1=0x41\)</td><td>\(CV_1=0xC3\)</td></tr>
+            <tr><td>2</td><td>\(CV_1=0xC3\)</td><td>\(M_2=0x42\)</td><td>\(CV_2=0x45\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> The toy example is useful because it shows the old-state-plus-block pattern clearly. It is not secure because the state is tiny, the function is simple, and collisions are easy.</p>
+        </div>
+
+        <h3>Part H: Padding preview</h3>
+        <table class="answer-table">
+          <thead><tr><th>Message</th><th>Length</th><th>Block size</th><th>Padding needed?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td><code>ATTACK</code></td><td>6</td><td>4</td><td>Yes</td><td>6 is not divisible by 4.</td></tr>
+            <tr><td><code>DAWN</code></td><td>4</td><td>4</td><td>No in this simplified view</td><td>It fills one block exactly.</td></tr>
+            <tr><td><code>RETREAT</code></td><td>7</td><td>4</td><td>Yes</td><td>7 is not divisible by 4.</td></tr>
+            <tr><td><code>SENDHELP</code></td><td>8</td><td>4</td><td>No in this simplified view</td><td>It fills two blocks exactly.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> Padding and length encoding define exactly where the message ends and prevent different messages from being interpreted as the same block sequence.</p>
+        </div>
+
+        <h3>Part I: Why block order matters</h3>
+        <table class="answer-table">
+          <thead><tr><th>Change</th><th>Expected effect</th></tr></thead>
+          <tbody>
+            <tr><td>Change \(M_1\)</td><td>Changes \(CV_1\), then \(CV_2\), then the final digest.</td></tr>
+            <tr><td>Change \(M_2\)</td><td>Leaves \(CV_1\) the same but changes \(CV_2\) and the final digest.</td></tr>
+            <tr><td>Reorder blocks</td><td>Should produce a different digest.</td></tr>
+            <tr><td>Append a block</td><td>Should produce a different final digest.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Changing an early block changes the chaining value produced from that block. Since that chaining value becomes input to the next block, the change should spread downstream.</p>
+        </div>
+
+        <h3>Part J: Compression is not automatically secure</h3>
+        <table class="answer-table">
+          <thead><tr><th>Requirement</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Strong diffusion</td><td>Changes should spread through the state.</td></tr>
+            <tr><td>Nonlinearity</td><td>Attackers should not exploit simple linear patterns.</td></tr>
+            <tr><td>Large state and output</td><td>Small states invite brute force and collisions.</td></tr>
+            <tr><td>Careful padding and length handling</td><td>Message boundaries must be unambiguous.</td></tr>
+            <tr><td>Studied construction</td><td>The design should have public cryptanalytic scrutiny.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>J1 sample answer.</strong> A loop only repeats the weakness if the compression function is weak. Strong hash design requires a strong internal function and a sound construction.</p>
+        </div>
+
+        <h3>Part K: Bridge to Merkle-Damgård</h3>
+        <table class="answer-table">
+          <thead><tr><th>Line</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=IV\)</td><td>Start from the initialization value.</td></tr>
+            <tr><td>Iterate</td><td>\(CV_i=f(CV_{i-1},M_i)\)</td><td>Process each message block with the previous chaining value.</td></tr>
+            <tr><td>Finish</td><td>\(H(M)=CV_t\)</td><td>The final chaining value becomes the digest in this simplified model.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> Merkle-Damgård is built around the same repeated compression pattern: start with an IV, process each block with a compression function, and output the final chaining value after proper padding and length handling.</p>
+        </div>
+
+        <h3>Part L: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A compression function combines a previous chaining value and a message block.</td><td>Valid</td><td>That is the core update.</td></tr>
+            <tr><td>Compression in hash design means ZIP-style file compression.</td><td>Mistaken</td><td>It means reducing internal inputs to a fixed-size state.</td></tr>
+            <tr><td>The IV is usually a public fixed starting value in ordinary hashing.</td><td>Valid</td><td>It is not normally a secret key.</td></tr>
+            <tr><td>Padding is irrelevant to hash construction.</td><td>Mistaken</td><td>Padding helps define message boundaries and block structure.</td></tr>
+            <tr><td>A secure-looking block loop can rescue a bad compression function.</td><td>Mistaken</td><td>A weak internal function makes the construction weak.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>M1 sample answer.</strong> Block-by-block hashing splits a message into fixed-size blocks. The construction starts with an initialization value, combines each block with the previous chaining value using a compression function, and carries the resulting chaining value forward until the final digest is produced.</p>
+          <p><strong>M2 sample answer.</strong> The chaining value is the running state of the hash. It carries the effect of previously processed blocks into the next compression step.</p>
+          <p><strong>M3 sample answer.</strong> Changing \(M_1\) should change \(CV_1\). Since \(CV_1\) is input to the next compression step, the change should continue forward and alter the final digest.</p>
+          <p><strong>M4 sample answer.</strong> This tutorial explained how compression functions allow hash functions to process long messages block by block. Each block \(M_i\) is combined with the previous chaining value \(CV_{i-1}\) using a compression function \(f\), producing a new chaining value \(CV_i\). The process begins with an IV and continues until the final digest is produced. Padding, length handling, diffusion, nonlinearity, and strong construction design are essential for security.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Long messages can be split into blocks before hashing.</td><td>True</td><td>That is the block-processing strategy.</td></tr>
+            <tr><td>A compression function takes \(CV_{i-1}\) and \(M_i\) as input.</td><td>True</td><td>Those are its two conceptual inputs.</td></tr>
+            <tr><td>A compression function outputs a new chaining value.</td><td>True</td><td>The output is \(CV_i\).</td></tr>
+            <tr><td>The first chaining value is usually written \(CV_0=IV\).</td><td>True</td><td>The IV starts the chain.</td></tr>
+            <tr><td>The IV is normally a secret key in ordinary hashing.</td><td>False</td><td>It is usually public and fixed.</td></tr>
+            <tr><td>Padding is needed when messages do not fit evenly into blocks.</td><td>True</td><td>The final block must be completed unambiguously.</td></tr>
+            <tr><td>A strong hash needs both a strong compression function and a sound construction.</td><td>True</td><td>The internal function and the outer structure both matter.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 45: Compression Functions and Block-by-Block Hashing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 48: HMAC: Safe Keyed Hashing | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .hmac-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .valid-table,
+    .scenario-table,
+    .hmac-table,
+    .danger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .hmac-table th, .hmac-table td,
+    .danger-table th, .danger-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .valid-table th,
+    .scenario-table th,
+    .hmac-table th,
+    .danger-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td,
+    .hmac-table th,
+    .hmac-table td,
+    .danger-table th,
+    .danger-table td { text-align: center; vertical-align: middle; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .step-table th,
+      .property-table th,
+      .example-table th,
+      .lesson-table th,
+      .valid-table th,
+      .scenario-table th,
+      .hmac-table th,
+      .danger-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 48</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>HMAC: Safe Keyed Hashing</h1>
+      <p class="subtitle">
+        Printable practice for understanding HMAC, inner and outer keyed hashes, key pads, verification, length-extension safety, and the difference between HMAC and digital signatures.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="48-hmac-safe-keyed-hashing.html">Tutorial 48</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the difference between a plain hash, a naive secret-prefix hash, and HMAC. HMAC is not just “hash the key and message.” Its inner-and-outer structure is the important part.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">HMAC formula</div>
+            <div class="math-display">
+              \[
+                HMAC(K,M)=H((K'\oplus opad)\,\|\,H((K'\oplus ipad)\,\|\,M))
+              \]
+            </div>
+          </div>
+
+          <div class="box hmac-box">
+            <div class="box-title">Memory phrase</div>
+            <pre><code>Inner hash:
+key-with-inner-pad + message
+
+Outer hash:
+key-with-outer-pad + inner digest</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(H\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(K\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(K'\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(M\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(\|\) mean?</td><td></td></tr>
+            <tr><td>A6. What does \(\oplus\) mean?</td><td></td></tr>
+            <tr><td>A7. What is <code>ipad</code>?</td><td></td></tr>
+            <tr><td>A8. What is <code>opad</code>?</td><td></td></tr>
+            <tr><td>A9. What is a tag?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mac-review">
+        <h2>Part B: MAC review</h2>
+        <table class="compare-table">
+          <thead><tr><th>Tool</th><th>Uses secret key?</th><th>Main purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Plain hash</td><td></td><td></td></tr>
+            <tr><td>MAC</td><td></td><td></td></tr>
+            <tr><td>HMAC</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain the difference between a plain hash and a MAC.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="unsafe-construction">
+        <h2>Part C: The unsafe temptation</h2>
+        <p>Consider the naive construction:</p>
+        <div class="math-display">
+          \[
+            tag=H(K\,\|\,M)
+          \]
+        </div>
+
+        <table class="danger-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>Why does this look reasonable at first?</td><td></td></tr>
+            <tr><td>What is the hidden danger with Merkle-Damgård-style hashes?</td><td></td></tr>
+            <tr><td>What attack from Tutorial 47 is relevant?</td><td></td></tr>
+            <tr><td>What construction should be used instead?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="hmac-formula">
+        <h2>Part D: Unpacking the HMAC formula</h2>
+        <p>Use the formula:</p>
+        <div class="math-display">
+          \[
+            HMAC(K,M)=H((K'\oplus opad)\,\|\,H((K'\oplus ipad)\,\|\,M))
+          \]
+        </div>
+
+        <table class="hmac-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(K'\oplus ipad\)</td><td></td></tr>
+            <tr><td>\(H((K'\oplus ipad)\,\|\,M)\)</td><td></td></tr>
+            <tr><td>\(K'\oplus opad\)</td><td></td></tr>
+            <tr><td>\(H((K'\oplus opad)\,\|\,\text{inner digest})\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Explain the HMAC formula in plain English.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="two-layers">
+        <h2>Part E: Inner and outer layers</h2>
+        <table class="hmac-table">
+          <thead><tr><th>Layer</th><th>Input</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td>Inner hash</td><td></td><td></td></tr>
+            <tr><td>Outer hash</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is it important that HMAC has two layers instead of simply hashing \(K\,\|\,M\)?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="key-processing">
+        <h2>Part F: Key processing</h2>
+        <p>Complete the table.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Key case</th><th>What HMAC does</th></tr></thead>
+          <tbody>
+            <tr><td>Key is longer than block size</td><td></td></tr>
+            <tr><td>Key is shorter than block size</td><td></td></tr>
+            <tr><td>Key is exactly block size</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why does HMAC need a block-sized key representation \(K'\)?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ipad-opad">
+        <h2>Part G: <code>ipad</code> and <code>opad</code></h2>
+        <p>Complete the comparison.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Pad</th><th>Used where?</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>ipad</code></td><td></td><td></td></tr>
+            <tr><td><code>opad</code></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why does HMAC use two different key-derived values?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="length-extension-safety">
+        <h2>Part H: Why HMAC avoids the naive length-extension problem</h2>
+        <table class="danger-table">
+          <thead><tr><th>Construction</th><th>Length-extension risk</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>\(H(K\,\|\,M)\)</td><td></td><td></td></tr>
+            <tr><td>HMAC</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Explain why an attacker cannot simply use HMAC’s visible tag to extend the original protected message.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="properties">
+        <h2>Part I: What HMAC provides</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Message integrity</td><td></td></tr>
+            <tr><td>Message authenticity</td><td></td></tr>
+            <tr><td>Safe keyed hashing</td><td></td></tr>
+            <tr><td>Standardized construction</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. What does HMAC not provide?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hmac-signature">
+        <h2>Part J: HMAC versus digital signatures</h2>
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>HMAC</th><th>Digital signature</th></tr></thead>
+          <tbody>
+            <tr><td>Key type</td><td></td><td></td></tr>
+            <tr><td>Who can verify?</td><td></td><td></td></tr>
+            <tr><td>Public proof?</td><td></td><td></td></tr>
+            <tr><td>Typical use</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="verification">
+        <h2>Part K: HMAC verification</h2>
+        <p>Put the verification steps in order.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Order</th><th>Verifier action</th></tr></thead>
+          <tbody>
+            <tr><td></td><td>Compare recomputed tag with received tag.</td></tr>
+            <tr><td></td><td>Receive message \(M\) and tag.</td></tr>
+            <tr><td></td><td>Accept only if they match.</td></tr>
+            <tr><td></td><td>Use shared key \(K\) to recompute \(HMAC(K,M)\).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Does verifying an HMAC decrypt anything? Explain.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="toy-example">
+        <h2>Part L: Toy HMAC-style example</h2>
+        <pre><code>Shared key:  K
+Message:     transfer=100
+Tag:         HMAC(K, "transfer=100")</code></pre>
+
+        <table class="example-table">
+          <thead><tr><th>Message</th><th>Tag available?</th><th>Verification result</th></tr></thead>
+          <tbody>
+            <tr><td><code>transfer=100</code></td><td>Correct tag</td><td></td></tr>
+            <tr><td><code>transfer=900</code></td><td>Old tag from previous message</td><td></td></tr>
+            <tr><td><code>transfer=900</code></td><td>Valid new HMAC tag</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">L1. Why should the old tag for <code>transfer=100</code> fail for <code>transfer=900</code>?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <p>For each scenario, identify the lesson.</p>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer says HMAC is just \(H(K\,\|\,M)\).</td><td></td></tr>
+            <tr><td>A student says HMAC encrypts the message.</td><td></td></tr>
+            <tr><td>An API needs shared-key message authentication.</td><td></td></tr>
+            <tr><td>A software vendor wants anyone to verify an update came from them.</td><td></td></tr>
+            <tr><td>A receiver recomputes the HMAC and compares it to the received tag.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>HMAC stands for Hash-based Message Authentication Code.</td><td></td><td></td></tr>
+            <tr><td>HMAC uses an inner hash and an outer hash.</td><td></td><td></td></tr>
+            <tr><td>HMAC hides the message contents.</td><td></td><td></td></tr>
+            <tr><td>Anyone can verify an HMAC without the shared key.</td><td></td><td></td></tr>
+            <tr><td>HMAC is designed to avoid the naive secret-prefix length-extension problem.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">O1. Explain HMAC in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">O2. Explain why \(H(K\,\|\,M)\) is not the same thing as HMAC.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">O3. Explain the difference between HMAC and a digital signature.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>HMAC uses a secret key.</td><td></td></tr>
+            <tr><td>A plain hash uses a secret key.</td><td></td></tr>
+            <tr><td>HMAC is simply \(H(K\,\|\,M)\).</td><td></td></tr>
+            <tr><td>HMAC uses inner and outer keyed hash layers.</td><td></td></tr>
+            <tr><td>HMAC authenticates but does not encrypt.</td><td></td></tr>
+            <tr><td>Digital signatures allow public verification.</td><td></td></tr>
+            <tr><td>HMAC verification requires the shared secret key.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central distinction is this: HMAC is not a raw secret-prefix hash. It is a two-layer keyed construction built to authenticate messages safely using a hash function.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(H\) represent?</td><td>The hash function.</td></tr>
+            <tr><td>A2. What does \(K\) represent?</td><td>The secret key.</td></tr>
+            <tr><td>A3. What does \(K'\) represent?</td><td>The block-sized key after key processing.</td></tr>
+            <tr><td>A4. What does \(M\) represent?</td><td>The message being authenticated.</td></tr>
+            <tr><td>A5. What does \(\|\) mean?</td><td>Concatenation, or joining pieces together.</td></tr>
+            <tr><td>A6. What does \(\oplus\) mean?</td><td>XOR, or bitwise exclusive OR.</td></tr>
+            <tr><td>A7. What is <code>ipad</code>?</td><td>The inner pad used in HMAC.</td></tr>
+            <tr><td>A8. What is <code>opad</code>?</td><td>The outer pad used in HMAC.</td></tr>
+            <tr><td>A9. What is a tag?</td><td>The authentication output produced by the MAC.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: MAC review</h3>
+        <table class="answer-table">
+          <thead><tr><th>Tool</th><th>Uses secret key?</th><th>Main purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Plain hash</td><td>No</td><td>Integrity fingerprint when digest is trusted.</td></tr>
+            <tr><td>MAC</td><td>Yes</td><td>Integrity plus authenticity.</td></tr>
+            <tr><td>HMAC</td><td>Yes</td><td>MAC built safely from a hash function.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> A plain hash provides a fingerprint of data but does not use a secret key. A MAC uses a secret key so the receiver can verify both integrity and authenticity.</p>
+        </div>
+
+        <h3>Part C: The unsafe temptation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>Why does this look reasonable at first?</td><td>It seems only someone with the key could compute the tag.</td></tr>
+            <tr><td>What is the hidden danger with Merkle-Damgård-style hashes?</td><td>The visible tag may act like a final chaining state and allow length extension.</td></tr>
+            <tr><td>What attack from Tutorial 47 is relevant?</td><td>Length extension attack.</td></tr>
+            <tr><td>What construction should be used instead?</td><td>HMAC.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Unpacking the HMAC formula</h3>
+        <table class="answer-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(K'\oplus ipad\)</td><td>The block-sized key mixed with the inner pad.</td></tr>
+            <tr><td>\(H((K'\oplus ipad)\,\|\,M)\)</td><td>The inner hash over the inner keyed prefix and message.</td></tr>
+            <tr><td>\(K'\oplus opad\)</td><td>The block-sized key mixed with the outer pad.</td></tr>
+            <tr><td>\(H((K'\oplus opad)\,\|\,\text{inner digest})\)</td><td>The outer hash that produces the final HMAC tag.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> HMAC first mixes the key with an inner pad and hashes that with the message. Then it mixes the key with an outer pad and hashes that with the inner digest to produce the final tag.</p>
+        </div>
+
+        <h3>Part E: Inner and outer layers</h3>
+        <table class="answer-table">
+          <thead><tr><th>Layer</th><th>Input</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td>Inner hash</td><td>\((K'\oplus ipad)\,\|\,M\)</td><td>Inner digest</td></tr>
+            <tr><td>Outer hash</td><td>\((K'\oplus opad)\,\|\,\text{inner digest}\)</td><td>Final HMAC tag</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> The two-layer structure prevents the visible tag from simply being the final state of a secret-prefix hash over the original message. The protected message is inside the inner hash, and the final tag comes from an outer keyed hash.</p>
+        </div>
+
+        <h3>Part F: Key processing</h3>
+        <table class="answer-table">
+          <thead><tr><th>Key case</th><th>What HMAC does</th></tr></thead>
+          <tbody>
+            <tr><td>Key is longer than block size</td><td>Hash the key first, then pad as needed.</td></tr>
+            <tr><td>Key is shorter than block size</td><td>Pad it with zeros to the block size.</td></tr>
+            <tr><td>Key is exactly block size</td><td>Use it as the block-sized key.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> HMAC XORs the key with block-sized pad patterns, so the key must first be represented at the hash function’s block size.</p>
+        </div>
+
+        <h3>Part G: <code>ipad</code> and <code>opad</code></h3>
+        <table class="answer-table">
+          <thead><tr><th>Pad</th><th>Used where?</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>ipad</code></td><td>Inner hash</td><td>Creates the inner keyed prefix.</td></tr>
+            <tr><td><code>opad</code></td><td>Outer hash</td><td>Creates the outer keyed prefix.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> The two different key-derived values separate the inner and outer hash roles, preventing HMAC from collapsing into a simple secret-prefix hash.</p>
+        </div>
+
+        <h3>Part H: Why HMAC avoids the naive length-extension problem</h3>
+        <table class="answer-table">
+          <thead><tr><th>Construction</th><th>Length-extension risk</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>\(H(K\,\|\,M)\)</td><td>Dangerous</td><td>Visible tag may let attacker continue from secret-prefix state.</td></tr>
+            <tr><td>HMAC</td><td>Designed to avoid this problem</td><td>Uses separate inner and outer keyed hashes.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> The visible HMAC tag is produced by the outer hash over an inner digest, not directly by hashing the original message with a secret prefix. An attacker cannot compute a valid new inner digest for an extended message without the key.</p>
+        </div>
+
+        <h3>Part I: What HMAC provides</h3>
+        <table class="answer-table">
+          <thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Message integrity</td><td>If the message changes, the HMAC tag should no longer verify.</td></tr>
+            <tr><td>Message authenticity</td><td>Only someone with the secret key should be able to produce a valid tag.</td></tr>
+            <tr><td>Safe keyed hashing</td><td>Uses a hash function without the naive secret-prefix length-extension problem.</td></tr>
+            <tr><td>Standardized construction</td><td>Widely studied and used in protocols.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> HMAC does not encrypt the message and does not provide public verification like a digital signature.</p>
+        </div>
+
+        <h3>Part J: HMAC versus digital signatures</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>HMAC</th><th>Digital signature</th></tr></thead>
+          <tbody>
+            <tr><td>Key type</td><td>Shared secret key</td><td>Private/public key pair</td></tr>
+            <tr><td>Who can verify?</td><td>Someone with the same secret key</td><td>Anyone with the public key</td></tr>
+            <tr><td>Public proof?</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Typical use</td><td>APIs, protocols, trusted-party authentication</td><td>Software signing, certificates, public verification</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: HMAC verification</h3>
+        <table class="answer-table">
+          <thead><tr><th>Order</th><th>Verifier action</th></tr></thead>
+          <tbody>
+            <tr><td>3</td><td>Compare recomputed tag with received tag.</td></tr>
+            <tr><td>1</td><td>Receive message \(M\) and tag.</td></tr>
+            <tr><td>4</td><td>Accept only if they match.</td></tr>
+            <tr><td>2</td><td>Use shared key \(K\) to recompute \(HMAC(K,M)\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> No. HMAC verification recomputes an authentication tag and compares it. It does not decrypt the message or hide its contents.</p>
+        </div>
+
+        <h3>Part L: Toy HMAC-style example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Message</th><th>Tag available?</th><th>Verification result</th></tr></thead>
+          <tbody>
+            <tr><td><code>transfer=100</code></td><td>Correct tag</td><td>Accept</td></tr>
+            <tr><td><code>transfer=900</code></td><td>Old tag from previous message</td><td>Reject</td></tr>
+            <tr><td><code>transfer=900</code></td><td>Valid new HMAC tag</td><td>Accept only if produced by someone with key</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> The tag is computed over the exact message. Changing the amount changes the message, so the old tag should not match the recomputed HMAC.</p>
+        </div>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer says HMAC is just \(H(K\,\|\,M)\).</td><td>Mistaken. HMAC uses inner and outer keyed hash layers.</td></tr>
+            <tr><td>A student says HMAC encrypts the message.</td><td>Mistaken. HMAC authenticates but does not encrypt.</td></tr>
+            <tr><td>An API needs shared-key message authentication.</td><td>HMAC is an appropriate standard construction.</td></tr>
+            <tr><td>A software vendor wants anyone to verify an update came from them.</td><td>Use a digital signature, not HMAC, because public verification is needed.</td></tr>
+            <tr><td>A receiver recomputes the HMAC and compares it to the received tag.</td><td>That is the normal verification process.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>HMAC stands for Hash-based Message Authentication Code.</td><td>Valid</td><td>That is the expansion of HMAC.</td></tr>
+            <tr><td>HMAC uses an inner hash and an outer hash.</td><td>Valid</td><td>This is its core structure.</td></tr>
+            <tr><td>HMAC hides the message contents.</td><td>Mistaken</td><td>It authenticates but does not encrypt.</td></tr>
+            <tr><td>Anyone can verify an HMAC without the shared key.</td><td>Mistaken</td><td>Verification requires the shared secret key.</td></tr>
+            <tr><td>HMAC is designed to avoid the naive secret-prefix length-extension problem.</td><td>Valid</td><td>Its inner/outer structure avoids that misuse pattern.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> HMAC is a standard Message Authentication Code built from a hash function and a secret key. It computes an inner hash using the key mixed with an inner pad and the message, then computes an outer hash using the key mixed with an outer pad and the inner digest.</p>
+          <p><strong>O2 sample answer.</strong> \(H(K\,\|\,M)\) is a simple secret-prefix hash and can be vulnerable to length extension with Merkle-Damgård-style hashes. HMAC uses two keyed layers with separate pads, so it is a different and safer construction.</p>
+          <p><strong>O3 sample answer.</strong> HMAC uses a shared secret key, so only parties with that key can verify the tag. A digital signature uses a private/public key pair, allowing anyone with the public key to verify the signature.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial introduced HMAC as a safe keyed-hash construction. It reviewed why \(H(K\,\|\,M)\) is unsafe with Merkle-Damgård-style hashes, then showed that HMAC uses an inner hash and an outer hash with key-derived pads. HMAC provides integrity and authenticity in shared-key settings, but it does not encrypt and does not provide public verification like a digital signature.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>HMAC uses a secret key.</td><td>True</td><td>It is a MAC construction.</td></tr>
+            <tr><td>A plain hash uses a secret key.</td><td>False</td><td>Plain hashes are unkeyed.</td></tr>
+            <tr><td>HMAC is simply \(H(K\,\|\,M)\).</td><td>False</td><td>HMAC uses inner and outer keyed hashes.</td></tr>
+            <tr><td>HMAC uses inner and outer keyed hash layers.</td><td>True</td><td>That is the construction.</td></tr>
+            <tr><td>HMAC authenticates but does not encrypt.</td><td>True</td><td>It does not hide message contents.</td></tr>
+            <tr><td>Digital signatures allow public verification.</td><td>True</td><td>They use public keys for verification.</td></tr>
+            <tr><td>HMAC verification requires the shared secret key.</td><td>True</td><td>The verifier recomputes the tag using the key.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 48: HMAC: Safe Keyed Hashing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

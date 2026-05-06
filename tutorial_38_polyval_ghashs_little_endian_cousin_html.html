@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POLYVAL: GHASH’s Little-Endian Cousin | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .polyval-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .flow-table,
+    .polyval-table,
+    .endian-table,
+    .field-table,
+    .role-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .polyval-table th,
+    .polyval-table td,
+    .endian-table th,
+    .endian-table td,
+    .field-table th,
+    .field-table td,
+    .role-table th,
+    .role-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .flow-table th,
+    .polyval-table th,
+    .endian-table th,
+    .field-table th,
+    .role-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .flow-table td,
+    .flow-table th,
+    .polyval-table td,
+    .polyval-table th,
+    .endian-table td,
+    .endian-table th,
+    .field-table td,
+    .field-table th,
+    .role-table td,
+    .role-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .input-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .polyval-node { background: #fff4d8; border-color: #ead399; }
+    .siv-node { background: #f0eafe; border-color: #d8c8f5; }
+    .cipher-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .bit-demo {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(60px, 1fr));
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .bit-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 10px 6px;
+      background: #ffffff;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 800;
+    }
+
+    .bit-card.high { background: #fff4d8; border-color: #ead399; }
+    .bit-card.low { background: #eaf7ef; border-color: #b8dfc5; }
+    .bit-label { font-family: system-ui, sans-serif; font-size: 0.76rem; color: #1f3763; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .bit-demo { grid-template-columns: repeat(4, minmax(60px, 1fr)); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .bit-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .bit-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .flow-table th, .polyval-table th, .endian-table th, .field-table th, .role-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 38</div>
+      <h1>POLYVAL: GHASH’s Little-Endian Cousin</h1>
+      <p class="subtitle">
+        How POLYVAL relates to GHASH, why AES-GCM-SIV uses it, and what “little-endian cousin” means without getting lost in implementation fog.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="37-aes-gcm-siv-and-synthetic-iv-modes-at-a-high-level.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 37 introduced AES-GCM-SIV and said that POLYVAL plays a GHASH-like role inside it. This tutorial explains what POLYVAL is at a high level, why it exists, how it resembles GHASH, and how bit-order conventions make it feel like GHASH’s little-endian cousin.</p>
+        </div>
+
+        <p class="lead">
+          POLYVAL is not an entirely alien machine. It lives in the same finite-field neighborhood as GHASH, but it arranges the furniture differently so certain implementations can move through the room more naturally.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that GHASH is the polynomial authentication function used in AES-GCM, that AES-GCM-SIV computes a synthetic IV before encryption, and that finite-field authenticators process blocks using XOR and multiplication in a binary field. You do not need to be fluent in the full POLYVAL reduction math yet.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          POLYVAL discussions can become confusing because they involve field arithmetic, byte order, and bit order. We will name the pieces carefully first.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>GHASH</td><td>GCM’s authentication mixer.</td><td>A polynomial hash over \(GF(2^{128})\) used in AES-GCM.</td></tr>
+            <tr><td>POLYVAL</td><td>GCM-SIV’s authentication mixer.</td><td>A polynomial hash over a related binary field used in AES-GCM-SIV.</td></tr>
+            <tr><td>AES-GCM-SIV</td><td>Nonce-misuse-resistant AEAD mode.</td><td>An AEAD construction using AES, POLYVAL, and counter-style encryption.</td></tr>
+            <tr><td>SIV</td><td>Synthetic Initialization Vector.</td><td>An IV-like value computed from cryptographic inputs.</td></tr>
+            <tr><td>endian</td><td>The order used to read bytes or bits.</td><td>A convention for interpreting multi-byte or multi-bit values.</td></tr>
+            <tr><td>little-endian</td><td>Least significant part first.</td><td>An ordering convention common on many processors.</td></tr>
+            <tr><td>big-endian</td><td>Most significant part first.</td><td>An ordering convention often used in network/protocol descriptions.</td></tr>
+            <tr><td>field polynomial</td><td>The folding rule for field multiplication.</td><td>The irreducible polynomial used to reduce products in a finite field.</td></tr>
+            <tr><td>block</td><td>A fixed-size chunk of data.</td><td>For GHASH and POLYVAL, a 128-bit value interpreted as a field element.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>The big picture</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Intuition first</div>
+          <p>
+            GHASH and POLYVAL are both polynomial authenticators. They take blocks of data, mix them with a hash key using finite-field arithmetic, and produce an authentication value. The main beginner difference is not their job. It is the convention they use for reading and multiplying the 128-bit field elements.</p>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Function</th><th>Used in</th><th>Main job</th><th>Beginner description</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH</td><td>AES-GCM</td><td>Authenticate AAD and ciphertext.</td><td>GCM’s finite-field authentication mixer.</td></tr>
+            <tr><td>POLYVAL</td><td>AES-GCM-SIV</td><td>Help compute the synthetic IV/authentication value.</td><td>GCM-SIV’s finite-field authentication mixer.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="where-polyval-sits">
+        <h2>Where POLYVAL sits inside AES-GCM-SIV</h2>
+        <p>
+          AES-GCM-SIV uses POLYVAL during the first major phase: computing the synthetic IV/authentication value from the nonce, AAD, and plaintext.</p>
+
+        <div class="diagram" role="img" aria-label="POLYVAL inside AES-GCM-SIV flow">
+          <div class="diagram-title">POLYVAL in the AES-GCM-SIV flow</div>
+          <div class="flow-row">
+            <div class="flow-node input-node">AAD</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node input-node">Plaintext</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node input-node">Lengths / formatting</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node polyval-node">POLYVAL</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node siv-node">Synthetic IV / tag material</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node cipher-node">Counter-style encryption</div>
+          </div>
+        </div>
+
+        <div class="box polyval-box">
+          <div class="box-title">Key idea</div>
+          <p>
+            In AES-GCM-SIV, POLYVAL helps bind the protected data into the synthetic IV. That synthetic IV then influences the encryption step.</p>
+        </div>
+      </section>
+
+      <section id="what-endian-means">
+        <h2>What “endian” means</h2>
+        <p>
+          Endianness is about how a sequence is interpreted. When we look at a group of bytes or bits, do we treat the first part as the highest-value part or the lowest-value part?</p>
+
+        <table class="endian-table">
+          <thead><tr><th>Convention</th><th>Plain meaning</th><th>Common mental image</th></tr></thead>
+          <tbody>
+            <tr><td>Big-endian</td><td>Most significant part first.</td><td>Read the largest place value first.</td></tr>
+            <tr><td>Little-endian</td><td>Least significant part first.</td><td>Read the smallest place value first.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          For a tiny 8-bit demonstration, imagine the bit pattern <code>10000001</code>. It contains a 1 at each end. If we disagree about which end represents the highest power of \(x\), the polynomial interpretation changes.</p>
+
+        <div class="bit-demo" aria-label="Endian bit interpretation demo">
+          <div class="bit-card high"><div class="bit-label">Big-style high</div>\(x^7\)</div>
+          <div class="bit-card">\(x^6\)</div>
+          <div class="bit-card">\(x^5\)</div>
+          <div class="bit-card">\(x^4\)</div>
+          <div class="bit-card">\(x^3\)</div>
+          <div class="bit-card">\(x^2\)</div>
+          <div class="bit-card">\(x\)</div>
+          <div class="bit-card low"><div class="bit-label">Low</div>\(1\)</div>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Why this matters</div>
+          <p>
+            GHASH and POLYVAL are closely related, but they use different conventions for how bits map into polynomial coefficients. That difference makes equivalent-looking ideas appear reversed or rearranged in code and specifications.</p>
+        </div>
+      </section>
+
+      <section id="ghash-polyval-fields">
+        <h2>GHASH and POLYVAL field polynomials</h2>
+        <p>
+          GHASH and POLYVAL both work with 128-bit field elements, but their polynomial definitions are written differently because of their conventions.</p>
+
+        <table class="field-table">
+          <thead><tr><th>Function</th><th>Field polynomial commonly associated with it</th><th>What to remember now</th></tr></thead>
+          <tbody>
+            <tr><td>GHASH</td><td>\(x^{128}+x^7+x^2+x+1\)</td><td>Used in AES-GCM.</td></tr>
+            <tr><td>POLYVAL</td><td>\(x^{128}+x^{127}+x^{126}+x^{121}+1\)</td><td>Used in AES-GCM-SIV.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Do not panic about the different polynomial</div>
+          <p>
+            At this stage, treat the two polynomials as different written forms for related finite-field machinery. The important lesson is that POLYVAL is engineered around a different bit-order convention that fits AES-GCM-SIV’s implementation goals.</p>
+        </div>
+      </section>
+
+      <section id="polyval-accumulator">
+        <h2>POLYVAL as an accumulator</h2>
+        <p>
+          Just like GHASH, POLYVAL processes formatted 128-bit blocks using an accumulator. The broad pattern is familiar:</p>
+
+        <div class="math-display">
+          \[
+            S_0=0
+          \]
+          \[
+            S_i=(S_{i-1}\oplus X_i)\cdot H
+          \]
+        </div>
+
+        <p>
+          Here:</p>
+        <table class="role-table">
+          <thead><tr><th>Symbol</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(S_i\)</td><td>The running POLYVAL accumulator after block \(i\).</td></tr>
+            <tr><td>\(X_i\)</td><td>The current formatted input block.</td></tr>
+            <tr><td>\(H\)</td><td>The POLYVAL hash key.</td></tr>
+            <tr><td>\(\oplus\)</td><td>XOR, used as addition in the binary field.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            If GHASH was “XOR a block, multiply by \(H\), repeat,” then POLYVAL is the same song played with a different instrument tuning.</p>
+        </div>
+      </section>
+
+      <section id="why-polyval-exists">
+        <h2>Why AES-GCM-SIV uses POLYVAL</h2>
+        <p>
+          POLYVAL was chosen for AES-GCM-SIV because its convention is convenient for efficient implementations on common little-endian processors. It provides the polynomial-authentication machinery needed to compute the synthetic IV while fitting the implementation style of the mode.</p>
+
+        <table class="polyval-table">
+          <thead><tr><th>Reason</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Related to GHASH</td><td>The conceptual learning transfers from GHASH to POLYVAL.</td></tr>
+            <tr><td>Little-endian-friendly</td><td>Its conventions better match many common processor layouts.</td></tr>
+            <tr><td>Supports SIV construction</td><td>It helps compute the synthetic IV/authentication value.</td></tr>
+            <tr><td>Efficient finite-field operation</td><td>It can benefit from carry-less multiplication patterns.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-comparison">
+        <h2>A tiny toy comparison</h2>
+        <p>
+          Suppose we have a 4-bit pattern:</p>
+
+        <pre><code>1010</code></pre>
+
+        <p>
+          If the leftmost bit is treated as the high power, the polynomial is:</p>
+        <div class="math-display">
+          \[
+            1010 \rightarrow x^3+x
+          \]
+        </div>
+
+        <p>
+          If the rightmost bit is treated as the high power, the same visual pattern could be interpreted differently:</p>
+        <div class="math-display">
+          \[
+            1010 \rightarrow x^2+1
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">What this toy example teaches</div>
+          <p>
+            The bits did not change. The reading convention changed. This is why GHASH and POLYVAL can feel confusing at first: the arithmetic is related, but the map from bits to polynomials is different.</p>
+        </div>
+      </section>
+
+      <section id="what-not-to-overlearn">
+        <h2>What not to overlearn yet</h2>
+        <p>
+          At this stage, do not try to memorize all bit-reversal formulas or implementation constants. The beginner goal is simpler:</p>
+
+        <ul>
+          <li>POLYVAL is used in AES-GCM-SIV.</li>
+          <li>POLYVAL is GHASH-like.</li>
+          <li>POLYVAL processes 128-bit blocks using XOR and finite-field multiplication.</li>
+          <li>POLYVAL uses different endian/bit-order conventions from GHASH.</li>
+          <li>Those conventions make it convenient for AES-GCM-SIV implementations.</li>
+        </ul>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking POLYVAL is completely unrelated to GHASH</div>
+          <p>
+            POLYVAL and GHASH are closely related polynomial authenticators. Their conventions differ, but their broad job is similar.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking little-endian means weaker or less secure</div>
+          <p>
+            Endianness is an interpretation convention, not a security ranking.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: comparing implementation constants without checking bit order</div>
+          <p>
+            The same mathematical idea can appear different when bit order or shift direction changes.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: trying to master POLYVAL before understanding its role</div>
+          <p>
+            First understand where POLYVAL sits in AES-GCM-SIV. Then study its exact arithmetic.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What mode uses POLYVAL?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES-GCM-SIV uses POLYVAL.</p>
+            </details>
+          </li>
+          <li>
+            What mode uses GHASH?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>AES-GCM uses GHASH.</p>
+            </details>
+          </li>
+          <li>
+            What is POLYVAL’s broad role in AES-GCM-SIV?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It helps compute the synthetic IV/authentication value from protected inputs.</p>
+            </details>
+          </li>
+          <li>
+            Does “little-endian” mean less secure?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. Endianness is an ordering convention, not a security quality.</p>
+            </details>
+          </li>
+          <li>
+            Why can the same bit pattern represent different polynomials under different conventions?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because the convention decides which bit corresponds to which power of \(x\).</p>
+            </details>
+          </li>
+          <li>
+            What is the beginner relationship between GHASH and POLYVAL?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>POLYVAL is a GHASH-like polynomial authenticator with different endian/bit-order conventions.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          POLYVAL shows that cryptographic mathematics is not only about abstract correctness. It is also about representation. The same broad finite-field idea can be arranged to fit a processor, a protocol, or a mode’s construction. This is where algebra meets the workbench: the field is the same kind of creature, but the harness is built for a different road.</p>
+        <ul>
+          <li>POLYVAL is used in AES-GCM-SIV.</li>
+          <li>POLYVAL is related to GHASH.</li>
+          <li>Both use finite-field polynomial authentication ideas.</li>
+          <li>Endian and bit-order conventions affect how the math is represented.</li>
+          <li>POLYVAL helps compute the synthetic IV/authentication value.</li>
+          <li>Understanding POLYVAL prepares us for the detailed AES-GCM-SIV construction.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>GHASH is used in AES-GCM.</li>
+            <li>POLYVAL is used in AES-GCM-SIV.</li>
+            <li>POLYVAL is GHASH-like, not completely unrelated.</li>
+            <li>Both process 128-bit blocks using finite-field arithmetic.</li>
+            <li>POLYVAL helps compute the synthetic IV/authentication value.</li>
+            <li>Endianness is about ordering and interpretation.</li>
+            <li>Little-endian does not mean weaker.</li>
+            <li>Different bit-order conventions can make related math look different.</li>
+            <li>Do not over-focus on constants before understanding the role.</li>
+            <li>The next step is practicing POLYVAL structure in a workbook.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core comparison</div>
+          <table class="data-table">
+            <thead><tr><th>Function</th><th>Mode</th><th>Role</th></tr></thead>
+            <tbody>
+              <tr><td>GHASH</td><td>AES-GCM</td><td>Authenticates AAD and ciphertext.</td></tr>
+              <tr><td>POLYVAL</td><td>AES-GCM-SIV</td><td>Helps compute synthetic IV/authentication value.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Accumulator pattern</div>
+          <div class="math-display">
+            \[
+              S_0=0
+            \]
+            \[
+              S_i=(S_{i-1}\oplus X_i)\cdot H
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 38: POLYVAL, GHASH’s Little-Endian Cousin</strong>. After that, the next tutorial can move into <strong>Synthetic IV Construction Step by Step</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

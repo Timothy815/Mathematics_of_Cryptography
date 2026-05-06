@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 39: Synthetic IV Construction Step by Step | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .siv-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .flow-table,
+    .step-table,
+    .role-table,
+    .valid-table,
+    .risk-table,
+    .scenario-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .flow-table th, .flow-table td,
+    .step-table th, .step-table td,
+    .role-table th, .role-table td,
+    .valid-table th, .valid-table td,
+    .risk-table th, .risk-table td,
+    .scenario-table th, .scenario-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .flow-table th,
+    .step-table th,
+    .role-table th,
+    .valid-table th,
+    .risk-table th,
+    .scenario-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .step-table th,
+    .step-table td,
+    .role-table th,
+    .role-table td,
+    .valid-table th,
+    .valid-table td,
+    .risk-table th,
+    .risk-table td,
+    .scenario-table th,
+    .scenario-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(120px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .pipeline-card {
+      border: 1px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 12px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+      min-height: 90px;
+    }
+
+    .pipeline-card.format { background: #eaf7ef; border-color: #b8dfc5; }
+    .pipeline-card.polyval { background: #fff4d8; border-color: #ead399; }
+    .pipeline-card.nonce { background: #f0eafe; border-color: #d8c8f5; }
+    .pipeline-card.tag { background: #fdeaea; border-color: #efb5b5; }
+    .pipeline-card.encrypt { background: #eef3ff; border-color: #c7d2ea; }
+    .pipeline-label { color: #1f3763; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .pipeline-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .pipeline-card { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .pipeline-card {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .flow-table th,
+      .step-table th,
+      .role-table th,
+      .valid-table th,
+      .risk-table th,
+      .scenario-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 39</div>
+      <h1>Synthetic IV Construction Step by Step</h1>
+      <p class="subtitle">
+        Printable practice for AES-GCM-SIV’s synthetic IV pipeline: formatting, POLYVAL, nonce mixing, synthetic IV/tag production, encryption, verification, and repeated-input warnings.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="39-synthetic-iv-construction-step-by-step.html">Tutorial 39</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Work through the pipeline as a staged machine. The goal is to understand what each stage contributes: formatting prevents ambiguity, POLYVAL summarizes protected inputs, nonce mixing makes the instance specific, the synthetic IV/tag guides encryption, and verification decides whether the message is accepted.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Synthetic IV pipeline</div>
+            <pre><code>1. Format AAD, plaintext, and lengths
+2. Run POLYVAL over formatted blocks
+3. Mix nonce into the POLYVAL result
+4. Produce synthetic IV / tag material
+5. Use synthetic IV for counter-style encryption
+6. During decryption, recompute and verify</code></pre>
+          </div>
+
+          <div class="box quick-reference-box">
+            <div class="box-title">POLYVAL accumulator</div>
+            <div class="math-display">
+              \[
+                S_0=0
+              \]
+              \[
+                S_i=(S_{i-1}\oplus X_i)\cdot H
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AEAD stand for?</td><td></td></tr>
+            <tr><td>A2. What does AAD stand for?</td><td></td></tr>
+            <tr><td>A3. What is authenticated but not encrypted?</td><td></td></tr>
+            <tr><td>A4. What is authenticated and encrypted?</td><td></td></tr>
+            <tr><td>A5. What is a synthetic IV?</td><td></td></tr>
+            <tr><td>A6. What should happen if verification fails?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="pipeline-ordering">
+        <h2>Part B: Pipeline ordering</h2>
+        <p>Number the stages in the correct order.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Stage description</th><th>Order number</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Use counter-style encryption based on the synthetic IV.</td><td></td><td></td></tr>
+            <tr><td>Format AAD, plaintext, and length information.</td><td></td><td></td></tr>
+            <tr><td>Run POLYVAL over the formatted blocks.</td><td></td><td></td></tr>
+            <tr><td>Mix nonce information into the POLYVAL result.</td><td></td><td></td></tr>
+            <tr><td>Produce synthetic IV/tag material.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="pipeline-grid" aria-label="Synthetic IV pipeline cards">
+          <div class="pipeline-card format"><div class="pipeline-label">Stage 1</div>Format inputs</div>
+          <div class="pipeline-card polyval"><div class="pipeline-label">Stage 2</div>Run POLYVAL</div>
+          <div class="pipeline-card nonce"><div class="pipeline-label">Stage 3</div>Mix nonce</div>
+          <div class="pipeline-card tag"><div class="pipeline-label">Stage 4</div>Synthetic IV/tag</div>
+          <div class="pipeline-card encrypt"><div class="pipeline-label">Stage 5</div>Encrypt</div>
+        </div>
+      </section>
+
+      <section id="formatting">
+        <h2>Part C: Formatting AAD, plaintext, and lengths</h2>
+        <p>Complete the table.</p>
+
+        <table class="role-table">
+          <thead><tr><th>Input</th><th>Encrypted?</th><th>Authenticated?</th><th>Why included?</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td></td><td></td><td></td></tr>
+            <tr><td>Plaintext</td><td></td><td></td><td></td></tr>
+            <tr><td>Length information</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why does formatting matter in authenticated encryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Give one real-world example of AAD.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="polyval-reasoning">
+        <h2>Part D: POLYVAL reasoning</h2>
+        <p>Use the accumulator rule:</p>
+        <div class="math-display">
+          \[
+            S_i=(S_{i-1}\oplus X_i)\cdot H
+          \]
+        </div>
+
+        <table class="role-table">
+          <thead><tr><th>Symbol</th><th>Role in the synthetic IV pipeline</th></tr></thead>
+          <tbody>
+            <tr><td>\(S_i\)</td><td></td></tr>
+            <tr><td>\(X_i\)</td><td></td></tr>
+            <tr><td>\(H\)</td><td></td></tr>
+            <tr><td>\(\oplus\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. What does POLYVAL contribute to AES-GCM-SIV before encryption happens?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="nonce-mixing">
+        <h2>Part E: Nonce mixing</h2>
+        <p>Complete the table.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>POLYVAL result</td><td></td></tr>
+            <tr><td>Nonce</td><td></td></tr>
+            <tr><td>AES/keyed processing</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. How is AES-GCM-SIV’s use of the nonce different from ordinary AES-GCM’s more fragile nonce use?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="synthetic-iv-tag">
+        <h2>Part F: Synthetic IV/tag reasoning</h2>
+        <p>Complete the table.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>The synthetic IV/tag acts like...</th><th>Because...</th></tr></thead>
+          <tbody>
+            <tr><td>A tag</td><td></td></tr>
+            <tr><td>An IV</td><td></td></tr>
+            <tr><td>A keyed fingerprint</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why is the synthetic IV/tag a hinge between authentication and encryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="encryption-stage">
+        <h2>Part G: Counter-style encryption stage</h2>
+        <p>Recall the stream/CTR-style equation:</p>
+        <div class="math-display">
+          \[
+            C=P\oplus S
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. What does \(S\) represent in this equation?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Why does deriving the encryption setup from the synthetic IV help reduce nonce-reuse damage?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="decryption-verification">
+        <h2>Part H: Decryption and verification</h2>
+        <p>Number these decryption-side steps.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Decryption step</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Reject if the recomputed value does not match.</td><td></td><td></td></tr>
+            <tr><td>Use tag/synthetic IV to decrypt and recover candidate plaintext.</td><td></td><td></td></tr>
+            <tr><td>Recompute POLYVAL over AAD, plaintext, and lengths.</td><td></td><td></td></tr>
+            <tr><td>Recreate the expected synthetic IV/tag.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why should failed-decryption plaintext not be used?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="repeated-input-warning">
+        <h2>Part I: Repeated input warning</h2>
+        <p>Complete the table.</p>
+
+        <table class="risk-table">
+          <thead><tr><th>Situation</th><th>What may happen?</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td>Same key, nonce, AAD, and plaintext</td><td></td><td></td></tr>
+            <tr><td>Same key and nonce, different plaintext</td><td></td><td></td></tr>
+            <tr><td>Unique nonces</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does misuse resistance not mean “no information can ever leak from repeated use”?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part J: Scenario judgment</h2>
+        <p>For each scenario, explain the AES-GCM-SIV lesson.</p>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A packet header must remain visible but protected against tampering.</td><td></td></tr>
+            <tr><td>Two messages accidentally reuse a nonce but have different plaintexts.</td><td></td></tr>
+            <tr><td>The same exact message, nonce, key, and AAD are reused.</td><td></td></tr>
+            <tr><td>Verification fails during decryption.</td><td></td></tr>
+            <tr><td>A developer wants to skip length formatting because the data “looks obvious.”</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part K: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>The synthetic IV is simply random.</td><td></td><td></td></tr>
+            <tr><td>AES-GCM-SIV ignores the nonce.</td><td></td><td></td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td></td><td></td></tr>
+            <tr><td>POLYVAL contributes a keyed summary of protected inputs.</td><td></td><td></td></tr>
+            <tr><td>If verification fails, the plaintext should still be used if it “looks right.”</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part L: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">L1. Explain the full synthetic IV pipeline in your own words.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L2. Why is the synthetic IV both tag-like and IV-like?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L3. Why does AES-GCM-SIV reduce, but not completely eliminate, nonce-reuse danger?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV computes a synthetic IV before encryption.</td><td></td></tr>
+            <tr><td>AAD is encrypted.</td><td></td></tr>
+            <tr><td>Plaintext is authenticated and encrypted.</td><td></td></tr>
+            <tr><td>Length information helps prevent ambiguity.</td><td></td></tr>
+            <tr><td>POLYVAL processes formatted blocks into a keyed summary.</td><td></td></tr>
+            <tr><td>Failed verification should result in rejection.</td><td></td></tr>
+            <tr><td>AES-GCM-SIV makes nonce reuse completely harmless.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            Think of AES-GCM-SIV as building the encryption starting point from the protected data itself. POLYVAL helps create the keyed summary, and that summary becomes part of the tag/synthetic IV machinery.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AEAD stand for?</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>A2. What does AAD stand for?</td><td>Associated Authenticated Data.</td></tr>
+            <tr><td>A3. What is authenticated but not encrypted?</td><td>AAD.</td></tr>
+            <tr><td>A4. What is authenticated and encrypted?</td><td>Plaintext.</td></tr>
+            <tr><td>A5. What is a synthetic IV?</td><td>An IV-like value computed from protected cryptographic inputs.</td></tr>
+            <tr><td>A6. What should happen if verification fails?</td><td>The message should be rejected.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Pipeline ordering</h3>
+        <table class="answer-table">
+          <thead><tr><th>Stage description</th><th>Order number</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Use counter-style encryption based on the synthetic IV.</td><td>5</td><td>Produces the ciphertext after the synthetic IV/tag material is ready.</td></tr>
+            <tr><td>Format AAD, plaintext, and length information.</td><td>1</td><td>Prepares unambiguous protected inputs.</td></tr>
+            <tr><td>Run POLYVAL over the formatted blocks.</td><td>2</td><td>Creates a keyed authentication-style summary.</td></tr>
+            <tr><td>Mix nonce information into the POLYVAL result.</td><td>3</td><td>Makes the encryption instance-specific.</td></tr>
+            <tr><td>Produce synthetic IV/tag material.</td><td>4</td><td>Creates the value used for verification and encryption setup.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Formatting AAD, plaintext, and lengths</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Encrypted?</th><th>Authenticated?</th><th>Why included?</th></tr></thead>
+          <tbody>
+            <tr><td>AAD</td><td>No</td><td>Yes</td><td>Visible metadata can still be protected against tampering.</td></tr>
+            <tr><td>Plaintext</td><td>Yes</td><td>Yes</td><td>The secret message needs confidentiality and integrity.</td></tr>
+            <tr><td>Length information</td><td>No, not in the usual message sense</td><td>Yes</td><td>Prevents ambiguity between different input layouts.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> Formatting matters because the decrypting side must know exactly what was authenticated. Without clear formatting and lengths, different inputs could potentially be confused.</p>
+          <p><strong>C2 sample answer.</strong> A packet header, sender ID, protocol version, or message number could be AAD.</p>
+        </div>
+
+        <h3>Part D: POLYVAL reasoning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Symbol</th><th>Role in the synthetic IV pipeline</th></tr></thead>
+          <tbody>
+            <tr><td>\(S_i\)</td><td>The running POLYVAL accumulator after block \(i\).</td></tr>
+            <tr><td>\(X_i\)</td><td>The current formatted block being processed.</td></tr>
+            <tr><td>\(H\)</td><td>The POLYVAL hash key.</td></tr>
+            <tr><td>\(\oplus\)</td><td>XOR, used as addition in the binary field.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> POLYVAL contributes a keyed mathematical summary of the formatted AAD, plaintext, and length information before encryption begins.</p>
+        </div>
+
+        <h3>Part E: Nonce mixing</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>POLYVAL result</td><td>Represents the protected AAD/plaintext/length structure.</td></tr>
+            <tr><td>Nonce</td><td>Makes the encryption instance-specific.</td></tr>
+            <tr><td>AES/keyed processing</td><td>Finalizes a value only the key-holder can reproduce correctly.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> Ordinary AES-GCM relies on the external nonce to set up encryption directly. AES-GCM-SIV mixes the nonce into a synthetic IV construction that also depends on the protected data.</p>
+        </div>
+
+        <h3>Part F: Synthetic IV/tag reasoning</h3>
+        <table class="answer-table">
+          <thead><tr><th>The synthetic IV/tag acts like...</th><th>Because...</th></tr></thead>
+          <tbody>
+            <tr><td>A tag</td><td>It is checked to verify authenticity.</td></tr>
+            <tr><td>An IV</td><td>It is used to set up counter-style encryption.</td></tr>
+            <tr><td>A keyed fingerprint</td><td>It depends on the key and protected inputs.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> It is the hinge because authentication-style processing creates it, and then encryption uses it as starting material.</p>
+        </div>
+
+        <h3>Part G: Counter-style encryption stage</h3>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> \(S\) represents the keystream generated by counter-style encryption.</p>
+          <p><strong>G2 sample answer.</strong> If the encryption setup depends on the synthetic IV, and the synthetic IV depends on protected inputs, then different plaintexts can lead to different keystream setup even when an external nonce repeats.</p>
+        </div>
+
+        <h3>Part H: Decryption and verification</h3>
+        <table class="answer-table">
+          <thead><tr><th>Decryption step</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Reject if the recomputed value does not match.</td><td>4</td><td>Prevent tampered data from being accepted.</td></tr>
+            <tr><td>Use tag/synthetic IV to decrypt and recover candidate plaintext.</td><td>1</td><td>Produce a candidate plaintext for verification.</td></tr>
+            <tr><td>Recompute POLYVAL over AAD, plaintext, and lengths.</td><td>2</td><td>Recreate the authentication-style summary.</td></tr>
+            <tr><td>Recreate the expected synthetic IV/tag.</td><td>3</td><td>Check whether the data is authentic.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> Failed verification means the message may have been tampered with or corrupted. Using failed-decryption plaintext breaks the security promise of authenticated encryption.</p>
+        </div>
+
+        <h3>Part I: Repeated input warning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Situation</th><th>What may happen?</th><th>What it means</th></tr></thead>
+          <tbody>
+            <tr><td>Same key, nonce, AAD, and plaintext</td><td>Same ciphertext/tag may appear.</td><td>An observer may learn the same protected input repeated.</td></tr>
+            <tr><td>Same key and nonce, different plaintext</td><td>Synthetic IV can differ.</td><td>Designed to avoid ordinary GCM’s catastrophic nonce-reuse failure.</td></tr>
+            <tr><td>Unique nonces</td><td>Normal intended use.</td><td>Still best practice.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Misuse resistance reduces certain failures, but deterministic constructions can still reveal repeated identical inputs. Safer does not mean zero leakage under every misuse.</p>
+        </div>
+
+        <h3>Part J: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A packet header must remain visible but protected against tampering.</td><td>Use it as AAD: authenticated but not encrypted.</td></tr>
+            <tr><td>Two messages accidentally reuse a nonce but have different plaintexts.</td><td>AES-GCM-SIV is designed to reduce catastrophic nonce-reuse damage.</td></tr>
+            <tr><td>The same exact message, nonce, key, and AAD are reused.</td><td>Repeated output may reveal repeated protected input.</td></tr>
+            <tr><td>Verification fails during decryption.</td><td>Reject the message.</td></tr>
+            <tr><td>A developer wants to skip length formatting because the data “looks obvious.”</td><td>Do not skip formatting; it prevents ambiguity and supports correct authentication.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>The synthetic IV is simply random.</td><td>Mistaken</td><td>It is computed from cryptographic inputs.</td></tr>
+            <tr><td>AES-GCM-SIV ignores the nonce.</td><td>Mistaken</td><td>The nonce is mixed into the construction.</td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td>Valid</td><td>That is the purpose of AAD.</td></tr>
+            <tr><td>POLYVAL contributes a keyed summary of protected inputs.</td><td>Valid</td><td>That summary helps create the synthetic IV/tag.</td></tr>
+            <tr><td>If verification fails, the plaintext should still be used if it “looks right.”</td><td>Mistaken</td><td>Failed verification requires rejection.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> AES-GCM-SIV formats AAD, plaintext, and length information, then processes those blocks with POLYVAL. The POLYVAL result is combined with nonce information and keyed AES processing to produce synthetic IV/tag material. That synthetic IV is then used to guide counter-style encryption.</p>
+          <p><strong>L2 sample answer.</strong> It is tag-like because it is recomputed and checked for authenticity. It is IV-like because it is used as starting material for counter-style encryption.</p>
+          <p><strong>L3 sample answer.</strong> AES-GCM-SIV reduces nonce-reuse danger because different messages can produce different synthetic IVs even under repeated nonces. But exact repeated inputs can still produce repeated outputs, revealing repetition.</p>
+          <p><strong>L4 sample answer.</strong> AES-GCM-SIV builds a synthetic IV from the protected data before encryption. It formats AAD, plaintext, and lengths, runs POLYVAL to create a keyed summary, mixes in nonce information, produces synthetic IV/tag material, and then encrypts using counter-style encryption. During decryption, the receiver recomputes and verifies the tag. This design reduces nonce-reuse damage but does not make misuse harmless.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM-SIV computes a synthetic IV before encryption.</td><td>True</td><td>That is the core construction idea.</td></tr>
+            <tr><td>AAD is encrypted.</td><td>False</td><td>AAD is authenticated but visible.</td></tr>
+            <tr><td>Plaintext is authenticated and encrypted.</td><td>True</td><td>That is part of AEAD protection.</td></tr>
+            <tr><td>Length information helps prevent ambiguity.</td><td>True</td><td>It helps distinguish input layouts.</td></tr>
+            <tr><td>POLYVAL processes formatted blocks into a keyed summary.</td><td>True</td><td>That summary helps create synthetic IV/tag material.</td></tr>
+            <tr><td>Failed verification should result in rejection.</td><td>True</td><td>Unauthenticated output must not be trusted.</td></tr>
+            <tr><td>AES-GCM-SIV makes nonce reuse completely harmless.</td><td>False</td><td>It is more misuse resistant, not misuse proof.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Paired with Tutorial 39: Synthetic IV Construction Step by Step.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

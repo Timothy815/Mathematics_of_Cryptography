@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 41: What Is a Cryptographic Hash Function? | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .hash-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .property-table,
+    .use-table,
+    .valid-table,
+    .scenario-table,
+    .toy-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .property-table th, .property-table td,
+    .use-table th, .use-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .toy-table th, .toy-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .property-table th,
+    .use-table th,
+    .valid-table th,
+    .scenario-table th,
+    .toy-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .property-table th,
+    .property-table td,
+    .use-table th,
+    .use-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td,
+    .toy-table th,
+    .toy-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .property-table th,
+      .use-table th,
+      .valid-table th,
+      .scenario-table th,
+      .toy-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 41</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>What Is a Cryptographic Hash Function?</h1>
+      <p class="subtitle">
+        Printable practice for hash function vocabulary, fixed-length digests, hashing versus encryption, core resistance properties, avalanche effect, uses, non-uses, and common traps.</p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="41-what-is-a-cryptographic-hash-function.html">Tutorial 41</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            This workbook opens Volume 2. Focus on the central contrast: encryption is reversible with a key, while hashing produces a fixed-length digest that is designed to be one-way. Work carefully through the resistance properties because they will become the vocabulary for the next several tutorials.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core notation</div>
+            <div class="math-display">
+              \[
+                h=H(M)
+              \]
+            </div>
+            <p>Read as: digest \(h\) is produced by applying hash function \(H\) to message \(M\).</p>
+          </div>
+
+          <div class="box warning-box">
+            <div class="box-title">Hashing is not encryption</div>
+            <p>
+              Encryption is reversible with the right key. Hashing is designed to be one-way and fixed-length.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is \(M\)?</td><td></td></tr>
+            <tr><td>A2. What is \(H\)?</td><td></td></tr>
+            <tr><td>A3. What is \(h\)?</td><td></td></tr>
+            <tr><td>A4. What is a digest?</td><td></td></tr>
+            <tr><td>A5. What does fixed-length output mean?</td><td></td></tr>
+            <tr><td>A6. What is a collision?</td><td></td></tr>
+            <tr><td>A7. What does one-way mean?</td><td></td></tr>
+            <tr><td>A8. What is the avalanche effect?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="definition-practice">
+        <h2>Part B: Definition practice</h2>
+        <div class="problem">
+          <div class="problem-title">B1. Write a clear definition of a cryptographic hash function in your own words.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Explain what \(h=H(M)\) means.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B3. Why must the same input always produce the same digest?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="fixed-length-practice">
+        <h2>Part C: Fixed-length output</h2>
+        <p>Complete the table.</p>
+
+        <table class="data-table">
+          <thead><tr><th>Input</th><th>Possible hash function</th><th>Output size</th><th>What this teaches</th></tr></thead>
+          <tbody>
+            <tr><td><code>hello</code></td><td>SHA-256</td><td></td><td></td></tr>
+            <tr><td>A 500-page document</td><td>SHA-256</td><td></td><td></td></tr>
+            <tr><td>A software installer</td><td>SHA-256</td><td></td><td></td></tr>
+            <tr><td>A disk image</td><td>SHA-256</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why must collisions exist for fixed-length hash functions?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="hashing-vs-encryption">
+        <h2>Part D: Hashing versus encryption</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>Encryption</th><th>Hashing</th></tr></thead>
+          <tbody>
+            <tr><td>Main purpose</td><td></td><td></td></tr>
+            <tr><td>Reversible?</td><td></td><td></td></tr>
+            <tr><td>Uses a key?</td><td></td><td></td></tr>
+            <tr><td>Output size</td><td></td><td></td></tr>
+            <tr><td>Example</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Explain why “hashing a password” is not the same as “encrypting a password.”</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="security-properties">
+        <h2>Part E: Three core security properties</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Property</th><th>Attacker challenge</th><th>Compact math form</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Second preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Collision resistance</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Which property is about finding an input from a digest?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. Which property is about finding any two different inputs with the same digest?</div>
+          <span class="blank-line"></span>
+        </div>
+      </section>
+
+      <section id="avalanche-practice">
+        <h2>Part F: Avalanche effect</h2>
+        <div class="problem">
+          <div class="problem-title">F1. Explain the avalanche effect.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Why would predictable small digest changes be dangerous?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="uses-practice">
+        <h2>Part G: What hashes are used for</h2>
+        <p>Complete the table.</p>
+
+        <table class="use-table">
+          <thead><tr><th>Use</th><th>How the hash helps</th></tr></thead>
+          <tbody>
+            <tr><td>File integrity checks</td><td></td></tr>
+            <tr><td>Digital signatures</td><td></td></tr>
+            <tr><td>Message authentication</td><td></td></tr>
+            <tr><td>Password storage</td><td></td></tr>
+            <tr><td>Merkle trees</td><td></td></tr>
+            <tr><td>Blockchains</td><td></td></tr>
+            <tr><td>Key derivation</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonuses-practice">
+        <h2>Part H: What hashes do not do by themselves</h2>
+        <p>Complete the corrections.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Misunderstanding</th><th>Correction</th></tr></thead>
+          <tbody>
+            <tr><td>A hash encrypts data.</td><td></td></tr>
+            <tr><td>A hash proves who created a message.</td><td></td></tr>
+            <tr><td>A fast hash is enough for password storage.</td><td></td></tr>
+            <tr><td>A hash prevents tampering by itself.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-hash">
+        <h2>Part I: Toy hash warning</h2>
+        <p>Consider the toy hash:</p>
+        <div class="math-display">
+          \[
+            H_{toy}(M)=\left(\sum \text{bytes of } M\right)\bmod 256
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I1. Does this toy function have fixed-length output?</div>
+          <span class="blank-line"></span>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why is it not cryptographically secure?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I3. What is the difference between a checksum and a cryptographic hash?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part J: Scenario judgment</h2>
+        <p>For each scenario, explain whether hashing is being used correctly or incorrectly.</p>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Correct or incorrect?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>A website posts a SHA-256 digest so users can check a downloaded file.</td><td></td><td></td></tr>
+            <tr><td>A developer says they can decrypt a SHA-256 hash to recover the original message.</td><td></td><td></td></tr>
+            <tr><td>A system uses a plain fast hash directly for password storage.</td><td></td><td></td></tr>
+            <tr><td>A signature system signs a digest of a large message.</td><td></td><td></td></tr>
+            <tr><td>A public digest is treated as proof that a specific person created a file.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part K: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Hashing is reversible with the right key.</td><td></td><td></td></tr>
+            <tr><td>The same input should always produce the same digest.</td><td></td><td></td></tr>
+            <tr><td>Collisions are impossible in a fixed-length hash function.</td><td></td><td></td></tr>
+            <tr><td>A cryptographic hash should resist deliberate attack, not only accidental changes.</td><td></td><td></td></tr>
+            <tr><td>A plain hash by itself proves who created a message.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part L: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">L1. Explain why hashes are useful even though collisions must exist.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L2. Explain the difference between preimage resistance and collision resistance.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L3. Why does a digest not automatically prove authenticity?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A cryptographic hash maps input data to a fixed-length digest.</td><td></td></tr>
+            <tr><td>Hashing is the same as encryption.</td><td></td></tr>
+            <tr><td>Hash functions are deterministic.</td><td></td></tr>
+            <tr><td>Collisions must exist for fixed-length hashes.</td><td></td></tr>
+            <tr><td>The security goal is to make useful collisions infeasible to find.</td><td></td></tr>
+            <tr><td>Plain fast hashes are ideal for password storage.</td><td></td></tr>
+            <tr><td>Hashes are used in MACs, signatures, Merkle trees, and key derivation.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The big idea is that cryptographic hashes are fixed-length, deterministic, one-way fingerprints designed to resist deliberate attack.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is \(M\)?</td><td>The message or input data being hashed.</td></tr>
+            <tr><td>A2. What is \(H\)?</td><td>The hash function.</td></tr>
+            <tr><td>A3. What is \(h\)?</td><td>The digest or hash value.</td></tr>
+            <tr><td>A4. What is a digest?</td><td>The fixed-length output of a hash function.</td></tr>
+            <tr><td>A5. What does fixed-length output mean?</td><td>The output size stays the same even when input sizes differ.</td></tr>
+            <tr><td>A6. What is a collision?</td><td>Two different inputs that produce the same digest.</td></tr>
+            <tr><td>A7. What does one-way mean?</td><td>Easy to compute, hard to reverse.</td></tr>
+            <tr><td>A8. What is the avalanche effect?</td><td>A small input change should cause a large, unpredictable output change.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Definition practice</h3>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> A cryptographic hash function takes input data and produces a fixed-length digest designed to be one-way and resistant to collisions.</p>
+          <p><strong>B2 sample answer.</strong> \(h=H(M)\) means that applying hash function \(H\) to message \(M\) produces digest \(h\).</p>
+          <p><strong>B3 sample answer.</strong> The same input must produce the same digest so hashes can be used to check whether data stayed the same.</p>
+        </div>
+
+        <h3>Part C: Fixed-length output</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Possible hash function</th><th>Output size</th><th>What this teaches</th></tr></thead>
+          <tbody>
+            <tr><td><code>hello</code></td><td>SHA-256</td><td>256 bits</td><td>Small inputs still produce fixed-size digests.</td></tr>
+            <tr><td>A 500-page document</td><td>SHA-256</td><td>256 bits</td><td>Large inputs produce the same digest size.</td></tr>
+            <tr><td>A software installer</td><td>SHA-256</td><td>256 bits</td><td>Hashes can fingerprint large files.</td></tr>
+            <tr><td>A disk image</td><td>SHA-256</td><td>256 bits</td><td>Input size does not determine digest size.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> Collisions must exist because there are more possible inputs than fixed-length outputs. Many inputs must map into the same finite output space.</p>
+        </div>
+
+        <h3>Part D: Hashing versus encryption</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>Encryption</th><th>Hashing</th></tr></thead>
+          <tbody>
+            <tr><td>Main purpose</td><td>Hide information so it can later be recovered by someone with the key.</td><td>Create a fixed-length fingerprint.</td></tr>
+            <tr><td>Reversible?</td><td>Yes, with the right key.</td><td>No, not by design.</td></tr>
+            <tr><td>Uses a key?</td><td>Usually yes.</td><td>Ordinary hash functions do not use a secret key.</td></tr>
+            <tr><td>Output size</td><td>Usually related to input size.</td><td>Fixed length.</td></tr>
+            <tr><td>Example</td><td>AES encryption.</td><td>SHA-256 digest.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> Encrypting a password means it could be decrypted if the key is known. Hashing a password is meant to avoid storing a recoverable password, though real password storage needs special slow salted password hashes.</p>
+        </div>
+
+        <h3>Part E: Three core security properties</h3>
+        <table class="answer-table">
+          <thead><tr><th>Property</th><th>Attacker challenge</th><th>Compact math form</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>Given \(h\), find \(M\) such that \(H(M)=h\).</td><td>Find \(M\) from \(h\).</td></tr>
+            <tr><td>Second preimage resistance</td><td>Given \(M_1\), find \(M_2\ne M_1\) with the same digest.</td><td>\(H(M_1)=H(M_2)\)</td></tr>
+            <tr><td>Collision resistance</td><td>Find any two different messages with the same digest.</td><td>\(M_1\ne M_2\), \(H(M_1)=H(M_2)\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1.</strong> Preimage resistance.</p>
+          <p><strong>E2.</strong> Collision resistance.</p>
+        </div>
+
+        <h3>Part F: Avalanche effect</h3>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> The avalanche effect means a tiny change in the input should cause many unpredictable changes in the digest.</p>
+          <p><strong>F2 sample answer.</strong> Predictable digest changes could help attackers manipulate inputs, infer structure, or search for collisions more efficiently.</p>
+        </div>
+
+        <h3>Part G: What hashes are used for</h3>
+        <table class="answer-table">
+          <thead><tr><th>Use</th><th>How the hash helps</th></tr></thead>
+          <tbody>
+            <tr><td>File integrity checks</td><td>Compare expected digest to actual digest.</td></tr>
+            <tr><td>Digital signatures</td><td>Usually sign a digest rather than the entire message directly.</td></tr>
+            <tr><td>Message authentication</td><td>Used inside constructions such as HMAC.</td></tr>
+            <tr><td>Password storage</td><td>Special slow password hashes protect stored password verifiers.</td></tr>
+            <tr><td>Merkle trees</td><td>Build authenticated data structures from hash links.</td></tr>
+            <tr><td>Blockchains</td><td>Link data and proof structures using hashes.</td></tr>
+            <tr><td>Key derivation</td><td>Help transform shared secrets or passwords into cryptographic keys.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: What hashes do not do by themselves</h3>
+        <table class="answer-table">
+          <thead><tr><th>Misunderstanding</th><th>Correction</th></tr></thead>
+          <tbody>
+            <tr><td>A hash encrypts data.</td><td>No. A hash is not designed to be reversed.</td></tr>
+            <tr><td>A hash proves who created a message.</td><td>No. A plain hash has no secret key and no identity by itself.</td></tr>
+            <tr><td>A fast hash is enough for password storage.</td><td>No. Password storage needs slow, salted password-hashing functions.</td></tr>
+            <tr><td>A hash prevents tampering by itself.</td><td>Only if the expected digest is protected or authenticated somehow.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Toy hash warning</h3>
+        <div class="answer-step">
+          <p><strong>I1.</strong> Yes. It outputs one byte, or 8 bits.</p>
+          <p><strong>I2 sample answer.</strong> It is easy to find different messages with the same byte sum, so collisions are easy.</p>
+          <p><strong>I3 sample answer.</strong> A checksum may detect accidental changes, but a cryptographic hash must resist deliberate attack.</p>
+        </div>
+
+        <h3>Part J: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Correct or incorrect?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>A website posts a SHA-256 digest so users can check a downloaded file.</td><td>Correct if the digest is trustworthy.</td><td>Users can compare expected and actual file digests.</td></tr>
+            <tr><td>A developer says they can decrypt a SHA-256 hash to recover the original message.</td><td>Incorrect.</td><td>Hashes are not designed to be decrypted.</td></tr>
+            <tr><td>A system uses a plain fast hash directly for password storage.</td><td>Incorrect.</td><td>Password storage needs special slow salted password hashing.</td></tr>
+            <tr><td>A signature system signs a digest of a large message.</td><td>Correct in principle.</td><td>Signatures commonly operate over message digests.</td></tr>
+            <tr><td>A public digest is treated as proof that a specific person created a file.</td><td>Incorrect.</td><td>A plain public digest has no identity or secret key attached.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Hashing is reversible with the right key.</td><td>Mistaken</td><td>That describes encryption, not ordinary hashing.</td></tr>
+            <tr><td>The same input should always produce the same digest.</td><td>Valid</td><td>Hash functions are deterministic.</td></tr>
+            <tr><td>Collisions are impossible in a fixed-length hash function.</td><td>Mistaken</td><td>Collisions must exist; they should be infeasible to find.</td></tr>
+            <tr><td>A cryptographic hash should resist deliberate attack, not only accidental changes.</td><td>Valid</td><td>That is what separates cryptographic hashes from simple checksums.</td></tr>
+            <tr><td>A plain hash by itself proves who created a message.</td><td>Mistaken</td><td>Authenticity requires a MAC, signature, or protected digest.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> Hashes are useful because even though collisions exist mathematically, secure hash functions make finding useful collisions infeasible. This allows digests to serve as practical fingerprints.</p>
+          <p><strong>L2 sample answer.</strong> Preimage resistance starts with a digest and asks the attacker to find an input. Collision resistance asks the attacker to find any two different inputs with the same digest.</p>
+          <p><strong>L3 sample answer.</strong> Anyone can compute a plain hash. Authenticity requires something only the legitimate party can produce or protect, such as a MAC or digital signature.</p>
+          <p><strong>L4 sample answer.</strong> A cryptographic hash function maps input data to a fixed-length digest. It is deterministic, one-way by design, and should resist preimage, second preimage, and collision attacks. Hashing is not encryption because it is not meant to be reversed. Hashes are used for integrity checks, MACs, signatures, password hashing, Merkle trees, blockchains, and key derivation, but plain hashes do not prove authenticity by themselves.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A cryptographic hash maps input data to a fixed-length digest.</td><td>True</td><td>That is the basic hash function shape.</td></tr>
+            <tr><td>Hashing is the same as encryption.</td><td>False</td><td>Encryption is reversible with a key; hashing is one-way by design.</td></tr>
+            <tr><td>Hash functions are deterministic.</td><td>True</td><td>The same input should produce the same digest.</td></tr>
+            <tr><td>Collisions must exist for fixed-length hashes.</td><td>True</td><td>The input space is larger than the output space.</td></tr>
+            <tr><td>The security goal is to make useful collisions infeasible to find.</td><td>True</td><td>Collisions exist but should be computationally hard to discover.</td></tr>
+            <tr><td>Plain fast hashes are ideal for password storage.</td><td>False</td><td>Password storage needs slow, salted password-hashing functions.</td></tr>
+            <tr><td>Hashes are used in MACs, signatures, Merkle trees, and key derivation.</td><td>True</td><td>Hashes are major cryptographic building blocks.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 41: What Is a Cryptographic Hash Function?
+      </p>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Randomness, Entropy, and Secure Random Number Generation | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .rng-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .danger-table,
+    .rng-table,
+    .entropy-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .danger-table th,
+    .danger-table td,
+    .rng-table th,
+    .rng-table td,
+    .entropy-table th,
+    .entropy-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .danger-table th,
+    .rng-table th,
+    .entropy-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .step-table td,
+    .step-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th,
+    .danger-table td,
+    .danger-table th,
+    .rng-table td,
+    .rng-table th,
+    .entropy-table td,
+    .entropy-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .source-node { background: #fff4d8; border-color: #ead399; }
+    .pool-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .rng-node { background: #f0eafe; border-color: #d8c8f5; }
+    .key-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre { break-inside: avoid; }
+      .box, .diagram, details.solution, pre { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .danger-table th, .rng-table th, .entropy-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 55</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Randomness, Entropy, and Secure Random Number Generation</h1>
+      <p class="subtitle">
+        Why cryptography depends on unpredictable values: entropy, random keys, salts, nonces, initialization vectors, CSPRNGs, and the quiet catastrophe of bad randomness.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="54-password-hashing-and-password-based-key-derivation.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 54 showed why password systems need special protection because human secrets are weak. This tutorial studies the opposite ideal: strong cryptographic randomness. Keys, salts, nonces, challenges, and many protocol values depend on random generation or unpredictable state.</p>
+        </div>
+
+        <p class="lead">
+          Randomness is the well cryptography drinks from. If the well is poisoned, the castle can have perfect walls and still fall because every key was copied before the doors were built.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that cryptographic systems rely on secret keys, unique nonces, salts, and unpredictable challenges. You should also know that ordinary programming-language random functions are often designed for simulations or games, not for cryptographic security.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>randomness</td><td>No predictable pattern.</td><td>Unpredictability in generated values.</td></tr>
+            <tr><td>entropy</td><td>Uncertainty.</td><td>A measure of unpredictability or possible surprise.</td></tr>
+            <tr><td>bit of entropy</td><td>One coin-flip worth of uncertainty.</td><td>Two equally likely possibilities.</td></tr>
+            <tr><td>RNG</td><td>Random number generator.</td><td>System that produces random-looking values.</td></tr>
+            <tr><td>PRNG</td><td>Pseudorandom generator.</td><td>Deterministic generator expanded from a seed.</td></tr>
+            <tr><td>CSPRNG</td><td>Cryptographic random generator.</td><td>Cryptographically Secure Pseudorandom Number Generator.</td></tr>
+            <tr><td>seed</td><td>Starting secret/state.</td><td>Initial value used to initialize a PRNG/CSPRNG.</td></tr>
+            <tr><td>nonce</td><td>Used once.</td><td>A value that often needs uniqueness, sometimes unpredictability.</td></tr>
+            <tr><td>salt</td><td>Password-hash separator.</td><td>Unique public value used to separate password hashes.</td></tr>
+            <tr><td>IV</td><td>Initialization value.</td><td>Mode-specific starting value for encryption.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="randomness-vs-pseudorandomness">
+        <h2>Randomness versus pseudorandomness</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: pseudorandomness</div>
+          <p>
+            A pseudorandom generator is deterministic, but its output should look random to someone who does not know its internal state or seed.</p>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Type</th><th>Source</th><th>Cryptographic question</th></tr></thead>
+          <tbody>
+            <tr><td>True randomness</td><td>Physical uncertainty, hardware events, operating-system entropy sources.</td><td>Is the source measured and handled safely?</td></tr>
+            <tr><td>Pseudorandomness</td><td>Deterministic algorithm from secret seed/state.</td><td>Is it secure even after many outputs are observed?</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          In practice, computers collect uncertain events into an entropy pool, then use a secure generator to produce random bytes for applications.</p>
+      </section>
+
+      <section id="entropy">
+        <h2>Entropy: measuring uncertainty</h2>
+        <p>
+          Entropy is a way to talk about uncertainty. One fair coin flip has one bit of entropy because there are two equally likely outcomes.</p>
+
+        <div class="math-display">
+          \[
+            \text{possibilities}=2^n
+          \]
+        </div>
+
+        <p>
+          If a value has \(n\) bits of ideal entropy, an attacker faces about \(2^n\) equally likely possibilities.</p>
+
+        <table class="entropy-table">
+          <thead><tr><th>Entropy</th><th>Possible values</th><th>Friendly meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1 bit</td><td>\(2^1=2\)</td><td>One fair coin flip.</td></tr>
+            <tr><td>8 bits</td><td>\(2^8=256\)</td><td>One random byte.</td></tr>
+            <tr><td>32 bits</td><td>\(2^{32}\)</td><td>Large for humans, small for attackers.</td></tr>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>Strong cryptographic scale.</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>Enormous security margin for random guessing.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="uniformity-vs-unpredictability">
+        <h2>Uniformity and unpredictability</h2>
+        <p>
+          Good cryptographic randomness should avoid bias and be unpredictable. A generator can look messy but still be predictable, and a value can be unique but not random.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Property</th><th>Meaning</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Uniform</td><td>All values are equally likely.</td><td>Each 128-bit key has the same chance.</td></tr>
+            <tr><td>Unpredictable</td><td>Attacker cannot guess the next value.</td><td>Secure session key.</td></tr>
+            <tr><td>Unique</td><td>Value does not repeat in context.</td><td>Counter nonce.</td></tr>
+            <tr><td>Secret</td><td>Attacker does not know it.</td><td>Private key or symmetric key.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            A counter can be unique without being unpredictable. A key must be unpredictable and secret. A salt should be unique, but usually does not need secrecy.</p>
+        </div>
+      </section>
+
+      <section id="csprng">
+        <h2>CSPRNG: cryptographic random generation</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: CSPRNG</div>
+          <p>
+            A Cryptographically Secure Pseudorandom Number Generator is a generator designed so that its outputs are unpredictable to attackers, even if they observe many previous outputs.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="CSPRNG flow">
+          <div class="diagram-title">Secure random generation flow</div>
+          <div class="flow-row">
+            <div class="flow-node source-node">Entropy sources</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node pool-node">Entropy pool</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">CSPRNG</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node key-node">Keys, salts,<br>nonces, IVs</div>
+          </div>
+        </div>
+
+        <table class="rng-table">
+          <thead><tr><th>Generator type</th><th>Appropriate for cryptography?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Simulation/game PRNG</td><td>No</td><td>May be predictable from seed or observed outputs.</td></tr>
+            <tr><td>CSPRNG</td><td>Yes</td><td>Designed for attacker resistance.</td></tr>
+            <tr><td>Operating-system secure random API</td><td>Yes</td><td>Usually the right source for application developers.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="where-randomness-is-used">
+        <h2>Where cryptography uses randomness</h2>
+        <table class="example-table">
+          <thead><tr><th>Value</th><th>Needs secrecy?</th><th>Needs uniqueness?</th><th>Needs unpredictability?</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric key</td><td>Yes</td><td>Should not repeat accidentally</td><td>Yes</td></tr>
+            <tr><td>Private key</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Salt</td><td>No</td><td>Yes, per password/account</td><td>Random enough to avoid collisions</td></tr>
+            <tr><td>Nonce</td><td>Usually no</td><td>Usually yes under same key</td><td>Depends on scheme</td></tr>
+            <tr><td>IV</td><td>Depends on mode</td><td>Depends on mode</td><td>Depends on mode</td></tr>
+            <tr><td>Challenge</td><td>No</td><td>Fresh</td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="bad-randomness-failures">
+        <h2>What bad randomness breaks</h2>
+        <table class="danger-table">
+          <thead><tr><th>Bad randomness problem</th><th>Possible consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Predictable keys</td><td>Attackers can guess or reconstruct secret keys.</td></tr>
+            <tr><td>Repeated nonces</td><td>AEAD or stream-like modes may fail.</td></tr>
+            <tr><td>Repeated salts</td><td>Password hashes lose some separation benefit.</td></tr>
+            <tr><td>Predictable challenges</td><td>Authentication protocols may be replayed or precomputed.</td></tr>
+            <tr><td>Low-entropy seeds</td><td>CSPRNG output may become guessable.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Design warning</div>
+          <p>
+            A cryptosystem with weak randomness can fail even if every algorithm inside it is famous, standardized, and mathematically elegant.</p>
+        </div>
+      </section>
+
+      <section id="modulo-bias">
+        <h2>Modulo bias</h2>
+        <p>
+          A common mistake is taking random bytes and using modulo reduction to force them into a smaller range. If the range does not divide evenly into the source size, some outputs become more likely than others.</p>
+
+        <div class="math-display">
+          \[
+            x=randomByte()\bmod 10
+          \]
+        </div>
+
+        <p>
+          Since one byte has 256 possible values and 10 does not divide 256 evenly, values 0 through 5 occur one extra time compared with 6 through 9.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Output range</th><th>How many byte values map there?</th></tr></thead>
+          <tbody>
+            <tr><td>0 through 5</td><td>26 each</td></tr>
+            <tr><td>6 through 9</td><td>25 each</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Safer habit</div>
+          <p>
+            Use secure library functions for bounded random integers. Good libraries use rejection sampling or another method to avoid bias.</p>
+        </div>
+      </section>
+
+      <section id="randomness-api-habits">
+        <h2>Practical random API habits</h2>
+        <table class="property-table">
+          <thead><tr><th>Habit</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Use operating-system secure randomness</td><td>It is designed for cryptographic use.</td></tr>
+            <tr><td>Do not seed cryptographic generators manually unless required</td><td>Manual seeding can reduce entropy or cause repeated state.</td></tr>
+            <tr><td>Do not use timestamps as secrets</td><td>Time is guessable.</td></tr>
+            <tr><td>Do not use ordinary PRNGs for keys</td><td>They may be predictable.</td></tr>
+            <tr><td>Use library methods for random tokens</td><td>They handle size, encoding, and bias more safely.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="randomness-health">
+        <h2>Randomness health and failure thinking</h2>
+        <p>
+          Secure systems often include health checks, reseeding behavior, and careful handling of generator state. The details are subtle, but the design goal is straightforward: do not let weak or repeated state silently produce security-critical values.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Concern</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Early boot entropy</td><td>Devices may start before enough uncertainty is available.</td></tr>
+            <tr><td>Virtual machine cloning</td><td>Cloned systems may duplicate random-generator state.</td></tr>
+            <tr><td>Embedded devices</td><td>May lack strong entropy sources.</td></tr>
+            <tr><td>State compromise</td><td>If generator state leaks, future or past outputs may be at risk depending on design.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-example">
+        <h2>Toy example: weak seed, weak keys</h2>
+        <p>
+          Suppose a toy system seeds a PRNG using the current second of the day. There are only 86,400 possible seconds in a day.</p>
+
+        <div class="math-display">
+          \[
+            86400 < 2^{17}
+          \]
+        </div>
+
+        <p>
+          That means the attacker might only need to test fewer than \(2^{17}\) possible seeds, which is tiny compared with a 128-bit key space.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Seed source</th><th>Approximate possibilities</th><th>Security result</th></tr></thead>
+          <tbody>
+            <tr><td>Second of the day</td><td>Less than \(2^{17}\)</td><td>Far too guessable.</td></tr>
+            <tr><td>128-bit secure random seed</td><td>\(2^{128}\)</td><td>Cryptographic scale.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: using ordinary random functions for keys</div>
+          <p>
+            Game/simulation random functions are not designed to resist attackers.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: using timestamps as secrets</div>
+          <p>
+            Timestamps are easy to guess or narrow down.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: confusing uniqueness with unpredictability</div>
+          <p>
+            A counter is unique but predictable. That may be fine for some nonces, but not for keys.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: introducing modulo bias</div>
+          <p>
+            Use library functions for bounded random values rather than careless modulo reduction.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is entropy in cryptographic language?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Entropy is a measure of uncertainty or unpredictability.</p>
+            </details>
+          </li>
+          <li>
+            How many possible values are represented by \(n\) bits of ideal entropy?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(2^n\) possible values.</p>
+            </details>
+          </li>
+          <li>
+            What is a CSPRNG?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A Cryptographically Secure Pseudorandom Number Generator, designed to produce outputs unpredictable to attackers.</p>
+            </details>
+          </li>
+          <li>
+            Why is a timestamp a bad secret seed?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because timestamps are guessable and usually come from a small search range.</p>
+            </details>
+          </li>
+          <li>
+            Does a nonce always need to be secret?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>No. A nonce usually needs uniqueness under the same key; unpredictability depends on the scheme.</p>
+            </details>
+          </li>
+          <li>
+            What is modulo bias?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Modulo bias occurs when random values are reduced into a range that does not divide evenly, causing some outputs to be more likely than others.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Randomness is not a side detail. It creates the secrets and freshness values that the rest of cryptography depends on. Strong algorithms cannot rescue predictable keys, repeated nonces, biased random choices, or weak generator seeds.</p>
+        <ul>
+          <li>Entropy measures uncertainty.</li>
+          <li>\(n\) bits of entropy means about \(2^n\) possible values.</li>
+          <li>Keys need secrecy and unpredictability.</li>
+          <li>Salts need uniqueness, not secrecy.</li>
+          <li>Nonces usually need uniqueness; unpredictability depends on the mode.</li>
+          <li>CSPRNGs are designed for cryptographic randomness.</li>
+          <li>Ordinary PRNGs should not be used for cryptographic keys.</li>
+          <li>Modulo bias can make some random choices more likely than others.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Randomness is foundational to cryptography.</li>
+            <li>Entropy measures uncertainty or unpredictability.</li>
+            <li>\(n\) bits of ideal entropy means \(2^n\) possible values.</li>
+            <li>A CSPRNG is a cryptographically secure pseudorandom number generator.</li>
+            <li>True randomness may come from physical uncertainty; CSPRNGs expand secure state into random bytes.</li>
+            <li>Keys must be secret and unpredictable.</li>
+            <li>Salts are usually public but should be unique per password/account.</li>
+            <li>Nonces usually need uniqueness under the same key.</li>
+            <li>Some IVs need unpredictability, some need uniqueness, depending on mode.</li>
+            <li>Do not use ordinary PRNGs for cryptographic keys.</li>
+            <li>Do not seed security-critical generators with timestamps.</li>
+            <li>Use secure library and operating-system random APIs.</li>
+            <li>Avoid modulo bias by using proper bounded-random functions.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              \text{possibilities}=2^n
+            \]
+            \[
+              2^{128}\text{ possible keys for a 128-bit random key}
+            \]
+            \[
+              x=randomByte()\bmod 10 \quad \text{can be biased}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 55: Randomness, Entropy, and Secure Random Number Generation</strong>. After that, the next tutorial can move into <strong>Public-Key Cryptography: One-Way Functions, Trapdoors, and Key Exchange</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

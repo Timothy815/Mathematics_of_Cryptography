@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 46: Merkle-Damgård Construction | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .md-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .step-table,
+    .state-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .block-table,
+    .valid-table,
+    .scenario-table,
+    .padding-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .state-table th, .state-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .block-table th, .block-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .padding-table th, .padding-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .step-table th,
+    .state-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .block-table th,
+    .valid-table th,
+    .scenario-table th,
+    .padding-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .state-table th,
+    .state-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .block-table th,
+    .block-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td,
+    .padding-table th,
+    .padding-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .step-table th,
+      .state-table th,
+      .property-table th,
+      .example-table th,
+      .lesson-table th,
+      .block-table th,
+      .valid-table th,
+      .scenario-table th,
+      .padding-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 46</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Merkle-Damgård Construction</h1>
+      <p class="subtitle">
+        Printable practice for the classic hash construction pattern: padding, block splitting, chaining values, strengthening, and the bridge toward length extension and HMAC.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="46-merkle-damgard-construction.html">Tutorial 46</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the architecture. Merkle-Damgård is not one hash algorithm; it is a pattern for building a hash from a compression function. Track the message from original input to padded blocks, then follow the chaining value from \(IV\) to final digest.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core construction</div>
+            <div class="math-display">
+              \[
+                CV_0=IV
+              \]
+              \[
+                CV_i=f(CV_{i-1},M_i) \quad \text{for } i=1,2,\ldots,t
+              \]
+              \[
+                H(M)=CV_t
+              \]
+            </div>
+          </div>
+
+          <div class="box md-box">
+            <div class="box-title">Strengthening pattern</div>
+            <div class="math-display">
+              \[
+                pad(M)=M\,\|\,1\,\|\,0\ldots0\,\|\,\text{len}(M)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(pad(M)\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(M_i\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(t\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(IV\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(CV_i\) represent?</td><td></td></tr>
+            <tr><td>A7. What does \(f\) represent?</td><td></td></tr>
+            <tr><td>A8. What does strengthening mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="definition-practice">
+        <h2>Part B: Definition practice</h2>
+        <div class="problem">
+          <div class="problem-title">B1. Define Merkle-Damgård construction in your own words.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Explain why Merkle-Damgård is a construction pattern, not one specific hash algorithm.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="big-picture-steps">
+        <h2>Part C: Big-picture steps</h2>
+        <p>Put the steps in order and explain the purpose.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td></td><td>Output \(CV_t\) as the digest.</td><td></td></tr>
+            <tr><td></td><td>Start with message \(M\).</td><td></td></tr>
+            <tr><td></td><td>Set \(CV_0=IV\).</td><td></td></tr>
+            <tr><td></td><td>Split padded message into blocks \(M_1,\ldots,M_t\).</td><td></td></tr>
+            <tr><td></td><td>Pad the message.</td><td></td></tr>
+            <tr><td></td><td>Compute \(CV_i=f(CV_{i-1},M_i)\) repeatedly.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="core-formulas">
+        <h2>Part D: Core formulas</h2>
+        <p>Complete the formulas and meanings.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(CV_0=\)</td><td></td></tr>
+            <tr><td>\(CV_i=f(\_,\_)\)</td><td></td></tr>
+            <tr><td>\(H(M)=\)</td><td></td></tr>
+            <tr><td>\(pad(M)=M\,\|\,1\,\|\,0\ldots0\,\|\,\)</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="padding-purpose">
+        <h2>Part E: Padding purposes</h2>
+        <p>Complete the table.</p>
+
+        <table class="padding-table">
+          <thead><tr><th>Padding purpose</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Fill the last block</td><td></td></tr>
+            <tr><td>Mark the end of the message</td><td></td></tr>
+            <tr><td>Encode length</td><td></td></tr>
+            <tr><td>Prevent ambiguity</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is padding part of the security structure rather than just formatting?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="strengthening-practice">
+        <h2>Part F: Merkle-Damgård strengthening</h2>
+        <p>Explain each piece of the strengthening pattern.</p>
+
+        <table class="padding-table">
+          <thead><tr><th>Piece</th><th>Meaning</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>\(M\)</td><td></td><td></td></tr>
+            <tr><td>\(1\)</td><td></td><td></td></tr>
+            <tr><td>\(0\ldots0\)</td><td></td><td></td></tr>
+            <tr><td>\(\text{len}(M)\)</td><td></td><td></td></tr>
+            <tr><td>\(\|\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain why appending the original message length helps prevent ambiguity.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="toy-padding">
+        <h2>Part G: Toy padding example</h2>
+        <p>Use the toy example:</p>
+        <pre><code>Message bits:       101
+Original length:    3 bits
+Toy padding shape:  message | 1 | zeros | length
+Padded message:     101 1 0000 0011</code></pre>
+
+        <table class="block-table">
+          <thead><tr><th>Piece</th><th>Value</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td></td><td></td></tr>
+            <tr><td>1 bit</td><td></td><td></td></tr>
+            <tr><td>Zeros</td><td></td><td></td></tr>
+            <tr><td>Length</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why is this a toy padding example rather than a real padding specification?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="three-block-example">
+        <h2>Part H: Three-block example</h2>
+        <p>Suppose a padded message has three blocks: \(M_1,M_2,M_3\). Complete the table.</p>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td></td><td></td></tr>
+            <tr><td>Block 1</td><td></td><td></td></tr>
+            <tr><td>Block 2</td><td></td><td></td></tr>
+            <tr><td>Block 3</td><td></td><td></td></tr>
+            <tr><td>Output</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="security-theorem">
+        <h2>Part I: Security theorem idea</h2>
+        <div class="problem">
+          <div class="problem-title">I1. State the informal security theorem idea for Merkle-Damgård collision resistance.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>If...</th><th>Then...</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Compression function resists collisions</td><td></td><td></td></tr>
+            <tr><td>Compression function is weak</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="limits">
+        <h2>Part J: What Merkle-Damgård does not automatically guarantee</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Issue</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Depends on compression function</td><td></td></tr>
+            <tr><td>Padding matters</td><td></td></tr>
+            <tr><td>Length extension issue</td><td></td></tr>
+            <tr><td>Not automatically a MAC</td><td></td></tr>
+            <tr><td>Finalization may matter</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="sha-family">
+        <h2>Part K: SHA-family connection</h2>
+        <p>Complete the comparison.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Hash family</th><th>Construction family</th><th>Important note</th></tr></thead>
+          <tbody>
+            <tr><td>MD5</td><td></td><td></td></tr>
+            <tr><td>SHA-1</td><td></td><td></td></tr>
+            <tr><td>SHA-2</td><td></td><td></td></tr>
+            <tr><td>SHA-3</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why should we distinguish construction family from current security status?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part L: Scenario judgment</h2>
+        <p>For each scenario, identify the lesson.</p>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says Merkle-Damgård is a specific hash algorithm.</td><td></td></tr>
+            <tr><td>A design uses a weak compression function inside Merkle-Damgård.</td><td></td></tr>
+            <tr><td>A naive MAC uses <code>Hash(secret || message)</code>.</td><td></td></tr>
+            <tr><td>A construction pads messages but does not clearly encode length.</td><td></td></tr>
+            <tr><td>A designer assumes SHA-3 works like SHA-2 internally.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part M: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Merkle-Damgård builds variable-length hashing from a fixed-input compression function.</td><td></td><td></td></tr>
+            <tr><td>The IV is usually a secret key.</td><td></td><td></td></tr>
+            <tr><td>Length strengthening includes information about the original message length.</td><td></td><td></td></tr>
+            <tr><td>A plain Merkle-Damgård hash is automatically a secure MAC.</td><td></td><td></td></tr>
+            <tr><td>SHA-3 uses the same Merkle-Damgård construction as SHA-2.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part N: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">N1. Explain Merkle-Damgård construction in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N2. Why is Merkle-Damgård strengthening important?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N3. Why does this construction lead naturally into length extension attacks?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Merkle-Damgård starts with \(CV_0=IV\).</td><td></td></tr>
+            <tr><td>Each block updates the chaining value using a compression function.</td><td></td></tr>
+            <tr><td>The final chaining value becomes the digest in the basic construction.</td><td></td></tr>
+            <tr><td>Padding and length encoding are unimportant details.</td><td></td></tr>
+            <tr><td>Merkle-Damgård-style hashes can have length-extension issues in some misuse scenarios.</td><td></td></tr>
+            <tr><td>MD5 and SHA-1 are still safe for collision resistance.</td><td></td></tr>
+            <tr><td>HMAC exists partly to avoid naive hash-MAC problems.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            Merkle-Damgård is the formal version of the iterated compression pattern: pad the message, split into blocks, start from an IV, process each block through the compression function, and output the final chaining value.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td>The original message before padding.</td></tr>
+            <tr><td>A2. What does \(pad(M)\) represent?</td><td>The message after padding and usually length information are added.</td></tr>
+            <tr><td>A3. What does \(M_i\) represent?</td><td>The \(i\)-th fixed-size block after padding.</td></tr>
+            <tr><td>A4. What does \(t\) represent?</td><td>The total number of padded message blocks.</td></tr>
+            <tr><td>A5. What does \(IV\) represent?</td><td>The fixed public initialization value.</td></tr>
+            <tr><td>A6. What does \(CV_i\) represent?</td><td>The chaining value after block \(i\).</td></tr>
+            <tr><td>A7. What does \(f\) represent?</td><td>The compression function.</td></tr>
+            <tr><td>A8. What does strengthening mean?</td><td>Padding that includes a representation of the original message length.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Definition practice</h3>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> Merkle-Damgård construction builds a hash function by padding the message, splitting it into fixed-size blocks, starting with an IV, and repeatedly applying a compression function to update a chaining value until the final digest is produced.</p>
+          <p><strong>B2 sample answer.</strong> It is a construction pattern because many different hash algorithms can use this broad structure with different compression functions, parameters, and output sizes.</p>
+        </div>
+
+        <h3>Part C: Big-picture steps</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Action</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>6</td><td>Output \(CV_t\) as the digest.</td><td>The final state is the hash result in the basic construction.</td></tr>
+            <tr><td>1</td><td>Start with message \(M\).</td><td>This is the original data to hash.</td></tr>
+            <tr><td>4</td><td>Set \(CV_0=IV\).</td><td>The first block needs a starting chaining value.</td></tr>
+            <tr><td>3</td><td>Split padded message into blocks \(M_1,\ldots,M_t\).</td><td>The compression function expects fixed-size blocks.</td></tr>
+            <tr><td>2</td><td>Pad the message.</td><td>Make the input fit whole blocks and encode boundaries.</td></tr>
+            <tr><td>5</td><td>Compute \(CV_i=f(CV_{i-1},M_i)\) repeatedly.</td><td>Each block updates the running state.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Core formulas</h3>
+        <table class="answer-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(CV_0=IV\)</td><td>The initial chaining value is the initialization value.</td></tr>
+            <tr><td>\(CV_i=f(CV_{i-1},M_i)\)</td><td>Each block updates the chaining value using the compression function.</td></tr>
+            <tr><td>\(H(M)=CV_t\)</td><td>The final chaining value is the digest in the basic construction.</td></tr>
+            <tr><td>\(pad(M)=M\,\|\,1\,\|\,0\ldots0\,\|\,\text{len}(M)\)</td><td>The message is padded with a marker, zeros, and original length information.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Padding purposes</h3>
+        <table class="answer-table">
+          <thead><tr><th>Padding purpose</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Fill the last block</td><td>The padded message must divide into whole blocks.</td></tr>
+            <tr><td>Mark the end of the message</td><td>The padding should make it clear where the original message stops.</td></tr>
+            <tr><td>Encode length</td><td>Merkle-Damgård strengthening appends information about the original message length.</td></tr>
+            <tr><td>Prevent ambiguity</td><td>Different messages should not accidentally produce the same padded block sequence.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> Padding defines the exact block sequence processed by the compression function. Bad padding can make message boundaries ambiguous and can undermine the assumptions behind the construction.</p>
+        </div>
+
+        <h3>Part F: Merkle-Damgård strengthening</h3>
+        <table class="answer-table">
+          <thead><tr><th>Piece</th><th>Meaning</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>\(M\)</td><td>Original message</td><td>The data being hashed.</td></tr>
+            <tr><td>\(1\)</td><td>A single 1 bit</td><td>Marks the beginning of padding.</td></tr>
+            <tr><td>\(0\ldots0\)</td><td>Enough zero bits</td><td>Fills space before the length field.</td></tr>
+            <tr><td>\(\text{len}(M)\)</td><td>Original message length</td><td>Binds the padded input to the original length.</td></tr>
+            <tr><td>\(\|\)</td><td>Concatenation</td><td>Means the pieces are joined together.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> Appending the length helps distinguish messages that might otherwise produce similar-looking padded endings. It binds the final padded block sequence to the original message size.</p>
+        </div>
+
+        <h3>Part G: Toy padding example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Piece</th><th>Value</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td><code>101</code></td><td>Original data.</td></tr>
+            <tr><td>1 bit</td><td><code>1</code></td><td>Marks that padding has begun.</td></tr>
+            <tr><td>Zeros</td><td><code>0000</code></td><td>Fills space before length field.</td></tr>
+            <tr><td>Length</td><td><code>0011</code></td><td>Records original length 3.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> It uses tiny block and length sizes for learning. Real hash functions have precise standardized padding rules and much larger block and length fields.</p>
+        </div>
+
+        <h3>Part H: Three-block example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Start</td><td>\(CV_0=IV\)</td><td>Use the fixed starting value.</td></tr>
+            <tr><td>Block 1</td><td>\(CV_1=f(CV_0,M_1)\)</td><td>Compress the IV with block 1.</td></tr>
+            <tr><td>Block 2</td><td>\(CV_2=f(CV_1,M_2)\)</td><td>Compress the new state with block 2.</td></tr>
+            <tr><td>Block 3</td><td>\(CV_3=f(CV_2,M_3)\)</td><td>Compress the new state with block 3.</td></tr>
+            <tr><td>Output</td><td>\(H(M)=CV_3\)</td><td>Output the final chaining value.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Security theorem idea</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Informally, if the compression function is collision resistant and the padding is appropriate, then a collision in the full Merkle-Damgård hash can be traced back to a collision in the compression function.</p>
+        </div>
+        <table class="answer-table">
+          <thead><tr><th>If...</th><th>Then...</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Compression function resists collisions</td><td>Construction can inherit collision resistance</td><td>Security of the whole can be related to security of the part.</td></tr>
+            <tr><td>Compression function is weak</td><td>The full hash is likely weak</td><td>Iteration cannot magically fix a broken core.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: What Merkle-Damgård does not automatically guarantee</h3>
+        <table class="answer-table">
+          <thead><tr><th>Issue</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Depends on compression function</td><td>A weak compression function makes the construction weak.</td></tr>
+            <tr><td>Padding matters</td><td>Bad padding can break assumptions.</td></tr>
+            <tr><td>Length extension issue</td><td>Plain Merkle-Damgård hashes can allow extension-style attacks in certain misuse scenarios.</td></tr>
+            <tr><td>Not automatically a MAC</td><td>A plain hash is not a message authentication code.</td></tr>
+            <tr><td>Finalization may matter</td><td>Some designs add output transformations or domain separation.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: SHA-family connection</h3>
+        <table class="answer-table">
+          <thead><tr><th>Hash family</th><th>Construction family</th><th>Important note</th></tr></thead>
+          <tbody>
+            <tr><td>MD5</td><td>Merkle-Damgård-style</td><td>Broken for collision resistance.</td></tr>
+            <tr><td>SHA-1</td><td>Merkle-Damgård-style</td><td>Broken for collision resistance.</td></tr>
+            <tr><td>SHA-2</td><td>Merkle-Damgård-style</td><td>Still widely used when appropriate.</td></tr>
+            <tr><td>SHA-3</td><td>Sponge construction</td><td>Different architecture, studied later.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> Two algorithms may share a construction family but have different security histories. MD5, SHA-1, and SHA-2 are all Merkle-Damgård-style, but MD5 and SHA-1 are broken for collision resistance while SHA-2 remains widely used.</p>
+        </div>
+
+        <h3>Part L: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says Merkle-Damgård is a specific hash algorithm.</td><td>Mistaken. It is a construction pattern.</td></tr>
+            <tr><td>A design uses a weak compression function inside Merkle-Damgård.</td><td>The full construction is likely weak because the core component is weak.</td></tr>
+            <tr><td>A naive MAC uses <code>Hash(secret || message)</code>.</td><td>Dangerous with Merkle-Damgård-style hashes because of length extension issues.</td></tr>
+            <tr><td>A construction pads messages but does not clearly encode length.</td><td>Padding may be ambiguous; strengthening exists to bind original length.</td></tr>
+            <tr><td>A designer assumes SHA-3 works like SHA-2 internally.</td><td>Mistaken. SHA-3 uses a sponge construction, not Merkle-Damgård like SHA-2.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Merkle-Damgård builds variable-length hashing from a fixed-input compression function.</td><td>Valid</td><td>That is the core purpose of the construction.</td></tr>
+            <tr><td>The IV is usually a secret key.</td><td>Mistaken</td><td>In ordinary hashing, the IV is usually public and fixed.</td></tr>
+            <tr><td>Length strengthening includes information about the original message length.</td><td>Valid</td><td>That is the strengthening idea.</td></tr>
+            <tr><td>A plain Merkle-Damgård hash is automatically a secure MAC.</td><td>Mistaken</td><td>Plain hashes are not MACs; HMAC is designed for keyed authentication.</td></tr>
+            <tr><td>SHA-3 uses the same Merkle-Damgård construction as SHA-2.</td><td>Mistaken</td><td>SHA-3 uses a sponge construction.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>N1 sample answer.</strong> Merkle-Damgård construction builds a hash function by padding a message, splitting it into fixed-size blocks, starting from a public initialization value, and repeatedly applying a compression function to update a chaining value. The final chaining value becomes the digest in the basic form.</p>
+          <p><strong>N2 sample answer.</strong> Merkle-Damgård strengthening is important because it includes the original message length in the padding, helping avoid ambiguity and supporting the collision-resistance argument.</p>
+          <p><strong>N3 sample answer.</strong> The final digest is essentially a chaining value. In certain naive uses, an attacker can continue hashing additional blocks from that visible state, leading to length extension attacks.</p>
+          <p><strong>N4 sample answer.</strong> This tutorial explained Merkle-Damgård as a construction pattern for building variable-length hash functions from compression functions. It starts with an IV, pads and splits the message into blocks, updates chaining values with \(CV_i=f(CV_{i-1},M_i)\), and outputs the final chaining value. Strengthening appends the original message length. The construction is important historically, but it does not automatically fix weak compression functions or make a plain hash into a secure MAC.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Merkle-Damgård starts with \(CV_0=IV\).</td><td>True</td><td>The IV initializes the chaining state.</td></tr>
+            <tr><td>Each block updates the chaining value using a compression function.</td><td>True</td><td>This is the iterative update.</td></tr>
+            <tr><td>The final chaining value becomes the digest in the basic construction.</td><td>True</td><td>\(H(M)=CV_t\).</td></tr>
+            <tr><td>Padding and length encoding are unimportant details.</td><td>False</td><td>They are part of the construction and security reasoning.</td></tr>
+            <tr><td>Merkle-Damgård-style hashes can have length-extension issues in some misuse scenarios.</td><td>True</td><td>This is a known design consequence.</td></tr>
+            <tr><td>MD5 and SHA-1 are still safe for collision resistance.</td><td>False</td><td>They are broken for collision resistance.</td></tr>
+            <tr><td>HMAC exists partly to avoid naive hash-MAC problems.</td><td>True</td><td>HMAC is designed for safe keyed authentication using hashes.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 46: Merkle-Damgård Construction.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

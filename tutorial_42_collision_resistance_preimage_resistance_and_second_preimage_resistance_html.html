@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Collision Resistance, Preimage Resistance, and Second Preimage Resistance | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .hash-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .game-table,
+    .property-table,
+    .example-table,
+    .relationship-table,
+    .security-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .game-table th,
+    .game-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .relationship-table th,
+    .relationship-table td,
+    .security-table th,
+    .security-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .game-table th,
+    .property-table th,
+    .example-table th,
+    .relationship-table th,
+    .security-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .game-table td,
+    .game-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .relationship-table td,
+    .relationship-table th,
+    .security-table td,
+    .security-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .given-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .challenge-node { background: #fff4d8; border-color: #ead399; }
+    .goal-node { background: #f0eafe; border-color: #d8c8f5; }
+    .warning-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .property-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .property-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .property-card h3 { margin-top: 0; }
+    .property-card.preimage { background: #eaf7ef; border-color: #b8dfc5; }
+    .property-card.second { background: #fff4d8; border-color: #ead399; }
+    .property-card.collision { background: #f0eafe; border-color: #d8c8f5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .property-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .property-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .property-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .game-table th, .property-table th, .example-table th, .relationship-table th, .security-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 42</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Collision Resistance, Preimage Resistance, and Second Preimage Resistance</h1>
+      <p class="subtitle">
+        A careful separation of the three major hash-security games: finding an input from a digest, finding a matching input for a given message, and finding any two messages that collide.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="41-what-is-a-cryptographic-hash-function.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 41 introduced cryptographic hash functions as fixed-length, one-way fingerprints. This tutorial slows down and separates the three major security properties that often get blurred together: preimage resistance, second preimage resistance, and collision resistance.</p>
+        </div>
+
+        <p class="lead">
+          These three ideas are easy to confuse because they all involve hashes being “hard to break.” But each one gives the attacker a different starting point and a different goal. Think of them as three different games played on the same board.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that a hash function maps a message \(M\) to a digest \(h\), written \(h=H(M)\). You should also know that hash outputs are fixed length, that collisions must exist in principle, and that security means collisions and reversals should be computationally infeasible to find.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          We will use compact notation throughout, so let us name the parts first.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(M\)</td><td>A message.</td><td>An input to the hash function.</td></tr>
+            <tr><td>\(M_1\)</td><td>The first message.</td><td>One input to the hash function.</td></tr>
+            <tr><td>\(M_2\)</td><td>The second message.</td><td>A different input, often compared to \(M_1\).</td></tr>
+            <tr><td>\(H\)</td><td>The hash function.</td><td>A function mapping messages to fixed-length digests.</td></tr>
+            <tr><td>\(h\)</td><td>The digest.</td><td>The fixed-length hash output.</td></tr>
+            <tr><td>\(H(M)=h\)</td><td>Message \(M\) hashes to digest \(h\).</td><td>The hash relation between input and digest.</td></tr>
+            <tr><td>\(M_1\ne M_2\)</td><td>The messages are different.</td><td>The two inputs are not identical.</td></tr>
+            <tr><td>collision</td><td>Two different messages share a digest.</td><td>\(M_1\ne M_2\) and \(H(M_1)=H(M_2)\).</td></tr>
+            <tr><td>infeasible</td><td>Too hard to do in practice.</td><td>Computationally unrealistic with available resources.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="three-games-overview">
+        <h2>The three attacker games</h2>
+        <p>
+          The easiest way to separate the properties is to ask: what is the attacker given, and what must the attacker find?</p>
+
+        <div class="property-grid">
+          <div class="property-card preimage">
+            <h3>Preimage resistance</h3>
+            <p>Given a digest, find any message that produces it.</p>
+          </div>
+          <div class="property-card second">
+            <h3>Second preimage resistance</h3>
+            <p>Given one message, find a different message with the same digest.</p>
+          </div>
+          <div class="property-card collision">
+            <h3>Collision resistance</h3>
+            <p>Find any two different messages with the same digest.</p>
+          </div>
+        </div>
+
+        <table class="game-table">
+          <thead><tr><th>Property</th><th>Attacker is given</th><th>Attacker must find</th><th>Math form</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>A digest \(h\)</td><td>A message \(M\) such that \(H(M)=h\)</td><td>Find \(M\) from \(h\)</td></tr>
+            <tr><td>Second preimage resistance</td><td>A specific message \(M_1\)</td><td>A different message \(M_2\ne M_1\) with the same digest</td><td>\(H(M_1)=H(M_2)\)</td></tr>
+            <tr><td>Collision resistance</td><td>Nothing specific, just the hash function</td><td>Any two different messages with the same digest</td><td>\(M_1\ne M_2\), \(H(M_1)=H(M_2)\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="preimage-resistance">
+        <h2>Preimage resistance</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: preimage resistance</div>
+          <p>
+            A hash function is preimage resistant if, given a digest \(h\), it is computationally infeasible to find any message \(M\) such that \(H(M)=h\).</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            \text{Given } h, \text{ find } M \text{ such that } H(M)=h.
+          \]
+        </div>
+
+        <div class="diagram" role="img" aria-label="Preimage resistance attacker game">
+          <div class="diagram-title">Preimage game</div>
+          <div class="flow-row">
+            <div class="flow-node given-node">Given:<br>digest \(h\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node challenge-node">Attacker searches</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node goal-node">Goal:<br>some \(M\) with \(H(M)=h\)</div>
+          </div>
+        </div>
+
+        <p>
+          Preimage resistance is the “do not reverse the fingerprint” property. If someone sees only the digest, they should not be able to work backward to a message that produces it.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Preimage resistance asks: “Can you find any original-looking document that fits this fingerprint?”</p>
+        </div>
+      </section>
+
+      <section id="second-preimage-resistance">
+        <h2>Second preimage resistance</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: second preimage resistance</div>
+          <p>
+            A hash function is second preimage resistant if, given a specific message \(M_1\), it is computationally infeasible to find a different message \(M_2\ne M_1\) such that \(H(M_1)=H(M_2)\).</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            \text{Given } M_1, \text{ find } M_2\ne M_1 \text{ such that } H(M_1)=H(M_2).
+          \]
+        </div>
+
+        <div class="diagram" role="img" aria-label="Second preimage resistance attacker game">
+          <div class="diagram-title">Second preimage game</div>
+          <div class="flow-row">
+            <div class="flow-node given-node">Given:<br>specific message \(M_1\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node challenge-node">Attacker searches</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node goal-node">Goal:<br>different \(M_2\)<br>same digest</div>
+          </div>
+        </div>
+
+        <p>
+          Second preimage resistance is important when a specific document already exists. For example, if a contract has a digest, an attacker should not be able to create a different contract with the same digest.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Second preimage resistance asks: “Given this exact document, can you forge another document with the same fingerprint?”</p>
+        </div>
+      </section>
+
+      <section id="collision-resistance">
+        <h2>Collision resistance</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: collision resistance</div>
+          <p>
+            A hash function is collision resistant if it is computationally infeasible to find any two different messages \(M_1\ne M_2\) such that \(H(M_1)=H(M_2)\).</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            \text{Find } M_1\ne M_2 \text{ such that } H(M_1)=H(M_2).
+          \]
+        </div>
+
+        <div class="diagram" role="img" aria-label="Collision resistance attacker game">
+          <div class="diagram-title">Collision game</div>
+          <div class="flow-row">
+            <div class="flow-node given-node">Given:<br>hash function \(H\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node challenge-node">Attacker searches freely</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node goal-node">Goal:<br>any \(M_1\ne M_2\)<br>same digest</div>
+          </div>
+        </div>
+
+        <p>
+          Collision resistance is a more flexible attacker game than second preimage resistance because the attacker does not have to match a specific existing message. They can choose both messages.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Collision resistance asks: “Can you create any two different documents that share a fingerprint?”</p>
+        </div>
+      </section>
+
+      <section id="similar-but-not-same">
+        <h2>Similar, but not the same</h2>
+        <p>
+          Second preimage resistance and collision resistance both involve two messages with the same digest, but the attacker’s freedom is different.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Question</th><th>Second preimage resistance</th><th>Collision resistance</th></tr></thead>
+          <tbody>
+            <tr><td>Is the first message fixed in advance?</td><td>Yes.</td><td>No.</td></tr>
+            <tr><td>Can attacker choose both messages?</td><td>No.</td><td>Yes.</td></tr>
+            <tr><td>Goal</td><td>Match a specific message’s digest.</td><td>Find any pair that shares a digest.</td></tr>
+            <tr><td>Typical intuition</td><td>Forgery against a known document.</td><td>Free search for a matching pair.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box hash-box">
+          <div class="box-title">Tiny phrase that helps</div>
+          <p>
+            Second preimage: “match this one.” Collision: “find any matching pair.”</p>
+        </div>
+      </section>
+
+      <section id="why-collisions-must-exist">
+        <h2>Why collisions must exist</h2>
+        <p>
+          Fixed-length hash functions have a finite output space. But the possible input space is much larger. By the pigeonhole principle, at least two different inputs must share some digest.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Pigeonhole principle</div>
+          <p>
+            If more pigeons than holes are placed into holes, at least one hole must contain more than one pigeon. For hashes, messages are pigeons and digests are holes.</p>
+        </div>
+
+        <p>
+          The security claim is not “collisions do not exist.” The security claim is “collisions should be infeasible to find.”</p>
+
+        <table class="example-table">
+          <thead><tr><th>Output size</th><th>Number of possible digests</th><th>Collision reality</th></tr></thead>
+          <tbody>
+            <tr><td>8 bits</td><td>\(2^8=256\)</td><td>Collisions are easy to find.</td></tr>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>Huge space, but birthday attacks matter.</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>Enormous space; secure hashes aim to make attacks infeasible.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="security-levels-preview">
+        <h2>A preview of security levels</h2>
+        <p>
+          For an ideal \(n\)-bit hash function, brute-force preimage search is roughly on the order of \(2^n\) work. Collision search is different because of the birthday phenomenon, which we will study next.</p>
+
+        <table class="security-table">
+          <thead><tr><th>Attack type</th><th>Ideal rough work for \(n\)-bit hash</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage attack</td><td>About \(2^n\)</td><td>Need to hit a specific digest.</td></tr>
+            <tr><td>Second preimage attack</td><td>About \(2^n\)</td><td>Need to match a specific message’s digest.</td></tr>
+            <tr><td>Collision attack</td><td>About \(2^{n/2}\)</td><td>Birthday phenomenon makes any matching pair easier to find.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Do not memorize blindly yet</div>
+          <p>
+            The \(2^{n/2}\) collision estimate deserves its own tutorial. For now, remember the shape: finding any pair is easier than hitting a specific target.</p>
+        </div>
+      </section>
+
+      <section id="toy-example">
+        <h2>Toy example: 8-bit digest</h2>
+        <p>
+          Imagine a toy hash with only 8-bit outputs. That means there are only 256 possible digests.</p>
+
+        <pre><code>Possible digests:
+00000000
+00000001
+00000010
+...
+11111111</code></pre>
+
+        <p>
+          If we hash many messages, collisions become unavoidable very quickly. This toy example is not secure, but it helps us see why output length matters.</p>
+
+        <table class="toy-table">
+          <thead><tr><th>Property</th><th>In an 8-bit toy hash</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>Weak, only 256 possible outputs.</td><td>Small digest spaces are easy to search.</td></tr>
+            <tr><td>Collision resistance</td><td>Very weak.</td><td>Any-pair search gets easy fast.</td></tr>
+            <tr><td>Avalanche effect</td><td>Could exist superficially.</td><td>Avalanche alone does not make a hash secure.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="practical-examples">
+        <h2>Practical examples</h2>
+        <table class="example-table">
+          <thead><tr><th>Situation</th><th>Most relevant property</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Someone sees a digest and tries to find any matching message.</td><td>Preimage resistance.</td><td>The attacker starts from only the digest.</td></tr>
+            <tr><td>Someone has a signed contract and tries to create a different contract with the same digest.</td><td>Second preimage resistance.</td><td>The attacker must match a specific existing message.</td></tr>
+            <tr><td>Someone creates two different files with the same digest before choosing which one to use.</td><td>Collision resistance.</td><td>The attacker chooses both messages.</td></tr>
+            <tr><td>Someone wants to replace a software download while keeping the same trusted digest.</td><td>Second preimage resistance.</td><td>The attacker wants a malicious file matching a known digest.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating all hash attacks as “finding a collision”</div>
+          <p>
+            Not every attack is a collision attack. Sometimes the attacker must match a specific digest or a specific message.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: confusing second preimage resistance with collision resistance</div>
+          <p>
+            In a second preimage attack, the first message is fixed. In a collision attack, the attacker can choose both messages.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: thinking collisions are impossible</div>
+          <p>
+            Collisions exist for fixed-length hashes. The goal is making them infeasible to find.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: assuming avalanche equals security</div>
+          <p>
+            Avalanche behavior is important, but it does not by itself prove preimage, second preimage, or collision resistance.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            In a preimage attack, what is the attacker given?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The attacker is given a digest \(h\).</p>
+            </details>
+          </li>
+          <li>
+            In a second preimage attack, what is fixed in advance?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>The first message \(M_1\) is fixed in advance.</p>
+            </details>
+          </li>
+          <li>
+            In a collision attack, can the attacker choose both messages?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Yes. The attacker can search for any two different messages with the same digest.</p>
+            </details>
+          </li>
+          <li>
+            Why must collisions exist for fixed-length hash functions?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because the input space is larger than the finite output space, so multiple inputs must map to at least some outputs.</p>
+            </details>
+          </li>
+          <li>
+            Which is usually easier for an ideal \(n\)-bit hash: finding any collision or finding a preimage for a specific digest?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Finding any collision is usually easier because of the birthday phenomenon, roughly \(2^{n/2}\) work instead of \(2^n\).</p>
+            </details>
+          </li>
+          <li>
+            Give a one-sentence difference between second preimage resistance and collision resistance.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Second preimage resistance requires matching a specific given message, while collision resistance allows the attacker to choose both messages freely.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          These three properties are the grammar of hash-function security. Digital signatures, file integrity checks, certificates, Merkle trees, blockchains, commitments, and password-related systems all rely on different forms of “hard to match this digest” or “hard to make two things share a digest.” Without this vocabulary, later hash constructions become a fog bank with equations floating in it.</p>
+        <ul>
+          <li>Preimage resistance protects against reversing a digest.</li>
+          <li>Second preimage resistance protects a specific existing message from substitution.</li>
+          <li>Collision resistance protects against freely generated matching pairs.</li>
+          <li>Collisions must exist, but secure hashes make them infeasible to find.</li>
+          <li>Collision attacks are affected by the birthday phenomenon.</li>
+          <li>Hash length matters because it determines the size of the search space.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Preimage resistance starts with a digest \(h\).</li>
+            <li>Preimage goal: find \(M\) such that \(H(M)=h\).</li>
+            <li>Second preimage resistance starts with a specific message \(M_1\).</li>
+            <li>Second preimage goal: find \(M_2\ne M_1\) such that \(H(M_1)=H(M_2)\).</li>
+            <li>Collision resistance lets the attacker choose both messages.</li>
+            <li>Collision goal: find any \(M_1\ne M_2\) such that \(H(M_1)=H(M_2)\).</li>
+            <li>Second preimage means “match this one.”</li>
+            <li>Collision means “find any matching pair.”</li>
+            <li>Collisions must exist for fixed-length hashes.</li>
+            <li>Secure hashes make useful collisions infeasible to find.</li>
+            <li>For an ideal \(n\)-bit hash, preimage attacks are roughly \(2^n\).</li>
+            <li>For an ideal \(n\)-bit hash, collision attacks are roughly \(2^{n/2}\).</li>
+          </ul>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Property</th><th>Given</th><th>Find</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>Digest \(h\)</td><td>Any \(M\) where \(H(M)=h\)</td></tr>
+            <tr><td>Second preimage resistance</td><td>Specific \(M_1\)</td><td>Different \(M_2\) with \(H(M_1)=H(M_2)\)</td></tr>
+            <tr><td>Collision resistance</td><td>Hash function \(H\)</td><td>Any pair \(M_1\ne M_2\) with \(H(M_1)=H(M_2)\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 42: Collision Resistance, Preimage Resistance, and Second Preimage Resistance</strong>. After that, the next tutorial can move into <strong>The Birthday Paradox and Why Hash Length Matters</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

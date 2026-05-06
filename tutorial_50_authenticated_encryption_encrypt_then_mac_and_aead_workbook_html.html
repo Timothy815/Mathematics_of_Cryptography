@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 50: Authenticated Encryption: Encrypt-then-MAC and AEAD | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .aead-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .valid-table,
+    .scenario-table,
+    .mode-table,
+    .danger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .mode-table th, .mode-table td,
+    .danger-table th, .danger-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .valid-table th,
+    .scenario-table th,
+    .mode-table th,
+    .danger-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td,
+    .mode-table th,
+    .mode-table td,
+    .danger-table th,
+    .danger-table td { text-align: center; vertical-align: middle; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .step-table th,
+      .property-table th,
+      .example-table th,
+      .lesson-table th,
+      .valid-table th,
+      .scenario-table th,
+      .mode-table th,
+      .danger-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 50</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Authenticated Encryption: Encrypt-then-MAC and AEAD</h1>
+      <p class="subtitle">
+        Printable practice for confidentiality, integrity, authenticity, Encrypt-then-MAC, AEAD notation, associated data, nonce safety, and verify-before-decrypt reasoning.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="50-authenticated-encryption-encrypt-then-mac-and-aead.html">Tutorial 50</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Keep the jobs separate in your mind: encryption hides, authentication detects tampering and proves key-holder approval, and authenticated encryption does both in one disciplined construction.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Encrypt-then-MAC</div>
+            <div class="math-display">
+              \[
+                C=Enc_{K_E}(N,P)
+              \]
+              \[
+                T=Mac_{K_M}(N\,\|\,C)
+              \]
+              \[
+                \text{send }(N,C,T)
+              \]
+            </div>
+          </div>
+
+          <div class="box aead-box">
+            <div class="box-title">AEAD</div>
+            <div class="math-display">
+              \[
+                (C,T)=AEAD.Enc_K(N,AAD,P)
+              \]
+              \[
+                AEAD.Dec_K(N,AAD,C,T)=P \quad \text{or} \quad reject
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(P\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(C\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(K_E\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(K_M\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(T\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(N\) represent?</td><td></td></tr>
+            <tr><td>A7. What does \(AAD\) represent?</td><td></td></tr>
+            <tr><td>A8. What does AEAD stand for?</td><td></td></tr>
+            <tr><td>A9. What does Encrypt-then-MAC mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="security-goals">
+        <h2>Part B: Security goals</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Goal</th><th>Question answered</th><th>Tool</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td></td><td></td></tr>
+            <tr><td>Integrity</td><td></td><td></td></tr>
+            <tr><td>Authenticity</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain why encryption and authentication are different jobs.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="encryption-alone">
+        <h2>Part C: Why encryption alone is not enough</h2>
+        <table class="danger-table">
+          <thead><tr><th>Problem</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext tampering</td><td></td></tr>
+            <tr><td>Malleability</td><td></td></tr>
+            <tr><td>Padding or format errors</td><td></td></tr>
+            <tr><td>No sender authentication</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is “it is encrypted” not enough to say “it is safe to process”?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="composition-orders">
+        <h2>Part D: Composition orders</h2>
+        <p>Complete the table.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>Composition</th><th>Basic shape</th><th>General status</th></tr></thead>
+          <tbody>
+            <tr><td>Encrypt-and-MAC</td><td></td><td></td></tr>
+            <tr><td>MAC-then-Encrypt</td><td></td><td></td></tr>
+            <tr><td>Encrypt-then-MAC</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="encrypt-then-mac">
+        <h2>Part E: Encrypt-then-MAC flow</h2>
+        <p>Complete the formulas and meanings.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(C=Enc_{K_E}(N,P)\)</td><td></td></tr>
+            <tr><td>\(T=Mac_{K_M}(N\,\|\,C)\)</td><td></td></tr>
+            <tr><td>\(\text{send }(N,C,T)\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does Encrypt-then-MAC authenticate the ciphertext instead of the plaintext?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="verify-before-decrypt">
+        <h2>Part F: Verify before decrypt</h2>
+        <p>Put the receiver steps in order.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Order</th><th>Receiver action</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td></td><td>If tag passes, decrypt.</td><td></td></tr>
+            <tr><td></td><td>Receive \((N,C,T)\).</td><td></td></tr>
+            <tr><td></td><td>If tag fails, reject.</td><td></td></tr>
+            <tr><td></td><td>Check \(T\) against \(N\,\|\,C\).</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why should failed authentication be handled with a boring, non-detailed rejection?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="separate-keys">
+        <h2>Part G: Separate keys or derived subkeys</h2>
+        <p>Use the idea:</p>
+        <div class="math-display">
+          \[
+            K_E \neq K_M
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. Explain why encryption and MAC should use separate keys or separately derived subkeys.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="aead-definition">
+        <h2>Part H: AEAD definition</h2>
+        <p>Complete the formulas and meanings.</p>
+
+        <table class="work-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\((C,T)=AEAD.Enc_K(N,AAD,P)\)</td><td></td></tr>
+            <tr><td>\(AEAD.Dec_K(N,AAD,C,T)=P\)</td><td></td></tr>
+            <tr><td>\(AEAD.Dec_K(N,AAD,C,T)=reject\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why are AEAD modes preferred in modern protocol design?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="associated-data">
+        <h2>Part I: Associated Authenticated Data</h2>
+        <p>Complete the table.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Associated data example</th><th>Why visible?</th><th>Why authenticate?</th></tr></thead>
+          <tbody>
+            <tr><td>Packet header</td><td></td><td></td></tr>
+            <tr><td>Protocol version</td><td></td><td></td></tr>
+            <tr><td>Session ID</td><td></td><td></td></tr>
+            <tr><td>Record number</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain AAD using the “address label on a sealed package” analogy.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="common-aead-modes">
+        <h2>Part J: Common AEAD modes</h2>
+        <p>Complete the table.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>AEAD mode</th><th>General idea</th><th>Important caution</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td></td><td></td></tr>
+            <tr><td>ChaCha20-Poly1305</td><td></td><td></td></tr>
+            <tr><td>AES-CCM</td><td></td><td></td></tr>
+            <tr><td>Misuse-resistant AEADs</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonce-warning">
+        <h2>Part K: Nonce warning</h2>
+        <p>Use the warning:</p>
+        <div class="math-display">
+          \[
+            \text{Same key }K + \text{same nonce }N = \text{danger}
+          \]
+        </div>
+
+        <table class="danger-table">
+          <thead><tr><th>Nonce behavior</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td>Unique nonce per key</td><td></td></tr>
+            <tr><td>Repeated nonce with same key</td><td></td></tr>
+            <tr><td>Random nonce too short</td><td></td></tr>
+            <tr><td>Counter nonce managed correctly</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why is nonce reuse often catastrophic even when the cipher itself is strong?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="composition-comparison">
+        <h2>Part L: Composition comparison</h2>
+        <table class="compare-table">
+          <thead><tr><th>Approach</th><th>Confidentiality?</th><th>Integrity/authenticity?</th><th>Recommended?</th></tr></thead>
+          <tbody>
+            <tr><td>Encrypt only</td><td></td><td></td><td></td></tr>
+            <tr><td>MAC only</td><td></td><td></td><td></td></tr>
+            <tr><td>Encrypt-then-MAC</td><td></td><td></td><td></td></tr>
+            <tr><td>AEAD</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-example">
+        <h2>Part M: Toy payment-message example</h2>
+        <pre><code>Plaintext P:
+  amount=100; recipient=Alice
+
+AAD:
+  version=2; message_number=1042
+
+AEAD output:
+  nonce N
+  ciphertext C
+  tag T</code></pre>
+
+        <table class="example-table">
+          <thead><tr><th>Attacker changes...</th><th>Should receiver accept?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext amount bits</td><td></td><td></td></tr>
+            <tr><td>AAD message number</td><td></td><td></td></tr>
+            <tr><td>Tag</td><td></td><td></td></tr>
+            <tr><td>Nothing</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part N: Scenario judgment</h2>
+        <p>For each scenario, identify the lesson.</p>
+
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer says encryption automatically proves the message was not changed.</td><td></td></tr>
+            <tr><td>A receiver decrypts malformed ciphertext before checking a tag.</td><td></td></tr>
+            <tr><td>A protocol leaves headers visible but includes them as AAD.</td><td></td></tr>
+            <tr><td>A system reuses the same AES-GCM nonce with the same key.</td><td></td></tr>
+            <tr><td>A library returns plaintext or reject from AEAD decryption.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part O: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption alone always provides authentication.</td><td></td><td></td></tr>
+            <tr><td>Encrypt-then-MAC authenticates the ciphertext before decryption.</td><td></td><td></td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td></td><td></td></tr>
+            <tr><td>AEAD combines confidentiality, integrity, and authenticity.</td><td></td><td></td></tr>
+            <tr><td>Nonce reuse with the same key can be dangerous.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part P: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">P1. Explain authenticated encryption in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">P2. Explain why verify-before-decrypt is such an important habit.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">P3. Explain the difference between plaintext, ciphertext, tag, nonce, and AAD.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">P4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption provides confidentiality.</td><td></td></tr>
+            <tr><td>A MAC provides integrity and authenticity.</td><td></td></tr>
+            <tr><td>Encrypt-then-MAC means MAC first, then encrypt.</td><td></td></tr>
+            <tr><td>AEAD stands for Authenticated Encryption with Associated Data.</td><td></td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td></td></tr>
+            <tr><td>AEAD decryption should return plaintext or reject.</td><td></td></tr>
+            <tr><td>Nonce reuse is harmless if the encryption algorithm is strong.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central lesson is this: modern secure messages usually need both secrecy and tamper detection. AEAD gives a clean interface for doing both at once.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(P\) represent?</td><td>Plaintext, the readable message before encryption.</td></tr>
+            <tr><td>A2. What does \(C\) represent?</td><td>Ciphertext, the encrypted message.</td></tr>
+            <tr><td>A3. What does \(K_E\) represent?</td><td>The encryption key.</td></tr>
+            <tr><td>A4. What does \(K_M\) represent?</td><td>The MAC key.</td></tr>
+            <tr><td>A5. What does \(T\) represent?</td><td>The authentication tag.</td></tr>
+            <tr><td>A6. What does \(N\) represent?</td><td>A nonce, a value used once.</td></tr>
+            <tr><td>A7. What does \(AAD\) represent?</td><td>Additional Authenticated Data, authenticated but not encrypted.</td></tr>
+            <tr><td>A8. What does AEAD stand for?</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>A9. What does Encrypt-then-MAC mean?</td><td>Encrypt the plaintext first, then compute a MAC over the ciphertext and relevant context.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Security goals</h3>
+        <table class="answer-table">
+          <thead><tr><th>Goal</th><th>Question answered</th><th>Tool</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>Can outsiders read it?</td><td>Encryption.</td></tr>
+            <tr><td>Integrity</td><td>Was it changed?</td><td>MAC or authenticated encryption tag.</td></tr>
+            <tr><td>Authenticity</td><td>Was it produced by someone with the right key?</td><td>MAC or authenticated encryption tag.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> Encryption hides the message contents, while authentication detects tampering and proves that the message was produced by someone with the correct key. A message can be hidden but still unauthenticated.</p>
+        </div>
+
+        <h3>Part C: Why encryption alone is not enough</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext tampering</td><td>The receiver might decrypt altered data.</td></tr>
+            <tr><td>Malleability</td><td>Changes in ciphertext may produce meaningful changes in plaintext.</td></tr>
+            <tr><td>Padding or format errors</td><td>Different errors may leak information.</td></tr>
+            <tr><td>No sender authentication</td><td>Encryption alone does not prove who created the ciphertext.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> Encrypted data may still be modified by an attacker. Without authentication, the receiver may process altered ciphertext or reveal useful error information.</p>
+        </div>
+
+        <h3>Part D: Composition orders</h3>
+        <table class="answer-table">
+          <thead><tr><th>Composition</th><th>Basic shape</th><th>General status</th></tr></thead>
+          <tbody>
+            <tr><td>Encrypt-and-MAC</td><td>Send \(C=Enc(P)\) and \(T=Mac(P)\)</td><td>Can leak information through the tag depending on MAC and message structure.</td></tr>
+            <tr><td>MAC-then-Encrypt</td><td>Encrypt \(P\,\|\,T\)</td><td>Historically used, but error handling and padding can be fragile.</td></tr>
+            <tr><td>Encrypt-then-MAC</td><td>Encrypt \(P\), then MAC \(C\)</td><td>Preferred generic composition when done correctly.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Encrypt-then-MAC flow</h3>
+        <table class="answer-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(C=Enc_{K_E}(N,P)\)</td><td>Encrypt plaintext \(P\) using encryption key \(K_E\) and nonce \(N\).</td></tr>
+            <tr><td>\(T=Mac_{K_M}(N\,\|\,C)\)</td><td>Compute a MAC tag over the nonce and ciphertext using MAC key \(K_M\).</td></tr>
+            <tr><td>\(\text{send }(N,C,T)\)</td><td>Send the nonce, ciphertext, and tag.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> Authenticating the ciphertext lets the receiver check whether the encrypted data was altered before decrypting it. This prevents processing unauthenticated ciphertext.</p>
+        </div>
+
+        <h3>Part F: Verify before decrypt</h3>
+        <table class="answer-table">
+          <thead><tr><th>Order</th><th>Receiver action</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>4</td><td>If tag passes, decrypt.</td><td>Only authenticated ciphertext is decrypted.</td></tr>
+            <tr><td>1</td><td>Receive \((N,C,T)\).</td><td>Collect nonce, ciphertext, and tag.</td></tr>
+            <tr><td>3</td><td>If tag fails, reject.</td><td>Do not process untrusted ciphertext.</td></tr>
+            <tr><td>2</td><td>Check \(T\) against \(N\,\|\,C\).</td><td>Detect tampering before decryption.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> Detailed error messages can leak information. A clean, boring rejection avoids giving attackers clues about padding, formatting, or partial decryption behavior.</p>
+        </div>
+
+        <h3>Part G: Separate keys or derived subkeys</h3>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> Encryption and authentication have different security roles. Separate keys or derived subkeys compartmentalize the system so that using one primitive does not interfere with the assumptions of the other.</p>
+        </div>
+
+        <h3>Part H: AEAD definition</h3>
+        <table class="answer-table">
+          <thead><tr><th>Formula</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\((C,T)=AEAD.Enc_K(N,AAD,P)\)</td><td>Encrypt plaintext \(P\) and produce ciphertext \(C\) plus tag \(T\), authenticating the associated data.</td></tr>
+            <tr><td>\(AEAD.Dec_K(N,AAD,C,T)=P\)</td><td>If verification succeeds, return plaintext.</td></tr>
+            <tr><td>\(AEAD.Dec_K(N,AAD,C,T)=reject\)</td><td>If verification fails, reject and release no plaintext.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> AEAD modes are preferred because they combine encryption and authentication in one studied interface, reducing the chance that developers combine primitives incorrectly.</p>
+        </div>
+
+        <h3>Part I: Associated Authenticated Data</h3>
+        <table class="answer-table">
+          <thead><tr><th>Associated data example</th><th>Why visible?</th><th>Why authenticate?</th></tr></thead>
+          <tbody>
+            <tr><td>Packet header</td><td>Routers or protocol handlers may need it.</td><td>Attackers should not alter routing/context fields undetected.</td></tr>
+            <tr><td>Protocol version</td><td>Receiver needs to parse correctly.</td><td>Prevents downgrade or confusion attacks.</td></tr>
+            <tr><td>Session ID</td><td>Used to identify connection context.</td><td>Prevents messages from being moved between sessions.</td></tr>
+            <tr><td>Record number</td><td>Used for ordering.</td><td>Helps prevent replay or reordering.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> AAD is like an address label on a sealed package: it must remain readable so the system can route or interpret the package, but it must be protected so an attacker cannot change it unnoticed.</p>
+        </div>
+
+        <h3>Part J: Common AEAD modes</h3>
+        <table class="answer-table">
+          <thead><tr><th>AEAD mode</th><th>General idea</th><th>Important caution</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td>AES counter-mode encryption plus Galois-field authentication.</td><td>Nonce reuse can be catastrophic.</td></tr>
+            <tr><td>ChaCha20-Poly1305</td><td>Stream cipher encryption plus Poly1305 authentication.</td><td>Nonce reuse must be avoided.</td></tr>
+            <tr><td>AES-CCM</td><td>Counter-mode encryption plus CBC-MAC.</td><td>Must be used according to specification.</td></tr>
+            <tr><td>Misuse-resistant AEADs</td><td>Designed to reduce harm from nonce misuse.</td><td>Still require careful specification and implementation.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Nonce warning</h3>
+        <table class="answer-table">
+          <thead><tr><th>Nonce behavior</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td>Unique nonce per key</td><td>Expected safe use for nonce-based AEADs.</td></tr>
+            <tr><td>Repeated nonce with same key</td><td>Can reveal relationships between messages or break authentication depending on mode.</td></tr>
+            <tr><td>Random nonce too short</td><td>Collision risk may become non-negligible.</td></tr>
+            <tr><td>Counter nonce managed correctly</td><td>Often reliable if never reset under same key.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> Many modes rely on the nonce to ensure fresh keystream or authentication conditions. Reusing a nonce with the same key can expose message relationships or even destroy authentication security.</p>
+        </div>
+
+        <h3>Part L: Composition comparison</h3>
+        <table class="answer-table">
+          <thead><tr><th>Approach</th><th>Confidentiality?</th><th>Integrity/authenticity?</th><th>Recommended?</th></tr></thead>
+          <tbody>
+            <tr><td>Encrypt only</td><td>Yes</td><td>No</td><td>No for modern message security.</td></tr>
+            <tr><td>MAC only</td><td>No</td><td>Yes</td><td>Only when secrecy is not needed.</td></tr>
+            <tr><td>Encrypt-then-MAC</td><td>Yes</td><td>Yes</td><td>Good classic generic construction.</td></tr>
+            <tr><td>AEAD</td><td>Yes</td><td>Yes</td><td>Preferred modern interface.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Toy payment-message example</h3>
+        <table class="answer-table">
+          <thead><tr><th>Attacker changes...</th><th>Should receiver accept?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext amount bits</td><td>No</td><td>Tag check fails.</td></tr>
+            <tr><td>AAD message number</td><td>No</td><td>AAD is authenticated.</td></tr>
+            <tr><td>Tag</td><td>No</td><td>Tag no longer verifies.</td></tr>
+            <tr><td>Nothing</td><td>Yes</td><td>Tag verifies and plaintext decrypts.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer says encryption automatically proves the message was not changed.</td><td>Mistaken. Encryption does not automatically authenticate.</td></tr>
+            <tr><td>A receiver decrypts malformed ciphertext before checking a tag.</td><td>Dangerous. Verify before decrypting or releasing plaintext.</td></tr>
+            <tr><td>A protocol leaves headers visible but includes them as AAD.</td><td>Good use of associated data: visible but authenticated.</td></tr>
+            <tr><td>A system reuses the same AES-GCM nonce with the same key.</td><td>Catastrophic or highly dangerous misuse.</td></tr>
+            <tr><td>A library returns plaintext or reject from AEAD decryption.</td><td>Correct interface style.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption alone always provides authentication.</td><td>Mistaken</td><td>Encryption hides contents but does not automatically detect tampering.</td></tr>
+            <tr><td>Encrypt-then-MAC authenticates the ciphertext before decryption.</td><td>Valid</td><td>That is the intended order.</td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td>Mistaken</td><td>AAD is authenticated but not encrypted.</td></tr>
+            <tr><td>AEAD combines confidentiality, integrity, and authenticity.</td><td>Valid</td><td>That is the purpose of authenticated encryption.</td></tr>
+            <tr><td>Nonce reuse with the same key can be dangerous.</td><td>Valid</td><td>Many AEAD modes require nonce uniqueness.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part P: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>P1 sample answer.</strong> Authenticated encryption combines encryption and authentication so that a message is both hidden and protected from undetected tampering. It provides confidentiality, integrity, and authenticity together.</p>
+          <p><strong>P2 sample answer.</strong> Verify-before-decrypt prevents the system from processing altered ciphertext or leaking information through decryption errors. If authentication fails, the system should reject without releasing plaintext.</p>
+          <p><strong>P3 sample answer.</strong> Plaintext is the readable message. Ciphertext is the encrypted message. A tag authenticates the ciphertext and context. A nonce is a value used once with the key. AAD is visible context that is authenticated but not encrypted.</p>
+          <p><strong>P4 sample answer.</strong> This tutorial explained authenticated encryption as the combination of confidentiality, integrity, and authenticity. It compared composition orders and emphasized Encrypt-then-MAC as the safest classic generic pattern. It introduced AEAD as the preferred modern interface, where plaintext is encrypted, associated data is authenticated, and decryption returns plaintext or reject. It also warned that nonce reuse can break otherwise strong modes.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption provides confidentiality.</td><td>True</td><td>It hides message contents.</td></tr>
+            <tr><td>A MAC provides integrity and authenticity.</td><td>True</td><td>It detects tampering and proves key-holder approval.</td></tr>
+            <tr><td>Encrypt-then-MAC means MAC first, then encrypt.</td><td>False</td><td>It means encrypt first, then MAC the ciphertext.</td></tr>
+            <tr><td>AEAD stands for Authenticated Encryption with Associated Data.</td><td>True</td><td>That is the expansion.</td></tr>
+            <tr><td>AAD is authenticated but not encrypted.</td><td>True</td><td>It remains visible but protected from tampering.</td></tr>
+            <tr><td>AEAD decryption should return plaintext or reject.</td><td>True</td><td>Invalid tags should not release plaintext.</td></tr>
+            <tr><td>Nonce reuse is harmless if the encryption algorithm is strong.</td><td>False</td><td>Many strong modes fail badly under nonce reuse.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 50: Authenticated Encryption: Encrypt-then-MAC and AEAD.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

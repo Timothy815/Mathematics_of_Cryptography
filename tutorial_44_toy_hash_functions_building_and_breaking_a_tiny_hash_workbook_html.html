@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 44: Toy Hash Functions: Building and Breaking a Tiny Hash | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.45rem, 3vw, 1.95rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.15rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 18px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .toy-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .compare-table,
+    .step-table,
+    .state-table,
+    .attack-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .valid-table,
+    .scenario-table,
+    .byte-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .state-table th, .state-table td,
+    .attack-table th, .attack-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .byte-table th, .byte-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .data-table th,
+    .work-table th,
+    .answer-table th,
+    .compare-table th,
+    .step-table th,
+    .state-table th,
+    .attack-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .valid-table th,
+    .scenario-table th,
+    .byte-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .state-table th,
+    .state-table td,
+    .attack-table th,
+    .attack-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .valid-table th,
+    .valid-table td,
+    .scenario-table th,
+    .scenario-table td,
+    .byte-table th,
+    .byte-table td { text-align: center; vertical-align: middle; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333333;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .byte-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .byte-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #ffffff;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-weight: 900;
+    }
+
+    .byte-card.green { background: #eaf7ef; border-color: #b8dfc5; }
+    .byte-card.gold { background: #fff4d8; border-color: #ead399; }
+    .byte-card.purple { background: #f0eafe; border-color: #d8c8f5; }
+    .byte-card.red { background: #fdeaea; border-color: #efb5b5; }
+    .small-label { display:block; font-family: system-ui, sans-serif; font-size: 0.78rem; color:#1f3763; text-transform: uppercase; letter-spacing:0.04em; margin-bottom:6px; }
+
+    .page-break { break-before: page; }
+
+    .answer-key {
+      border-top: 4px double #334e7d;
+      padding-top: 20px;
+    }
+
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .byte-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid, .byte-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+
+      body {
+        background: #ffffff;
+        color: #000000;
+        font-size: 10.5pt;
+        line-height: 1.35;
+      }
+
+      .page { max-width: none; padding: 0; }
+
+      header.workbook-header,
+      main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+
+      .workbook-nav,
+      .no-print { display: none !important; }
+
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+
+      .box, .problem, table, .work-space, pre, .byte-card { break-inside: avoid; }
+
+      .box, .problem, .work-space, pre, .byte-card {
+        background: #ffffff !important;
+        border-color: #999999;
+      }
+
+      .data-table th,
+      .work-table th,
+      .answer-table th,
+      .compare-table th,
+      .step-table th,
+      .state-table th,
+      .attack-table th,
+      .property-table th,
+      .example-table th,
+      .lesson-table th,
+      .valid-table th,
+      .scenario-table th,
+      .byte-table th {
+        background: #eeeeee !important;
+      }
+
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 44</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>Toy Hash Functions: Building and Breaking a Tiny Hash</h1>
+      <p class="subtitle">
+        Printable practice for computing a tiny hash by hand, testing fixed output, identifying weaknesses, applying the birthday bound, and explaining why toy hashes are learning tools rather than security tools.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="44-toy-hash-functions-building-and-breaking-a-tiny-hash.html">Tutorial 44</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Work through the toy hash as a visible machine. The goal is not to admire the design, but to learn how fixed-length output, small state, simple structure, birthday search, and avalanche testing relate to real hash security.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Toy hash rule</div>
+            <div class="math-display">
+              \[
+                s_0=0
+              \]
+              \[
+                s_i=\bigl((s_{i-1}\oplus b_i)\lll 1+b_i\bigr)\bmod 256
+              \]
+              \[
+                H_{toy}(M)=s_{\text{final}}
+              \]
+            </div>
+          </div>
+
+          <div class="box warning-box">
+            <div class="box-title">Learning warning</div>
+            <p>Toy cryptography is for understanding, not protection. A weak machine can teach excellent lessons because its cracks are visible.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(b_i\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(s\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(H_{toy}(M)\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(\oplus\) mean?</td><td></td></tr>
+            <tr><td>A6. What does \(\lll 1\) mean?</td><td></td></tr>
+            <tr><td>A7. What does \(\bmod 256\) mean?</td><td></td></tr>
+            <tr><td>A8. What is a collision?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-rule">
+        <h2>Part B: Understanding the toy rule</h2>
+        <p>Number the byte-update operations in order.</p>
+
+        <table class="step-table">
+          <thead><tr><th>Operation</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Add the byte again and reduce modulo 256.</td><td></td><td></td></tr>
+            <tr><td>Start with previous state \(s_{i-1}\).</td><td></td><td></td></tr>
+            <tr><td>XOR the current byte into the state.</td><td></td><td></td></tr>
+            <tr><td>Rotate left by 1 bit.</td><td></td><td></td></tr>
+            <tr><td>Use the result as the new state \(s_i\).</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain the toy hash update rule in plain English.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="byte-tools">
+        <h2>Part C: Byte tools</h2>
+        <div class="byte-grid">
+          <div class="byte-card green"><span class="small-label">Decimal</span>65</div>
+          <div class="byte-card gold"><span class="small-label">Hex</span>0x41</div>
+          <div class="byte-card purple"><span class="small-label">Binary</span>01000001</div>
+          <div class="byte-card red"><span class="small-label">ASCII</span>A</div>
+        </div>
+
+        <table class="byte-table">
+          <thead><tr><th>Character</th><th>Hex byte</th><th>Binary byte</th></tr></thead>
+          <tbody>
+            <tr><td><code>A</code></td><td></td><td></td></tr>
+            <tr><td><code>B</code></td><td></td><td></td></tr>
+            <tr><td><code>C</code></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="compute-a">
+        <h2>Part D: Compute <code>Htoy(A)</code></h2>
+        <p>Use \(s_0=0x00\) and \(b_1=0x41\).</p>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td></td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td></td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td></td></tr>
+            <tr><td>4</td><td>Final digest</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="compute-ab">
+        <h2>Part E: Compute <code>Htoy(AB)</code></h2>
+        <p>Use the result from <code>A</code> as \(s_1\), then process <code>B</code> with \(b_2=0x42\).</p>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Operation for byte <code>B</code></th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td></td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td></td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td></td></tr>
+            <tr><td>4</td><td>Final digest</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="compute-b">
+        <h2>Part F: Compute <code>Htoy(B)</code></h2>
+        <p>Use \(s_0=0x00\) and \(b_1=0x42\).</p>
+
+        <table class="state-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td></td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td></td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td></td></tr>
+            <tr><td>4</td><td>Final digest</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Compare the digests for <code>A</code> and <code>B</code>. Does this look like strong avalanche behavior?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="fixed-output">
+        <h2>Part G: Fixed output is easy</h2>
+        <p>Complete the table.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Message</th><th>Output size</th><th>Comment</th></tr></thead>
+          <tbody>
+            <tr><td><code>A</code></td><td></td><td></td></tr>
+            <tr><td><code>AB</code></td><td></td><td></td></tr>
+            <tr><td><code>HELLO</code></td><td></td><td></td></tr>
+            <tr><td>A whole book</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Explain why fixed-length output alone does not make a hash secure.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="break-output-size">
+        <h2>Part H: Breaking it by output size</h2>
+        <p>Complete the reasoning.</p>
+
+        <table class="attack-table">
+          <thead><tr><th>Digest length</th><th>Possible outputs</th><th>Guaranteed collision after more than...</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>8 bits</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why does the pigeonhole principle guarantee a collision after more than 256 different messages?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="birthday-search">
+        <h2>Part I: Breaking it by birthday search</h2>
+        <p>Complete the table.</p>
+
+        <table class="attack-table">
+          <thead><tr><th>Digest length</th><th>Possible outputs</th><th>Rough collision search scale</th></tr></thead>
+          <tbody>
+            <tr><td>8 bits</td><td></td><td></td></tr>
+            <tr><td>16 bits</td><td></td><td></td></tr>
+            <tr><td>32 bits</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why do collisions become likely around 16 random messages for an 8-bit digest?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="structure-weaknesses">
+        <h2>Part J: Structural weaknesses</h2>
+        <p>Complete the table.</p>
+
+        <table class="attack-table">
+          <thead><tr><th>Weakness</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Only 8-bit state</td><td></td></tr>
+            <tr><td>No strong compression function</td><td></td></tr>
+            <tr><td>No padding or length binding</td><td></td></tr>
+            <tr><td>Linear-ish pieces</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="three-properties">
+        <h2>Part K: How the toy hash fails the three properties</h2>
+        <p>Complete the table.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Property</th><th>What the attacker tries</th><th>Why the toy hash fails</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Second preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Collision resistance</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="real-hashes">
+        <h2>Part L: What real hash functions add</h2>
+        <p>Complete the table.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Toy hash weakness</th><th>Real hash design response</th></tr></thead>
+          <tbody>
+            <tr><td>8-bit digest</td><td></td></tr>
+            <tr><td>Tiny internal state</td><td></td></tr>
+            <tr><td>One shallow update per byte</td><td></td></tr>
+            <tr><td>Easy structure</td><td></td></tr>
+            <tr><td>No formal construction</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part M: Valid or mistaken?</h2>
+        <p>Mark each statement as valid or mistaken, then explain briefly.</p>
+
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A toy hash is useful for learning.</td><td></td><td></td></tr>
+            <tr><td>Fixed-length output by itself proves a hash is secure.</td><td></td><td></td></tr>
+            <tr><td>An 8-bit digest has only 256 possible outputs.</td><td></td><td></td></tr>
+            <tr><td>Avalanche behavior alone proves security.</td><td></td><td></td></tr>
+            <tr><td>Toy crypto should not be used for real protection.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part N: Concept checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">N1. Explain why this toy hash is useful even though it is insecure.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N2. Explain why the toy hash fails collision resistance.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N3. Explain why avalanche testing is useful but not sufficient.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">N4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>The toy hash starts with \(s_0=0\).</td><td></td></tr>
+            <tr><td>The toy hash outputs 8 bits.</td><td></td></tr>
+            <tr><td>An 8-bit digest has \(2^8=256\) possible outputs.</td><td></td></tr>
+            <tr><td>For an 8-bit digest, birthday collisions become likely around \(2^4=16\) messages.</td><td></td></tr>
+            <tr><td>Fixed-length output is enough to prove cryptographic security.</td><td></td></tr>
+            <tr><td>Real hash functions use larger outputs and stronger constructions.</td><td></td></tr>
+            <tr><td>Toy hashes belong in learning environments, not production systems.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The toy hash is intentionally weak. The point is to make the weaknesses visible: tiny output, tiny state, simple structure, weak avalanche, and easy collisions.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(M\) represent?</td><td>The message or input.</td></tr>
+            <tr><td>A2. What does \(b_i\) represent?</td><td>The current byte being processed.</td></tr>
+            <tr><td>A3. What does \(s\) represent?</td><td>The running 8-bit state.</td></tr>
+            <tr><td>A4. What does \(H_{toy}(M)\) represent?</td><td>The final toy hash digest of message \(M\).</td></tr>
+            <tr><td>A5. What does \(\oplus\) mean?</td><td>XOR, or bitwise exclusive OR.</td></tr>
+            <tr><td>A6. What does \(\lll 1\) mean?</td><td>Rotate left by 1 bit.</td></tr>
+            <tr><td>A7. What does \(\bmod 256\) mean?</td><td>Keep only values from 0 to 255, or one byte.</td></tr>
+            <tr><td>A8. What is a collision?</td><td>Two different messages with the same digest.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Understanding the toy rule</h3>
+        <table class="answer-table">
+          <thead><tr><th>Operation</th><th>Order number</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Add the byte again and reduce modulo 256.</td><td>4</td><td>Mix the byte again and keep one-byte state.</td></tr>
+            <tr><td>Start with previous state \(s_{i-1}\).</td><td>1</td><td>Carry forward the running state.</td></tr>
+            <tr><td>XOR the current byte into the state.</td><td>2</td><td>Combine the new byte with the old state.</td></tr>
+            <tr><td>Rotate left by 1 bit.</td><td>3</td><td>Move bits around within the byte.</td></tr>
+            <tr><td>Use the result as the new state \(s_i\).</td><td>5</td><td>Continue or output final digest.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>B1 sample answer.</strong> Start with the previous state, XOR in the current byte, rotate the result left by one bit, add the byte again, reduce to one byte, and use that as the new state.</p>
+        </div>
+
+        <h3>Part C: Byte tools</h3>
+        <table class="answer-table">
+          <thead><tr><th>Character</th><th>Hex byte</th><th>Binary byte</th></tr></thead>
+          <tbody>
+            <tr><td><code>A</code></td><td><code>0x41</code></td><td><code>01000001</code></td></tr>
+            <tr><td><code>B</code></td><td><code>0x42</code></td><td><code>01000010</code></td></tr>
+            <tr><td><code>C</code></td><td><code>0x43</code></td><td><code>01000011</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Compute <code>Htoy(A)</code></h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td>\(0x00\oplus0x41=0x41\)</td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td>\(0x41=01000001\rightarrow10000010=0x82\)</td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td>\((0x82+0x41)\bmod256=0xC3\)</td></tr>
+            <tr><td>4</td><td>Final digest</td><td>\(H_{toy}(\texttt{A})=0xC3\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Compute <code>Htoy(AB)</code></h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Operation for byte <code>B</code></th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td>\(0xC3\oplus0x42=0x81\)</td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td>\(0x81=10000001\rightarrow00000011=0x03\)</td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td>\((0x03+0x42)\bmod256=0x45\)</td></tr>
+            <tr><td>4</td><td>Final digest</td><td>\(H_{toy}(\texttt{AB})=0x45\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Compute <code>Htoy(B)</code></h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Operation</th><th>Work / value</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>XOR state with byte</td><td>\(0x00\oplus0x42=0x42\)</td></tr>
+            <tr><td>2</td><td>Rotate left by 1</td><td>\(0x42=01000010\rightarrow10000100=0x84\)</td></tr>
+            <tr><td>3</td><td>Add byte modulo 256</td><td>\((0x84+0x42)\bmod256=0xC6\)</td></tr>
+            <tr><td>4</td><td>Final digest</td><td>\(H_{toy}(\texttt{B})=0xC6\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> <code>A</code> gives <code>0xC3</code> and <code>B</code> gives <code>0xC6</code>. These outputs are close-looking, so this does not suggest strong avalanche behavior.</p>
+        </div>
+
+        <h3>Part G: Fixed output is easy</h3>
+        <table class="answer-table">
+          <thead><tr><th>Message</th><th>Output size</th><th>Comment</th></tr></thead>
+          <tbody>
+            <tr><td><code>A</code></td><td>8 bits</td><td>One-byte input, one-byte digest.</td></tr>
+            <tr><td><code>AB</code></td><td>8 bits</td><td>Two-byte input, one-byte digest.</td></tr>
+            <tr><td><code>HELLO</code></td><td>8 bits</td><td>Five-byte input, one-byte digest.</td></tr>
+            <tr><td>A whole book</td><td>8 bits</td><td>Still only one-byte digest.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> Fixed-length output is easy because any function can throw away or compress information. Security requires resistance to preimage, second preimage, and collision attacks.</p>
+        </div>
+
+        <h3>Part H: Breaking it by output size</h3>
+        <table class="answer-table">
+          <thead><tr><th>Digest length</th><th>Possible outputs</th><th>Guaranteed collision after more than...</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>8 bits</td><td>\(2^8=256\)</td><td>256 different messages</td><td>There are more messages than digest slots.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> With only 256 possible digest values, 257 different messages force at least two messages to land in the same digest slot.</p>
+        </div>
+
+        <h3>Part I: Breaking it by birthday search</h3>
+        <table class="answer-table">
+          <thead><tr><th>Digest length</th><th>Possible outputs</th><th>Rough collision search scale</th></tr></thead>
+          <tbody>
+            <tr><td>8 bits</td><td>\(2^8=256\)</td><td>\(2^4=16\)</td></tr>
+            <tr><td>16 bits</td><td>\(2^{16}\)</td><td>\(2^8=256\)</td></tr>
+            <tr><td>32 bits</td><td>\(2^{32}\)</td><td>\(2^{16}\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Birthday search says collisions become likely around the square root of the output space. For 8 bits, \(\sqrt{2^8}=2^4=16\).</p>
+        </div>
+
+        <h3>Part J: Structural weaknesses</h3>
+        <table class="answer-table">
+          <thead><tr><th>Weakness</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Only 8-bit state</td><td>The entire state can be searched easily.</td></tr>
+            <tr><td>No strong compression function</td><td>The update is too simple to hide structure.</td></tr>
+            <tr><td>No padding or length binding</td><td>Different message layouts may be easier to manipulate.</td></tr>
+            <tr><td>Linear-ish pieces</td><td>XOR and rotation can preserve patterns without stronger nonlinear structure.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: How the toy hash fails the three properties</h3>
+        <table class="answer-table">
+          <thead><tr><th>Property</th><th>What the attacker tries</th><th>Why the toy hash fails</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>Given a digest, find an input.</td><td>Only 256 digests; brute force is easy.</td></tr>
+            <tr><td>Second preimage resistance</td><td>Given one message, find a different message with the same digest.</td><td>Small output and simple state make alternatives easy to search for.</td></tr>
+            <tr><td>Collision resistance</td><td>Find any two different messages with the same digest.</td><td>Birthday search makes collisions likely after roughly 16 random tries.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: What real hash functions add</h3>
+        <table class="answer-table">
+          <thead><tr><th>Toy hash weakness</th><th>Real hash design response</th></tr></thead>
+          <tbody>
+            <tr><td>8-bit digest</td><td>Use large outputs such as 256 bits or more.</td></tr>
+            <tr><td>Tiny internal state</td><td>Use much larger internal state.</td></tr>
+            <tr><td>One shallow update per byte</td><td>Use many rounds of mixing.</td></tr>
+            <tr><td>Easy structure</td><td>Use carefully designed nonlinear and diffusive operations.</td></tr>
+            <tr><td>No formal construction</td><td>Use studied structures such as Merkle-Damgård or sponge constructions.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A toy hash is useful for learning.</td><td>Valid</td><td>It exposes structure and weaknesses clearly.</td></tr>
+            <tr><td>Fixed-length output by itself proves a hash is secure.</td><td>Mistaken</td><td>Security requires resistance properties.</td></tr>
+            <tr><td>An 8-bit digest has only 256 possible outputs.</td><td>Valid</td><td>\(2^8=256\).</td></tr>
+            <tr><td>Avalanche behavior alone proves security.</td><td>Mistaken</td><td>Avalanche is not enough to prove resistance to attacks.</td></tr>
+            <tr><td>Toy crypto should not be used for real protection.</td><td>Valid</td><td>It is for learning, not production security.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>N1 sample answer.</strong> The toy hash is useful because its flaws are visible. It lets us practice computation, collision reasoning, avalanche testing, and attack analysis without being buried inside a full real-world hash function.</p>
+          <p><strong>N2 sample answer.</strong> It fails collision resistance because it has only 256 possible outputs, so collisions are guaranteed after enough messages and become likely after roughly 16 random samples by the birthday bound.</p>
+          <p><strong>N3 sample answer.</strong> Avalanche testing helps reveal whether small input changes spread through the output, but a function can have avalanche-like behavior and still have short outputs, structural weaknesses, or easy collisions.</p>
+          <p><strong>N4 sample answer.</strong> This tutorial built a deliberately weak 8-bit toy hash and computed examples by hand. The toy hash shows that fixed-length output is easy, but security is hard. Because it has only an 8-bit output and tiny state, brute force and birthday collisions are easy. Real hash functions need larger outputs, larger states, many rounds, stronger mixing, padding, length handling, and studied constructions.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>The toy hash starts with \(s_0=0\).</td><td>True</td><td>That is the initial state.</td></tr>
+            <tr><td>The toy hash outputs 8 bits.</td><td>True</td><td>The state is reduced modulo 256.</td></tr>
+            <tr><td>An 8-bit digest has \(2^8=256\) possible outputs.</td><td>True</td><td>Eight bits give 256 values.</td></tr>
+            <tr><td>For an 8-bit digest, birthday collisions become likely around \(2^4=16\) messages.</td><td>True</td><td>Collision scale is roughly \(2^{n/2}\).</td></tr>
+            <tr><td>Fixed-length output is enough to prove cryptographic security.</td><td>False</td><td>Security requires resistance properties.</td></tr>
+            <tr><td>Real hash functions use larger outputs and stronger constructions.</td><td>True</td><td>They need much more structure and analysis.</td></tr>
+            <tr><td>Toy hashes belong in learning environments, not production systems.</td><td>True</td><td>Toy hashes are intentionally weak.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 2: Hash Functions, MACs, and Integrity Structures. Paired with Tutorial 44: Toy Hash Functions: Building and Breaking a Tiny Hash.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

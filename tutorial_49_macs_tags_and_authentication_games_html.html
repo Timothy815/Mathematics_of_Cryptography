@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MACs, Tags, and Authentication Games | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .game-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .step-table,
+    .property-table,
+    .example-table,
+    .lesson-table,
+    .game-table,
+    .attack-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .step-table th,
+    .step-table td,
+    .property-table th,
+    .property-table td,
+    .example-table th,
+    .example-table td,
+    .lesson-table th,
+    .lesson-table td,
+    .game-table th,
+    .game-table td,
+    .attack-table th,
+    .attack-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .step-table th,
+    .property-table th,
+    .example-table th,
+    .lesson-table th,
+    .game-table th,
+    .attack-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .step-table td,
+    .step-table th,
+    .property-table td,
+    .property-table th,
+    .example-table td,
+    .example-table th,
+    .lesson-table td,
+    .lesson-table th,
+    .game-table td,
+    .game-table th,
+    .attack-table td,
+    .attack-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .key-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .message-node { background: #fff4d8; border-color: #ead399; }
+    .tag-node { background: #f0eafe; border-color: #d8c8f5; }
+    .attack-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .two-column {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 18px 0;
+    }
+
+    .mini-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+    }
+
+    .mini-card.green { background: #eaf7ef; border-color: #b8dfc5; }
+    .mini-card.gold { background: #fff4d8; border-color: #ead399; }
+    .mini-card.purple { background: #f0eafe; border-color: #d8c8f5; }
+    .mini-card.red { background: #fdeaea; border-color: #efb5b5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .two-column { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .mini-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .mini-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .game-table th, .attack-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 49</div>
+      <div class="volume-label">Volume 2: Hash Functions, MACs, and Integrity Structures</div>
+      <h1>MACs, Tags, and Authentication Games</h1>
+      <p class="subtitle">
+        How to think about message authentication formally: keys, tags, verification, forgery, attacker queries, and the game-based idea behind “secure against forgery.”
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="48-hmac-safe-keyed-hashing.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 48 introduced HMAC as a safe keyed-hash construction. This tutorial steps back and asks a deeper question: what does it mean for any MAC to be secure? To answer that, we use a game between an attacker and a verifier.</p>
+        </div>
+
+        <p class="lead">
+          Cryptography often defines security through games. Not games for amusement, exactly, but ritualized contests: the attacker gets certain powers, the defender sets rules, and security means the attacker still cannot win except with tiny probability. A MAC security game is the courtroom drama of message authentication.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that a MAC uses a secret key to produce an authentication tag for a message. You should also know that HMAC is a standard MAC construction built from a hash function and a secret key.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(K\)</td><td>The shared secret.</td><td>The MAC key known by sender and verifier.</td></tr>
+            <tr><td>\(M\)</td><td>The message.</td><td>The data being authenticated.</td></tr>
+            <tr><td>\(T\)</td><td>The tag.</td><td>The MAC output attached to the message.</td></tr>
+            <tr><td>\(Mac_K(M)\)</td><td>Make a tag.</td><td>The tagging algorithm using key \(K\).</td></tr>
+            <tr><td>\(Vrfy_K(M,T)\)</td><td>Check a tag.</td><td>The verification algorithm using key \(K\).</td></tr>
+            <tr><td>accept</td><td>The tag is valid.</td><td>Verifier outputs true or 1.</td></tr>
+            <tr><td>reject</td><td>The tag is invalid.</td><td>Verifier outputs false or 0.</td></tr>
+            <tr><td>forgery</td><td>A fake but valid message-tag pair.</td><td>A new \((M,T)\) accepted by the verifier without legitimate tagging.</td></tr>
+            <tr><td>oracle</td><td>A permitted black-box helper.</td><td>A model where the attacker can request tags for chosen messages.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mac-system">
+        <h2>The three parts of a MAC system</h2>
+        <p>
+          A MAC system usually has three conceptual algorithms:</p>
+
+        <table class="step-table">
+          <thead><tr><th>Part</th><th>Notation</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Key generation</td><td>\(K\leftarrow Gen()\)</td><td>Create a secret key.</td></tr>
+            <tr><td>Tagging</td><td>\(T=Mac_K(M)\)</td><td>Produce a tag for a message.</td></tr>
+            <tr><td>Verification</td><td>\(Vrfy_K(M,T)\)</td><td>Accept or reject a message-tag pair.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="MAC tagging and verification flow">
+          <div class="diagram-title">MAC flow</div>
+          <div class="flow-row">
+            <div class="flow-node key-node">Secret key<br>\(K\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node message-node">Message<br>\(M\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">\(Mac_K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node tag-node">Tag<br>\(T\)</div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-node key-node">Secret key<br>\(K\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node message-node">Message<br>\(M\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node tag-node">Tag<br>\(T\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">\(Vrfy_K\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">accept / reject</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="correctness">
+        <h2>Correctness: honest tags should verify</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: correctness</div>
+          <p>
+            A MAC is correct if a tag honestly generated for a message under key \(K\) verifies successfully under the same key.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            Vrfy_K(M,Mac_K(M))=accept
+          \]
+        </div>
+
+        <p>
+          This sounds obvious, but it matters. Before a MAC can be secure, it must at least work for honest users.</p>
+      </section>
+
+      <section id="integrity-authenticity">
+        <h2>Integrity and authenticity</h2>
+        <table class="compare-table">
+          <thead><tr><th>Property</th><th>Question it answers</th><th>MAC role</th></tr></thead>
+          <tbody>
+            <tr><td>Integrity</td><td>Was the message changed?</td><td>A changed message should fail verification with the old tag.</td></tr>
+            <tr><td>Authenticity</td><td>Was this approved by someone with the key?</td><td>Only key holders should be able to make valid tags.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Integrity says “the wax seal is not broken.” Authenticity says “the seal came from someone who had the signet ring.”</p>
+        </div>
+      </section>
+
+      <section id="what-counts-as-forgery">
+        <h2>What counts as a forgery?</h2>
+        <p>
+          A forgery is not merely making up a tag. A forgery is making a new message-tag pair that the verifier accepts.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: forgery</div>
+          <p>
+            A MAC forgery is a pair \((M^*,T^*)\) such that \(Vrfy_K(M^*,T^*)=accept\), where \(M^*\) is a message the attacker was not already given a legitimate tag for.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            Vrfy_K(M^*,T^*)=accept
+          \]
+        </div>
+
+        <p>
+          The star symbols \(M^*\) and \(T^*\) are often used to mean the attacker’s attempted forged message and forged tag.</p>
+      </section>
+
+      <section id="not-forgery">
+        <h2>What does not count as a meaningful forgery?</h2>
+        <table class="attack-table">
+          <thead><tr><th>Attempt</th><th>Forgery?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Replay an old valid \((M,T)\)</td><td>Usually not a new MAC forgery</td><td>The attacker did not create a valid tag for a new message.</td></tr>
+            <tr><td>Guess random \(T\) for new \(M\), verifier rejects</td><td>No</td><td>The pair is not accepted.</td></tr>
+            <tr><td>Ask for tag on \(M\), then submit same \((M,T)\)</td><td>No</td><td>The attacker already obtained that exact tag legitimately from the oracle.</td></tr>
+            <tr><td>Create valid tag for new \(M^*\)</td><td>Yes</td><td>A new message-tag pair verifies.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Replay attacks are still real</div>
+          <p>
+            Replaying an old valid message may still be dangerous in real systems. MAC security and replay protection are related but different. Systems often add nonces, timestamps, sequence numbers, or session context to prevent replay.</p>
+        </div>
+      </section>
+
+      <section id="authentication-game">
+        <h2>The authentication game</h2>
+        <p>
+          In cryptography, we often define MAC security with a game. The attacker gets to ask for tags on messages of their choice, then tries to forge a valid tag for a new message.</p>
+
+        <table class="game-table">
+          <thead><tr><th>Round</th><th>What happens</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Challenger secretly chooses key \(K\).</td></tr>
+            <tr><td>2</td><td>Attacker can query a tagging oracle for tags on messages \(M_1,M_2,\ldots\).</td></tr>
+            <tr><td>3</td><td>Oracle returns valid tags \(T_i=Mac_K(M_i)\).</td></tr>
+            <tr><td>4</td><td>Attacker outputs a candidate forgery \((M^*,T^*)\).</td></tr>
+            <tr><td>5</td><td>Attacker wins if \(M^*\) was not previously queried and \(Vrfy_K(M^*,T^*)=accept\).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box game-box">
+          <div class="box-title">Key idea</div>
+          <p>
+            The attacker is allowed to see valid tags for chosen messages. Security means they still cannot make a valid tag for a new message.</p>
+        </div>
+      </section>
+
+      <section id="chosen-message-attack">
+        <h2>Chosen-message attacks</h2>
+        <p>
+          The authentication game gives the attacker a strong ability: they can choose messages and receive tags. This is called a chosen-message attack model.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Attack model</th><th>Attacker ability</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Passive observation</td><td>Sees some message-tag pairs.</td><td>Weaker attacker model.</td></tr>
+            <tr><td>Chosen-message attack</td><td>Can request tags for messages they choose.</td><td>Stronger and more realistic for many APIs/protocols.</td></tr>
+            <tr><td>Forgery attempt</td><td>Outputs new \((M^*,T^*)\).</td><td>Tests whether tags can be created without the key.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          This is a demanding standard. A good MAC should remain secure even after the attacker has collected many legitimate tags for messages of their choice.</p>
+      </section>
+
+      <section id="uf-cma">
+        <h2>Unforgeability under chosen-message attack</h2>
+        <p>
+          The standard phrase is often abbreviated as <strong>UF-CMA</strong>, meaning <strong>UnForgeability under Chosen-Message Attack</strong>.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: UF-CMA security</div>
+          <p>
+            A MAC is UF-CMA secure if even an attacker who can obtain valid tags for messages of their choice cannot produce a valid tag for a new message, except with negligible probability.</p>
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>UF</td><td>Unforgeability: attacker should not create a valid new tag.</td></tr>
+            <tr><td>CMA</td><td>Chosen-message attack: attacker may request tags for chosen messages.</td></tr>
+            <tr><td>Negligible probability</td><td>So tiny that it is considered infeasible at the security level.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tag-length">
+        <h2>Tag length and guessing</h2>
+        <p>
+          If a tag is \(n\) bits long and behaves unpredictably, a random tag guess succeeds with probability about:</p>
+
+        <div class="math-display">
+          \[
+            \frac{1}{2^n}
+          \]
+        </div>
+
+        <p>
+          That is why tag length matters. Short tags can be guessed more easily, especially if an attacker gets many attempts.</p>
+
+        <table class="example-table">
+          <thead><tr><th>Tag length</th><th>Random forgery probability per try</th><th>Comment</th></tr></thead>
+          <tbody>
+            <tr><td>32 bits</td><td>\(1/2^{32}\)</td><td>Often too short for many modern settings.</td></tr>
+            <tr><td>64 bits</td><td>\(1/2^{64}\)</td><td>Better, but context matters.</td></tr>
+            <tr><td>128 bits</td><td>\(1/2^{128}\)</td><td>Strong generic forgery resistance.</td></tr>
+            <tr><td>256 bits</td><td>\(1/2^{256}\)</td><td>Extremely large margin for random guessing.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="many-attempts">
+        <h2>Many attempts change the risk</h2>
+        <p>
+          If an attacker gets \(q\) independent forgery attempts against an \(n\)-bit tag, a rough upper estimate for random guessing success is:</p>
+
+        <div class="math-display">
+          \[
+            \frac{q}{2^n}
+          \]
+        </div>
+
+        <p>
+          This is why systems often rate-limit failed verification attempts and choose tag lengths large enough for the expected threat model.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Approximation note</div>
+          <p>
+            The expression \(q/2^n\) is a simple approximation when \(q\) is much smaller than \(2^n\). It is enough for intuition here.</p>
+        </div>
+      </section>
+
+      <section id="tag-truncation">
+        <h2>Tag truncation</h2>
+        <p>
+          Some systems use shortened MAC tags to save space. This is called tag truncation. It can be safe when done according to a standard and with enough bits, but truncation reduces guessing resistance.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Action</th><th>Effect</th></tr></thead>
+          <tbody>
+            <tr><td>Use full HMAC tag</td><td>Maximum tag length from the chosen hash output.</td></tr>
+            <tr><td>Truncate to 128 bits</td><td>Often still strong in many settings.</td></tr>
+            <tr><td>Truncate to 32 bits</td><td>May be risky if many attempts are possible.</td></tr>
+            <tr><td>Truncate without analysis</td><td>Bad engineering habit.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Design warning</div>
+          <p>
+            Short tags are tiny doors. If an attacker can knock many times, eventually the odds stop feeling tiny.</p>
+        </div>
+      </section>
+
+      <section id="macs-vs-encryption">
+        <h2>MACs do not encrypt</h2>
+        <p>
+          A MAC authenticates a message. It does not hide the message.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Goal</th><th>Tool</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>Encryption</td><td>Hides message contents.</td></tr>
+            <tr><td>Integrity and authenticity</td><td>MAC</td><td>Detects tampering and verifies key-holder approval.</td></tr>
+            <tr><td>Both</td><td>Authenticated encryption</td><td>Encrypts and authenticates together.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="replay-protection">
+        <h2>MACs do not automatically stop replay</h2>
+        <p>
+          If an attacker records a valid message-tag pair and sends it again later, the MAC may still verify. That is a replay attack, not necessarily a MAC forgery.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Replay defense</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce</td><td>Unique value used once.</td></tr>
+            <tr><td>Timestamp</td><td>Limits how long a message is valid.</td></tr>
+            <tr><td>Sequence number</td><td>Ensures messages arrive in expected order.</td></tr>
+            <tr><td>Session binding</td><td>Ties message to a specific protocol session.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            A MAC can prove the ticket is genuine. Replay protection checks whether that ticket has already been used.</p>
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking a MAC encrypts</div>
+          <p>
+            A MAC authenticates. It does not hide the message.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking replay is the same as forgery</div>
+          <p>
+            Replay can be dangerous, but it is not the same as creating a valid tag for a new message.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: allowing short tags without analysis</div>
+          <p>
+            Shorter tags mean easier random guessing, especially across many attempts.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: forgetting chosen-message attacks</div>
+          <p>
+            A strong MAC should resist attackers who can obtain tags for messages they choose.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What are the three conceptual parts of a MAC system?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Key generation, tagging, and verification.</p>
+            </details>
+          </li>
+          <li>
+            What does \(T=Mac_K(M)\) mean?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It means the tag \(T\) is generated for message \(M\) using secret key \(K\).</p>
+            </details>
+          </li>
+          <li>
+            What counts as a MAC forgery?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A new message-tag pair \((M^*,T^*)\) that verifies successfully, where the attacker did not already obtain a legitimate tag for \(M^*\).</p>
+            </details>
+          </li>
+          <li>
+            What does UF-CMA mean?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Unforgeability under Chosen-Message Attack.</p>
+            </details>
+          </li>
+          <li>
+            What is the random guessing probability for one attempt against a 128-bit tag?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>About \(1/2^{128}\).</p>
+            </details>
+          </li>
+          <li>
+            Why do MACs not automatically stop replay attacks?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A previously valid message-tag pair may still verify unless the system includes freshness controls such as nonces, timestamps, or sequence numbers.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          MACs are where hash mathematics meets protocol discipline. A secure MAC does not merely produce complicated-looking tags. It must resist forgery even when attackers can request tags for chosen messages. This game-based way of thinking will appear again in encryption, signatures, key exchange, and modern proofs of security.</p>
+        <ul>
+          <li>A MAC has key generation, tagging, and verification.</li>
+          <li>Correct tags should verify.</li>
+          <li>Forgery means producing a valid tag for a new message.</li>
+          <li>UF-CMA is the standard security idea for MACs.</li>
+          <li>Tag length affects guessing resistance.</li>
+          <li>MACs authenticate but do not encrypt.</li>
+          <li>Replay protection requires freshness mechanisms.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A MAC provides message integrity and authenticity using a secret key.</li>
+            <li>A tag is the MAC output attached to a message.</li>
+            <li>Tagging is written \(T=Mac_K(M)\).</li>
+            <li>Verification is written \(Vrfy_K(M,T)\).</li>
+            <li>Correctness means honest tags verify: \(Vrfy_K(M,Mac_K(M))=accept\).</li>
+            <li>A forgery is a new valid message-tag pair.</li>
+            <li>Replay of an old valid pair can be dangerous, but it is not the same as creating a new forgery.</li>
+            <li>The authentication game lets the attacker request tags, then try to forge one new valid pair.</li>
+            <li>UF-CMA means Unforgeability under Chosen-Message Attack.</li>
+            <li>An \(n\)-bit unpredictable tag has random guessing probability about \(1/2^n\) per try.</li>
+            <li>With \(q\) attempts, rough guessing risk is about \(q/2^n\).</li>
+            <li>MACs do not encrypt and do not automatically prevent replay.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              T=Mac_K(M)
+            \]
+            \[
+              Vrfy_K(M,Mac_K(M))=accept
+            \]
+            \[
+              Vrfy_K(M^*,T^*)=accept
+            \]
+            \[
+              P(\text{random forgery})\approx\frac{1}{2^n}
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 49: MACs, Tags, and Authentication Games</strong>. After that, the next tutorial can move into <strong>Authenticated Encryption: Encrypt-then-MAC and AEAD</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 2: Hash Functions, MACs, and Integrity Structures. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

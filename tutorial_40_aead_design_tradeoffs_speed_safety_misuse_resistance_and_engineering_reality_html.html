@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEAD Design Tradeoffs: Speed, Safety, Misuse Resistance, and Engineering Reality | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --red-soft: #fdeaea;
+      --purple-soft: #f0eafe;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      font-size: 18px;
+    }
+
+    .page {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+    }
+
+    header.tutorial-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+
+    h1 {
+      font-size: clamp(2.1rem, 5vw, 3.5rem);
+      color: #16243d;
+      margin-bottom: 0.35em;
+    }
+
+    h2 {
+      font-size: clamp(1.55rem, 3vw, 2.1rem);
+      color: #1f3763;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 0.35em;
+      margin-top: 1.4em;
+    }
+
+    h3 { font-size: 1.25rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 1em; }
+    a { color: var(--accent); }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.2rem;
+      max-width: 760px;
+      margin-bottom: 0;
+    }
+
+    .tutorial-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link,
+    button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .nav-link:hover,
+    button.print-button:hover { background: var(--accent-soft); }
+
+    main {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 34px;
+    }
+
+    section { margin-bottom: 34px; }
+    .lead { font-size: 1.14rem; color: #333333; }
+
+    .box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      background: #ffffff;
+    }
+
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .purpose-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .definition-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .intuition-box { background: var(--gold-soft); border-color: #ead399; }
+    .mistake-box { background: var(--red-soft); border-color: #efb5b5; }
+    .technical-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .tradeoff-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .recap-box { background: #f5f5f5; border-color: #d5d5d5; }
+
+    .symbol-table,
+    .data-table,
+    .compare-table,
+    .flow-table,
+    .mode-table,
+    .decision-table,
+    .risk-table,
+    .tradeoff-table,
+    .scenario-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.96rem;
+    }
+
+    .symbol-table th,
+    .symbol-table td,
+    .data-table th,
+    .data-table td,
+    .compare-table th,
+    .compare-table td,
+    .flow-table th,
+    .flow-table td,
+    .mode-table th,
+    .mode-table td,
+    .decision-table th,
+    .decision-table td,
+    .risk-table th,
+    .risk-table td,
+    .tradeoff-table th,
+    .tradeoff-table td,
+    .scenario-table th,
+    .scenario-table td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    .symbol-table th,
+    .data-table th,
+    .compare-table th,
+    .flow-table th,
+    .mode-table th,
+    .decision-table th,
+    .risk-table th,
+    .tradeoff-table th,
+    .scenario-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table td,
+    .compare-table th,
+    .flow-table td,
+    .flow-table th,
+    .mode-table td,
+    .mode-table th,
+    .decision-table td,
+    .decision-table th,
+    .risk-table td,
+    .risk-table th,
+    .tradeoff-table td,
+    .tradeoff-table th,
+    .scenario-table td,
+    .scenario-table th { text-align: center; vertical-align: middle; }
+
+    .math-display { overflow-x: auto; padding: 12px 0; }
+
+    code,
+    .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .diagram {
+      border: 1px solid #cfd7e6;
+      background: #fbfcff;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 22px 0;
+      overflow-x: auto;
+    }
+
+    .diagram-title { font-weight: 800; color: #1f3763; margin-bottom: 12px; }
+
+    .flow-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .flow-node {
+      border: 1px solid #b9c6dd;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      min-width: 125px;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    .machine-node {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      border-radius: 18px;
+      padding: 16px 18px;
+      min-width: 145px;
+      text-align: center;
+      font-weight: 900;
+      color: #16243d;
+    }
+
+    .speed-node { background: #eaf7ef; border-color: #b8dfc5; }
+    .safety-node { background: #fff4d8; border-color: #ead399; }
+    .misuse-node { background: #f0eafe; border-color: #d8c8f5; }
+    .reality-node { background: #fdeaea; border-color: #efb5b5; }
+
+    .flow-arrow { color: var(--accent); font-weight: 900; font-size: 1.4rem; }
+
+    .tradeoff-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0;
+    }
+
+    .tradeoff-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .tradeoff-card.speed { background: #eaf7ef; border-color: #b8dfc5; }
+    .tradeoff-card.safety { background: #fff4d8; border-color: #ead399; }
+    .tradeoff-card.misuse { background: #f0eafe; border-color: #d8c8f5; }
+    .tradeoff-card.reality { background: #fdeaea; border-color: #efb5b5; }
+
+    details.solution {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      background: #fcfcfc;
+      margin: 12px 0;
+    }
+
+    details.solution summary { cursor: pointer; font-weight: 800; color: var(--accent); }
+    .practice-list li { margin-bottom: 14px; }
+
+    .footer-note {
+      margin-top: 36px;
+      color: var(--muted);
+      font-size: 0.95rem;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+    }
+    .page-break { break-before: page; }
+
+    @media (max-width: 900px) {
+      .tradeoff-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 780px) {
+      body { font-size: 16px; }
+      header.tutorial-header, main { padding: 24px; }
+      .flow-row { align-items: stretch; flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); }
+      .tradeoff-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.tutorial-header, main {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        background: #ffffff;
+      }
+      .tutorial-nav, .no-print { display: none !important; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 13pt; break-after: avoid; }
+      section, .box, .diagram, table, details, pre, .tradeoff-card { break-inside: avoid; }
+      .box, .diagram, details.solution, pre, .tradeoff-card { background: #ffffff !important; border: 1px solid #999999; }
+      .symbol-table th, .data-table th, .compare-table th, .flow-table th, .mode-table th, .decision-table th, .risk-table th, .tradeoff-table th, .scenario-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 40</div>
+      <h1>AEAD Design Tradeoffs: Speed, Safety, Misuse Resistance, and Engineering Reality</h1>
+      <p class="subtitle">
+        A capstone for the authenticated encryption arc: how engineers compare AEAD modes, why no mode is perfect for every situation, and how cryptographic design balances math with operational reality.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">Roadmap</a>
+        <a class="nav-link" href="39-synthetic-iv-construction-step-by-step.html">Previous Tutorial</a>
+        <a class="nav-link" href="#practice">Practice</a>
+        <a class="nav-link" href="#one-page-recap">One-page recap</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            The previous tutorials studied AES-GCM, GHASH, nonce reuse, AES-GCM-SIV, POLYVAL, and synthetic IV construction. This tutorial steps back and asks the engineering question: how do we choose an authenticated encryption mode when real systems have speed limits, compatibility demands, nonce-management risks, hardware differences, and human mistakes?</p>
+        </div>
+
+        <p class="lead">
+          Cryptography is not only about finding the strongest-looking mathematical spell. It is also about choosing the right tool for the room, the workers, the wiring, the fire exits, and the likelihood that somebody will eventually label a box wrong.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that AEAD means authenticated encryption with associated data, that AES-GCM is fast but nonce-fragile, that AES-GCM-SIV is more nonce-misuse resistant, and that synthetic IV modes compute an IV-like value from protected inputs. You should also understand that using a vetted library is usually safer than writing your own cryptographic primitive.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <p>
+          This tutorial uses more engineering language than algebra, so we will define the vocabulary carefully.</p>
+
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>AEAD</td><td>Encryption plus authentication.</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>AAD</td><td>Visible data that is still protected against tampering.</td><td>Associated Authenticated Data.</td></tr>
+            <tr><td>nonce</td><td>A value used to make an encryption instance distinct.</td><td>A normally unique input for an encryption operation.</td></tr>
+            <tr><td>misuse resistance</td><td>Less catastrophic behavior under certain mistakes.</td><td>Robustness against selected incorrect usage patterns.</td></tr>
+            <tr><td>performance</td><td>How fast or resource-efficient a mode is.</td><td>Throughput, latency, memory, hardware acceleration, and energy cost.</td></tr>
+            <tr><td>compatibility</td><td>How widely supported the mode is.</td><td>Availability in protocols, libraries, hardware, and deployed systems.</td></tr>
+            <tr><td>side channel</td><td>Information leaked through behavior instead of direct output.</td><td>Timing, memory access, power, cache behavior, or other observable effects.</td></tr>
+            <tr><td>API</td><td>The interface programmers use.</td><td>Application Programming Interface.</td></tr>
+            <tr><td>threat model</td><td>What you are defending against.</td><td>A statement of attacker capabilities, assets, assumptions, and risks.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="the-four-forces">
+        <h2>The four forces of AEAD design</h2>
+        <p>
+          Choosing an AEAD mode is usually a tradeoff among four forces.</p>
+
+        <div class="tradeoff-grid">
+          <div class="tradeoff-card speed">Speed</div>
+          <div class="tradeoff-card safety">Safety</div>
+          <div class="tradeoff-card misuse">Misuse resistance</div>
+          <div class="tradeoff-card reality">Engineering reality</div>
+        </div>
+
+        <table class="tradeoff-table">
+          <thead><tr><th>Force</th><th>Question it asks</th><th>Example concern</th></tr></thead>
+          <tbody>
+            <tr><td>Speed</td><td>Can this run fast enough?</td><td>High-throughput servers, VPNs, disks, mobile devices.</td></tr>
+            <tr><td>Safety</td><td>Does this protect confidentiality and authenticity when used correctly?</td><td>Strong security proofs and vetted implementations.</td></tr>
+            <tr><td>Misuse resistance</td><td>What happens when a common mistake occurs?</td><td>Nonce reuse, rollback, distributed counters, accidental repeats.</td></tr>
+            <tr><td>Engineering reality</td><td>Can humans and systems deploy this correctly?</td><td>Library availability, protocol compatibility, API design, hardware support.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="aead-modes-compared">
+        <h2>AEAD modes compared at a high level</h2>
+        <p>
+          The following table is simplified, but it gives a useful design-level comparison.</p>
+
+        <table class="mode-table">
+          <thead><tr><th>Mode family</th><th>Strengths</th><th>Main caution</th><th>Good mental model</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td>Very fast with hardware support, widely deployed, strong when used correctly.</td><td>Nonce reuse can be catastrophic.</td><td>Fast machine that demands disciplined serial numbers.</td></tr>
+            <tr><td>AES-GCM-SIV</td><td>More nonce-misuse resistant, still AES-based, designed to reduce GCM-style nonce disasters.</td><td>Less universal and may cost more work.</td><td>GCM-family machine with guardrails.</td></tr>
+            <tr><td>ChaCha20-Poly1305-style AEAD</td><td>Excellent software performance, especially where AES hardware is not available.</td><td>Still requires nonce discipline.</td><td>Stream-cipher-plus-MAC workhorse.</td></tr>
+            <tr><td>SIV-style modes generally</td><td>Misuse-resistant design philosophy.</td><td>Often deterministic under repeated identical inputs and may trade speed for safety.</td><td>Build the starting point from the protected message.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Important boundary</div>
+          <p>
+            This table is for learning. In real systems, mode choice depends on exact protocol requirements, standards, implementation quality, hardware, and security review.</p>
+        </div>
+      </section>
+
+      <section id="speed">
+        <h2>Tradeoff 1: Speed</h2>
+        <p>
+          Speed matters because cryptography often runs on every packet, every file block, every database record, or every connection. Slow cryptography can become expensive, battery-draining, or unusable at scale.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: performance</div>
+          <p>
+            Performance includes throughput, latency, memory use, energy cost, and whether the algorithm benefits from hardware acceleration.</p>
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Situation</th><th>Why speed matters</th></tr></thead>
+          <tbody>
+            <tr><td>High-volume network traffic</td><td>Encryption must keep up with packets.</td></tr>
+            <tr><td>Mobile devices</td><td>Energy cost and CPU time matter.</td></tr>
+            <tr><td>Storage encryption</td><td>Large amounts of data must be processed efficiently.</td></tr>
+            <tr><td>Real-time communication</td><td>Latency matters for usability.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Speed is not vanity</div>
+          <p>
+            A secure design that is too slow for deployment may be replaced by something worse. Practical cryptography has to survive contact with budgets, batteries, and impatient protocols.</p>
+        </div>
+      </section>
+
+      <section id="safety">
+        <h2>Tradeoff 2: Safety when used correctly</h2>
+        <p>
+          A mode must first do its intended job: confidentiality and authenticity. AEAD modes are designed so attackers cannot read protected plaintexts or modify messages without detection, assuming the mode is used within its security requirements.</p>
+
+        <div class="math-display">
+          \[
+            \text{AEAD} = \text{Confidentiality} + \text{Authentication} + \text{AAD support}
+          \]
+        </div>
+
+        <table class="flow-table">
+          <thead><tr><th>Security property</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>Attackers should not learn the protected plaintext.</td></tr>
+            <tr><td>Integrity/authenticity</td><td>Attackers should not be able to modify or forge accepted messages.</td></tr>
+            <tr><td>AAD protection</td><td>Visible metadata can be checked for tampering.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="misuse-resistance">
+        <h2>Tradeoff 3: Misuse resistance</h2>
+        <p>
+          Many cryptographic failures happen not because the primitive is mathematically weak, but because the system uses it incorrectly. Nonce reuse is one of the most important examples.</p>
+
+        <table class="risk-table">
+          <thead><tr><th>Mistake</th><th>Why it happens</th><th>Why misuse resistance helps</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce reuse</td><td>Counters reset, VMs roll back, distributed systems collide.</td><td>Misuse-resistant modes can reduce catastrophic failure.</td></tr>
+            <tr><td>Bad API use</td><td>Developers pass values in wrong order or reuse state.</td><td>Safer APIs can make mistakes harder.</td></tr>
+            <tr><td>Skipping verification</td><td>Systems use decrypted data before checking tags.</td><td>Clear APIs can refuse to release plaintext until verification passes.</td></tr>
+            <tr><td>Manual cryptography</td><td>Developers assemble primitives incorrectly.</td><td>High-level AEAD APIs reduce dangerous assembly work.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box tradeoff-box">
+          <div class="box-title">Misuse-resistant does not mean mistake-proof</div>
+          <p>
+            Misuse resistance changes the shape of failure. It does not abolish failure. A parachute is helpful; it is not a license to jump without looking.</p>
+        </div>
+      </section>
+
+      <section id="engineering-reality">
+        <h2>Tradeoff 4: Engineering reality</h2>
+        <p>
+          The best mathematical choice on paper might not be the right deployment choice if it is unsupported, unavailable, slow on the platform, incompatible with the protocol, or implemented poorly.</p>
+
+        <table class="decision-table">
+          <thead><tr><th>Engineering question</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Is it available in vetted libraries?</td><td>Custom implementations are risky.</td></tr>
+            <tr><td>Is it supported by the protocol?</td><td>Both sides must agree on the mode.</td></tr>
+            <tr><td>Does the hardware accelerate it?</td><td>Performance can vary dramatically by platform.</td></tr>
+            <tr><td>Can the system manage nonces safely?</td><td>Some modes are fragile if nonce discipline fails.</td></tr>
+            <tr><td>Does the API prevent common mistakes?</td><td>Safer interfaces reduce human error.</td></tr>
+            <tr><td>Is there a compliance requirement?</td><td>Regulated environments may require specific standards.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="api-design">
+        <h2>API design matters</h2>
+        <p>
+          Cryptographic safety is not only about algorithms. It is also about the interface exposed to programmers. A dangerous API lets users accidentally reuse nonces, skip authentication checks, or confuse encryption with authentication.</p>
+
+        <div class="diagram" role="img" aria-label="Good and bad API design comparison">
+          <div class="diagram-title">Good API design reduces mistake surface</div>
+          <div class="flow-row">
+            <div class="machine-node safety-node">Good API</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Generates nonces safely when possible</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Checks tags before plaintext release</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Clear failure behavior</div>
+          </div>
+          <div class="flow-row">
+            <div class="machine-node reality-node">Bad API</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Manual nonce handling</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Plaintext before verification</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Easy foot-guns</div>
+          </div>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Rule of thumb</div>
+          <p>
+            Prefer high-level AEAD APIs that make the safe path obvious and the dangerous path difficult.</p>
+        </div>
+      </section>
+
+      <section id="choosing-a-mode">
+        <h2>A beginner decision framework</h2>
+        <p>
+          This is not a formal standard. It is a learning framework for thinking about mode choice.</p>
+
+        <table class="decision-table">
+          <thead><tr><th>Question</th><th>If yes...</th><th>Design pressure</th></tr></thead>
+          <tbody>
+            <tr><td>Do you need maximum compatibility?</td><td>AES-GCM is often widely available.</td><td>Compatibility and deployment reality.</td></tr>
+            <tr><td>Can you guarantee nonce uniqueness?</td><td>AES-GCM may be appropriate.</td><td>Speed and common support.</td></tr>
+            <tr><td>Is nonce reuse plausible?</td><td>Consider misuse-resistant AEAD such as AES-GCM-SIV where available.</td><td>Damage reduction.</td></tr>
+            <tr><td>Is AES hardware unavailable or weak?</td><td>ChaCha20-Poly1305-style modes may be attractive.</td><td>Software performance.</td></tr>
+            <tr><td>Are you in a regulated environment?</td><td>Follow approved standards and guidance.</td><td>Compliance and auditability.</td></tr>
+            <tr><td>Are you building a real product?</td><td>Use vetted libraries and expert-reviewed designs.</td><td>Operational security.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="case-studies">
+        <h2>Short case studies</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Likely design pressure</th><th>Reasoning</th></tr></thead>
+          <tbody>
+            <tr><td>High-throughput server with AES hardware and mature nonce management</td><td>AES-GCM may be a strong fit.</td><td>Fast, widely supported, safe when nonce discipline is reliable.</td></tr>
+            <tr><td>Distributed storage system with rollback/snapshot risk</td><td>Misuse-resistant AEAD may be attractive.</td><td>Nonce repeats are more plausible, so guardrails matter.</td></tr>
+            <tr><td>Mobile software on devices without strong AES acceleration</td><td>ChaCha20-Poly1305-style approach may be attractive.</td><td>Good software performance can matter more than AES hardware speed.</td></tr>
+            <tr><td>Protocol with strict existing standards</td><td>Use the required mode.</td><td>Interoperability and compliance may decide the choice.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mathematical-view">
+        <h2>The mathematical view versus the engineering view</h2>
+        <p>
+          The mathematical view asks whether a construction is secure under stated assumptions. The engineering view asks whether those assumptions survive real deployment.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>View</th><th>Main question</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Mathematical/security proof view</td><td>What is guaranteed if the assumptions hold?</td><td>AES-GCM is strong when nonce uniqueness holds.</td></tr>
+            <tr><td>Engineering/deployment view</td><td>Will the assumptions hold in messy systems?</td><td>Will counters reset, collide, or roll back?</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">A healthy cryptographic instinct</div>
+          <p>
+            Do not ask only “Is this mode secure?” Ask “Secure under what assumptions, and can my system actually keep those assumptions alive?”</p>
+        </div>
+      </section>
+
+      <section id="what-this-arc-taught">
+        <h2>What this AEAD arc taught</h2>
+        <p>
+          The AEAD arc began with AES-GCM and ended with design tradeoffs. Here is the trail we walked.</p>
+
+        <table class="flow-table">
+          <thead><tr><th>Topic</th><th>Core lesson</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td>Confidentiality and authentication can be combined efficiently.</td></tr>
+            <tr><td>GHASH</td><td>Finite-field polynomial hashing authenticates structured data.</td></tr>
+            <tr><td>Nonce reuse</td><td>Correct math can fail if usage assumptions are broken.</td></tr>
+            <tr><td>AES-GCM-SIV</td><td>Designs can reduce damage from common mistakes.</td></tr>
+            <tr><td>POLYVAL</td><td>Representation choices affect implementation and design.</td></tr>
+            <tr><td>Tradeoffs</td><td>Mode choice balances speed, safety, misuse resistance, and reality.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: choosing only by speed</div>
+          <p>
+            Speed matters, but a fast design used incorrectly is a fast route into trouble.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: assuming misuse resistance removes responsibility</div>
+          <p>
+            Misuse-resistant modes reduce certain failures. They do not make careless deployment safe.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: ignoring libraries and APIs</div>
+          <p>
+            A secure primitive with a bad API can still be dangerous in practice.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: thinking one mode is best for every world</div>
+          <p>
+            Different systems have different constraints. Cryptographic design is context-sensitive.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What are the four major forces in AEAD design tradeoffs?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Speed, safety, misuse resistance, and engineering reality.</p>
+            </details>
+          </li>
+          <li>
+            Why is AES-GCM attractive in many systems?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It is fast, widely supported, hardware-accelerated on many platforms, and strong when nonce uniqueness is maintained.</p>
+            </details>
+          </li>
+          <li>
+            Why might AES-GCM-SIV be attractive in a distributed system?</n            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Distributed systems may have nonce coordination problems, so nonce-misuse resistance can reduce catastrophic failure risk.</p>
+            </details>
+          </li>
+          <li>
+            Why does API design matter for cryptography?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>APIs shape how developers use cryptography. A safer API can prevent nonce mistakes, tag-check mistakes, and dangerous manual assembly.</p>
+            </details>
+          </li>
+          <li>
+            What question connects the mathematical view and engineering view?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>“Secure under what assumptions, and can my system actually keep those assumptions alive?”</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          This tutorial is where the math course touches real engineering. A mode can be brilliant in a proof and still be dangerous if deployed in a system that cannot satisfy its assumptions. Good cryptography is not just strong machinery. It is strong machinery placed in a world where people forget, servers reboot, counters wrap, virtual machines roll back, and libraries become the hands through which the math enters reality.</p>
+        <ul>
+          <li>AEAD combines confidentiality and authentication.</li>
+          <li>AES-GCM is fast and common but nonce-fragile.</li>
+          <li>AES-GCM-SIV improves nonce-misuse resistance.</li>
+          <li>ChaCha20-Poly1305-style modes can be strong software performers.</li>
+          <li>Library/API quality matters.</li>
+          <li>Mode choice depends on threat model, platform, protocol, and deployment reality.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>AEAD means authenticated encryption with associated data.</li>
+            <li>AEAD mode choice involves tradeoffs.</li>
+            <li>The four major forces are speed, safety, misuse resistance, and engineering reality.</li>
+            <li>AES-GCM is fast and widely deployed.</li>
+            <li>AES-GCM requires strict nonce discipline.</li>
+            <li>AES-GCM-SIV is more nonce-misuse resistant.</li>
+            <li>Misuse resistant does not mean mistake proof.</li>
+            <li>ChaCha20-Poly1305-style modes can be attractive for software performance.</li>
+            <li>Good APIs reduce dangerous mistakes.</li>
+            <li>Use vetted libraries for real systems.</li>
+            <li>Ask whether your system can preserve the assumptions a mode requires.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Decision reminder</div>
+          <pre><code>Ask:
+1. What security properties do I need?
+2. Can I manage nonces safely?
+3. What does my platform accelerate?
+4. What do my protocols/libraries support?
+5. What mistakes are likely in my system?
+6. What do standards or compliance requirements demand?</code></pre>
+        </div>
+
+        <table class="data-table">
+          <thead><tr><th>Mode family</th><th>Design personality</th></tr></thead>
+          <tbody>
+            <tr><td>AES-GCM</td><td>Fast and common, but nonce-fragile.</td></tr>
+            <tr><td>AES-GCM-SIV</td><td>More defensive against nonce misuse.</td></tr>
+            <tr><td>ChaCha20-Poly1305-style AEAD</td><td>Strong software-performance workhorse.</td></tr>
+            <tr><td>SIV-style modes generally</td><td>Build starting values from protected data.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 40: AEAD Design Tradeoffs</strong>. After that, the course can transition into a new arc: <strong>Hash Functions, Compression Functions, Merkle-Damgård, Sponge Constructions, and MACs</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>
