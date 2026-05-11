@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 72: Protocol Composition: Secure Primitives, Insecure Systems | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <style>
+    :root {
+      --bg: #f7f5ef;
+      --paper: #ffffff;
+      --ink: #222222;
+      --muted: #666666;
+      --accent: #334e7d;
+      --accent-soft: #e9eef8;
+      --gold-soft: #fff4d8;
+      --green-soft: #eaf7ef;
+      --purple-soft: #f0eafe;
+      --red-soft: #fdeaea;
+      --border: #d7d7d7;
+      --code-bg: #f5f2ea;
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      --radius: 18px;
+      --max-width: 980px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      font-size: 17px;
+    }
+
+    .page { max-width: var(--max-width); margin: 0 auto; padding: 32px 20px 80px; }
+
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .course-label {
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+
+    .volume-label {
+      display: inline-block;
+      background: var(--purple-soft);
+      border: 1px solid #d8c8f5;
+      color: #3d2f66;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+
+    h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 0.75em; }
+    h1 { font-size: clamp(2rem, 5vw, 3.25rem); color: #16243d; margin-bottom: 0.35em; }
+    h2 { font-size: clamp(1.45rem, 3vw, 1.95rem); color: #1f3763; border-bottom: 2px solid var(--accent-soft); padding-bottom: 0.35em; margin-top: 1.4em; }
+    h3 { font-size: 1.15rem; color: #283f68; margin-top: 1.2em; }
+    p { margin: 0 0 0.9em; }
+    a { color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 1.15rem; max-width: 780px; margin-bottom: 0; }
+
+    .workbook-nav { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 0; }
+    .nav-link, button.print-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #c7d2ea;
+      background: #ffffff;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .nav-link:hover, button.print-button:hover { background: var(--accent-soft); }
+
+    main { background: var(--paper); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 34px; }
+    section { margin-bottom: 34px; }
+
+    .box { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; margin: 18px 0; background: #ffffff; }
+    .box-title { font-weight: 800; margin-bottom: 8px; color: #1f3763; }
+    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .protocol-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .warning-box { background: var(--red-soft); border-color: #efb5b5; }
+
+    code, .inline-code {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: var(--code-bg);
+      padding: 0.12em 0.3em;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+
+    .math-display { overflow-x: auto; padding: 10px 0; }
+
+    .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333333; }
+    .reference-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+
+    .work-table, .answer-table, .compare-table, .step-table, .property-table, .example-table, .lesson-table, .valid-table, .scenario-table, .danger-table, .protocol-table, .math-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .compare-table th, .compare-table td,
+    .step-table th, .step-table td,
+    .property-table th, .property-table td,
+    .example-table th, .example-table td,
+    .lesson-table th, .lesson-table td,
+    .valid-table th, .valid-table td,
+    .scenario-table th, .scenario-table td,
+    .danger-table th, .danger-table td,
+    .protocol-table th, .protocol-table td,
+    .math-table th, .math-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+
+    .work-table th, .answer-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .valid-table th, .scenario-table th, .danger-table th, .protocol-table th, .math-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+
+    .compare-table th, .compare-table td, .step-table th, .step-table td, .property-table th, .property-table td, .example-table th, .example-table td, .lesson-table th, .lesson-table td, .valid-table th, .valid-table td, .scenario-table th, .scenario-table td, .danger-table th, .danger-table td, .protocol-table th, .protocol-table td, .math-table th, .math-table td { text-align: center; vertical-align: middle; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 92px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+
+    .large-work-space { min-height: 150px; }
+    .extra-large-work-space { min-height: 230px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+    .page-break { break-before: page; }
+    .answer-key { border-top: 4px double #334e7d; padding-top: 20px; }
+    .answer-step { margin: 10px 0; padding-left: 14px; border-left: 4px solid #c7d2ea; }
+    .footer-note { margin-top: 36px; color: var(--muted); font-size: 0.95rem; border-top: 1px solid var(--border); padding-top: 18px; }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+      body { background: #ffffff; color: #000000; font-size: 10.5pt; line-height: 1.35; }
+      .page { max-width: none; padding: 0; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #ffffff; }
+      .workbook-nav, .no-print { display: none !important; }
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+      .box, .problem, table, .work-space, pre { break-inside: avoid; }
+      .box, .problem, .work-space, pre { background: #ffffff !important; border-color: #999999; }
+      .work-table th, .answer-table th, .compare-table th, .step-table th, .property-table th, .example-table th, .lesson-table th, .valid-table th, .scenario-table th, .danger-table th, .protocol-table th, .math-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 72</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography and Key Exchange</div>
+      <h1>Protocol Composition: Secure Primitives, Insecure Systems</h1>
+      <p class="subtitle">
+        Printable practice for primitive-versus-protocol security, binding, transcript protection, replay resistance, downgrade defense, state machines, key separation, context separation, parsing order, and composition discipline.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
+        <a class="nav-link" href="72-protocol-composition-secure-primitives-insecure-systems.html">Tutorial 72</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Do not ask only whether the primitives are strong. Ask what is authenticated, what is fresh, what identities are bound, what keys are separated, what state is expected, and whether invalid data can affect behavior.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Transcript-bound session key</div>
+            <div class="math-display">
+              \[
+                session\_key = KDF(shared\_secret, transcript, identities, context)
+              \]
+            </div>
+          </div>
+
+          <div class="box protocol-box">
+            <div class="box-title">Key separation</div>
+            <div class="math-display">
+              \[
+                K_{enc}=KDF(master,\ \text{``encryption''}\parallel transcript)
+              \]
+              \[
+                K_{mac}=KDF(master,\ \text{``authentication''}\parallel transcript)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a primitive?</td><td></td></tr>
+            <tr><td>A2. What is a protocol?</td><td></td></tr>
+            <tr><td>A3. What is composition?</td><td></td></tr>
+            <tr><td>A4. What is binding?</td><td></td></tr>
+            <tr><td>A5. What is a transcript?</td><td></td></tr>
+            <tr><td>A6. What is a replay attack?</td><td></td></tr>
+            <tr><td>A7. What is a downgrade attack?</td><td></td></tr>
+            <tr><td>A8. What is context separation?</td><td></td></tr>
+            <tr><td>A9. What is key separation?</td><td></td></tr>
+            <tr><td>A10. What is a state machine?</td><td></td></tr>
+            <tr><td>A11. What does fail closed mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="primitive-vs-protocol">
+        <h2>Part B: Primitive security versus protocol security</h2>
+        <table class="compare-table">
+          <thead><tr><th>Layer</th><th>Question</th><th>Example failure</th></tr></thead>
+          <tbody>
+            <tr><td>Primitive</td><td></td><td></td></tr>
+            <tr><td>Mode</td><td></td><td></td></tr>
+            <tr><td>Protocol</td><td></td><td></td></tr>
+            <tr><td>Implementation</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why can secure primitives still produce an insecure protocol?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="binding">
+        <h2>Part C: Binding</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            session\_key = KDF(shared\_secret, transcript, identities, context)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>Bind this...</th><th>To prevent...</th></tr></thead>
+          <tbody>
+            <tr><td>Identity to key</td><td></td></tr>
+            <tr><td>Transcript to session</td><td></td></tr>
+            <tr><td>Algorithm choices to transcript</td><td></td></tr>
+            <tr><td>Nonce/counter to message</td><td></td></tr>
+            <tr><td>Context label to derived key</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is binding like protocol glue?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="identity-binding">
+        <h2>Part D: Identity binding</h2>
+        <table class="danger-table">
+          <thead><tr><th>Missing binding</th><th>Possible result</th></tr></thead>
+          <tbody>
+            <tr><td>Public key not bound to identity.</td><td></td></tr>
+            <tr><td>Identity not included in key derivation.</td><td></td></tr>
+            <tr><td>Role not bound.</td><td></td></tr>
+            <tr><td>Protocol name not bound.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="replay-attacks">
+        <h2>Part E: Replay attacks</h2>
+        <pre><code>Bad pattern:
+1. Alice sends signed command: "Pay Bob $100"
+2. Attacker records it.
+3. Attacker sends the same signed command again.
+4. System accepts it because signature is valid.</code></pre>
+
+        <table class="lesson-table">
+          <thead><tr><th>Replay defense</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce challenge</td><td></td></tr>
+            <tr><td>Counter/sequence number</td><td></td></tr>
+            <tr><td>Timestamp</td><td></td></tr>
+            <tr><td>Session identifier</td><td></td></tr>
+            <tr><td>Replay cache</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does a valid signature not automatically prove freshness?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="downgrade-attacks">
+        <h2>Part F: Downgrade attacks</h2>
+        <pre><code>Client: I support StrongVersion and WeakVersion.
+Attacker modifies message:
+Client: I support WeakVersion.
+Server: OK, use WeakVersion.</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why should negotiation choices be included in the authenticated transcript?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="state-confusion">
+        <h2>Part G: State confusion</h2>
+        <table class="protocol-table">
+          <thead><tr><th>State issue</th><th>Risk</th></tr></thead>
+          <tbody>
+            <tr><td>Accepting data before handshake complete.</td><td></td></tr>
+            <tr><td>Allowing old handshake messages in a new session.</td><td></td></tr>
+            <tr><td>Not separating client/server roles.</td><td></td></tr>
+            <tr><td>Continuing after failed verification.</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why should a protocol behave like a strict state machine?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="key-separation">
+        <h2>Part H: Key separation and context separation</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            K_{enc}=KDF(master,\ \text{``encryption''}\parallel transcript)
+          \]
+          \[
+            K_{mac}=KDF(master,\ \text{``authentication''}\parallel transcript)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why are labels such as <code>"encryption"</code> and <code>"authentication"</code> useful in key derivation?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. Why is reusing one key for many roles dangerous?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="parse-auth-order">
+        <h2>Part I: Parsing and authentication order</h2>
+        <table class="compare-table">
+          <thead><tr><th>Pattern</th><th>Security meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Decrypt → parse → verify</td><td></td></tr>
+            <tr><td>Verify tag → decrypt/release → parse</td><td></td></tr>
+            <tr><td>Parse headers as AAD</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why is parsing unauthenticated data dangerous?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="composition-failures">
+        <h2>Part J: Common composition failure patterns</h2>
+        <table class="danger-table">
+          <thead><tr><th>Failure pattern</th><th>What went wrong?</th></tr></thead>
+          <tbody>
+            <tr><td>Secure encryption without authentication.</td><td></td></tr>
+            <tr><td>Valid signature but no freshness.</td><td></td></tr>
+            <tr><td>Key exchange without identity binding.</td><td></td></tr>
+            <tr><td>Negotiation not authenticated.</td><td></td></tr>
+            <tr><td>Same key reused for multiple roles.</td><td></td></tr>
+            <tr><td>Detailed error handling.</td><td></td></tr>
+            <tr><td>State machine too permissive.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="composition-checklist">
+        <h2>Part K: Composition discipline checklist</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Question</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>What exactly is authenticated?</td><td></td></tr>
+            <tr><td>What proves freshness?</td><td></td></tr>
+            <tr><td>Are keys separated by purpose?</td><td></td></tr>
+            <tr><td>Can old messages be accepted?</td><td></td></tr>
+            <tr><td>Are negotiation choices protected?</td><td></td></tr>
+            <tr><td>Can invalid data affect behavior?</td><td></td></tr>
+            <tr><td>Do errors leak state?</td><td></td></tr>
+            <tr><td>Is the state machine strict?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-protocol">
+        <h2>Part L: Toy protocol comparison</h2>
+        <table class="compare-table">
+          <thead><tr><th>Unsafe instinct</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>Sign only \(g^a\).</td><td></td></tr>
+            <tr><td>Derive key only from shared secret.</td><td></td></tr>
+            <tr><td>Accept any valid signed old value.</td><td></td></tr>
+            <tr><td>Continue after negotiation mismatch.</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <p>Compare:</p>
+        <div class="math-display">
+          \[
+            unsafe:\ K=KDF(g^{ab})
+          \]
+          \[
+            safer:\ K=KDF(g^{ab}, transcript, identities, algorithms, context)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L1. Why is the safer key derivation stronger as a protocol habit?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A protocol uses AES-GCM correctly but does not authenticate who the peer is.</td><td></td></tr>
+            <tr><td>A signed payment command can be replayed because no nonce, counter, or timestamp is checked.</td><td></td></tr>
+            <tr><td>A handshake signs the full transcript including roles and algorithm choices.</td><td></td></tr>
+            <tr><td>The same derived key is used for encryption, MAC, and export.</td><td></td></tr>
+            <tr><td>A client and server continue after the negotiated algorithm list changes unexpectedly.</td><td></td></tr>
+            <tr><td>An implementation parses decrypted plaintext before verifying the authentication tag.</td><td></td></tr>
+            <tr><td>A state machine rejects application data before the handshake is complete.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Secure primitives automatically guarantee a secure protocol.</td><td></td><td></td></tr>
+            <tr><td>Binding identities to keys helps prevent identity confusion.</td><td></td><td></td></tr>
+            <tr><td>Freshness is unnecessary if a signature is valid.</td><td></td><td></td></tr>
+            <tr><td>Downgrade defenses should protect negotiation choices.</td><td></td><td></td></tr>
+            <tr><td>Key separation helps avoid cross-purpose interactions.</td><td></td><td></td></tr>
+            <tr><td>A permissive state machine is usually safer than a strict one.</td><td></td><td></td></tr>
+            <tr><td>Unauthenticated data should not be allowed to trigger sensitive behavior.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain protocol composition in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain binding, replay protection, and downgrade protection in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain key separation, context separation, and strict state machines in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A protocol is a structured conversation using cryptographic primitives.</td><td></td></tr>
+            <tr><td>A valid old message can still be dangerous if freshness is not checked.</td><td></td></tr>
+            <tr><td>Algorithm negotiation should be left unauthenticated so attackers can modify it easily.</td><td></td></tr>
+            <tr><td>Keys should usually be separated by purpose.</td><td></td></tr>
+            <tr><td>State machines should accept messages in any phase to improve flexibility.</td><td></td></tr>
+            <tr><td>Parsing unauthenticated plaintext can create oracles or unsafe behavior.</td><td></td></tr>
+            <tr><td>Protocol design requires more than choosing strong primitives.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that secure primitives are ingredients, not the whole meal. Protocol security depends on ordering, binding, freshness, state, context, and failure behavior.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a primitive?</td><td>A cryptographic building block such as a hash, MAC, signature, encryption scheme, KDF, or key exchange.</td></tr>
+            <tr><td>A2. What is a protocol?</td><td>A structured sequence of messages and state transitions using primitives to achieve a security goal.</td></tr>
+            <tr><td>A3. What is composition?</td><td>Combining primitives and protocol steps together.</td></tr>
+            <tr><td>A4. What is binding?</td><td>Cryptographically tying important facts together, such as identities, keys, transcript, roles, and context.</td></tr>
+            <tr><td>A5. What is a transcript?</td><td>The ordered record of protocol messages exchanged.</td></tr>
+            <tr><td>A6. What is a replay attack?</td><td>An attack where an old valid message is recorded and accepted again later.</td></tr>
+            <tr><td>A7. What is a downgrade attack?</td><td>An attack that tricks parties into using weaker protocol versions or algorithms.</td></tr>
+            <tr><td>A8. What is context separation?</td><td>Preventing data or keys from one purpose/protocol context from being reused as another.</td></tr>
+            <tr><td>A9. What is key separation?</td><td>Using different keys for different purposes, often derived with labels.</td></tr>
+            <tr><td>A10. What is a state machine?</td><td>The protocol’s rulebook of stages and valid messages in each stage.</td></tr>
+            <tr><td>A11. What does fail closed mean?</td><td>Invalid or uncertain state leads to safe rejection.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Primitive security versus protocol security</h3>
+        <table class="answer-table">
+          <thead><tr><th>Layer</th><th>Question</th><th>Example failure</th></tr></thead>
+          <tbody>
+            <tr><td>Primitive</td><td>Is this building block secure under its definition?</td><td>Using a weak MAC or broken cipher.</td></tr>
+            <tr><td>Mode</td><td>Is the primitive used safely?</td><td>Nonce reuse in GCM.</td></tr>
+            <tr><td>Protocol</td><td>Are messages, identities, keys, and state bound correctly?</td><td>Replay, downgrade, unknown-key-share, state confusion.</td></tr>
+            <tr><td>Implementation</td><td>Does the code leak or fail incorrectly?</td><td>Timing leak, fault attack, parsing oracle.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Secure primitives provide narrow guarantees, but a protocol must still bind identities, prove freshness, authenticate negotiation, separate keys, enforce state, and handle failures safely.</p></div>
+
+        <h3>Part C: Binding</h3>
+        <table class="answer-table">
+          <thead><tr><th>Bind this...</th><th>To prevent...</th></tr></thead>
+          <tbody>
+            <tr><td>Identity to key</td><td>Unknown-key-share or impersonation confusion.</td></tr>
+            <tr><td>Transcript to session</td><td>Message splicing or handshake tampering.</td></tr>
+            <tr><td>Algorithm choices to transcript</td><td>Downgrade attacks.</td></tr>
+            <tr><td>Nonce/counter to message</td><td>Replay or reordering confusion.</td></tr>
+            <tr><td>Context label to derived key</td><td>Key reuse across purposes.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> Binding is protocol glue because it keeps keys, identities, messages, roles, algorithm choices, and context from being separated, swapped, or reused in the wrong place.</p></div>
+
+        <h3>Part D: Identity binding</h3>
+        <table class="answer-table">
+          <thead><tr><th>Missing binding</th><th>Possible result</th></tr></thead>
+          <tbody>
+            <tr><td>Public key not bound to identity.</td><td>Impersonation.</td></tr>
+            <tr><td>Identity not included in key derivation.</td><td>Unknown-key-share confusion.</td></tr>
+            <tr><td>Role not bound.</td><td>Client/server reflection or role confusion.</td></tr>
+            <tr><td>Protocol name not bound.</td><td>Cross-protocol attack.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Replay attacks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Replay defense</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce challenge</td><td>Prove the response was made for this session.</td></tr>
+            <tr><td>Counter/sequence number</td><td>Reject old or repeated messages.</td></tr>
+            <tr><td>Timestamp</td><td>Accept only within a time window.</td></tr>
+            <tr><td>Session identifier</td><td>Bind messages to one session.</td></tr>
+            <tr><td>Replay cache</td><td>Remember used tokens/messages.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> A signature proves the message was signed by the key, but it does not prove the message is new, intended for this session, or not already used.</p></div>
+
+        <h3>Part F: Downgrade attacks</h3>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> If negotiation choices are authenticated as part of the transcript, attackers cannot silently remove strong options or force weaker versions without detection.</p></div>
+
+        <h3>Part G: State confusion</h3>
+        <table class="answer-table">
+          <thead><tr><th>State issue</th><th>Risk</th></tr></thead>
+          <tbody>
+            <tr><td>Accepting data before handshake complete.</td><td>Unauthenticated data processed too early.</td></tr>
+            <tr><td>Allowing old handshake messages in a new session.</td><td>Replay or transcript confusion.</td></tr>
+            <tr><td>Not separating client/server roles.</td><td>Reflection or role-confusion attack.</td></tr>
+            <tr><td>Continuing after failed verification.</td><td>Fail-open behavior.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> A strict state machine ensures messages are accepted only in the correct phase and context, reducing replay, reflection, and phase-confusion risks.</p></div>
+
+        <h3>Part H: Key separation and context separation</h3>
+        <div class="answer-step">
+          <p><strong>H1 sample answer.</strong> Labels make derived keys purpose-specific, so an encryption key and authentication key do not accidentally collide or get reused across roles.</p>
+          <p><strong>H2 sample answer.</strong> One key used for many roles may create cross-purpose interactions that none of the primitive security definitions promised to handle.</p>
+        </div>
+
+        <h3>Part I: Parsing and authentication order</h3>
+        <table class="answer-table">
+          <thead><tr><th>Pattern</th><th>Security meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Decrypt → parse → verify</td><td>Dangerous. Unverified data affects behavior.</td></tr>
+            <tr><td>Verify tag → decrypt/release → parse</td><td>Safer AEAD instinct.</td></tr>
+            <tr><td>Parse headers as AAD</td><td>Public metadata can be authenticated before use.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Unauthenticated data may trigger parser bugs, error oracles, state changes, or side channels before the system knows the data is legitimate.</p></div>
+
+        <h3>Part J: Common composition failure patterns</h3>
+        <table class="answer-table">
+          <thead><tr><th>Failure pattern</th><th>What went wrong?</th></tr></thead>
+          <tbody>
+            <tr><td>Secure encryption without authentication.</td><td>Tampering may go undetected.</td></tr>
+            <tr><td>Valid signature but no freshness.</td><td>Replay remains possible.</td></tr>
+            <tr><td>Key exchange without identity binding.</td><td>Man-in-the-middle or identity confusion.</td></tr>
+            <tr><td>Negotiation not authenticated.</td><td>Downgrade possible.</td></tr>
+            <tr><td>Same key reused for multiple roles.</td><td>Cross-purpose interactions.</td></tr>
+            <tr><td>Detailed error handling.</td><td>Protocol oracle.</td></tr>
+            <tr><td>State machine too permissive.</td><td>Messages accepted in wrong stage.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Composition discipline checklist</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>What exactly is authenticated?</td><td>Include identities, transcript, algorithms, roles, and context.</td></tr>
+            <tr><td>What proves freshness?</td><td>Use nonces, counters, timestamps, or replay caches.</td></tr>
+            <tr><td>Are keys separated by purpose?</td><td>Use labeled KDF outputs.</td></tr>
+            <tr><td>Can old messages be accepted?</td><td>Bind messages to session and state.</td></tr>
+            <tr><td>Are negotiation choices protected?</td><td>Authenticate the transcript.</td></tr>
+            <tr><td>Can invalid data affect behavior?</td><td>Verify before parsing or acting.</td></tr>
+            <tr><td>Do errors leak state?</td><td>Use generic failure where appropriate.</td></tr>
+            <tr><td>Is the state machine strict?</td><td>Reject messages outside the expected phase.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Toy protocol comparison</h3>
+        <table class="answer-table">
+          <thead><tr><th>Unsafe instinct</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>Sign only \(g^a\).</td><td>Sign transcript: identities, roles, \(g^a\), \(g^b\), algorithms.</td></tr>
+            <tr><td>Derive key only from shared secret.</td><td>Derive key from shared secret plus transcript/context.</td></tr>
+            <tr><td>Accept any valid signed old value.</td><td>Require freshness and session binding.</td></tr>
+            <tr><td>Continue after negotiation mismatch.</td><td>Fail closed on mismatch.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>L1 sample answer.</strong> The safer derivation binds the key to the conversation, participants, algorithm choices, and context, making it harder to splice, replay, or reuse across sessions or protocols.</p></div>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A protocol uses AES-GCM correctly but does not authenticate who the peer is.</td><td>Primitive use may be correct, but protocol authentication is missing.</td></tr>
+            <tr><td>A signed payment command can be replayed because no nonce, counter, or timestamp is checked.</td><td>Valid signature does not prove freshness.</td></tr>
+            <tr><td>A handshake signs the full transcript including roles and algorithm choices.</td><td>Good binding and downgrade defense.</td></tr>
+            <tr><td>The same derived key is used for encryption, MAC, and export.</td><td>Key separation failure.</td></tr>
+            <tr><td>A client and server continue after the negotiated algorithm list changes unexpectedly.</td><td>Fail-open downgrade risk.</td></tr>
+            <tr><td>An implementation parses decrypted plaintext before verifying the authentication tag.</td><td>Unsafe ordering; possible parsing oracle or side effects.</td></tr>
+            <tr><td>A state machine rejects application data before the handshake is complete.</td><td>Good strict-state behavior.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Secure primitives automatically guarantee a secure protocol.</td><td>Mistaken</td><td>Composition errors can still break the system.</td></tr>
+            <tr><td>Binding identities to keys helps prevent identity confusion.</td><td>Valid</td><td>It ties the key to the intended party.</td></tr>
+            <tr><td>Freshness is unnecessary if a signature is valid.</td><td>Mistaken</td><td>Old signed messages may be replayed.</td></tr>
+            <tr><td>Downgrade defenses should protect negotiation choices.</td><td>Valid</td><td>Otherwise attackers may force weaker choices.</td></tr>
+            <tr><td>Key separation helps avoid cross-purpose interactions.</td><td>Valid</td><td>Different jobs should use different derived keys.</td></tr>
+            <tr><td>A permissive state machine is usually safer than a strict one.</td><td>Mistaken</td><td>Strict state reduces phase confusion.</td></tr>
+            <tr><td>Unauthenticated data should not be allowed to trigger sensitive behavior.</td><td>Valid</td><td>Verify before parsing or acting.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> Protocol composition is the process of combining cryptographic primitives and message steps into a larger system. Even if each primitive is secure alone, the protocol can fail if identities, freshness, state, keys, context, or errors are handled incorrectly.</p>
+          <p><strong>O2 sample answer.</strong> Binding ties important protocol facts together so they cannot be swapped or separated. Replay protection proves messages are fresh using nonces, counters, timestamps, session identifiers, or caches. Downgrade protection authenticates negotiation choices so attackers cannot force weaker settings.</p>
+          <p><strong>O3 sample answer.</strong> Key separation uses different derived keys for different purposes, while context separation prevents one protocol or role from being confused with another. Strict state machines accept only expected messages in the correct phase and reject everything else.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial explained why strong cryptographic primitives do not automatically create secure systems. It covered binding, transcript protection, replay attacks, downgrade attacks, state confusion, key separation, context separation, safe parsing order, and composition discipline.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A protocol is a structured conversation using cryptographic primitives.</td><td>True</td><td>That is the protocol idea.</td></tr>
+            <tr><td>A valid old message can still be dangerous if freshness is not checked.</td><td>True</td><td>Replay remains possible.</td></tr>
+            <tr><td>Algorithm negotiation should be left unauthenticated so attackers can modify it easily.</td><td>False</td><td>Negotiation should be protected.</td></tr>
+            <tr><td>Keys should usually be separated by purpose.</td><td>True</td><td>This avoids cross-purpose interactions.</td></tr>
+            <tr><td>State machines should accept messages in any phase to improve flexibility.</td><td>False</td><td>Strict state reduces protocol confusion.</td></tr>
+            <tr><td>Parsing unauthenticated plaintext can create oracles or unsafe behavior.</td><td>True</td><td>Unverified data can affect behavior.</td></tr>
+            <tr><td>Protocol design requires more than choosing strong primitives.</td><td>True</td><td>Composition discipline is required.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 72: Protocol Composition: Secure Primitives, Insecure Systems.
+      </p>
+    </main>
+  </div>
+</body>
+</html>
