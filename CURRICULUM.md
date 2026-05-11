@@ -134,4 +134,6 @@ This document is the definitive roadmap for the curriculum. It tracks the actual
 *Focused on the mathematical frontier of quantum-resistant structures.*
 
 ### XVI. Lattice-Based Cryptography
+74. **Module 74:** Post-Quantum Overview: Lattices, Codes, & Hash-Based
+75. **Module 75:** The Quantum Threat: Shor, Grover, and Store-Now-Decrypt-Later
 76. **Module 76:** Lattice Intuition: Vectors, Grids, and Noise

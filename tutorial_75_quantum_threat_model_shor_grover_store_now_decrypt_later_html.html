@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quantum Threat Model: Shor, Grover, and Store-Now-Decrypt-Later | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 75</div>
+      <div class="volume-label">Volume 6: Post-Quantum Foundations</div>
+      <h1>Quantum Threat Model: Shor, Grover, and Store-Now-Decrypt-Later</h1>
+      <p class="subtitle">
+        A practical threat-modeling lesson for post-quantum cryptography: what quantum attackers change, what they do not change, how Shor differs from Grover, why public-key cryptography is under special pressure, and how long-lived secrets create migration urgency before large quantum computers exist.
+      </p>
+
+      <nav class="tutorial-nav no-print">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 74 gave the broad post-quantum map. This tutorial sharpens the threat model. Not every cryptographic tool is affected equally by quantum computing. Some public-key systems face a cliff. Symmetric systems face a slope. Long-lived secrets create urgency even before the cliff is visible from the road.</p>
+        </div>
+
+        <p class="lead">
+          The quantum threat is not a cartoon ray gun pointed equally at all cryptography. It is more like a specialized set of skeleton keys. Some locks fall open. Some merely need thicker metal. Some are not the target at all.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know RSA, Diffie-Hellman, elliptic-curve cryptography, symmetric key search, hash functions, bits of security, key exchange, signatures, and the post-quantum family map from Tutorial 74.</p>
+      </section>
+
+      <section id="terms-used">
+        <h2>Terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Threat model</td><td>Who can attack, what can they do, and what do we fear?</td><td>Explicit assumptions about attacker capability, goals, access, and time horizon.</td></tr>
+            <tr><td>Cryptographically relevant quantum computer, or CRQC</td><td>A quantum computer big and reliable enough to matter for crypto.</td><td>A fault-tolerant quantum machine capable of running attacks against deployed cryptographic parameters.</td></tr>
+            <tr><td>Shor’s algorithm</td><td>The factoring/discrete-log breaker.</td><td>Quantum algorithm that efficiently solves factoring and discrete logarithms.</td></tr>
+            <tr><td>Grover’s algorithm</td><td>The search accelerator.</td><td>Quantum algorithm giving quadratic speedup for unstructured search.</td></tr>
+            <tr><td>Store-now, decrypt-later</td><td>Record today, break tomorrow.</td><td>Harvest encrypted data now and decrypt later when better attacks or quantum computers exist.</td></tr>
+            <tr><td>Harvest now, decrypt later, or HNDL</td><td>Another name for the same patient attack.</td><td>Long-term collection of encrypted data for future decryption.</td></tr>
+            <tr><td>Forward secrecy</td><td>Past sessions stay safe after later key compromise.</td><td>Past session keys remain protected even if long-term keys are later compromised.</td></tr>
+            <tr><td>Security lifetime</td><td>How long the secret must stay secret.</td><td>Required confidentiality duration of protected data.</td></tr>
+            <tr><td>Migration time</td><td>How long replacement takes.</td><td>Time needed to inventory, upgrade, deploy, test, and retire vulnerable cryptography.</td></tr>
+            <tr><td>Crypto-agility</td><td>Ability to safely change crypto.</td><td>Design property enabling algorithm and parameter upgrades without redesigning the whole system.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="core-threat-model">
+        <h2>The core quantum threat model</h2>
+        <p>
+          A quantum threat model asks: what if an attacker eventually has access to a cryptographically relevant quantum computer? The immediate question is not only “Can they break traffic in the future?” but also “Can they record traffic today that must remain secret long enough to be worth breaking later?”</p>
+
+        <div class="diagram" role="img" aria-label="Quantum threat model timeline">
+          <div class="diagram-title">Store-now, decrypt-later timeline</div>
+          <div class="flow-row">
+            <div class="flow-node time-node">Today</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node danger-node">attacker records ciphertext</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node time-node">Years pass</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node danger-node">future quantum attack</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node danger-node">old secret exposed</div>
+          </div>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            The attacker does not need tomorrow’s crowbar to steal today’s locked box. They only need shelf space.</p>
+        </div>
+      </section>
+
+      <section id="shor">
+        <h2>Shor’s algorithm: the public-key cliff</h2>
+        <p>
+          Shor’s algorithm is dangerous because it efficiently solves the mathematical problems behind common classical public-key systems: factoring and discrete logarithms.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>System</th><th>Hard problem</th><th>Shor impact</th></tr></thead>
+          <tbody>
+            <tr><td>RSA encryption/signatures</td><td>Factoring \(N=pq\)</td><td>Breaks the trapdoor assumption.</td></tr>
+            <tr><td>Finite-field Diffie-Hellman</td><td>Discrete logarithm</td><td>Breaks key exchange.</td></tr>
+            <tr><td>Elliptic-curve Diffie-Hellman</td><td>Elliptic-curve discrete logarithm</td><td>Breaks key exchange.</td></tr>
+            <tr><td>ECDSA / EdDSA-style signatures</td><td>Elliptic-curve discrete logarithm</td><td>Breaks signature security.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Important distinction</div>
+          <p>
+            Increasing RSA key sizes or elliptic-curve sizes is not the same kind of answer as increasing symmetric key sizes. Against Shor’s algorithm, the underlying mathematical family itself is the problem.</p>
+        </div>
+      </section>
+
+      <section id="grover">
+        <h2>Grover’s algorithm: the search slope</h2>
+        <p>
+          Grover’s algorithm gives a quadratic speedup for unstructured search. In rough cryptographic planning, an ideal \(n\)-bit brute-force search moves from about \(2^n\) classical work toward about \(2^{n/2}\) quantum search work.</p>
+
+        <div class="math-display">
+          \[
+            classical\ search\approx 2^n
+          \]
+          \[
+            Grover\text{-style search}\approx 2^{n/2}
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Symmetric key size</th><th>Classical brute force</th><th>Grover-style estimate</th><th>Planning lesson</th></tr></thead>
+          <tbody>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>\(2^{64}\)</td><td>May be too small for high-value quantum-era margin.</td></tr>
+            <tr><td>192 bits</td><td>\(2^{192}\)</td><td>\(2^{96}\)</td><td>Stronger, but still below 128-bit quantum-search margin.</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>\(2^{128}\)</td><td>Common conservative quantum-era symmetric target.</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Grover does not make symmetric cryptography obsolete. It changes security margins.</p>
+      </section>
+
+      <section id="hashes">
+        <h2>Quantum effects on hashes</h2>
+        <p>
+          Hash functions have several security goals, and quantum attacks affect them differently. The simple planning lesson is to choose digest lengths with enough margin for the intended goal.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Hash goal</th><th>Classical rough work for \(n\)-bit digest</th><th>Quantum-era caution</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>About \(2^n\)</td><td>Grover-like speedup suggests larger outputs for high security.</td></tr>
+            <tr><td>Second-preimage resistance</td><td>About \(2^n\)</td><td>Use adequate digest length and modern construction.</td></tr>
+            <tr><td>Collision resistance</td><td>About \(2^{n/2}\)</td><td>Collision security already loses half the exponent classically.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Do not over-flatten the story</div>
+          <p>
+            Quantum hash analysis is more nuanced than “everything is cut in half.” For this stage, the important lesson is that hash output sizes and security goals must be chosen with quantum-era margins in mind.</p>
+        </div>
+      </section>
+
+      <section id="not-all-crypto">
+        <h2>What quantum computers do not automatically break</h2>
+        <p>
+          Quantum computers do not automatically break every use of cryptography. A threat model must distinguish families and assumptions.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Cryptographic area</th><th>Quantum-era status</th></tr></thead>
+          <tbody>
+            <tr><td>AES-style symmetric encryption</td><td>Still usable with sufficient key sizes and safe modes.</td></tr>
+            <tr><td>Modern hashes</td><td>Still usable with appropriate output sizes and goals.</td></tr>
+            <tr><td>HMAC and KDFs</td><td>Still important, with adequate underlying hash/security margins.</td></tr>
+            <tr><td>RSA / DH / ECC public-key systems</td><td>Need replacement or hybrid transition.</td></tr>
+            <tr><td>Protocols</td><td>Need migration, transcript binding, downgrade defense, and crypto-agility.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="mosca-inequality">
+        <h2>The migration timing problem</h2>
+        <p>
+          A useful way to reason about urgency is to compare three time periods:</p>
+
+        <table class="symbol-table">
+          <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(X\)</td><td>Security lifetime: how long the data must remain secret.</td></tr>
+            <tr><td>\(Y\)</td><td>Migration time: how long it takes to deploy quantum-resistant protection.</td></tr>
+            <tr><td>\(Z\)</td><td>Time until a cryptographically relevant quantum computer exists.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            X + Y > Z \quad \Rightarrow \quad migration\ is\ urgent
+          \]
+        </div>
+
+        <p>
+          This is sometimes called Mosca’s inequality in discussions of quantum migration. The exact dates may be uncertain, but the logic is sharp: if secrets need to last longer than the time remaining after migration delay, waiting is dangerous.</p>
+      </section>
+
+      <section id="who-cares-most">
+        <h2>Who should worry first?</h2>
+        <table class="danger-table">
+          <thead><tr><th>Environment</th><th>Why urgency may be higher</th></tr></thead>
+          <tbody>
+            <tr><td>Government secrets</td><td>Long confidentiality lifetimes and capable adversaries.</td></tr>
+            <tr><td>Healthcare records</td><td>Long-lived privacy requirements.</td></tr>
+            <tr><td>Financial infrastructure</td><td>High-value trust, signatures, and archival records.</td></tr>
+            <tr><td>Critical infrastructure</td><td>Long device lifetimes and difficult upgrades.</td></tr>
+            <tr><td>Embedded / IoT systems</td><td>Hard to patch, constrained memory/CPU, long deployment cycles.</td></tr>
+            <tr><td>Public-key infrastructure</td><td>Certificate chains and trust anchors require coordinated migration.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="decision-questions">
+        <h2>Quantum-risk decision questions</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Question</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>What data must remain secret, and for how long?</td><td>Defines security lifetime \(X\).</td></tr>
+            <tr><td>Where are RSA, DH, ECDH, ECDSA, or EdDSA used?</td><td>Identifies Shor-vulnerable dependencies.</td></tr>
+            <tr><td>Can traffic be recorded by adversaries today?</td><td>Indicates store-now, decrypt-later risk.</td></tr>
+            <tr><td>How long will migration take?</td><td>Defines migration time \(Y\).</td></tr>
+            <tr><td>Can the system support hybrid handshakes?</td><td>Supports transition without fully trusting one new assumption.</td></tr>
+            <tr><td>Can algorithm choices be upgraded safely?</td><td>Tests crypto-agility.</td></tr>
+            <tr><td>Are signatures also migrated?</td><td>Key exchange migration alone may not be enough.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="hybrid-threat-model">
+        <h2>Hybrid threat-model logic</h2>
+        <p>
+          A hybrid key exchange combines classical and post-quantum contributions. A common design goal is that the final secret remains protected if at least one component remains secure.</p>
+
+        <div class="math-display">
+          \[
+            shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+          \]
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>If classical part fails...</th><th>If PQC part holds...</th><th>Hybrid result</th></tr></thead>
+          <tbody>
+            <tr><td>Quantum attacker breaks ECDH.</td><td>ML-KEM-style secret remains secure.</td><td>Final secret can remain protected.</td></tr>
+            <tr><td>Classical part remains secure.</td><td>PQC assumption later weakens.</td><td>Final secret may still have classical protection.</td></tr>
+            <tr><td>Both parts fail.</td><td>No secure contribution remains.</td><td>Hybrid protection fails.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Hybrid warning</div>
+          <p>
+            Hybrid designs must still prevent downgrade. If an attacker can strip out the post-quantum part or force a weak mode, the hybrid design becomes decorative armor.</p>
+        </div>
+      </section>
+
+      <section id="signatures-threat-model">
+        <h2>Signatures have a different timeline problem</h2>
+        <p>
+          Key exchange protects confidentiality of sessions. Signatures protect authenticity and integrity of messages, certificates, software updates, logs, and legal or archival records. Migrating key exchange alone does not migrate signatures.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Signature use</th><th>Quantum-era concern</th></tr></thead>
+          <tbody>
+            <tr><td>Software updates</td><td>Forged updates could compromise systems.</td></tr>
+            <tr><td>Certificates</td><td>Certificate chains must move away from vulnerable signature algorithms.</td></tr>
+            <tr><td>Documents and records</td><td>Long-term validation may need timestamps and PQC signatures.</td></tr>
+            <tr><td>Firmware images</td><td>Embedded devices may trust old signature schemes for many years.</td></tr>
+            <tr><td>Authentication tokens</td><td>Forged signatures can impersonate authority.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating quantum risk as all-or-nothing</div>
+          <p>
+            Quantum attacks affect different primitives differently. The threat model must be specific.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking symmetric crypto is dead</div>
+          <p>
+            Symmetric cryptography remains usable with appropriate key sizes and designs.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: migrating key exchange but forgetting signatures</div>
+          <p>
+            A system may still depend on RSA, ECDSA, or EdDSA signatures in certificates, firmware, or updates.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: ignoring data lifetime</div>
+          <p>
+            Data that must remain confidential for decades creates urgency today.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: assuming hybrid automatically means secure</div>
+          <p>
+            Hybrid protocols still need transcript binding, downgrade protection, correct KDF design, and clean error handling.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is a cryptographically relevant quantum computer?
+            <details class="solution"><summary>Show solution</summary><p>A fault-tolerant quantum computer capable of running attacks against deployed cryptographic parameters.</p></details>
+          </li>
+          <li>
+            Which common public-key systems are threatened by Shor’s algorithm?
+            <details class="solution"><summary>Show solution</summary><p>RSA, finite-field Diffie-Hellman, elliptic-curve Diffie-Hellman, and elliptic-curve signature systems such as ECDSA/EdDSA-style systems.</p></details>
+          </li>
+          <li>
+            Why does Grover’s algorithm not destroy symmetric cryptography in the same way?
+            <details class="solution"><summary>Show solution</summary><p>It gives a quadratic search speedup, which can often be addressed by using larger symmetric keys, rather than breaking the underlying family outright.</p></details>
+          </li>
+          <li>
+            What is store-now, decrypt-later?
+            <details class="solution"><summary>Show solution</summary><p>An attacker records encrypted data now and waits to decrypt it later when stronger attacks or quantum computers become available.</p></details>
+          </li>
+          <li>
+            What does \(X+Y>Z\) mean in migration planning?
+            <details class="solution"><summary>Show solution</summary><p>If data lifetime plus migration time exceeds the time until a cryptographically relevant quantum computer, migration is urgent.</p></details>
+          </li>
+          <li>
+            Why is migrating signatures separate from migrating key exchange?
+            <details class="solution"><summary>Show solution</summary><p>Key exchange establishes secrets; signatures authenticate data, certificates, updates, and identities. They solve different protocol jobs.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          A good quantum threat model prevents panic and complacency at the same time. It tells us which systems face a cliff, which systems need larger margins, which secrets are urgent because of long lifetimes, and which protocol components need migration. It turns “quantum someday” into concrete engineering questions.</p>
+        <ul>
+          <li>Shor threatens factoring and discrete-log public-key systems.</li>
+          <li>Grover weakens brute-force margins but does not erase symmetric cryptography.</li>
+          <li>Hash goals need quantum-era security margins.</li>
+          <li>Store-now, decrypt-later makes future attacks relevant today.</li>
+          <li>Migration urgency depends on data lifetime, migration time, and quantum arrival estimates.</li>
+          <li>Hybrid protocols can reduce transition risk when designed carefully.</li>
+          <li>Signatures and key exchange must be migrated separately.</li>
+          <li>Crypto-agility is a survival trait.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A quantum threat model asks what a quantum-capable attacker can do and when.</li>
+            <li>A cryptographically relevant quantum computer is powerful enough to threaten deployed cryptography.</li>
+            <li>Shor’s algorithm threatens RSA, Diffie-Hellman, elliptic-curve Diffie-Hellman, and elliptic-curve signatures.</li>
+            <li>Grover’s algorithm gives a quadratic speedup for search.</li>
+            <li>Symmetric cryptography can often respond with larger keys.</li>
+            <li>Hash functions require careful security-goal and output-size choices.</li>
+            <li>Quantum computers do not automatically break all cryptography.</li>
+            <li>Store-now, decrypt-later is urgent for long-lived secrets.</li>
+            <li>Migration planning compares data lifetime, migration time, and quantum-arrival estimates.</li>
+            <li>\(X+Y>Z\) means migration is urgent.</li>
+            <li>Hybrid key exchange combines classical and post-quantum secrets.</li>
+            <li>Hybrid protocols still need downgrade protection.</li>
+            <li>Signatures require their own migration path.</li>
+            <li>Crypto-agility helps future migrations.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              classical\ search\approx 2^n
+            \]
+            \[
+              Grover\text{-style search}\approx 2^{n/2}
+            \]
+            \[
+              X + Y > Z \quad \Rightarrow \quad migration\ is\ urgent
+            \]
+            \[
+              shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+            \]
+          </div>
+          <pre><code>Quantum threat-model questions:
+What must remain secret?
+For how long?
+Can attackers record it today?
+Where are RSA, DH, ECDH, ECDSA, or EdDSA used?
+How long will migration take?
+Can the protocol prevent downgrade?
+Are signatures migrated too?</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 75: Quantum Threat Model: Shor, Grover, and Store-Now-Decrypt-Later</strong>. After that, the next tutorial can be <strong>76. Lattice Intuition: Vectors, Grids, Closest Vectors, and Noisy Equations</strong>.</p>
+      </section>
+
+      <nav class="bottom-nav">
+        <div class="nav-bundle">
+          <a href="tutorial_74_post_quantum_cryptography_overview_lattices_code_hash_migration_html.html" class="nav-item">⬅️ Previous</a>
+          <a href="tutorial_76_lattice_intuition_vectors_grids_closest_vectors_noisy_equations_html.html" class="nav-item">Next ➡️</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_75_quantum_threat_model_shor_grover_store_now_decrypt_later_workbook_html.html" class="nav-item nav-secondary">🔄 Switch Mode</a>
+          <a href="index.html" class="nav-item nav-primary">🏠 Dashboard</a>
+        </div>
+      </nav>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 6: Post-Quantum Foundations. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

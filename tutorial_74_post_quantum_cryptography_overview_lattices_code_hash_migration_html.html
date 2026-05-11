@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Post-Quantum Cryptography: Lattices, Code-Based Systems, Hash-Based Signatures, and Migration | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 74</div>
+      <div class="volume-label">Volume 6: Post-Quantum Foundations</div>
+      <h1>Post-Quantum Cryptography: Lattices, Code-Based Systems, Hash-Based Signatures, and Migration</h1>
+      <p class="subtitle">
+        A first map of the post-quantum landscape: why quantum computers threaten RSA, Diffie-Hellman, and elliptic-curve cryptography; what ML-KEM, ML-DSA, and SLH-DSA are; how lattices, codes, and hash-based signatures fit together; and why migration is a protocol and engineering problem, not merely an algorithm swap.
+      </p>
+
+      <nav class="tutorial-nav no-print">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Volume 3 ended with real-world protocols. Volume 4 begins with the next great migration: replacing or supplementing classical public-key cryptography with systems believed to remain secure against quantum attackers. This tutorial is the map before the hike. We will not prove lattice hardness yet. We will name the kingdoms, describe their terrain, and explain why migration matters.</p>
+        </div>
+
+        <p class="lead">
+          Post-quantum cryptography is not “quantum cryptography.” It is ordinary software cryptography designed to survive a future where attackers may own quantum machines. The battlefield changes, but the protocols still run on laptops, phones, servers, routers, and sleepy little embedded boxes blinking in closets.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know public-key encryption, key exchange, digital signatures, hash functions, security parameters, bits of security, protocol composition, TLS-style handshakes, and the basic difference between symmetric and public-key cryptography.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Post-quantum cryptography, or PQC</td><td>Crypto built for a quantum-threat world.</td><td>Classical algorithms believed secure against both classical and quantum attackers.</td></tr>
+            <tr><td>Quantum computer</td><td>A machine using quantum effects for computation.</td><td>A computational model that enables algorithms such as Shor and Grover.</td></tr>
+            <tr><td>Shor’s algorithm</td><td>The public-key wrecking ball.</td><td>Quantum algorithm that efficiently solves factoring and discrete logarithms.</td></tr>
+            <tr><td>Grover’s algorithm</td><td>The search-speedup blade.</td><td>Quantum algorithm giving quadratic speedup for unstructured search.</td></tr>
+            <tr><td>KEM</td><td>Key-delivery wrapper.</td><td>Key Encapsulation Mechanism for establishing a shared secret.</td></tr>
+            <tr><td>ML-KEM</td><td>NIST’s main lattice KEM.</td><td>Module-Lattice-Based Key-Encapsulation Mechanism, standardized as FIPS 203.</td></tr>
+            <tr><td>ML-DSA</td><td>NIST’s main lattice signature.</td><td>Module-Lattice-Based Digital Signature Algorithm, standardized as FIPS 204.</td></tr>
+            <tr><td>SLH-DSA</td><td>NIST’s stateless hash-based signature.</td><td>Stateless Hash-Based Digital Signature Algorithm, standardized as FIPS 205.</td></tr>
+            <tr><td>Lattice</td><td>A repeating grid of points.</td><td>Discrete additive subgroup of a vector space, often used for hard geometric problems.</td></tr>
+            <tr><td>Learning With Errors, or LWE</td><td>Noisy equations that are hard to untangle.</td><td>Hardness assumption based on solving linear equations with added noise.</td></tr>
+            <tr><td>Code-based cryptography</td><td>Hide a message inside error-correcting-code noise.</td><td>Cryptography based on hardness of decoding random-looking error-correcting codes.</td></tr>
+            <tr><td>Hash-based signature</td><td>Signatures from hash functions.</td><td>Digital signatures built mainly from hash functions and Merkle-tree-like structures.</td></tr>
+            <tr><td>Hybrid migration</td><td>Wear belt and suspenders.</td><td>Combining classical and post-quantum methods during transition.</td></tr>
+            <tr><td>Crypto-agility</td><td>The ability to swap cryptography safely.</td><td>System design that supports upgrading algorithms, parameters, and protocols.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="why-quantum-changes-public-key">
+        <h2>Why quantum computers change public-key cryptography</h2>
+        <p>
+          RSA depends on factoring being hard. Diffie-Hellman and elliptic-curve cryptography depend on discrete logarithms being hard. Shor’s algorithm threatens both factoring and discrete logarithms if a sufficiently large, fault-tolerant quantum computer becomes available.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Classical system</th><th>Main hard problem</th><th>Quantum concern</th></tr></thead>
+          <tbody>
+            <tr><td>RSA</td><td>Factoring \(N=pq\)</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>Finite-field Diffie-Hellman</td><td>Discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>Elliptic-curve Diffie-Hellman</td><td>Elliptic-curve discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>ECDSA / EdDSA-style signatures</td><td>Elliptic-curve discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Shor attacks the trapdoor staircases of classical public-key cryptography. The stairs still look steep to ordinary computers, but a quantum attacker may have an elevator.</p>
+        </div>
+      </section>
+
+      <section id="symmetric-impact">
+        <h2>What about symmetric cryptography?</h2>
+        <p>
+          Symmetric cryptography is affected differently. Grover’s algorithm gives a quadratic speedup for brute-force search, which is often summarized as cutting an ideal \(n\)-bit search down toward about \(2^{n/2}\) quantum work. This does not destroy symmetric cryptography in the same way Shor threatens RSA and elliptic curves. It usually means choosing larger symmetric security margins.</p>
+
+        <div class="math-display">
+          \[
+            classical\ brute\ force\approx 2^n
+          \]
+          \[
+            Grover\text{-style search}\approx 2^{n/2}
+          \]
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Primitive family</th><th>Quantum impact</th><th>Typical response</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric encryption</td><td>Quadratic search speedup.</td><td>Use larger keys when needed.</td></tr>
+            <tr><td>Hashes</td><td>Some goals get quantum speedups.</td><td>Use adequate digest lengths and modern designs.</td></tr>
+            <tr><td>Public-key factoring/discrete-log systems</td><td>Efficient quantum attacks from Shor.</td><td>Migrate to post-quantum assumptions.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="pqc-map">
+        <h2>The post-quantum map</h2>
+        <div class="diagram" role="img" aria-label="Post-quantum cryptography families">
+          <div class="diagram-title">Major post-quantum families</div>
+          <div class="flow-row">
+            <div class="flow-node lattice-node">Lattice-based<br>ML-KEM, ML-DSA</div>
+            <div class="flow-node hash-node">Hash-based<br>SLH-DSA</div>
+            <div class="flow-node code-node">Code-based<br>McEliece family</div>
+            <div class="flow-node quantum-node">Other / cautionary<br>isogenies, multivariate</div>
+          </div>
+        </div>
+
+        <table class="pqc-table">
+          <thead><tr><th>Family</th><th>Main idea</th><th>Typical role</th><th>Tradeoff flavor</th></tr></thead>
+          <tbody>
+            <tr><td>Lattice-based</td><td>Noisy linear algebra and hard geometry.</td><td>KEMs and signatures.</td><td>Efficient, but mathematically subtle.</td></tr>
+            <tr><td>Hash-based</td><td>Sign using hash functions and trees.</td><td>Signatures.</td><td>Conservative assumptions, larger signatures.</td></tr>
+            <tr><td>Code-based</td><td>Decode hidden error-correcting codes.</td><td>Mostly encryption/KEM-style systems.</td><td>Long history, often large public keys.</td></tr>
+            <tr><td>Isogeny-based</td><td>Maps between elliptic curves.</td><td>Mostly research/cautionary.</td><td>Small keys once attractive; major break showed risk.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="kem-vs-signature">
+        <h2>KEMs versus signatures</h2>
+        <p>
+          Post-quantum migration is not one algorithm replacing everything. Key establishment and signatures are different jobs.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Job</th><th>Classical examples</th><th>Post-quantum examples</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Key establishment</td><td>ECDH, DH, RSA key transport</td><td>ML-KEM</td><td>Establishes a shared secret.</td></tr>
+            <tr><td>Digital signature</td><td>RSA-PSS, ECDSA, EdDSA</td><td>ML-DSA, SLH-DSA</td><td>Authenticates data and signer identity.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Common mistake</div>
+          <p>
+            ML-KEM does not replace signatures. ML-DSA and SLH-DSA do not replace key establishment. They solve different protocol jobs.</p>
+        </div>
+      </section>
+
+      <section id="ml-kem">
+        <h2>ML-KEM: Module-Lattice-Based Key-Encapsulation Mechanism</h2>
+        <div class="box pqc-box">
+          <div class="box-title">What ML-KEM is for</div>
+          <p>
+            ML-KEM is a post-quantum key encapsulation mechanism. It lets one party encapsulate a shared secret to another party’s public key. The other party decapsulates using the private key. Both end up with the same shared secret, which can feed symmetric encryption or a protocol key schedule.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            (ciphertext, shared\_secret)=Encapsulate(public\_key)
+          \]
+          \[
+            shared\_secret=Decapsulate(private\_key, ciphertext)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>ML-KEM feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Lattice-based.</td></tr>
+            <tr><td>Protocol role</td><td>Key establishment.</td></tr>
+            <tr><td>Underlying flavor</td><td>Module Learning With Errors.</td></tr>
+            <tr><td>Former competition name</td><td>CRYSTALS-Kyber.</td></tr>
+            <tr><td>Standard name</td><td>ML-KEM.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ml-dsa">
+        <h2>ML-DSA: Module-Lattice-Based Digital Signature Algorithm</h2>
+        <div class="box pqc-box">
+          <div class="box-title">What ML-DSA is for</div>
+          <p>
+            ML-DSA is a post-quantum digital signature algorithm. It is used to sign data so that others can verify that the holder of the private key approved that data.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            signature = Sign(private\_key, message)
+          \]
+          \[
+            Verify(public\_key, message, signature)\in\{true,false\}
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>ML-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Lattice-based.</td></tr>
+            <tr><td>Protocol role</td><td>Digital signatures.</td></tr>
+            <tr><td>Underlying flavor</td><td>Module lattice assumptions.</td></tr>
+            <tr><td>Former competition name</td><td>CRYSTALS-Dilithium.</td></tr>
+            <tr><td>Standard name</td><td>ML-DSA.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="slh-dsa">
+        <h2>SLH-DSA: Stateless Hash-Based Digital Signature Algorithm</h2>
+        <div class="box pqc-box">
+          <div class="box-title">What SLH-DSA is for</div>
+          <p>
+            SLH-DSA is a stateless hash-based signature algorithm. It relies mainly on hash-function security rather than lattice assumptions. This makes it conceptually conservative, though with larger signatures and different performance tradeoffs.</p>
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>SLH-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Hash-based.</td></tr>
+            <tr><td>Protocol role</td><td>Digital signatures.</td></tr>
+            <tr><td>Underlying flavor</td><td>Hash functions, one-time signatures, tree structures.</td></tr>
+            <tr><td>Former competition name</td><td>SPHINCS+.</td></tr>
+            <tr><td>Standard name</td><td>SLH-DSA.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            If lattice signatures are elegant new machinery, hash-based signatures are the sturdy old stone bridge. Heavy, maybe, but comforting.</p>
+        </div>
+      </section>
+
+      <section id="lattice-intuition">
+        <h2>Lattice intuition</h2>
+        <p>
+          A lattice is a regular grid of points formed by combining basis vectors with integer coefficients. Lattice cryptography often hides secrets inside high-dimensional noisy linear algebra. The attacker sees equations, but noise makes exact recovery hard.</p>
+
+        <div class="math-display">
+          \[
+            b = A s + e \pmod q
+          \]
+        </div>
+
+        <p>
+          In this sketch, \(A\) is public structure, \(s\) is secret, \(e\) is small error or noise, and \(q\) is a modulus. Without the noise, solving for \(s\) would look like linear algebra. With carefully chosen noise in high dimensions, the problem becomes hard.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Analogy</div>
+          <p>
+            Imagine hearing a precise melody through static. One noisy note is easy to guess. A huge orchestra of noisy equations becomes much harder to untangle.</p>
+        </div>
+      </section>
+
+      <section id="code-based-intuition">
+        <h2>Code-based cryptography intuition</h2>
+        <p>
+          Code-based cryptography is built from error-correcting codes. The friendly owner knows a code structure that can correct certain errors efficiently. The attacker sees something that looks like a random code and faces a hard decoding problem.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td>Original data to protect.</td></tr>
+            <tr><td>Error-correcting code</td><td>Structure that can recover from certain errors.</td></tr>
+            <tr><td>Added errors</td><td>Intentional noise hiding the message.</td></tr>
+            <tr><td>Secret structure</td><td>Trapdoor allowing efficient decoding.</td></tr>
+            <tr><td>Attacker problem</td><td>Decode without knowing the hidden structure.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="migration">
+        <h2>Migration: the hard part is not only mathematics</h2>
+        <p>
+          Post-quantum migration affects protocols, certificates, devices, libraries, packet sizes, storage formats, hardware acceleration, compliance, and operational workflows. A technically strong algorithm can still be hard to deploy safely.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Migration issue</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Larger keys or signatures</td><td>Can affect packet sizes, certificates, memory, and bandwidth.</td></tr>
+            <tr><td>Protocol compatibility</td><td>Old systems may not understand new algorithms.</td></tr>
+            <tr><td>Hybrid handshakes</td><td>Can combine classical and PQC security during transition.</td></tr>
+            <tr><td>Certificates and PKI</td><td>Signature algorithms and certificate chains must migrate.</td></tr>
+            <tr><td>Embedded devices</td><td>May lack memory, CPU, or update paths.</td></tr>
+            <tr><td>Crypto-agility</td><td>Systems need safe upgrade paths for future changes.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="store-now-decrypt-later">
+        <h2>Store-now, decrypt-later</h2>
+        <p>
+          The quantum threat is not only future communication. Attackers can record encrypted traffic today and decrypt it later if future quantum capabilities break the key exchange used to protect it. This is especially important for data that must remain secret for years or decades.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Long-lived secrecy warning</div>
+          <p>
+            If a secret must remain confidential for twenty years, waiting until quantum computers are actually available may be too late. The ciphertext harvest may already be sitting in someone’s warehouse of patient doom.</p>
+        </div>
+      </section>
+
+      <section id="hybrid-protocols">
+        <h2>Hybrid classical/post-quantum protocols</h2>
+        <p>
+          A hybrid protocol combines a classical method and a post-quantum method. The goal is to remain safe if one side later turns out weaker than expected.</p>
+
+        <div class="math-display">
+          \[
+            shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+          \]
+        </div>
+
+        <p>
+          Hybrid designs are not magic glue. They must bind the transcript, prevent downgrade, separate keys by purpose, and handle failures carefully.</p>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking PQC means quantum computers run the protocol</div>
+          <p>
+            Post-quantum cryptography is classical cryptography designed to resist quantum attackers.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: treating ML-KEM, ML-DSA, and SLH-DSA as interchangeable</div>
+          <p>
+            ML-KEM is for key establishment. ML-DSA and SLH-DSA are for signatures.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: ignoring migration costs</div>
+          <p>
+            Post-quantum objects can change sizes, performance, protocols, certificates, and storage.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: waiting too long because the quantum computer is not here yet</div>
+          <p>
+            Store-now, decrypt-later attacks matter for long-lived secrets.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: forgetting crypto-agility</div>
+          <p>
+            Today’s migration will not be the last. Systems should be built to change safely.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does post-quantum cryptography mean?
+            <details class="solution"><summary>Show solution</summary><p>Classical cryptographic algorithms designed to resist attackers who may have quantum computers.</p></details>
+          </li>
+          <li>
+            Which algorithm threatens RSA and elliptic-curve public-key systems?
+            <details class="solution"><summary>Show solution</summary><p>Shor’s algorithm.</p></details>
+          </li>
+          <li>
+            What does ML-KEM do?
+            <details class="solution"><summary>Show solution</summary><p>It is a key encapsulation mechanism used for post-quantum key establishment.</p></details>
+          </li>
+          <li>
+            What do ML-DSA and SLH-DSA do?
+            <details class="solution"><summary>Show solution</summary><p>They are post-quantum digital signature algorithms.</p></details>
+          </li>
+          <li>
+            What is the basic intuition behind Learning With Errors?
+            <details class="solution"><summary>Show solution</summary><p>Solving linear equations would be easy, but added noise makes recovering the secret hard in the intended setting.</p></details>
+          </li>
+          <li>
+            Why does store-now, decrypt-later matter?
+            <details class="solution"><summary>Show solution</summary><p>Attackers can record encrypted traffic today and decrypt it later if future quantum computers break the key exchange used.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Post-quantum cryptography is the next great public-key transition. It forces us to rethink what hardness assumptions we trust, how protocols establish keys, how certificates are signed, how long secrets must remain safe, and how systems migrate without collapsing under their own backward compatibility. It is also a reminder that cryptography is never finished. It evolves because attackers, machines, and mathematics evolve.</p>
+        <ul>
+          <li>Shor threatens factoring and discrete logarithm systems.</li>
+          <li>Grover changes symmetric search estimates but does not destroy symmetric cryptography.</li>
+          <li>ML-KEM is for post-quantum key establishment.</li>
+          <li>ML-DSA and SLH-DSA are for post-quantum signatures.</li>
+          <li>Lattice cryptography often uses noisy linear-algebra assumptions.</li>
+          <li>Hash-based signatures rely mainly on hash-function security.</li>
+          <li>Code-based cryptography relies on hard decoding problems.</li>
+          <li>Migration requires protocol, engineering, and operational planning.</li>
+          <li>Store-now, decrypt-later makes the threat urgent for long-lived secrets.</li>
+          <li>Crypto-agility is no longer optional for serious systems.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Post-quantum cryptography is classical cryptography designed to resist quantum attackers.</li>
+            <li>Shor’s algorithm threatens RSA, Diffie-Hellman, elliptic-curve Diffie-Hellman, and elliptic-curve signatures.</li>
+            <li>Grover’s algorithm gives a quadratic search speedup, affecting symmetric security estimates.</li>
+            <li>ML-KEM is a post-quantum key encapsulation mechanism.</li>
+            <li>ML-DSA is a lattice-based post-quantum signature algorithm.</li>
+            <li>SLH-DSA is a stateless hash-based post-quantum signature algorithm.</li>
+            <li>Lattice systems often rely on noisy linear algebra.</li>
+            <li>Code-based systems rely on hard decoding problems.</li>
+            <li>Hash-based signatures rely mainly on hash functions and tree structures.</li>
+            <li>KEMs and signatures solve different protocol jobs.</li>
+            <li>Migration affects protocols, certificates, devices, sizes, libraries, and operations.</li>
+            <li>Store-now, decrypt-later matters for long-lived secrets.</li>
+            <li>Hybrid protocols combine classical and post-quantum secrets during transition.</li>
+            <li>Crypto-agility means systems can upgrade algorithms safely.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              classical\ brute\ force\approx 2^n
+            \]
+            \[
+              Grover\text{-style search}\approx 2^{n/2}
+            \]
+            \[
+              (ciphertext, shared\_secret)=Encapsulate(public\_key)
+            \]
+            \[
+              shared\_secret=Decapsulate(private\_key, ciphertext)
+            \]
+            \[
+              b = A s + e \pmod q
+            \]
+            \[
+              shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 74: Post-Quantum Cryptography: Lattices, Code-Based Systems, Hash-Based Signatures, and Migration</strong>. After that, the next tutorial can be <strong>75. Quantum Threat Model: Shor, Grover, and Store-Now-Decrypt-Later</strong>.</p>
+      </section>
+
+      <nav class="bottom-nav">
+        <div class="nav-bundle">
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_html.html" class="nav-item">⬅️ Previous</a>
+          <a href="tutorial_75_quantum_threat_model_shor_grover_store_now_decrypt_later_html.html" class="nav-item">Next ➡️</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_74_post_quantum_cryptography_overview_workbook_html.html" class="nav-item nav-secondary">🔄 Switch Mode</a>
+          <a href="index.html" class="nav-item nav-primary">🏠 Dashboard</a>
+        </div>
+      </nav>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 6: Post-Quantum Foundations. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    </main>
+  </div>
+</body>
+</html>

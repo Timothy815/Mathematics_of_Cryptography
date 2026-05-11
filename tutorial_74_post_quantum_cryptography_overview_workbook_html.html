@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 74: Post-Quantum Cryptography | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 74</div>
+      <div class="volume-label">Volume 6: Post-Quantum Foundations</div>
+      <h1>Post-Quantum Cryptography: Lattices, Code-Based Systems, Hash-Based Signatures, and Migration</h1>
+      <p class="subtitle">
+        Printable practice for post-quantum cryptography foundations: Shor, Grover, ML-KEM, ML-DSA, SLH-DSA, lattice intuition, code-based intuition, hash-based signatures, hybrid migration, store-now-decrypt-later, and crypto-agility.
+      </p>
+
+      <nav class="workbook-nav no-print">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat this as a map of the post-quantum terrain. The goal is not yet to prove lattice security or implement a standard. The goal is to distinguish the families, jobs, migration risks, and basic threat model.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Quantum search impact</div>
+            <div class="math-display">
+              \[
+                classical\ brute\ force\approx 2^n
+              \]
+              \[
+                Grover\text{-style search}\approx 2^{n/2}
+              \]
+            </div>
+          </div>
+
+          <div class="box pqc-box">
+            <div class="box-title">Hybrid shared secret</div>
+            <div class="math-display">
+              \[
+                shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is post-quantum cryptography?</td><td></td></tr>
+            <tr><td>A2. What is Shor’s algorithm?</td><td></td></tr>
+            <tr><td>A3. What is Grover’s algorithm?</td><td></td></tr>
+            <tr><td>A4. What is a Key Encapsulation Mechanism, or KEM?</td><td></td></tr>
+            <tr><td>A5. What is ML-KEM?</td><td></td></tr>
+            <tr><td>A6. What is ML-DSA?</td><td></td></tr>
+            <tr><td>A7. What is SLH-DSA?</td><td></td></tr>
+            <tr><td>A8. What is a lattice?</td><td></td></tr>
+            <tr><td>A9. What is Learning With Errors, or LWE?</td><td></td></tr>
+            <tr><td>A10. What is code-based cryptography?</td><td></td></tr>
+            <tr><td>A11. What is a hash-based signature?</td><td></td></tr>
+            <tr><td>A12. What is hybrid migration?</td><td></td></tr>
+            <tr><td>A13. What is crypto-agility?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="quantum-threat">
+        <h2>Part B: Why quantum changes public-key cryptography</h2>
+        <table class="danger-table">
+          <thead><tr><th>Classical system</th><th>Main hard problem</th><th>Quantum concern</th></tr></thead>
+          <tbody>
+            <tr><td>RSA</td><td></td><td></td></tr>
+            <tr><td>Finite-field Diffie-Hellman</td><td></td><td></td></tr>
+            <tr><td>Elliptic-curve Diffie-Hellman</td><td></td><td></td></tr>
+            <tr><td>ECDSA / EdDSA-style signatures</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why does Shor’s algorithm matter more dramatically for RSA and elliptic-curve systems than Grover’s algorithm does for symmetric encryption?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="symmetric-impact">
+        <h2>Part C: Symmetric impact</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            classical\ brute\ force\approx 2^n
+          \]
+          \[
+            Grover\text{-style search}\approx 2^{n/2}
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Symmetric key size</th><th>Classical brute-force estimate</th><th>Grover-style search estimate</th></tr></thead>
+          <tbody>
+            <tr><td>128 bits</td><td></td><td></td></tr>
+            <tr><td>192 bits</td><td></td><td></td></tr>
+            <tr><td>256 bits</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why does Grover’s algorithm suggest larger symmetric security margins rather than replacing symmetric cryptography entirely?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="pqc-map">
+        <h2>Part D: Post-quantum family map</h2>
+        <table class="pqc-table">
+          <thead><tr><th>Family</th><th>Main idea</th><th>Typical role</th><th>Tradeoff flavor</th></tr></thead>
+          <tbody>
+            <tr><td>Lattice-based</td><td></td><td></td><td></td></tr>
+            <tr><td>Hash-based</td><td></td><td></td><td></td></tr>
+            <tr><td>Code-based</td><td></td><td></td><td></td></tr>
+            <tr><td>Isogeny-based</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="kem-vs-signature">
+        <h2>Part E: KEMs versus signatures</h2>
+        <table class="compare-table">
+          <thead><tr><th>Job</th><th>Classical examples</th><th>Post-quantum examples</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Key establishment</td><td></td><td></td><td></td></tr>
+            <tr><td>Digital signature</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is it wrong to say that ML-KEM replaces digital signatures?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ml-kem">
+        <h2>Part F: ML-KEM</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            (ciphertext, shared\_secret)=Encapsulate(public\_key)
+          \]
+          \[
+            shared\_secret=Decapsulate(private\_key, ciphertext)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>ML-KEM feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td></td></tr>
+            <tr><td>Protocol role</td><td></td></tr>
+            <tr><td>Underlying flavor</td><td></td></tr>
+            <tr><td>Former competition name</td><td></td></tr>
+            <tr><td>Standard name</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain encapsulation and decapsulation in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="ml-dsa">
+        <h2>Part G: ML-DSA</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            signature = Sign(private\_key, message)
+          \]
+          \[
+            Verify(public\_key, message, signature)\in\{true,false\}
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>ML-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td></td></tr>
+            <tr><td>Protocol role</td><td></td></tr>
+            <tr><td>Underlying flavor</td><td></td></tr>
+            <tr><td>Former competition name</td><td></td></tr>
+            <tr><td>Standard name</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="slh-dsa">
+        <h2>Part H: SLH-DSA</h2>
+        <table class="lesson-table">
+          <thead><tr><th>SLH-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td></td></tr>
+            <tr><td>Protocol role</td><td></td></tr>
+            <tr><td>Underlying flavor</td><td></td></tr>
+            <tr><td>Former competition name</td><td></td></tr>
+            <tr><td>Standard name</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why might hash-based signatures feel conservative compared with newer lattice assumptions?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="lattice-intuition">
+        <h2>Part I: Lattice intuition</h2>
+        <p>Use the sketch:</p>
+        <div class="math-display">
+          \[
+            b = A s + e \pmod q
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Symbol</th><th>Meaning in the sketch</th></tr></thead>
+          <tbody>
+            <tr><td>\(A\)</td><td></td></tr>
+            <tr><td>\(s\)</td><td></td></tr>
+            <tr><td>\(e\)</td><td></td></tr>
+            <tr><td>\(q\)</td><td></td></tr>
+            <tr><td>\(b\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does adding noise make the problem different from ordinary linear algebra?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="code-based">
+        <h2>Part J: Code-based cryptography intuition</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td></td></tr>
+            <tr><td>Error-correcting code</td><td></td></tr>
+            <tr><td>Added errors</td><td></td></tr>
+            <tr><td>Secret structure</td><td></td></tr>
+            <tr><td>Attacker problem</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Explain code-based cryptography using the idea of decoding without the secret structure.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="migration">
+        <h2>Part K: Migration issues</h2>
+        <table class="danger-table">
+          <thead><tr><th>Migration issue</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Larger keys or signatures</td><td></td></tr>
+            <tr><td>Protocol compatibility</td><td></td></tr>
+            <tr><td>Hybrid handshakes</td><td></td></tr>
+            <tr><td>Certificates and PKI</td><td></td></tr>
+            <tr><td>Embedded devices</td><td></td></tr>
+            <tr><td>Crypto-agility</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="store-now">
+        <h2>Part L: Store-now, decrypt-later</h2>
+        <div class="problem">
+          <div class="problem-title">L1. Why does store-now, decrypt-later make post-quantum migration urgent for long-lived secrets?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="hybrid">
+        <h2>Part M: Hybrid classical/post-quantum protocols</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            shared\_secret = KDF(classical\_secret \parallel pqc\_secret \parallel transcript)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">M1. What is the defensive purpose of combining a classical secret and a post-quantum secret?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">M2. Why must hybrid designs still bind the transcript and prevent downgrade?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part N: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system replaces ECDH key exchange with ML-KEM but keeps ECDSA signatures.</td><td></td></tr>
+            <tr><td>A protocol uses ML-DSA for signatures and assumes it also performs key establishment.</td><td></td></tr>
+            <tr><td>A government archive must keep secrets confidential for thirty years.</td><td></td></tr>
+            <tr><td>A TLS-like handshake combines an ECDH secret and an ML-KEM secret into one KDF.</td><td></td></tr>
+            <tr><td>An embedded device cannot fit larger post-quantum signatures in its memory budget.</td><td></td></tr>
+            <tr><td>A system stores algorithm identifiers rigidly and cannot add new algorithms without a firmware rewrite.</td><td></td></tr>
+            <tr><td>A designer thinks post-quantum cryptography requires quantum computers to run.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part O: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Post-quantum cryptography means classical software cryptography designed to resist quantum attackers.</td><td></td><td></td></tr>
+            <tr><td>Shor’s algorithm threatens RSA and elliptic-curve public-key systems.</td><td></td><td></td></tr>
+            <tr><td>Grover’s algorithm affects symmetric brute-force estimates.</td><td></td><td></td></tr>
+            <tr><td>ML-KEM is a digital signature algorithm.</td><td></td><td></td></tr>
+            <tr><td>ML-DSA and SLH-DSA are signature algorithms.</td><td></td><td></td></tr>
+            <tr><td>Lattice cryptography often uses noisy linear-algebra-style assumptions.</td><td></td><td></td></tr>
+            <tr><td>Store-now, decrypt-later is irrelevant for long-lived secrets.</td><td></td><td></td></tr>
+            <tr><td>Crypto-agility helps systems migrate safely.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part P: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">P1. Explain post-quantum cryptography in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P2. Explain the difference between Shor’s and Grover’s effects in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P3. Explain ML-KEM, ML-DSA, and SLH-DSA in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P4. Explain why migration is more than an algorithm swap.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Post-quantum cryptography runs on ordinary classical computers.</td><td></td></tr>
+            <tr><td>Shor’s algorithm is the major threat to RSA and elliptic-curve cryptography.</td><td></td></tr>
+            <tr><td>ML-KEM and ML-DSA solve the exact same protocol job.</td><td></td></tr>
+            <tr><td>SLH-DSA is hash-based.</td><td></td></tr>
+            <tr><td>Hybrid handshakes can combine classical and post-quantum secrets.</td><td></td></tr>
+            <tr><td>Store-now, decrypt-later matters for secrets that must remain private for many years.</td><td></td></tr>
+            <tr><td>Post-quantum migration only affects mathematicians, not protocols or engineering.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that post-quantum cryptography replaces vulnerable public-key assumptions with assumptions believed to resist quantum attackers, but migration affects whole systems, not just formulas.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is post-quantum cryptography?</td><td>Classical cryptographic algorithms believed secure against both classical and quantum attackers.</td></tr>
+            <tr><td>A2. What is Shor’s algorithm?</td><td>A quantum algorithm that efficiently solves factoring and discrete logarithms.</td></tr>
+            <tr><td>A3. What is Grover’s algorithm?</td><td>A quantum algorithm that gives a quadratic speedup for unstructured search.</td></tr>
+            <tr><td>A4. What is a Key Encapsulation Mechanism, or KEM?</td><td>A method for establishing a shared secret by encapsulating to a public key and decapsulating with a private key.</td></tr>
+            <tr><td>A5. What is ML-KEM?</td><td>Module-Lattice-Based Key-Encapsulation Mechanism, used for post-quantum key establishment.</td></tr>
+            <tr><td>A6. What is ML-DSA?</td><td>Module-Lattice-Based Digital Signature Algorithm, used for post-quantum signatures.</td></tr>
+            <tr><td>A7. What is SLH-DSA?</td><td>Stateless Hash-Based Digital Signature Algorithm, used for post-quantum signatures.</td></tr>
+            <tr><td>A8. What is a lattice?</td><td>A repeating grid of points, formally a discrete additive subgroup of a vector space.</td></tr>
+            <tr><td>A9. What is Learning With Errors, or LWE?</td><td>A hardness assumption based on solving noisy linear equations.</td></tr>
+            <tr><td>A10. What is code-based cryptography?</td><td>Cryptography based on the hardness of decoding random-looking error-correcting codes.</td></tr>
+            <tr><td>A11. What is a hash-based signature?</td><td>A digital signature built mainly from hash functions and tree structures.</td></tr>
+            <tr><td>A12. What is hybrid migration?</td><td>Combining classical and post-quantum methods during the transition period.</td></tr>
+            <tr><td>A13. What is crypto-agility?</td><td>The ability for a system to safely upgrade algorithms, parameters, and protocols.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Why quantum changes public-key cryptography</h3>
+        <table class="answer-table">
+          <thead><tr><th>Classical system</th><th>Main hard problem</th><th>Quantum concern</th></tr></thead>
+          <tbody>
+            <tr><td>RSA</td><td>Factoring \(N=pq\)</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>Finite-field Diffie-Hellman</td><td>Discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>Elliptic-curve Diffie-Hellman</td><td>Elliptic-curve discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+            <tr><td>ECDSA / EdDSA-style signatures</td><td>Elliptic-curve discrete logarithm</td><td>Shor’s algorithm.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Shor’s algorithm attacks the core mathematical problems behind RSA and elliptic-curve cryptography efficiently on a suitable quantum computer. Grover gives a speedup for search, but symmetric cryptography can often respond by increasing key sizes.</p></div>
+
+        <h3>Part C: Symmetric impact</h3>
+        <table class="answer-table">
+          <thead><tr><th>Symmetric key size</th><th>Classical brute-force estimate</th><th>Grover-style search estimate</th></tr></thead>
+          <tbody>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>\(2^{64}\)</td></tr>
+            <tr><td>192 bits</td><td>\(2^{192}\)</td><td>\(2^{96}\)</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>\(2^{128}\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> Grover reduces the effective search exponent but does not make symmetric cryptography collapse in the same way Shor affects RSA and elliptic curves. Larger symmetric keys can restore comfortable security margins.</p></div>
+
+        <h3>Part D: Post-quantum family map</h3>
+        <table class="answer-table">
+          <thead><tr><th>Family</th><th>Main idea</th><th>Typical role</th><th>Tradeoff flavor</th></tr></thead>
+          <tbody>
+            <tr><td>Lattice-based</td><td>Noisy linear algebra and hard geometry.</td><td>KEMs and signatures.</td><td>Efficient, but mathematically subtle.</td></tr>
+            <tr><td>Hash-based</td><td>Sign using hash functions and trees.</td><td>Signatures.</td><td>Conservative assumptions, larger signatures.</td></tr>
+            <tr><td>Code-based</td><td>Decode hidden error-correcting codes.</td><td>Mostly encryption/KEM-style systems.</td><td>Long history, often large public keys.</td></tr>
+            <tr><td>Isogeny-based</td><td>Maps between elliptic curves.</td><td>Mostly research/cautionary.</td><td>Small keys once attractive; major break showed risk.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: KEMs versus signatures</h3>
+        <table class="answer-table">
+          <thead><tr><th>Job</th><th>Classical examples</th><th>Post-quantum examples</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>Key establishment</td><td>ECDH, DH, RSA key transport</td><td>ML-KEM</td><td>Establishes a shared secret.</td></tr>
+            <tr><td>Digital signature</td><td>RSA-PSS, ECDSA, EdDSA</td><td>ML-DSA, SLH-DSA</td><td>Authenticates data and signer identity.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> ML-KEM establishes shared secrets. Digital signatures authenticate messages and identities. These are different protocol jobs, so ML-KEM does not replace signatures.</p></div>
+
+        <h3>Part F: ML-KEM</h3>
+        <table class="answer-table">
+          <thead><tr><th>ML-KEM feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Lattice-based.</td></tr>
+            <tr><td>Protocol role</td><td>Key establishment.</td></tr>
+            <tr><td>Underlying flavor</td><td>Module Learning With Errors.</td></tr>
+            <tr><td>Former competition name</td><td>CRYSTALS-Kyber.</td></tr>
+            <tr><td>Standard name</td><td>ML-KEM.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Encapsulation creates a ciphertext and shared secret using the recipient’s public key. Decapsulation uses the recipient’s private key and ciphertext to recover the same shared secret.</p></div>
+
+        <h3>Part G: ML-DSA</h3>
+        <table class="answer-table">
+          <thead><tr><th>ML-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Lattice-based.</td></tr>
+            <tr><td>Protocol role</td><td>Digital signatures.</td></tr>
+            <tr><td>Underlying flavor</td><td>Module lattice assumptions.</td></tr>
+            <tr><td>Former competition name</td><td>CRYSTALS-Dilithium.</td></tr>
+            <tr><td>Standard name</td><td>ML-DSA.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: SLH-DSA</h3>
+        <table class="answer-table">
+          <thead><tr><th>SLH-DSA feature</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Family</td><td>Hash-based.</td></tr>
+            <tr><td>Protocol role</td><td>Digital signatures.</td></tr>
+            <tr><td>Underlying flavor</td><td>Hash functions, one-time signatures, tree structures.</td></tr>
+            <tr><td>Former competition name</td><td>SPHINCS+.</td></tr>
+            <tr><td>Standard name</td><td>SLH-DSA.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> Hash functions are older, heavily studied primitives, so hash-based signatures may feel conservative even if they have larger size or performance tradeoffs.</p></div>
+
+        <h3>Part I: Lattice intuition</h3>
+        <table class="answer-table">
+          <thead><tr><th>Symbol</th><th>Meaning in the sketch</th></tr></thead>
+          <tbody>
+            <tr><td>\(A\)</td><td>Public matrix or public structure.</td></tr>
+            <tr><td>\(s\)</td><td>Secret value/vector.</td></tr>
+            <tr><td>\(e\)</td><td>Small error or noise.</td></tr>
+            <tr><td>\(q\)</td><td>Modulus.</td></tr>
+            <tr><td>\(b\)</td><td>Public noisy result.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Without noise, solving for the secret resembles ordinary linear algebra. With carefully chosen noise, the equations become hard to untangle in high-dimensional settings.</p></div>
+
+        <h3>Part J: Code-based cryptography intuition</h3>
+        <table class="answer-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td>Original data to protect.</td></tr>
+            <tr><td>Error-correcting code</td><td>Structure that can recover from certain errors.</td></tr>
+            <tr><td>Added errors</td><td>Intentional noise hiding the message.</td></tr>
+            <tr><td>Secret structure</td><td>Trapdoor allowing efficient decoding.</td></tr>
+            <tr><td>Attacker problem</td><td>Decode without knowing the hidden structure.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> The legitimate user knows a hidden code structure that makes decoding possible. The attacker sees something random-looking and must solve a hard decoding problem without that trapdoor structure.</p></div>
+
+        <h3>Part K: Migration issues</h3>
+        <table class="answer-table">
+          <thead><tr><th>Migration issue</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Larger keys or signatures</td><td>Can affect packet sizes, certificates, memory, and bandwidth.</td></tr>
+            <tr><td>Protocol compatibility</td><td>Old systems may not understand new algorithms.</td></tr>
+            <tr><td>Hybrid handshakes</td><td>Can combine classical and PQC security during transition.</td></tr>
+            <tr><td>Certificates and PKI</td><td>Signature algorithms and certificate chains must migrate.</td></tr>
+            <tr><td>Embedded devices</td><td>May lack memory, CPU, or update paths.</td></tr>
+            <tr><td>Crypto-agility</td><td>Systems need safe upgrade paths for future changes.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Store-now, decrypt-later</h3>
+        <div class="answer-step"><p><strong>L1 sample answer.</strong> Attackers can record encrypted traffic now and wait for future quantum capabilities to break the key exchange. Long-lived secrets may already be exposed later if migration waits too long.</p></div>
+
+        <h3>Part M: Hybrid classical/post-quantum protocols</h3>
+        <div class="answer-step">
+          <p><strong>M1 sample answer.</strong> Combining both secrets can provide defense if one method later turns out weaker than expected.</p>
+          <p><strong>M2 sample answer.</strong> Without transcript binding and downgrade protection, an attacker might remove one part of the hybrid exchange or tamper with the negotiation.</p>
+        </div>
+
+        <h3>Part N: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system replaces ECDH key exchange with ML-KEM but keeps ECDSA signatures.</td><td>Key establishment migrated, but signatures remain quantum-vulnerable.</td></tr>
+            <tr><td>A protocol uses ML-DSA for signatures and assumes it also performs key establishment.</td><td>Wrong job. ML-DSA signs; it does not establish shared secrets.</td></tr>
+            <tr><td>A government archive must keep secrets confidential for thirty years.</td><td>Store-now, decrypt-later threat matters.</td></tr>
+            <tr><td>A TLS-like handshake combines an ECDH secret and an ML-KEM secret into one KDF.</td><td>Hybrid migration pattern.</td></tr>
+            <tr><td>An embedded device cannot fit larger post-quantum signatures in its memory budget.</td><td>Migration is an engineering problem too.</td></tr>
+            <tr><td>A system stores algorithm identifiers rigidly and cannot add new algorithms without a firmware rewrite.</td><td>Poor crypto-agility.</td></tr>
+            <tr><td>A designer thinks post-quantum cryptography requires quantum computers to run.</td><td>Mistaken. PQC runs on classical computers.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Post-quantum cryptography means classical software cryptography designed to resist quantum attackers.</td><td>Valid</td><td>That is the PQC idea.</td></tr>
+            <tr><td>Shor’s algorithm threatens RSA and elliptic-curve public-key systems.</td><td>Valid</td><td>It attacks factoring and discrete logarithms.</td></tr>
+            <tr><td>Grover’s algorithm affects symmetric brute-force estimates.</td><td>Valid</td><td>It gives a quadratic search speedup.</td></tr>
+            <tr><td>ML-KEM is a digital signature algorithm.</td><td>Mistaken</td><td>ML-KEM is for key establishment.</td></tr>
+            <tr><td>ML-DSA and SLH-DSA are signature algorithms.</td><td>Valid</td><td>They are digital signature algorithms.</td></tr>
+            <tr><td>Lattice cryptography often uses noisy linear-algebra-style assumptions.</td><td>Valid</td><td>This is the LWE-style intuition.</td></tr>
+            <tr><td>Store-now, decrypt-later is irrelevant for long-lived secrets.</td><td>Mistaken</td><td>It is especially relevant for long-lived secrets.</td></tr>
+            <tr><td>Crypto-agility helps systems migrate safely.</td><td>Valid</td><td>It supports safer future upgrades.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part P: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>P1 sample answer.</strong> Post-quantum cryptography is classical cryptography designed to remain secure against attackers with quantum computers. It aims to replace or supplement public-key systems such as RSA and elliptic-curve cryptography that are threatened by Shor’s algorithm.</p>
+          <p><strong>P2 sample answer.</strong> Shor’s algorithm threatens factoring and discrete-log-based systems such as RSA, Diffie-Hellman, and elliptic-curve cryptography. Grover’s algorithm gives a quadratic speedup for search, affecting symmetric-key security estimates but usually allowing larger keys as a response.</p>
+          <p><strong>P3 sample answer.</strong> ML-KEM is a lattice-based key encapsulation mechanism for establishing shared secrets. ML-DSA is a lattice-based digital signature algorithm. SLH-DSA is a stateless hash-based digital signature algorithm.</p>
+          <p><strong>P4 sample answer.</strong> Migration affects protocols, certificates, devices, packet sizes, memory, bandwidth, libraries, compliance, and operations. A secure algorithm still has to fit into real systems safely.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Post-quantum cryptography runs on ordinary classical computers.</td><td>True</td><td>It is designed to resist quantum attackers, not require quantum hardware.</td></tr>
+            <tr><td>Shor’s algorithm is the major threat to RSA and elliptic-curve cryptography.</td><td>True</td><td>It attacks factoring and discrete logarithms.</td></tr>
+            <tr><td>ML-KEM and ML-DSA solve the exact same protocol job.</td><td>False</td><td>ML-KEM establishes keys; ML-DSA signs.</td></tr>
+            <tr><td>SLH-DSA is hash-based.</td><td>True</td><td>It is stateless hash-based.</td></tr>
+            <tr><td>Hybrid handshakes can combine classical and post-quantum secrets.</td><td>True</td><td>This is a migration strategy.</td></tr>
+            <tr><td>Store-now, decrypt-later matters for secrets that must remain private for many years.</td><td>True</td><td>Future decryption can threaten data captured today.</td></tr>
+            <tr><td>Post-quantum migration only affects mathematicians, not protocols or engineering.</td><td>False</td><td>It affects systems, protocols, libraries, certificates, and devices.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <nav class="bottom-nav">
+        <div class="nav-bundle">
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_workbook_html.html" class="nav-item">⬅️ Previous</a>
+          <a href="tutorial_75_quantum_threat_model_shor_grover_store_now_decrypt_later_workbook_html.html" class="nav-item">Next ➡️</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_74_post_quantum_cryptography_overview_lattices_code_hash_migration_html.html" class="nav-item nav-secondary">🔄 Switch Mode</a>
+          <a href="index.html" class="nav-item nav-primary">🏠 Dashboard</a>
+        </div>
+      </nav>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 6: Post-Quantum Foundations. Paired with Tutorial 74: Post-Quantum Cryptography: Lattices, Code-Based Systems, Hash-Based Signatures, and Migration.
+      </p>
+    </main>
+  </div>
+</body>
+</html>
