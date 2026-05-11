@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 60: Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 60</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication</h1>
+      <p class="subtitle">
+        Printable practice for elliptic-curve equations, points as group elements, the point at infinity, point addition and doubling, scalar multiplication, public-key derivation, and ECDH intuition.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the conceptual machinery first: ECC uses points, not ordinary integers; point addition is the operation; scalar multiplication is repeated point addition; and the public key hides the private scalar.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Curve and point rules</div>
+            <div class="math-display">
+              \[
+                y^2=x^3+ax+b
+              \]
+              \[
+                P+\mathcal O=P
+              \]
+              \[
+                P+(-P)=\mathcal O
+              \]
+              \[
+                2P=P+P
+              \]
+            </div>
+          </div>
+
+          <div class="box ecc-box">
+            <div class="box-title">Scalar multiplication and keys</div>
+            <div class="math-display">
+              \[
+                kP=\underbrace{P+P+\cdots+P}_{k\text{ times}}
+              \]
+              \[
+                Q=dG
+              \]
+              \[
+                a(bG)=b(aG)=abG
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(E\) represent?</td><td></td></tr>
+            <tr><td>A2. What do \(P,Q,R\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(\mathcal O\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(+\) mean in ECC?</td><td></td></tr>
+            <tr><td>A5. What does \(-P\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(2P\) mean?</td><td></td></tr>
+            <tr><td>A7. What does \(kP\) mean?</td><td></td></tr>
+            <tr><td>A8. What does \(G\) represent?</td><td></td></tr>
+            <tr><td>A9. What does \(d\) represent?</td><td></td></tr>
+            <tr><td>A10. What does \(Q=dG\) represent?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="curve-equation">
+        <h2>Part B: Curve equation</h2>
+        <div class="problem">
+          <div class="problem-title">B1. Write the common simplified elliptic-curve equation.</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. What does the condition \(4a^3+27b^2\ne0\) help prevent?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B3. How does the real-number curve picture differ from the finite-field cryptographic version?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="points-as-group-elements">
+        <h2>Part C: Points as group elements</h2>
+        <table class="property-table">
+          <thead><tr><th>Group idea</th><th>Elliptic-curve version</th><th>Friendly meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Elements</td><td></td><td></td></tr>
+            <tr><td>Operation</td><td></td><td></td></tr>
+            <tr><td>Identity</td><td></td><td></td></tr>
+            <tr><td>Inverse</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. In one sentence, explain the big shift from RSA to ECC.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="point-infinity-negation">
+        <h2>Part D: Point at infinity and negation</h2>
+        <table class="math-table">
+          <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(P+\mathcal O=P\)</td><td></td></tr>
+            <tr><td>\(P+(-P)=\mathcal O\)</td><td></td></tr>
+            <tr><td>If \(P=(x,y)\), then \(-P=(x,-y)\)</td><td></td></tr>
+            <tr><td>In modular arithmetic, \(-y\equiv p-y\pmod p\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why is \(\mathcal O\) compared to zero?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="point-addition">
+        <h2>Part E: Point addition geometry</h2>
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td></td></tr>
+            <tr><td>2</td><td></td></tr>
+            <tr><td>3</td><td></td></tr>
+            <tr><td>4</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Explain point addition \(P+Q\) in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="point-doubling">
+        <h2>Part F: Point doubling</h2>
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td></td></tr>
+            <tr><td>2</td><td></td></tr>
+            <tr><td>3</td><td></td></tr>
+            <tr><td>4</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. How is point doubling different from adding two distinct points?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="finite-fields">
+        <h2>Part G: Curves over finite fields</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            y^2\equiv x^3+ax+b\pmod p
+          \]
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Real-number picture</th><th>Finite-field cryptographic version</th></tr></thead>
+          <tbody>
+            <tr><td>Smooth continuous curve</td><td></td></tr>
+            <tr><td>Coordinates can be fractions/decimals</td><td></td></tr>
+            <tr><td>Good for geometry intuition</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why is the smooth curve picture useful even though real ECC uses modular points?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="scalar-multiplication">
+        <h2>Part H: Scalar multiplication</h2>
+        <p>Complete the table.</p>
+        <table class="example-table">
+          <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(1P\)</td><td></td></tr>
+            <tr><td>\(2P\)</td><td></td></tr>
+            <tr><td>\(3P\)</td><td></td></tr>
+            <tr><td>\(7P\)</td><td></td></tr>
+            <tr><td>\(kP\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why is scalar multiplication not the same as multiplying the coordinates by \(k\)?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="double-and-add">
+        <h2>Part I: Double-and-add intuition</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            13=8+4+1
+          \]
+          \[
+            13P=8P+4P+P
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Multiple</th><th>How obtained</th></tr></thead>
+          <tbody>
+            <tr><td>\(2P\)</td><td></td></tr>
+            <tr><td>\(4P\)</td><td></td></tr>
+            <tr><td>\(8P\)</td><td></td></tr>
+            <tr><td>\(13P\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why is double-and-add useful?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ecc-key-pairs">
+        <h2>Part J: ECC key pairs</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            Q=dG
+          \]
+        </div>
+
+        <table class="ecc-table">
+          <thead><tr><th>Value</th><th>Public or private?</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Curve parameters</td><td></td><td></td></tr>
+            <tr><td>\(G\)</td><td></td><td></td></tr>
+            <tr><td>\(d\)</td><td></td><td></td></tr>
+            <tr><td>\(Q=dG\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Explain how an ECC public key is derived from a private scalar.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hard-problem">
+        <h2>Part K: Elliptic-curve discrete logarithm problem</h2>
+        <div class="problem">
+          <div class="problem-title">K1. Define the elliptic-curve discrete logarithm problem.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K2. Why is \(Q=dG\) easy forward but hard backward?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="ecdh-preview">
+        <h2>Part L: Elliptic-curve Diffie-Hellman preview</h2>
+        <table class="ecc-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td></td><td></td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">L1. Explain why Alice and Bob both reach \(abG\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L2. What two things are still needed after the raw ECDH shared point is computed?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="why-ecc-popular">
+        <h2>Part M: Why ECC is popular</h2>
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>ECC advantage</th></tr></thead>
+          <tbody>
+            <tr><td>Key size</td><td></td></tr>
+            <tr><td>Performance</td><td></td></tr>
+            <tr><td>Protocols</td><td></td></tr>
+            <tr><td>Mathematical structure</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part N: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says ECC multiplies point coordinates by the private key.</td><td></td></tr>
+            <tr><td>A system publishes \(Q=dG\) but keeps \(d\) secret.</td><td></td></tr>
+            <tr><td>A protocol performs ECDH but does not authenticate the peer.</td><td></td></tr>
+            <tr><td>A student says \(\mathcal O\) acts like zero for point addition.</td><td></td></tr>
+            <tr><td>A developer tries to invent their own elliptic curve parameters casually.</td><td></td></tr>
+            <tr><td>A secure system feeds the ECDH shared point into a KDF.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part O: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>ECC operates on points on a curve.</td><td></td><td></td></tr>
+            <tr><td>\(\mathcal O\) is the identity element for point addition.</td><td></td><td></td></tr>
+            <tr><td>\(kP\) means multiply the \(x\) and \(y\) coordinates by \(k\).</td><td></td><td></td></tr>
+            <tr><td>ECC public keys often have the form \(Q=dG\).</td><td></td><td></td></tr>
+            <tr><td>The private scalar \(d\) should be public.</td><td></td><td></td></tr>
+            <tr><td>ECDH still needs authentication against active attackers.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part P: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">P1. Explain elliptic-curve points as group elements in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P2. Explain scalar multiplication in one paragraph.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P3. Explain ECC public-key derivation and the hard reverse problem.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A common elliptic-curve equation is \(y^2=x^3+ax+b\).</td><td></td></tr>
+            <tr><td>\(P+\mathcal O=P\).</td><td></td></tr>
+            <tr><td>\(P+(-P)=\mathcal O\).</td><td></td></tr>
+            <tr><td>\(2P=P+P\).</td><td></td></tr>
+            <tr><td>\(Q=dG\) is a common ECC public-key shape.</td><td></td></tr>
+            <tr><td>The elliptic-curve discrete logarithm problem asks us to recover \(d\) from \(G\) and \(Q=dG\).</td><td></td></tr>
+            <tr><td>ECDH does not need authentication.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central ECC idea is: a private scalar repeatedly adds a public base point to create a public point. Forward is efficient; reversing the scalar is hard.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(E\) represent?</td><td>The elliptic curve.</td></tr>
+            <tr><td>A2. What do \(P,Q,R\) represent?</td><td>Points on the curve.</td></tr>
+            <tr><td>A3. What does \(\mathcal O\) represent?</td><td>The point at infinity, the identity element.</td></tr>
+            <tr><td>A4. What does \(+\) mean in ECC?</td><td>Point addition.</td></tr>
+            <tr><td>A5. What does \(-P\) represent?</td><td>The inverse/opposite point of \(P\).</td></tr>
+            <tr><td>A6. What does \(2P\) mean?</td><td>Point doubling, or \(P+P\).</td></tr>
+            <tr><td>A7. What does \(kP\) mean?</td><td>Scalar multiplication, adding \(P\) to itself \(k\) times.</td></tr>
+            <tr><td>A8. What does \(G\) represent?</td><td>The public base point or generator point.</td></tr>
+            <tr><td>A9. What does \(d\) represent?</td><td>The private scalar.</td></tr>
+            <tr><td>A10. What does \(Q=dG\) represent?</td><td>The public key point derived from private scalar \(d\).</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Curve equation</h3>
+        <div class="answer-step">
+          <p><strong>B1 answer.</strong> \(y^2=x^3+ax+b\).</p>
+          <p><strong>B2 answer.</strong> It helps prevent singular curves, such as curves with cusps or self-intersections.</p>
+          <p><strong>B3 sample answer.</strong> The real-number curve is smooth and continuous, useful for geometry intuition. The cryptographic version usually works over a finite field, so the points are discrete modular coordinate pairs.</p>
+        </div>
+
+        <h3>Part C: Points as group elements</h3>
+        <table class="answer-table">
+          <thead><tr><th>Group idea</th><th>Elliptic-curve version</th><th>Friendly meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Elements</td><td>Points on the curve</td><td>The things we operate on.</td></tr>
+            <tr><td>Operation</td><td>Point addition \(P+Q\)</td><td>Combine two points to get another point.</td></tr>
+            <tr><td>Identity</td><td>\(\mathcal O\)</td><td>Special zero-like point.</td></tr>
+            <tr><td>Inverse</td><td>\(-P\)</td><td>The point that cancels \(P\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> RSA works mainly with exponentiating integers, while ECC works with repeatedly adding points on a curve.</p></div>
+
+        <h3>Part D: Point at infinity and negation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(P+\mathcal O=P\)</td><td>Adding the identity changes nothing.</td></tr>
+            <tr><td>\(P+(-P)=\mathcal O\)</td><td>A point plus its inverse gives the identity.</td></tr>
+            <tr><td>If \(P=(x,y)\), then \(-P=(x,-y)\)</td><td>The inverse reflects across the \(x\)-axis in the real-number picture.</td></tr>
+            <tr><td>In modular arithmetic, \(-y\equiv p-y\pmod p\)</td><td>The negative coordinate is the modular additive inverse.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> \(\mathcal O\) is like zero because adding it to a point leaves the point unchanged.</p></div>
+
+        <h3>Part E: Point addition geometry</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Draw a line through \(P\) and \(Q\).</td></tr>
+            <tr><td>2</td><td>Find the third intersection point with the curve.</td></tr>
+            <tr><td>3</td><td>Reflect that third point across the \(x\)-axis.</td></tr>
+            <tr><td>4</td><td>The reflected point is \(P+Q\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> To add two distinct points, draw the line through them, find where it hits the curve again, then reflect that third point to get the sum.</p></div>
+
+        <h3>Part F: Point doubling</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Draw the tangent line at \(P\).</td></tr>
+            <tr><td>2</td><td>Find where the tangent line intersects the curve again.</td></tr>
+            <tr><td>3</td><td>Reflect that point across the \(x\)-axis.</td></tr>
+            <tr><td>4</td><td>The reflected point is \(2P\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Adding two distinct points uses a line through both points. Doubling uses the tangent line at one point because both inputs are the same point.</p></div>
+
+        <h3>Part G: Curves over finite fields</h3>
+        <table class="answer-table">
+          <thead><tr><th>Real-number picture</th><th>Finite-field cryptographic version</th></tr></thead>
+          <tbody>
+            <tr><td>Smooth continuous curve</td><td>Discrete set of modular points</td></tr>
+            <tr><td>Coordinates can be fractions/decimals</td><td>Coordinates are values modulo \(p\)</td></tr>
+            <tr><td>Good for geometry intuition</td><td>Used for actual cryptographic operations</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> The smooth curve picture helps explain point addition, negation, and doubling visually, even though the actual cryptographic arithmetic happens over modular points.</p></div>
+
+        <h3>Part H: Scalar multiplication</h3>
+        <table class="answer-table">
+          <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(1P\)</td><td>\(P\)</td></tr>
+            <tr><td>\(2P\)</td><td>\(P+P\)</td></tr>
+            <tr><td>\(3P\)</td><td>\(2P+P\)</td></tr>
+            <tr><td>\(7P\)</td><td>\(P+P+P+P+P+P+P\)</td></tr>
+            <tr><td>\(kP\)</td><td>Add \(P\) to itself \(k\) times.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> Scalar multiplication uses the elliptic-curve point addition rule repeatedly. It is not ordinary coordinate multiplication because the result is produced by the curve’s group operation.</p></div>
+
+        <h3>Part I: Double-and-add intuition</h3>
+        <table class="answer-table">
+          <thead><tr><th>Multiple</th><th>How obtained</th></tr></thead>
+          <tbody>
+            <tr><td>\(2P\)</td><td>Double \(P\).</td></tr>
+            <tr><td>\(4P\)</td><td>Double \(2P\).</td></tr>
+            <tr><td>\(8P\)</td><td>Double \(4P\).</td></tr>
+            <tr><td>\(13P\)</td><td>Add \(8P+4P+P\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Double-and-add is useful because it computes large scalar multiples efficiently, similar to how repeated squaring speeds up modular exponentiation.</p></div>
+
+        <h3>Part J: ECC key pairs</h3>
+        <table class="answer-table">
+          <thead><tr><th>Value</th><th>Public or private?</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Curve parameters</td><td>Public</td><td>Define the curve and finite field.</td></tr>
+            <tr><td>\(G\)</td><td>Public</td><td>Standard base point.</td></tr>
+            <tr><td>\(d\)</td><td>Private</td><td>Private scalar.</td></tr>
+            <tr><td>\(Q=dG\)</td><td>Public</td><td>Public key point.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> The private key is a scalar \(d\). The public key is computed by scalar-multiplying the public base point \(G\) by \(d\), giving \(Q=dG\).</p></div>
+
+        <h3>Part K: Elliptic-curve discrete logarithm problem</h3>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> Given \(G\) and \(Q=dG\), the elliptic-curve discrete logarithm problem is to recover the hidden scalar \(d\).</p>
+          <p><strong>K2 sample answer.</strong> Computing \(Q=dG\) is efficient using scalar multiplication. Reversing the process to find \(d\) from \(G\) and \(Q\) is believed to be computationally hard on well-chosen curves.</p>
+        </div>
+
+        <h3>Part L: Elliptic-curve Diffie-Hellman preview</h3>
+        <table class="answer-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td>\(A=aG\)</td><td>\(aB=a(bG)=abG\)</td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td>\(B=bG\)</td><td>\(bA=b(aG)=abG\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> Alice multiplies Bob’s public point by \(a\), giving \(a(bG)=abG\). Bob multiplies Alice’s public point by \(b\), giving \(b(aG)=abG\). Both get the same shared point.</p>
+          <p><strong>L2 answer.</strong> A KDF is needed to derive keys from the shared point, and authentication is needed to resist man-in-the-middle attacks.</p>
+        </div>
+
+        <h3>Part M: Why ECC is popular</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>ECC advantage</th></tr></thead>
+          <tbody>
+            <tr><td>Key size</td><td>Strong security with smaller keys than traditional RSA at comparable security levels.</td></tr>
+            <tr><td>Performance</td><td>Efficient for many signatures and key exchanges.</td></tr>
+            <tr><td>Protocols</td><td>Used in modern TLS, secure messaging, cryptocurrencies, and authentication systems.</td></tr>
+            <tr><td>Mathematical structure</td><td>Hard reverse problem based on scalar multiplication of points.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says ECC multiplies point coordinates by the private key.</td><td>Mistaken. Scalar multiplication is repeated point addition.</td></tr>
+            <tr><td>A system publishes \(Q=dG\) but keeps \(d\) secret.</td><td>Correct public/private key pattern.</td></tr>
+            <tr><td>A protocol performs ECDH but does not authenticate the peer.</td><td>Man-in-the-middle risk.</td></tr>
+            <tr><td>A student says \(\mathcal O\) acts like zero for point addition.</td><td>Correct intuition.</td></tr>
+            <tr><td>A developer tries to invent their own elliptic curve parameters casually.</td><td>Dangerous. Use vetted curves and libraries.</td></tr>
+            <tr><td>A secure system feeds the ECDH shared point into a KDF.</td><td>Good practice.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>ECC operates on points on a curve.</td><td>Valid</td><td>Points are the group elements.</td></tr>
+            <tr><td>\(\mathcal O\) is the identity element for point addition.</td><td>Valid</td><td>It acts like zero.</td></tr>
+            <tr><td>\(kP\) means multiply the \(x\) and \(y\) coordinates by \(k\).</td><td>Mistaken</td><td>It means repeated point addition.</td></tr>
+            <tr><td>ECC public keys often have the form \(Q=dG\).</td><td>Valid</td><td>Private scalar times base point gives public point.</td></tr>
+            <tr><td>The private scalar \(d\) should be public.</td><td>Mistaken</td><td>\(d\) is the private key.</td></tr>
+            <tr><td>ECDH still needs authentication against active attackers.</td><td>Valid</td><td>Unauthenticated key exchange is vulnerable to MITM attacks.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part P: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>P1 sample answer.</strong> In ECC, the elements are points on an elliptic curve. These points form a group because we can add two points and get another point, use \(\mathcal O\) as the identity, and use \(-P\) as the inverse of \(P\).</p>
+          <p><strong>P2 sample answer.</strong> Scalar multiplication means repeatedly adding a point to itself. \(kP\) does not multiply the coordinates by \(k\); it applies the elliptic-curve point addition operation repeatedly and efficiently.</p>
+          <p><strong>P3 sample answer.</strong> An ECC private key is a scalar \(d\). The public key is \(Q=dG\), where \(G\) is a public base point. Computing \(Q\) from \(d\) is efficient, but recovering \(d\) from \(G\) and \(Q\) is the elliptic-curve discrete logarithm problem.</p>
+          <p><strong>P4 sample answer.</strong> This tutorial introduced elliptic-curve cryptography as public-key cryptography built from points on a curve. It explained point addition, the point at infinity, point doubling, scalar multiplication, ECC public-key derivation, and the hard reverse problem. It also previewed ECDH, where Alice and Bob both compute \(abG\) from private scalars and public points.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A common elliptic-curve equation is \(y^2=x^3+ax+b\).</td><td>True</td><td>This is the common simplified form.</td></tr>
+            <tr><td>\(P+\mathcal O=P\).</td><td>True</td><td>\(\mathcal O\) is the identity.</td></tr>
+            <tr><td>\(P+(-P)=\mathcal O\).</td><td>True</td><td>A point plus its inverse gives the identity.</td></tr>
+            <tr><td>\(2P=P+P\).</td><td>True</td><td>This is point doubling.</td></tr>
+            <tr><td>\(Q=dG\) is a common ECC public-key shape.</td><td>True</td><td>The public point is private scalar times base point.</td></tr>
+            <tr><td>The elliptic-curve discrete logarithm problem asks us to recover \(d\) from \(G\) and \(Q=dG\).</td><td>True</td><td>That is the hard reverse problem.</td></tr>
+            <tr><td>ECDH does not need authentication.</td><td>False</td><td>Authentication is still needed against active attackers.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 60: Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_60_elliptic_curve_cryptography_points_addition_and_scalar_multiplication_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_59_rsa_worked_examples_encryption_decryption_and_signature_intuition_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_61_elliptic_curve_diffie_hellman_and_digital_signatures_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Workbook 76: Lattice Intuition: Vectors, Grids, Closest Vectors, and Noisy Equations | Mathematics of Cryptography</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+<header class="page-header">
+<div class="course-label">Mathematics of Cryptography · Workbook 76</div>
+      <div class="volume-label">Volume 6: Post-Quantum Foundations</div>
+
+<h1>Lattice Intuition: Vectors, Grids, Closest Vectors, and Noisy Equations</h1>
+<p class="subtitle">
+        Printable practice for lattice basics: basis vectors, integer combinations, closest lattice points, shortest nonzero vectors, Euclidean distance, noisy equations, and the first intuition behind Learning With Errors.
+      </p>
+<nav aria-label="Workbook navigation" class="nav no-print">
+<a class="nav-link" href="76-lattice-intuition-vectors-grids-closest-vectors-noisy-equations.html">Tutorial 76</a>
+<a class="nav-link" href="#answer-key">Answer Key</a>
+<button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+</nav>
+</header>
+<main>
+
+<section id="student-info">
+<div class="student-info">
+<div><span class="field-label">Name:</span><div class="field-line"></div></div>
+<div><span class="field-label">Date:</span><div class="field-line"></div></div>
+</div>
+</section>
+<section id="directions">
+<h2>Directions</h2>
+<div class="box purpose-box">
+<div class="box-title">How to use this workbook</div>
+<p>
+            Work carefully through the arithmetic. The goal is not speed. The goal is to connect the geometry picture with the algebra: vectors make grids, integer combinations make lattice points, distance lets us ask nearest-point questions, and noise hides exact equations.
+          </p>
+</div>
+</section>
+<section id="quick-reference">
+<h2>Quick reference</h2>
+<div class="box technical-box">
+<div class="math-display">
+<div class="math-fallback display">L={m<strong>b</strong><sub>1</sub>+n<strong>b</strong><sub>2</sub>:m,n∈ℤ}</div>
+<div class="math-fallback display">d((x<sub>1</sub>,y<sub>1</sub>),(x<sub>2</sub>,y<sub>2</sub>))=sqrt{(x<sub>2</sub>-x<sub>1</sub>)<sup>2+</sup>(y<sub>2</sub>-y<sub>1</sub>)<sup>2</sup>}</div>
+<div class="math-fallback display">b<sub>i</sub> = ⟨ <strong>a</strong><sub>i</sub>,<strong>s</strong>⟩ + e<sub>i</sub> (mod q)</div>
+</div>
+</div>
+</section>
+<section id="part-a">
+<h2>Part A: Vocabulary warm-up</h2>
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>A1. What is a vector?</td><td></td></tr>
+<tr><td>A2. What is a basis vector?</td><td></td></tr>
+<tr><td>A3. What is a linear combination?</td><td></td></tr>
+<tr><td>A4. What is an integer combination?</td><td></td></tr>
+<tr><td>A5. What is a lattice?</td><td></td></tr>
+<tr><td>A6. What is the Closest Vector Problem?</td><td></td></tr>
+<tr><td>A7. What is the Shortest Vector Problem?</td><td></td></tr>
+<tr><td>A8. What is noise in lattice-based cryptography?</td><td></td></tr>
+<tr><td>A9. What does LWE stand for?</td><td></td></tr>
+<tr><td>A10. Why are high dimensions important?</td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-b">
+<h2>Part B: Build lattice points</h2>
+<p>Use <span class="math-fallback inline"><strong>b</strong><sub>1</sub>=(2,0)</span> and <span class="math-fallback inline"><strong>b</strong><sub>2</sub>=(1,3)</span>.</p>
+<table class="center-table">
+<thead><tr><th>Expression</th><th>Work</th><th>Lattice point</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">1<strong>b</strong><sub>1</sub>+1<strong>b</strong><sub>2</sub></span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">2<strong>b</strong><sub>1</sub>+1<strong>b</strong><sub>2</sub></span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">3<strong>b</strong><sub>1</sub>-1<strong>b</strong><sub>2</sub></span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">-1<strong>b</strong><sub>1</sub>+2<strong>b</strong><sub>2</sub></span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">0<strong>b</strong><sub>1</sub>-2<strong>b</strong><sub>2</sub></span></td><td></td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-c">
+<h2>Part C: Is the point in the lattice?</h2>
+<p>Using the same basis, decide whether each point can be written as <span class="math-fallback inline">m(2,0)+n(1,3)</span> for integers <span class="math-fallback inline">m,n</span>.</p>
+<table class="center-table">
+<thead><tr><th>Point</th><th>In the lattice?</th><th>Explain</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(5,3)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(2,3)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(0,6)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(4,1)</span></td><td></td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-d">
+<h2>Part D: Closest point on the standard integer lattice</h2>
+<p>For the standard integer lattice, find the closest lattice point by rounding each coordinate.</p>
+<table class="center-table">
+<thead><tr><th>Target point</th><th>Closest lattice point</th><th>Difference vector</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(1.4,1.7)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(2.2,-1.8)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(-3.6,0.4)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(0.49,-0.51)</span></td><td></td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-e">
+<h2>Part E: Distance practice</h2>
+<p>Use <span class="math-fallback inline">d((x<sub>1</sub>,y<sub>1</sub>),(x<sub>2</sub>,y<sub>2</sub>))=sqrt{(x<sub>2</sub>-x<sub>1</sub>)<sup>2+</sup>(y<sub>2</sub>-y<sub>1</sub>)<sup>2</sup>}</span>.</p>
+<table class="center-table">
+<thead><tr><th>Points</th><th>Work</th><th>Distance</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(1.4,1.7)</span> to <span class="math-fallback inline">(1,2)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(2.2,-1.8)</span> to <span class="math-fallback inline">(2,-2)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(0,0)</span> to <span class="math-fallback inline">(3,4)</span></td><td></td><td></td></tr>
+<tr><td><span class="math-fallback inline">(-1,2)</span> to <span class="math-fallback inline">(2,-2)</span></td><td></td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-f">
+<h2>Part F: Shortest vector thinking</h2>
+<div class="problem">
+<div class="problem-title">F1. Why is the zero vector excluded from the Shortest Vector Problem?</div>
+<div class="work-space"></div>
+</div>
+<div class="problem">
+<div class="problem-title">F2. Why might a shortest nonzero vector reveal hidden structure in a lattice?</div>
+<div class="work-space large-work-space"></div>
+</div>
+</section>
+<section id="part-g">
+<h2>Part G: Noisy equations</h2>
+<p>Suppose <span class="math-fallback inline">q=17</span>, <span class="math-fallback inline">a=5</span>, <span class="math-fallback inline">s=3</span>, and <span class="math-fallback inline">e=1</span>. Compute:</p>
+<div class="math-display">
+<div class="math-fallback display">b=a· s+e (mod q)</div>
+</div>
+<div class="problem">
+<div class="problem-title">G1. Compute <span class="math-fallback inline">b</span>.</div>
+<div class="work-space"></div>
+</div>
+<div class="problem">
+<div class="problem-title">G2. What would <span class="math-fallback inline">b</span> be if there were no noise?</div>
+<div class="work-space"></div>
+</div>
+<div class="problem">
+<div class="problem-title">G3. Why does the noisy value make recovering <span class="math-fallback inline">s</span> harder?</div>
+<div class="work-space large-work-space"></div>
+</div>
+</section>
+<section id="part-h">
+<h2>Part H: LWE notation</h2>
+<p>Use:</p>
+<div class="math-display">
+<div class="math-fallback display">b<sub>i</sub> = ⟨ <strong>a</strong><sub>i</sub>,<strong>s</strong>⟩ + e<sub>i</sub> (mod q)</div>
+</div>
+<table>
+<thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline"><strong>a</strong><sub>i</sub></span></td><td></td></tr>
+<tr><td><span class="math-fallback inline"><strong>s</strong></span></td><td></td></tr>
+<tr><td><span class="math-fallback inline">e<sub>i</sub></span></td><td></td></tr>
+<tr><td><span class="math-fallback inline">q</span></td><td></td></tr>
+<tr><td><span class="math-fallback inline">b<sub>i</sub></span></td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section id="part-i">
+<h2>Part I: Concept explanations</h2>
+<div class="problem"><div class="problem-title">I1. Explain how basis vectors generate a lattice.</div><div class="work-space extra-large-work-space"></div></div>
+<div class="problem"><div class="problem-title">I2. Explain the difference between a good basis and a bad basis.</div><div class="work-space extra-large-work-space"></div></div>
+<div class="problem"><div class="problem-title">I3. Explain why two-dimensional pictures help but do not prove high-dimensional lattice security.</div><div class="work-space extra-large-work-space"></div></div>
+<div class="problem"><div class="problem-title">I4. Explain why noise is useful in LWE-style cryptography.</div><div class="work-space extra-large-work-space"></div></div>
+</section>
+<section id="self-check">
+<h2>Self-check</h2>
+<table>
+<thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+<tbody>
+<tr><td>A lattice is made from all real-number combinations of basis vectors.</td><td></td></tr>
+<tr><td>A lattice uses integer combinations of basis vectors.</td><td></td></tr>
+<tr><td>The zero vector is excluded from the Shortest Vector Problem.</td><td></td></tr>
+<tr><td>The same lattice can sometimes have different bases.</td><td></td></tr>
+<tr><td>Noise in LWE is accidental and should be removed from the design.</td><td></td></tr>
+<tr><td>High dimensions are one reason lattice problems become cryptographically useful.</td><td></td></tr>
+</tbody>
+</table>
+</section>
+<section class="answer-key page-break" id="answer-key">
+<h2>Answer key with work steps</h2>
+<div class="box intuition-box"><div class="box-title">Self-study note</div><p>The central move is this: vectors create the grid, distance creates nearest-point questions, and noise makes the hidden rule difficult to recover.</p></div>
+<h3>Part A: Vocabulary warm-up</h3>
+<table>
+<thead><tr><th>Question</th><th>Answer</th></tr></thead>
+<tbody>
+<tr><td>A1</td><td>A vector is an ordered list of numbers, often viewed as a movement arrow.</td></tr>
+<tr><td>A2</td><td>A basis vector is a generator vector used to build other points.</td></tr>
+<tr><td>A3</td><td>A linear combination is a sum of scaled vectors.</td></tr>
+<tr><td>A4</td><td>An integer combination is a linear combination where the coefficients are integers.</td></tr>
+<tr><td>A5</td><td>A lattice is the set of all integer combinations of basis vectors.</td></tr>
+<tr><td>A6</td><td>The Closest Vector Problem asks for the lattice point closest to a target point.</td></tr>
+<tr><td>A7</td><td>The Shortest Vector Problem asks for the shortest nonzero vector in the lattice.</td></tr>
+<tr><td>A8</td><td>Noise is a small intentional error that hides the exact equation.</td></tr>
+<tr><td>A9</td><td>LWE stands for Learning With Errors.</td></tr>
+<tr><td>A10</td><td>High dimensions create many possible combinations and make search much harder.</td></tr>
+</tbody>
+</table>
+<h3>Part B: Build lattice points</h3>
+<table class="center-table">
+<thead><tr><th>Expression</th><th>Work</th><th>Lattice point</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">1<strong>b</strong><sub>1</sub>+1<strong>b</strong><sub>2</sub></span></td><td><span class="math-fallback inline">(2,0)+(1,3)</span></td><td><span class="math-fallback inline">(3,3)</span></td></tr>
+<tr><td><span class="math-fallback inline">2<strong>b</strong><sub>1</sub>+1<strong>b</strong><sub>2</sub></span></td><td><span class="math-fallback inline">(4,0)+(1,3)</span></td><td><span class="math-fallback inline">(5,3)</span></td></tr>
+<tr><td><span class="math-fallback inline">3<strong>b</strong><sub>1</sub>-1<strong>b</strong><sub>2</sub></span></td><td><span class="math-fallback inline">(6,0)-(1,3)</span></td><td><span class="math-fallback inline">(5,-3)</span></td></tr>
+<tr><td><span class="math-fallback inline">-1<strong>b</strong><sub>1</sub>+2<strong>b</strong><sub>2</sub></span></td><td><span class="math-fallback inline">(-2,0)+(2,6)</span></td><td><span class="math-fallback inline">(0,6)</span></td></tr>
+<tr><td><span class="math-fallback inline">0<strong>b</strong><sub>1</sub>-2<strong>b</strong><sub>2</sub></span></td><td><span class="math-fallback inline">(0,0)-(2,6)</span></td><td><span class="math-fallback inline">(-2,-6)</span></td></tr>
+</tbody>
+</table>
+<h3>Part C: Is the point in the lattice?</h3>
+<table class="center-table">
+<thead><tr><th>Point</th><th>In the lattice?</th><th>Explain</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(5,3)</span></td><td>Yes</td><td><span class="math-fallback inline">2(2,0)+1(1,3)=(5,3)</span>.</td></tr>
+<tr><td><span class="math-fallback inline">(2,3)</span></td><td>No</td><td>Since <span class="math-fallback inline">y=3</span>, <span class="math-fallback inline">n=1</span>. Then <span class="math-fallback inline">x=2m+1</span>, so <span class="math-fallback inline">2m=1</span>, not an integer <span class="math-fallback inline">m</span>.</td></tr>
+<tr><td><span class="math-fallback inline">(0,6)</span></td><td>Yes</td><td><span class="math-fallback inline">-1(2,0)+2(1,3)=(0,6)</span>.</td></tr>
+<tr><td><span class="math-fallback inline">(4,1)</span></td><td>No</td><td>Since <span class="math-fallback inline">y=1</span>, <span class="math-fallback inline">3n=1</span>, so <span class="math-fallback inline">n</span> is not an integer.</td></tr>
+</tbody>
+</table>
+<h3>Part D: Closest point on the standard integer lattice</h3>
+<table class="center-table">
+<thead><tr><th>Target point</th><th>Closest lattice point</th><th>Difference vector</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(1.4,1.7)</span></td><td><span class="math-fallback inline">(1,2)</span></td><td><span class="math-fallback inline">(0.4,-0.3)</span></td></tr>
+<tr><td><span class="math-fallback inline">(2.2,-1.8)</span></td><td><span class="math-fallback inline">(2,-2)</span></td><td><span class="math-fallback inline">(0.2,0.2)</span></td></tr>
+<tr><td><span class="math-fallback inline">(-3.6,0.4)</span></td><td><span class="math-fallback inline">(-4,0)</span></td><td><span class="math-fallback inline">(0.4,0.4)</span></td></tr>
+<tr><td><span class="math-fallback inline">(0.49,-0.51)</span></td><td><span class="math-fallback inline">(0,-1)</span></td><td><span class="math-fallback inline">(0.49,0.49)</span></td></tr>
+</tbody>
+</table>
+<h3>Part E: Distance practice</h3>
+<table class="center-table">
+<thead><tr><th>Points</th><th>Work</th><th>Distance</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline">(1.4,1.7)</span> to <span class="math-fallback inline">(1,2)</span></td><td><span class="math-fallback inline">sqrt{0.4<sup>2+</sup>(-0.3)<sup>2</sup>}=sqrt{0.25}</span></td><td>0.5</td></tr>
+<tr><td><span class="math-fallback inline">(2.2,-1.8)</span> to <span class="math-fallback inline">(2,-2)</span></td><td><span class="math-fallback inline">sqrt{0.2<sup>2+0</sup>.2<sup>2</sup>}=sqrt{0.08}</span></td><td>≈ 0.283</td></tr>
+<tr><td><span class="math-fallback inline">(0,0)</span> to <span class="math-fallback inline">(3,4)</span></td><td><span class="math-fallback inline">sqrt{3<sup>2+4</sup><sup>2</sup>}=sqrt{25}</span></td><td>5</td></tr>
+<tr><td><span class="math-fallback inline">(-1,2)</span> to <span class="math-fallback inline">(2,-2)</span></td><td><span class="math-fallback inline">sqrt{3<sup>2+</sup>(-4)<sup>2</sup>}=sqrt{25}</span></td><td>5</td></tr>
+</tbody>
+</table>
+<h3>Part F: Shortest vector thinking</h3>
+<div class="answer-step"><p><strong>F1.</strong> The zero vector is always length 0, so including it would make the problem trivial. We exclude it to find meaningful lattice structure.</p></div>
+<div class="answer-step"><p><strong>F2.</strong> A short nonzero vector may reveal hidden relationships among the basis vectors or secret structure encoded in the lattice.</p></div>
+<h3>Part G: Noisy equations</h3>
+<div class="answer-step"><p><strong>G1.</strong> <span class="math-fallback inline">b=5·3+1 pmod{17}=16pmod{17}=16</span>.</p></div>
+<div class="answer-step"><p><strong>G2.</strong> Without noise, <span class="math-fallback inline">b=5·3=15pmod{17}</span>.</p></div>
+<div class="answer-step"><p><strong>G3.</strong> The noisy result no longer exactly matches <span class="math-fallback inline">a· s</span>, so an attacker cannot directly solve the clean equation for <span class="math-fallback inline">s</span>.</p></div>
+<h3>Part H: LWE notation</h3>
+<table>
+<thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline"><strong>a</strong><sub>i</sub></span></td><td>A public vector for equation <span class="math-fallback inline">i</span>.</td></tr>
+<tr><td><span class="math-fallback inline"><strong>s</strong></span></td><td>The secret vector.</td></tr>
+<tr><td><span class="math-fallback inline">e<sub>i</sub></span></td><td>The small error or noise term.</td></tr>
+<tr><td><span class="math-fallback inline">q</span></td><td>The modulus.</td></tr>
+<tr><td><span class="math-fallback inline">b<sub>i</sub></span></td><td>The noisy public result.</td></tr>
+</tbody>
+</table>
+<h3>Part I: Concept explanations</h3>
+<div class="answer-step"><p><strong>I1 sample.</strong> Basis vectors generate a lattice by allowing whole-number multiples of each vector to be added together. Every such integer combination is a lattice point.</p></div>
+<div class="answer-step"><p><strong>I2 sample.</strong> A good basis has short, nearly perpendicular vectors, making nearby lattice points easier to find. A bad basis uses long, slanted, tangled vectors, hiding the lattice’s structure.</p></div>
+<div class="answer-step"><p><strong>I3 sample.</strong> Two-dimensional pictures help us understand the idea, but cryptographic lattices live in high dimensions where there are too many directions and candidates to visualize directly.</p></div>
+<div class="answer-step"><p><strong>I4 sample.</strong> Noise is useful because it prevents equations from being solved exactly with ordinary linear algebra. The secret remains hidden behind small intentional errors.</p></div>
+<h3>Self-check</h3>
+<table>
+<thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>A lattice is made from all real-number combinations of basis vectors.</td><td>False</td><td>That describes a span/vector space. A lattice uses integer combinations.</td></tr>
+<tr><td>A lattice uses integer combinations of basis vectors.</td><td>True</td><td>Whole-number coefficients create the discrete grid.</td></tr>
+<tr><td>The zero vector is excluded from the Shortest Vector Problem.</td><td>True</td><td>Otherwise the answer is always trivial.</td></tr>
+<tr><td>The same lattice can sometimes have different bases.</td><td>True</td><td>Different generator sets can describe the same lattice.</td></tr>
+<tr><td>Noise in LWE is accidental and should be removed from the design.</td><td>False</td><td>The noise is intentional and security-relevant.</td></tr>
+<tr><td>High dimensions are one reason lattice problems become cryptographically useful.</td><td>True</td><td>High-dimensional search is much harder than the simple 2D picture.</td></tr>
+</tbody>
+</table>
+</section>
+<p class="footer-note">Mathematics of Cryptography workbook page. Volume 4: Post-Quantum Cryptography and Advanced Hardness Assumptions. Paired with Tutorial 76: Lattice Intuition.</p>
+
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_76_lattice_intuition_vectors_grids_closest_vectors_noisy_equations_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <span class="nav-item nav-primary nav-disabled">Next ➡️</span>
+        </div>
+      </nav>
+    </main>
+</div>
+</body>
+</html>

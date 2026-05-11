@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 58: RSA Mathematics: Primes, Totients, Modular Inverses, and Trapdoors | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 58</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>RSA Mathematics: Primes, Totients, Modular Inverses, and Trapdoors</h1>
+      <p class="subtitle">
+        Printable practice for RSA primes, modulus construction, Euler’s totient, public and private exponents, modular inverses, textbook RSA arithmetic, trapdoor reasoning, and modern RSA warnings.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Follow the RSA gear train carefully: choose primes, multiply them into \(n\), compute \(\varphi(n)\), choose \(e\), find \(d\), then use modular exponentiation. The arithmetic is toy-sized, but the structure is the real machine.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">RSA key construction</div>
+            <div class="math-display">
+              \[
+                n=pq
+              \]
+              \[
+                \varphi(n)=(p-1)(q-1)
+              \]
+              \[
+                \gcd(e,\varphi(n))=1
+              \]
+              \[
+                d\equiv e^{-1}\pmod{\varphi(n)}
+              \]
+            </div>
+          </div>
+
+          <div class="box rsa-box">
+            <div class="box-title">RSA operation shapes</div>
+            <div class="math-display">
+              \[
+                c\equiv m^e\pmod n
+              \]
+              \[
+                m\equiv c^d\pmod n
+              \]
+              \[
+                ed\equiv1\pmod{\varphi(n)}
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What do \(p\) and \(q\) represent?</td><td></td></tr>
+            <tr><td>A2. What does \(n\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(\varphi(n)\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(e\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(d\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(m\) represent?</td><td></td></tr>
+            <tr><td>A7. What does \(c\) represent?</td><td></td></tr>
+            <tr><td>A8. What does \(\gcd(a,b)\) mean?</td><td></td></tr>
+            <tr><td>A9. What does \(\equiv\) mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-picture">
+        <h2>Part B: RSA big picture</h2>
+        <table class="rsa-table">
+          <thead><tr><th>Key part</th><th>Contains</th><th>Who knows it?</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td></td><td></td></tr>
+            <tr><td>Private key</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain the RSA trapdoor chain: know \(p,q\) → compute \(\varphi(n)\) → compute \(d\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="primes-modulus">
+        <h2>Part C: Primes and modulus</h2>
+        <p>Complete the table.</p>
+        <table class="example-table">
+          <thead><tr><th>Prime \(p\)</th><th>Prime \(q\)</th><th>\(n=pq\)</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>11</td><td></td></tr>
+            <tr><td>7</td><td>13</td><td></td></tr>
+            <tr><td>11</td><td>17</td><td></td></tr>
+            <tr><td>13</td><td>19</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is multiplying primes easy while factoring their product can be hard?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="totient">
+        <h2>Part D: Euler’s totient</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            \varphi(n)=(p-1)(q-1)
+          \]
+        </div>
+
+        <table class="example-table">
+          <thead><tr><th>Prime \(p\)</th><th>Prime \(q\)</th><th>\(n=pq\)</th><th>\(\varphi(n)=(p-1)(q-1)\)</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>11</td><td></td><td></td></tr>
+            <tr><td>7</td><td>13</td><td></td><td></td></tr>
+            <tr><td>11</td><td>17</td><td></td><td></td></tr>
+            <tr><td>13</td><td>19</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why does knowing \(p\) and \(q\) make \(\varphi(n)\) easy to compute?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="choose-e">
+        <h2>Part E: Choosing \(e\)</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            \gcd(e,\varphi(n))=1
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>\(\varphi(n)\)</th><th>Candidate \(e\)</th><th>\(\gcd(e,\varphi(n))\)</th><th>Allowed?</th></tr></thead>
+          <tbody>
+            <tr><td>40</td><td>3</td><td></td><td></td></tr>
+            <tr><td>40</td><td>5</td><td></td><td></td></tr>
+            <tr><td>72</td><td>5</td><td></td><td></td></tr>
+            <tr><td>72</td><td>6</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why must \(e\) be relatively prime to \(\varphi(n)\)?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="compute-d">
+        <h2>Part F: Computing \(d\)</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            d\equiv e^{-1}\pmod{\varphi(n)}
+          \]
+          \[
+            ed\equiv1\pmod{\varphi(n)}
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>\(e\)</th><th>\(\varphi(n)\)</th><th>Candidate \(d\)</th><th>Check \(ed\bmod\varphi(n)\)</th><th>Correct inverse?</th></tr></thead>
+          <tbody>
+            <tr><td>3</td><td>40</td><td>27</td><td></td><td></td></tr>
+            <tr><td>5</td><td>72</td><td>29</td><td></td><td></td></tr>
+            <tr><td>7</td><td>40</td><td>23</td><td></td><td></td></tr>
+            <tr><td>3</td><td>40</td><td>13</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain what it means for \(d\) to be the modular inverse of \(e\).</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="toy-keygen">
+        <h2>Part G: Worked toy RSA key generation</h2>
+        <p>Fill in the blanks.</p>
+        <div class="math-display">
+          \[
+            p=5,\quad q=11
+          \]
+          \[
+            n=pq=\underline{\hspace{2cm}}
+          \]
+          \[
+            \varphi(n)=(5-1)(11-1)=\underline{\hspace{2cm}}
+          \]
+          \[
+            e=3
+          \]
+          \[
+            d=\underline{\hspace{2cm}} \quad \text{because } 3d\equiv1\pmod{40}
+          \]
+        </div>
+
+        <table class="rsa-table">
+          <thead><tr><th>Item</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td></td></tr>
+            <tr><td>Private key</td><td></td></tr>
+            <tr><td>Secret factorization</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="encryption-decryption">
+        <h2>Part H: RSA encryption and decryption</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            c\equiv m^e\pmod n
+          \]
+          \[
+            m\equiv c^d\pmod n
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. With public key \((n,e)=(55,3)\) and \(m=7\), compute \(c\equiv7^3\pmod{55}\).</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. With private exponent \(d=27\), what is \(13^{27}\bmod55\)?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="why-it-works">
+        <h2>Part I: Why RSA works</h2>
+        <p>Complete the steps.</p>
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(ed=1+k\varphi(n)\)</td><td></td></tr>
+            <tr><td>2</td><td>\(c^d\equiv(m^e)^d\pmod n\)</td><td></td></tr>
+            <tr><td>3</td><td>\(m^{ed}=m^{1+k\varphi(n)}\)</td><td></td></tr>
+            <tr><td>4</td><td>Original \(m\) returns</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. In plain language, why does \(d\) undo \(e\)?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="trapdoor">
+        <h2>Part J: RSA trapdoor</h2>
+        <table class="compare-table">
+          <thead><tr><th>Public information</th><th>Hidden trapdoor information</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>\(n=pq\)</td><td></td><td></td></tr>
+            <tr><td>\(e\)</td><td></td><td></td></tr>
+            <tr><td>\((n,e)\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Why is knowing \(p,q\) the trapdoor?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="signatures-preview">
+        <h2>Part K: RSA signatures preview</h2>
+        <p>Use the simplified shape:</p>
+        <div class="math-display">
+          \[
+            s\equiv m^d\pmod n
+          \]
+          \[
+            m\equiv s^e\pmod n
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why is “encrypt with the private key” a sloppy phrase for signatures?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="modern-warnings">
+        <h2>Part L: Modern RSA warnings</h2>
+        <table class="danger-table">
+          <thead><tr><th>Warning</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Do not use textbook RSA directly.</td><td></td></tr>
+            <tr><td>Use OAEP for RSA encryption.</td><td></td></tr>
+            <tr><td>Use PSS for RSA signatures.</td><td></td></tr>
+            <tr><td>Use large keys.</td><td></td></tr>
+            <tr><td>Protect private keys and primes.</td><td></td></tr>
+            <tr><td>Prefer modern libraries.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says the public modulus \(n\) must be secret.</td><td></td></tr>
+            <tr><td>A developer chooses \(e\) where \(\gcd(e,\varphi(n))\neq1\).</td><td></td></tr>
+            <tr><td>An attacker factors \(n\) and recovers \(p,q\).</td><td></td></tr>
+            <tr><td>A system uses textbook RSA directly for messages.</td><td></td></tr>
+            <tr><td>A system uses RSA-OAEP for encryption.</td><td></td></tr>
+            <tr><td>A person exposes \(d\) in a public repository.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>RSA begins by choosing secret primes \(p\) and \(q\).</td><td></td><td></td></tr>
+            <tr><td>\(n=pq\) is part of the public key.</td><td></td><td></td></tr>
+            <tr><td>\(\varphi(n)\) is easy to compute when \(p,q\) are known.</td><td></td><td></td></tr>
+            <tr><td>\(e\) can share a common factor with \(\varphi(n)\).</td><td></td><td></td></tr>
+            <tr><td>\(d\) satisfies \(ed\equiv1\pmod{\varphi(n)}\).</td><td></td><td></td></tr>
+            <tr><td>Textbook RSA is safe for direct real-world encryption.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain RSA key generation in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain why modular inverses matter in RSA.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain the RSA trapdoor in one paragraph.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>RSA public key is \((n,e)\).</td><td></td></tr>
+            <tr><td>RSA private exponent is \(d\).</td><td></td></tr>
+            <tr><td>The factorization \(p,q\) should be public.</td><td></td></tr>
+            <tr><td>\(\varphi(n)=(p-1)(q-1)\) when \(n=pq\) and \(p,q\) are prime.</td><td></td></tr>
+            <tr><td>Encryption shape is \(c\equiv m^e\pmod n\).</td><td></td></tr>
+            <tr><td>Decryption shape is \(m\equiv c^d\pmod n\).</td><td></td></tr>
+            <tr><td>Real RSA should use proper padding.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central RSA mechanism is this: the public sees \(n\) and \(e\), but the private key holder knows the factorization and can compute the inverse exponent \(d\).</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What do \(p\) and \(q\) represent?</td><td>The secret primes.</td></tr>
+            <tr><td>A2. What does \(n\) represent?</td><td>The public modulus, \(n=pq\).</td></tr>
+            <tr><td>A3. What does \(\varphi(n)\) represent?</td><td>Euler’s totient of \(n\), used to compute the private exponent.</td></tr>
+            <tr><td>A4. What does \(e\) represent?</td><td>The public exponent.</td></tr>
+            <tr><td>A5. What does \(d\) represent?</td><td>The private exponent.</td></tr>
+            <tr><td>A6. What does \(m\) represent?</td><td>The message number/plaintext representative.</td></tr>
+            <tr><td>A7. What does \(c\) represent?</td><td>The ciphertext number.</td></tr>
+            <tr><td>A8. What does \(\gcd(a,b)\) mean?</td><td>The greatest common divisor of \(a\) and \(b\).</td></tr>
+            <tr><td>A9. What does \(\equiv\) mean?</td><td>Congruent, meaning same remainder modulo a modulus.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: RSA big picture</h3>
+        <table class="answer-table">
+          <thead><tr><th>Key part</th><th>Contains</th><th>Who knows it?</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td>\((n,e)\)</td><td>Everyone may know it.</td></tr>
+            <tr><td>Private key</td><td>\(d\), and usually also \(p,q\) or related values</td><td>Only the owner.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> If someone knows \(p\) and \(q\), they can compute \(\varphi(n)=(p-1)(q-1)\). Once they know \(\varphi(n)\), they can compute \(d\), the inverse of \(e\). That gives the private RSA operation.</p></div>
+
+        <h3>Part C: Primes and modulus</h3>
+        <table class="answer-table">
+          <thead><tr><th>Prime \(p\)</th><th>Prime \(q\)</th><th>\(n=pq\)</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>11</td><td>55</td></tr>
+            <tr><td>7</td><td>13</td><td>91</td></tr>
+            <tr><td>11</td><td>17</td><td>187</td></tr>
+            <tr><td>13</td><td>19</td><td>247</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> Multiplication is a direct operation. Factoring asks for the original hidden prime factors from only the product, which becomes infeasible when the primes are huge and well chosen.</p></div>
+
+        <h3>Part D: Euler’s totient</h3>
+        <table class="answer-table">
+          <thead><tr><th>Prime \(p\)</th><th>Prime \(q\)</th><th>\(n=pq\)</th><th>\(\varphi(n)=(p-1)(q-1)\)</th></tr></thead>
+          <tbody>
+            <tr><td>5</td><td>11</td><td>55</td><td>40</td></tr>
+            <tr><td>7</td><td>13</td><td>91</td><td>72</td></tr>
+            <tr><td>11</td><td>17</td><td>187</td><td>160</td></tr>
+            <tr><td>13</td><td>19</td><td>247</td><td>216</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> When \(n\) is the product of two primes, the totient is simply \((p-1)(q-1)\). Knowing the primes makes this calculation immediate.</p></div>
+
+        <h3>Part E: Choosing \(e\)</h3>
+        <table class="answer-table">
+          <thead><tr><th>\(\varphi(n)\)</th><th>Candidate \(e\)</th><th>\(\gcd(e,\varphi(n))\)</th><th>Allowed?</th></tr></thead>
+          <tbody>
+            <tr><td>40</td><td>3</td><td>1</td><td>Yes</td></tr>
+            <tr><td>40</td><td>5</td><td>5</td><td>No</td></tr>
+            <tr><td>72</td><td>5</td><td>1</td><td>Yes</td></tr>
+            <tr><td>72</td><td>6</td><td>6</td><td>No</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> \(e\) must be relatively prime to \(\varphi(n)\) so that it has a modular inverse. Without that inverse, the private exponent \(d\) does not exist.</p></div>
+
+        <h3>Part F: Computing \(d\)</h3>
+        <table class="answer-table">
+          <thead><tr><th>\(e\)</th><th>\(\varphi(n)\)</th><th>Candidate \(d\)</th><th>Check \(ed\bmod\varphi(n)\)</th><th>Correct inverse?</th></tr></thead>
+          <tbody>
+            <tr><td>3</td><td>40</td><td>27</td><td>81 mod 40 = 1</td><td>Yes</td></tr>
+            <tr><td>5</td><td>72</td><td>29</td><td>145 mod 72 = 1</td><td>Yes</td></tr>
+            <tr><td>7</td><td>40</td><td>23</td><td>161 mod 40 = 1</td><td>Yes</td></tr>
+            <tr><td>3</td><td>40</td><td>13</td><td>39 mod 40 = 39</td><td>No</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> \(d\) is the modular inverse of \(e\) when multiplying \(e\) and \(d\) gives remainder 1 modulo \(\varphi(n)\). In symbols, \(ed\equiv1\pmod{\varphi(n)}\).</p></div>
+
+        <h3>Part G: Worked toy RSA key generation</h3>
+        <div class="answer-step">
+          <p>\(n=5\cdot11=55\).</p>
+          <p>\(\varphi(n)=(5-1)(11-1)=4\cdot10=40\).</p>
+          <p>\(d=27\), because \(3\cdot27=81\equiv1\pmod{40}\).</p>
+        </div>
+        <table class="answer-table">
+          <thead><tr><th>Item</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td>\((n,e)=(55,3)\)</td></tr>
+            <tr><td>Private key</td><td>\(d=27\)</td></tr>
+            <tr><td>Secret factorization</td><td>\(p=5,q=11\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part H: RSA encryption and decryption</h3>
+        <div class="answer-step">
+          <p><strong>H1 work.</strong> \(c\equiv7^3\pmod{55}\). Since \(7^3=343\) and \(343=6\cdot55+13\), \(c=13\).</p>
+          <p><strong>H2 answer.</strong> \(13^{27}\bmod55=7\), returning the original message.</p>
+        </div>
+
+        <h3>Part I: Why RSA works</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>\(ed=1+k\varphi(n)\)</td><td>\(e\) and \(d\) are inverses modulo \(\varphi(n)\).</td></tr>
+            <tr><td>2</td><td>\(c^d\equiv(m^e)^d\pmod n\)</td><td>Decrypting raises the encrypted value to \(d\).</td></tr>
+            <tr><td>3</td><td>\(m^{ed}=m^{1+k\varphi(n)}\)</td><td>The exponent has the form needed for Euler’s theorem structure.</td></tr>
+            <tr><td>4</td><td>Original \(m\) returns</td><td>The private exponent undoes the public exponent under RSA conditions.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> \(d\) is chosen so that multiplying by \(e\) is equivalent to 1 in the modular exponent cycle. That makes exponentiating by \(d\) undo the effect of exponentiating by \(e\).</p></div>
+
+        <h3>Part J: RSA trapdoor</h3>
+        <table class="answer-table">
+          <thead><tr><th>Public information</th><th>Hidden trapdoor information</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>\(n=pq\)</td><td>\(p,q\)</td><td>Factoring \(n\) reveals the primes.</td></tr>
+            <tr><td>\(e\)</td><td>\(\varphi(n)\)</td><td>Needed to compute \(d\).</td></tr>
+            <tr><td>\((n,e)\)</td><td>\(d\)</td><td>Private exponent decrypts or signs.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> Knowing \(p,q\) lets the owner compute \(\varphi(n)\), which lets them compute \(d\). Without the factorization, attackers should not be able to find the private exponent.</p></div>
+
+        <h3>Part K: RSA signatures preview</h3>
+        <div class="answer-step"><p><strong>K1 sample answer.</strong> Signatures are not merely encryption in reverse. Real signature schemes use hashing, encoding, padding, and verification rules. It is clearer to say the private key signs and the public key verifies.</p></div>
+
+        <h3>Part L: Modern RSA warnings</h3>
+        <table class="answer-table">
+          <thead><tr><th>Warning</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Do not use textbook RSA directly.</td><td>It is deterministic and vulnerable in many ways.</td></tr>
+            <tr><td>Use OAEP for RSA encryption.</td><td>Padding provides necessary security properties.</td></tr>
+            <tr><td>Use PSS for RSA signatures.</td><td>Modern probabilistic signature padding.</td></tr>
+            <tr><td>Use large keys.</td><td>Small moduli are factorable.</td></tr>
+            <tr><td>Protect private keys and primes.</td><td>Exposure breaks the trapdoor.</td></tr>
+            <tr><td>Prefer modern libraries.</td><td>Implementation details are sharp and numerous.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A student says the public modulus \(n\) must be secret.</td><td>Mistaken. \(n\) is public; \(p,q\) are secret.</td></tr>
+            <tr><td>A developer chooses \(e\) where \(\gcd(e,\varphi(n))\neq1\).</td><td>Bad choice. \(e\) needs an inverse modulo \(\varphi(n)\).</td></tr>
+            <tr><td>An attacker factors \(n\) and recovers \(p,q\).</td><td>Trapdoor exposed; RSA private key can be recovered.</td></tr>
+            <tr><td>A system uses textbook RSA directly for messages.</td><td>Bad. Real RSA needs padding such as OAEP.</td></tr>
+            <tr><td>A system uses RSA-OAEP for encryption.</td><td>Good modern RSA encryption practice.</td></tr>
+            <tr><td>A person exposes \(d\) in a public repository.</td><td>Private key compromise.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>RSA begins by choosing secret primes \(p\) and \(q\).</td><td>Valid</td><td>They are the hidden factorization.</td></tr>
+            <tr><td>\(n=pq\) is part of the public key.</td><td>Valid</td><td>The public key is \((n,e)\).</td></tr>
+            <tr><td>\(\varphi(n)\) is easy to compute when \(p,q\) are known.</td><td>Valid</td><td>Use \((p-1)(q-1)\).</td></tr>
+            <tr><td>\(e\) can share a common factor with \(\varphi(n)\).</td><td>Mistaken</td><td>Then \(e\) has no modular inverse.</td></tr>
+            <tr><td>\(d\) satisfies \(ed\equiv1\pmod{\varphi(n)}\).</td><td>Valid</td><td>That defines the private exponent relationship.</td></tr>
+            <tr><td>Textbook RSA is safe for direct real-world encryption.</td><td>Mistaken</td><td>Real RSA requires secure padding.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> RSA key generation starts by choosing two secret primes \(p\) and \(q\), multiplying them to get \(n=pq\), and computing \(\varphi(n)=(p-1)(q-1)\). Then a public exponent \(e\) is chosen relatively prime to \(\varphi(n)\), and the private exponent \(d\) is computed as the modular inverse of \(e\).</p>
+          <p><strong>O2 sample answer.</strong> Modular inverses matter because \(d\) must undo \(e\) in the RSA exponent structure. The relationship \(ed\equiv1\pmod{\varphi(n)}\) is what allows decryption to recover the original message.</p>
+          <p><strong>O3 sample answer.</strong> The RSA trapdoor is knowledge of the hidden prime factors \(p\) and \(q\). Those factors reveal \(\varphi(n)\), which allows the owner to compute \(d\), the private exponent.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial explained RSA as a public-key trapdoor system based on primes, totients, modular inverses, and modular exponentiation. The public key is \((n,e)\), while the private exponent \(d\) is computed using \(\varphi(n)\), which requires knowing the secret factorization. Textbook RSA shows the arithmetic, but real RSA requires secure padding such as OAEP for encryption and PSS for signatures.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>RSA public key is \((n,e)\).</td><td>True</td><td>Those values may be public.</td></tr>
+            <tr><td>RSA private exponent is \(d\).</td><td>True</td><td>\(d\) performs the private operation.</td></tr>
+            <tr><td>The factorization \(p,q\) should be public.</td><td>False</td><td>It is the trapdoor secret.</td></tr>
+            <tr><td>\(\varphi(n)=(p-1)(q-1)\) when \(n=pq\) and \(p,q\) are prime.</td><td>True</td><td>That is the RSA totient formula.</td></tr>
+            <tr><td>Encryption shape is \(c\equiv m^e\pmod n\).</td><td>True</td><td>This is textbook RSA encryption shape.</td></tr>
+            <tr><td>Decryption shape is \(m\equiv c^d\pmod n\).</td><td>True</td><td>This is textbook RSA decryption shape.</td></tr>
+            <tr><td>Real RSA should use proper padding.</td><td>True</td><td>Textbook RSA is not secure directly.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 58: RSA Mathematics: Primes, Totients, Modular Inverses, and Trapdoors.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_58_rsa_mathematics_primes_totients_modular_inverses_and_trapdoors_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_57_diffie_hellman_mathematics_modular_exponentiation_and_shared_secrets_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_59_rsa_worked_examples_encryption_decryption_and_signature_intuition_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formal Security Goals: IND-CPA, IND-CCA, INT-CTXT, and AE Security | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 67</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Formal Security Goals: IND-CPA, IND-CCA, INT-CTXT, and AE Security</h1>
+      <p class="subtitle">
+        Turning “secure” into testable attacker games: indistinguishability, chosen-plaintext attacks, chosen-ciphertext attacks, ciphertext integrity, and the combined goals behind authenticated encryption.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 66 introduced authenticated encryption as a practical tool. This tutorial explains how cryptographers make the word “secure” more precise. Rather than saying “this seems hard to break,” formal security goals ask: what can the attacker query, what must the attacker guess or forge, and how much better than chance can the attacker do?</p>
+        </div>
+
+        <p class="lead">
+          Formal security games are courtroom dramas for algorithms. The attacker gets rules, powers, and a challenge. The scheme is not judged by vibes, but by whether the attacker can win more often than random guessing or trivial luck should allow.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know symmetric encryption, AEAD, nonces, authentication tags, MACs, and the difference between confidentiality and integrity. The math here is not heavy algebra; it is careful adversarial thinking.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols and terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term or symbol</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Adversary</td><td>The attacker in the game.</td><td>An algorithm trying to distinguish, decrypt, or forge.</td></tr>
+            <tr><td>Oracle</td><td>A controlled black box.</td><td>A service the adversary may query, such as encryption or decryption.</td></tr>
+            <tr><td>Advantage</td><td>How much better than luck the attacker does.</td><td>Measured success above the baseline probability.</td></tr>
+            <tr><td>CPA</td><td>Chosen-plaintext attack.</td><td>Attacker may ask for encryptions of chosen messages.</td></tr>
+            <tr><td>CCA</td><td>Chosen-ciphertext attack.</td><td>Attacker may ask for decryptions of chosen ciphertexts under rules.</td></tr>
+            <tr><td>IND</td><td>Indistinguishability.</td><td>Attacker cannot distinguish encryptions of chosen messages.</td></tr>
+            <tr><td>IND-CPA</td><td>Hidden even with encryption queries.</td><td>Indistinguishability under chosen-plaintext attack.</td></tr>
+            <tr><td>IND-CCA</td><td>Hidden even with decryption-query power.</td><td>Indistinguishability under chosen-ciphertext attack.</td></tr>
+            <tr><td>INT-CTXT</td><td>No valid new ciphertext forgeries.</td><td>Integrity of ciphertexts.</td></tr>
+            <tr><td>AE</td><td>Confidentiality plus integrity.</td><td>Authenticated Encryption security, often combining IND-CPA and INT-CTXT or stronger variants.</td></tr>
+            <tr><td>AEAD</td><td>AE with public authenticated metadata.</td><td>Authenticated Encryption with Associated Data.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="why-games">
+        <h2>Why security games?</h2>
+        <p>
+          Security games give us a disciplined way to define attacker success. They describe what the attacker is allowed to do and what counts as winning.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Game ingredient</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Attacker powers</td><td>What the attacker may query or observe.</td></tr>
+            <tr><td>Challenge</td><td>The test the attacker must solve.</td></tr>
+            <tr><td>Winning condition</td><td>What counts as success.</td></tr>
+            <tr><td>Advantage</td><td>How much better than chance the attacker performs.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            A security definition is not a slogan. It is a game with rules, a scoreboard, and a suspiciously clever opponent.</p>
+        </div>
+      </section>
+
+      <section id="advantage">
+        <h2>Attacker advantage</h2>
+        <p>
+          Many confidentiality games ask the attacker to guess a hidden bit \(b\), often meaning “was message 0 encrypted or message 1 encrypted?” Random guessing succeeds with probability \(1/2\).</p>
+
+        <div class="math-display">
+          \[
+            Advantage = \left|Pr[attacker\ wins]-\frac{1}{2}\right|
+          \]
+        </div>
+
+        <p>
+          If the attacker wins about half the time, they have no useful distinguishing power. If they win much more often than half, the scheme leaks something useful.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Tiny advantage matters at scale</div>
+          <p>
+            Formal cryptography often treats even small advantages carefully because attackers may run many trials, exploit structure, or combine leaks with other weaknesses.</p>
+        </div>
+      </section>
+
+      <section id="ind-cpa">
+        <h2>IND-CPA: indistinguishability under chosen-plaintext attack</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: IND-CPA</div>
+          <p>
+            IND-CPA means that even if an attacker can ask for encryptions of chosen plaintexts, they still cannot distinguish which of two chosen challenge messages was encrypted, except with negligible advantage.</p>
+        </div>
+
+        <div class="diagram" role="img" aria-label="IND-CPA game flow">
+          <div class="diagram-title">IND-CPA game shape</div>
+          <div class="flow-row">
+            <div class="flow-node attacker-node">attacker</div>
+            <div class="flow-arrow">queries</div>
+            <div class="flow-node oracle-node">encryption oracle</div>
+            <div class="flow-arrow">then chooses</div>
+            <div class="flow-node context-node">\(m_0,m_1\)</div>
+            <div class="flow-arrow">challenge</div>
+            <div class="flow-node goal-node">guess \(b\)</div>
+          </div>
+        </div>
+
+        <pre><code>1. Attacker may ask for encryptions of chosen messages.
+2. Attacker chooses two equal-length messages m0 and m1.
+3. Challenger flips secret bit b.
+4. Challenger returns Enc(K, mb).
+5. Attacker guesses b.
+6. Secure means attacker cannot do much better than 50%.</code></pre>
+
+        <p>
+          IND-CPA captures confidentiality against passive observation plus chosen encryption queries. It says ciphertexts should not reveal which plaintext was chosen.</p>
+      </section>
+
+      <section id="why-randomization-needed">
+        <h2>Why deterministic encryption usually fails IND-CPA</h2>
+        <p>
+          If encryption is deterministic, the same plaintext under the same key always produces the same ciphertext. Then an attacker can often compare challenge ciphertexts to earlier encryption queries.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Scheme behavior</th><th>IND-CPA problem</th></tr></thead>
+          <tbody>
+            <tr><td>Same plaintext always gives same ciphertext.</td><td>Attacker can build a codebook of encryptions.</td></tr>
+            <tr><td>Nonce/randomness not used correctly.</td><td>Patterns may leak.</td></tr>
+            <tr><td>Repeated messages are visible.</td><td>Equality information leaks.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Core lesson</div>
+          <p>
+            Confidential encryption usually needs randomness, nonces, or state so identical plaintexts do not simply announce themselves.</p>
+        </div>
+      </section>
+
+      <section id="ind-cca">
+        <h2>IND-CCA: indistinguishability under chosen-ciphertext attack</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: IND-CCA</div>
+          <p>
+            IND-CCA means the attacker still cannot distinguish challenge encryptions even when given controlled access to a decryption oracle, except that they cannot simply ask the oracle to decrypt the challenge ciphertext itself.</p>
+        </div>
+
+        <pre><code>1. Attacker can ask encryption and decryption questions.
+2. Attacker chooses m0 and m1.
+3. Challenger returns challenge ciphertext C* = Enc(K, mb).
+4. Attacker may continue asking allowed decryption questions, but not for C* itself.
+5. Attacker guesses b.
+6. Secure means attacker cannot do much better than 50%.</code></pre>
+
+        <p>
+          IND-CCA is stronger than IND-CPA. It models attackers who can feed modified ciphertexts into a system and observe whether decryption succeeds, fails, or leaks information.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            CPA asks, “Can you learn from chosen encryptions?” CCA asks, “Can you also poke the decryption machine and learn from its reactions?”</p>
+        </div>
+      </section>
+
+      <section id="malleability">
+        <h2>Malleability and why CCA matters</h2>
+        <p>
+          A malleable encryption scheme lets attackers modify ciphertexts in ways that cause meaningful changes to plaintexts. Even if attackers cannot directly decrypt, the system’s reactions may leak information.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Property</th><th>Meaning</th><th>Risk</th></tr></thead>
+          <tbody>
+            <tr><td>Malleable</td><td>Ciphertext changes can cause controlled plaintext changes.</td><td>Attackers may manipulate messages.</td></tr>
+            <tr><td>Decrypt-and-report errors</td><td>System reveals different failure reasons.</td><td>Can become an oracle.</td></tr>
+            <tr><td>Authenticate before release</td><td>Invalid ciphertexts are rejected.</td><td>Limits decryption-oracle leakage.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="int-ctxt">
+        <h2>INT-CTXT: integrity of ciphertexts</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: INT-CTXT</div>
+          <p>
+            INT-CTXT means an attacker cannot create a new ciphertext that decrypts successfully unless that ciphertext was previously produced by the encryption oracle.</p>
+        </div>
+
+        <pre><code>1. Attacker may ask for encryptions of chosen messages.
+2. Attacker sees valid ciphertexts and tags.
+3. Attacker tries to output a new ciphertext/tag pair.
+4. The attacker wins if the new pair decrypts successfully.
+5. Secure means successful forgery should be infeasible.</code></pre>
+
+        <p>
+          INT-CTXT is about tamper resistance. It says attackers should not be able to manufacture valid ciphertexts, even if they have seen many valid examples.</p>
+      </section>
+
+      <section id="ae-security">
+        <h2>Authenticated Encryption security</h2>
+        <p>
+          Authenticated Encryption aims to provide both confidentiality and integrity. In simplified course language:</p>
+
+        <table class="security-table">
+          <thead><tr><th>Goal</th><th>Formal flavor</th><th>Plain-language meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>IND-CPA or stronger</td><td>Attacker cannot learn which plaintext was encrypted.</td></tr>
+            <tr><td>Integrity</td><td>INT-CTXT</td><td>Attacker cannot forge a valid new ciphertext.</td></tr>
+            <tr><td>Strong active-attack protection</td><td>IND-CCA-like behavior</td><td>Invalid ciphertexts should not leak useful information.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box security-box">
+          <div class="box-title">AE security intuition</div>
+          <p>
+            A good AEAD scheme hides the plaintext and refuses forged ciphertexts. It is not just a locked box. It is a locked box with a tamper-evident seal and a rule that broken seals are never opened.</p>
+        </div>
+      </section>
+
+      <section id="encrypt-then-mac">
+        <h2>Encrypt-then-MAC intuition</h2>
+        <p>
+          One historically important way to think about authenticated encryption is encrypt-then-MAC: first encrypt the plaintext, then compute a MAC over the ciphertext and relevant associated data.</p>
+
+        <div class="math-display">
+          \[
+            C=Enc(K_E,N,P)
+          \]
+          \[
+            tag=MAC(K_M,AAD\parallel N\parallel C)
+          \]
+        </div>
+
+        <p>
+          During decryption, verify the tag first. Only if the tag is valid should plaintext be released.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why this pattern matters</div>
+          <p>
+            Encrypt-then-MAC helps avoid decryption-oracle behavior because invalid ciphertexts are rejected before plaintext processing.</p>
+        </div>
+      </section>
+
+      <section id="relationship-table">
+        <h2>Relationship between the goals</h2>
+        <table class="compare-table">
+          <thead><tr><th>Security goal</th><th>Protects against</th><th>Does not by itself guarantee</th></tr></thead>
+          <tbody>
+            <tr><td>IND-CPA</td><td>Chosen-plaintext confidentiality attacks.</td><td>Ciphertext integrity.</td></tr>
+            <tr><td>IND-CCA</td><td>Stronger active decryption-query attacks.</td><td>Application-level authorization.</td></tr>
+            <tr><td>INT-CTXT</td><td>Forged ciphertexts.</td><td>Message secrecy by itself.</td></tr>
+            <tr><td>AE/AEAD</td><td>Confidentiality plus integrity.</td><td>Correct nonce management unless specified by mode.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="real-world-translation">
+        <h2>Real-world translation</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Formal phrase</th><th>Practical translation</th></tr></thead>
+          <tbody>
+            <tr><td>IND-CPA</td><td>Seeing many encryptions should not reveal which chosen message was encrypted.</td></tr>
+            <tr><td>IND-CCA</td><td>Even decryption behavior on attacker-chosen ciphertexts should not reveal the challenge plaintext.</td></tr>
+            <tr><td>INT-CTXT</td><td>Attackers should not be able to create a new ciphertext/tag pair that the receiver accepts.</td></tr>
+            <tr><td>AEAD security</td><td>Messages are hidden, tampering is detected, and public metadata is bound to the ciphertext.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking confidentiality implies integrity</div>
+          <p>
+            IND-CPA confidentiality does not mean attackers cannot modify ciphertexts.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking integrity implies secrecy</div>
+          <p>
+            A MAC can authenticate data without hiding it.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: treating decryption errors casually</div>
+          <p>
+            Error behavior can become an oracle if it leaks distinctions attackers can exploit.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: assuming AEAD fixes nonce misuse automatically</div>
+          <p>
+            AEAD security depends on the mode’s assumptions, often including nonce uniqueness.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does IND mean?
+            <details class="solution"><summary>Show solution</summary><p>Indistinguishability.</p></details>
+          </li>
+          <li>
+            What does CPA mean?
+            <details class="solution"><summary>Show solution</summary><p>Chosen-plaintext attack.</p></details>
+          </li>
+          <li>
+            What does CCA mean?
+            <details class="solution"><summary>Show solution</summary><p>Chosen-ciphertext attack.</p></details>
+          </li>
+          <li>
+            What does INT-CTXT protect against?
+            <details class="solution"><summary>Show solution</summary><p>Forgery of new ciphertexts that decrypt successfully.</p></details>
+          </li>
+          <li>
+            Does IND-CPA by itself guarantee ciphertext integrity?
+            <details class="solution"><summary>Show solution</summary><p>No. IND-CPA is a confidentiality goal, not an integrity goal.</p></details>
+          </li>
+          <li>
+            What should AEAD provide at a high level?
+            <details class="solution"><summary>Show solution</summary><p>Confidentiality, integrity, authenticity, and associated-data binding under the correct assumptions.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Formal security goals let cryptographers talk precisely about what a scheme does and does not protect. They also reveal why “encrypted” is not enough. IND-CPA gives a confidentiality target. IND-CCA strengthens the attacker model. INT-CTXT gives an integrity target. AEAD combines these ideas into the modern interface used by secure channels and protocols.</p>
+        <ul>
+          <li>Security games define attacker powers and winning conditions.</li>
+          <li>Advantage measures success above chance.</li>
+          <li>IND-CPA is confidentiality under chosen-plaintext attack.</li>
+          <li>Deterministic encryption often fails IND-CPA.</li>
+          <li>IND-CCA models attackers with decryption-query power.</li>
+          <li>Malleability can make decryption behavior dangerous.</li>
+          <li>INT-CTXT prevents valid ciphertext forgeries.</li>
+          <li>AEAD should provide confidentiality plus integrity.</li>
+          <li>Encrypt-then-MAC gives useful intuition for fail-closed decryption.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Formal security goals are attacker games.</li>
+            <li>An oracle is a controlled black box the attacker may query.</li>
+            <li>Advantage measures success above chance.</li>
+            <li>IND means indistinguishability.</li>
+            <li>CPA means chosen-plaintext attack.</li>
+            <li>CCA means chosen-ciphertext attack.</li>
+            <li>IND-CPA means ciphertexts hide which chosen plaintext was encrypted, even with encryption-query access.</li>
+            <li>Deterministic encryption usually leaks equality patterns and often fails IND-CPA.</li>
+            <li>IND-CCA gives the attacker controlled decryption-query power.</li>
+            <li>Malleability means ciphertext changes can cause meaningful plaintext changes.</li>
+            <li>INT-CTXT means attackers cannot forge new valid ciphertexts.</li>
+            <li>Confidentiality does not automatically imply integrity.</li>
+            <li>Integrity does not automatically imply secrecy.</li>
+            <li>AEAD aims to provide confidentiality plus integrity and associated-data binding.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              Advantage=\left|Pr[attacker\ wins]-\frac{1}{2}\right|
+            \]
+            \[
+              C=Enc(K_E,N,P)
+            \]
+            \[
+              tag=MAC(K_M,AAD\parallel N\parallel C)
+            \]
+          </div>
+          <pre><code>IND-CPA: hide which chosen plaintext was encrypted.
+IND-CCA: hide it even with controlled decryption access.
+INT-CTXT: prevent new valid ciphertext forgeries.
+AEAD: confidentiality + integrity + associated-data binding.</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 67: Formal Security Goals: IND-CPA, IND-CCA, INT-CTXT, and AE Security</strong>. After that, the next tutorial can move into <strong>Attack Models, Reductions, and Proof Sketches</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_67_formal_security_goals_ind_cpa_ind_cca_int_ctxt_and_ae_security_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_66_authenticated_encryption_aead_gcm_chacha_20_poly_1305_and_misuse_resistance_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_68_attack_models_reductions_and_proof_sketches_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

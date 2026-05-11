@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RSA Worked Examples: Encryption, Decryption, and Signature Intuition | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 59</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>RSA Worked Examples: Encryption, Decryption, and Signature Intuition</h1>
+      <p class="subtitle">
+        Hands-on toy RSA examples for seeing public exponentiation, private exponentiation, encryption/decryption reversal, signature verification intuition, and why padding separates learning math from real security.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 58 built the RSA machine. This tutorial turns the crank slowly. We will encrypt, decrypt, sign, and verify with tiny toy values so that the inverse-exponent structure becomes visible.</p>
+        </div>
+
+        <p class="lead">
+          RSA is best learned with arithmetic smoke cleared away. Tiny numbers let us watch the gears rotate. Real RSA uses enormous numbers and carefully designed padding, but the toy examples reveal the skeleton beneath the armor.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know that RSA uses a public key \((n,e)\) and a private exponent \(d\). You should also know that \(d\) is chosen so that \(ed\equiv1\pmod{\varphi(n)}\), which lets the private operation undo the public operation under RSA’s modular structure.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Symbol</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(n\)</td><td>Public wrapping modulus.</td><td>RSA modulus \(n=pq\).</td></tr>
+            <tr><td>\(e\)</td><td>Public exponent.</td><td>Exponent used with the public key.</td></tr>
+            <tr><td>\(d\)</td><td>Private exponent.</td><td>Exponent used with the private key.</td></tr>
+            <tr><td>\(m\)</td><td>Message number.</td><td>Plaintext representative modulo \(n\).</td></tr>
+            <tr><td>\(c\)</td><td>Ciphertext number.</td><td>Encrypted representative modulo \(n\).</td></tr>
+            <tr><td>\(s\)</td><td>Signature number.</td><td>Signature representative modulo \(n\).</td></tr>
+            <tr><td>OAEP</td><td>Real encryption padding.</td><td>Optimal Asymmetric Encryption Padding.</td></tr>
+            <tr><td>PSS</td><td>Real signature padding.</td><td>Probabilistic Signature Scheme.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-key-recap">
+        <h2>Toy key recap</h2>
+        <p>
+          We will reuse the tiny RSA key from Tutorial 58:</p>
+
+        <div class="math-display">
+          \[
+            p=5,\quad q=11
+          \]
+          \[
+            n=55,\quad \varphi(n)=40
+          \]
+          \[
+            e=3,\quad d=27
+          \]
+        </div>
+
+        <p>
+          Check the inverse relationship:</p>
+
+        <div class="math-display">
+          \[
+            ed=3\cdot27=81
+          \]
+          \[
+            81\equiv1\pmod{40}
+          \]
+        </div>
+
+        <table class="rsa-table">
+          <thead><tr><th>Key</th><th>Value</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td>\((n,e)=(55,3)\)</td><td>Used by others to encrypt or verify.</td></tr>
+            <tr><td>Private exponent</td><td>\(d=27\)</td><td>Used by owner to decrypt or sign.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Toy-only warning</div>
+          <p>
+            These numbers are deliberately tiny and insecure. They are training wheels, not tank armor.</p>
+        </div>
+      </section>
+
+      <section id="textbook-encryption-shape">
+        <h2>Textbook RSA encryption shape</h2>
+        <p>
+          Textbook RSA encryption raises the message number to the public exponent:</p>
+
+        <div class="math-display">
+          \[
+            c\equiv m^e\pmod n
+          \]
+        </div>
+
+        <p>
+          With \((n,e)=(55,3)\), this becomes:</p>
+
+        <div class="math-display">
+          \[
+            c\equiv m^3\pmod{55}
+          \]
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Language precision</div>
+          <p>
+            This is textbook RSA. Real RSA encryption uses padding, usually RSA-OAEP, before the RSA operation happens.</p>
+        </div>
+      </section>
+
+      <section id="example-one-encrypt">
+        <h2>Example 1: encrypt \(m=7\)</h2>
+        <p>
+          Start with message number:</p>
+
+        <div class="math-display">
+          \[
+            m=7
+          \]
+        </div>
+
+        <p>
+          Encrypt using \(e=3\) and \(n=55\):</p>
+
+        <div class="math-display">
+          \[
+            c\equiv7^3\pmod{55}
+          \]
+          \[
+            7^3=343
+          \]
+          \[
+            343=6\cdot55+13
+          \]
+          \[
+            c=13
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Message</td><td>\(m=7\)</td></tr>
+            <tr><td>Raise to public exponent</td><td>\(7^3=343\)</td></tr>
+            <tr><td>Reduce mod 55</td><td>\(343\bmod55=13\)</td></tr>
+            <tr><td>Ciphertext</td><td>\(c=13\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="fast-decryption-path">
+        <h2>Example 1: decrypt \(c=13\)</h2>
+        <p>
+          Textbook RSA decryption raises the ciphertext to the private exponent:</p>
+
+        <div class="math-display">
+          \[
+            m\equiv c^d\pmod n
+          \]
+        </div>
+
+        <p>
+          Here:</p>
+
+        <div class="math-display">
+          \[
+            m\equiv13^{27}\pmod{55}
+          \]
+        </div>
+
+        <p>
+          Computing \(13^{27}\) directly is enormous. Modular arithmetic lets us reduce along the way. A useful repeated-squaring path is:</p>
+
+        <table class="math-table">
+          <thead><tr><th>Power</th><th>Reduction mod 55</th></tr></thead>
+          <tbody>
+            <tr><td>\(13^1\)</td><td>13</td></tr>
+            <tr><td>\(13^2=169\)</td><td>4</td></tr>
+            <tr><td>\(13^4\equiv4^2=16\)</td><td>16</td></tr>
+            <tr><td>\(13^8\equiv16^2=256\)</td><td>36</td></tr>
+            <tr><td>\(13^{16}\equiv36^2=1296\)</td><td>31</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          Since \(27=16+8+2+1\):</p>
+
+        <div class="math-display">
+          \[
+            13^{27}=13^{16}\cdot13^8\cdot13^2\cdot13^1
+          \]
+          \[
+            13^{27}\equiv31\cdot36\cdot4\cdot13\pmod{55}
+          \]
+          \[
+            31\cdot36\cdot4\cdot13\equiv7\pmod{55}
+          \]
+        </div>
+
+        <p>
+          The original message returns:</p>
+
+        <div class="math-display">
+          \[
+            m=7
+          \]
+        </div>
+      </section>
+
+      <section id="rsa-flow-diagram">
+        <h2>RSA encryption/decryption flow</h2>
+        <div class="diagram" role="img" aria-label="Toy RSA encryption and decryption flow">
+          <div class="diagram-title">Toy RSA: public exponent out, private exponent back</div>
+          <div class="flow-row">
+            <div class="flow-node message-node">message<br>\(m=7\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">encrypt<br>\(m^e\bmod n\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">ciphertext<br>\(c=13\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">decrypt<br>\(c^d\bmod n\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node message-node">message<br>\(m=7\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="second-example">
+        <h2>Example 2: encrypt and decrypt \(m=12\)</h2>
+        <p>
+          Encrypt with \((n,e)=(55,3)\):</p>
+
+        <div class="math-display">
+          \[
+            c\equiv12^3\pmod{55}
+          \]
+          \[
+            12^3=1728
+          \]
+          \[
+            1728\equiv23\pmod{55}
+          \]
+        </div>
+
+        <p>
+          So:</p>
+
+        <div class="math-display">
+          \[
+            c=23
+          \]
+        </div>
+
+        <p>
+          Decryption should return \(12\):</p>
+
+        <div class="math-display">
+          \[
+            23^{27}\equiv12\pmod{55}
+          \]
+        </div>
+      </section>
+
+      <section id="message-limits">
+        <h2>Message limits in toy RSA</h2>
+        <p>
+          In textbook RSA, the message representative must be an integer modulo \(n\). That means:</p>
+
+        <div class="math-display">
+          \[
+            0\le m<n
+          \]
+        </div>
+
+        <p>
+          In our toy example, \(n=55\), so message representatives must be from 0 through 54. Real RSA does not directly encrypt arbitrary long messages. Instead, real systems use padding and usually encrypt a symmetric key or use hybrid encryption.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Approach</th><th>Meaning</th><th>Real-world status</th></tr></thead>
+          <tbody>
+            <tr><td>Textbook RSA on raw number</td><td>Encrypt \(m\) directly.</td><td>Learning only.</td></tr>
+            <tr><td>RSA-OAEP</td><td>Pad/encode before RSA encryption.</td><td>Real RSA encryption pattern.</td></tr>
+            <tr><td>Hybrid encryption</td><td>Use RSA to protect a symmetric key, then use AEAD for data.</td><td>Common real-world pattern.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="signature-intuition">
+        <h2>RSA signature intuition</h2>
+        <p>
+          RSA signatures use the private exponent to create a value that the public exponent can verify.</p>
+
+        <div class="math-display">
+          \[
+            s\equiv m^d\pmod n
+          \]
+          \[
+            m\equiv s^e\pmod n
+          \]
+        </div>
+
+        <p>
+          In real RSA signatures, you do not sign raw messages this way. A real signature scheme hashes and encodes the message first, then uses a secure padding scheme such as RSA-PSS.</p>
+      </section>
+
+      <section id="toy-signature-example">
+        <h2>Toy signature example with \(m=7\)</h2>
+        <p>
+          Sign with the private exponent \(d=27\):</p>
+
+        <div class="math-display">
+          \[
+            s\equiv7^{27}\pmod{55}
+          \]
+        </div>
+
+        <p>
+          The result is:</p>
+
+        <div class="math-display">
+          \[
+            s=28
+          \]
+        </div>
+
+        <p>
+          Verify with public exponent \(e=3\):</p>
+
+        <div class="math-display">
+          \[
+            s^e\equiv28^3\pmod{55}
+          \]
+          \[
+            28^3\equiv7\pmod{55}
+          \]
+        </div>
+
+        <p>
+          The verification recovers the message representative \(7\), so the toy signature checks out.</p>
+      </section>
+
+      <section id="signature-vs-encryption">
+        <h2>Signature versus encryption intuition</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Operation</th><th>Private key role</th><th>Public key role</th><th>Goal</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption</td><td>Decrypts</td><td>Encrypts to the owner</td><td>Confidentiality</td></tr>
+            <tr><td>Signature</td><td>Signs</td><td>Verifies signature</td><td>Authenticity/integrity/non-repudiation intuition</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Better wording</div>
+          <p>
+            Avoid saying “encrypt with the private key.” Say “sign with the private key” and “verify with the public key.” The math may look related, but the protocol goal is different.</p>
+        </div>
+      </section>
+
+      <section id="padding-matters">
+        <h2>Why padding matters</h2>
+        <p>
+          Textbook RSA has dangerous properties. It is deterministic: the same message encrypted with the same key gives the same ciphertext. It also has mathematical structure that attackers can exploit.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Textbook RSA weakness</th><th>Why dangerous?</th></tr></thead>
+          <tbody>
+            <tr><td>Deterministic encryption</td><td>Same message gives same ciphertext.</td></tr>
+            <tr><td>No randomness</td><td>Attackers can test guesses for small message spaces.</td></tr>
+            <tr><td>Malleable structure</td><td>Mathematical relationships can leak or manipulate meaning.</td></tr>
+            <tr><td>Raw message handling</td><td>Real messages need encoding, padding, and length handling.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Rule of thumb</div>
+          <p>
+            Textbook RSA is a blackboard diagram. Real RSA needs OAEP for encryption and PSS for signatures.</p>
+        </div>
+      </section>
+
+      <section id="hybrid-rsa">
+        <h2>RSA in hybrid encryption</h2>
+        <p>
+          Real systems often do not use RSA to encrypt the full message. Instead, RSA protects or transports a symmetric key, and the symmetric key protects the actual data.</p>
+
+        <pre><code>Generate random symmetric key K
+Encrypt data using AEAD with K
+Encrypt or wrap K using RSA-OAEP
+Send RSA-protected K plus AEAD ciphertext</code></pre>
+
+        <table class="compare-table">
+          <thead><tr><th>Part</th><th>Tool</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Key transport</td><td>RSA-OAEP</td><td>Public-key operation protects a small secret.</td></tr>
+            <tr><td>Bulk data</td><td>AEAD</td><td>Fast authenticated encryption for real messages.</td></tr>
+            <tr><td>Randomness</td><td>CSPRNG</td><td>Generates the symmetric key and required random values.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: treating toy RSA as secure</div>
+          <p>
+            Tiny moduli are factorable and useful only for learning.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: using textbook RSA directly</div>
+          <p>
+            Textbook RSA lacks the padding and security structure real systems require.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: saying signatures are “private-key encryption”</div>
+          <p>
+            Signatures are a separate primitive with different security goals and formatting rules.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: trying to RSA-encrypt large messages directly</div>
+          <p>
+            RSA operates on bounded-size representatives. Use hybrid encryption for real data.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            With \((n,e)=(55,3)\), encrypt \(m=7\).
+            <details class="solution"><summary>Show solution</summary><p>\(7^3=343\), and \(343\bmod55=13\). So \(c=13\).</p></details>
+          </li>
+          <li>
+            With \(d=27\), decrypt \(c=13\).
+            <details class="solution"><summary>Show solution</summary><p>\(13^{27}\bmod55=7\), so the message returns as \(m=7\).</p></details>
+          </li>
+          <li>
+            What is the valid message range for toy modulus \(n=55\)?
+            <details class="solution"><summary>Show solution</summary><p>\(0\le m<55\), so 0 through 54.</p></details>
+          </li>
+          <li>
+            In RSA signature intuition, which key signs?
+            <details class="solution"><summary>Show solution</summary><p>The private key signs.</p></details>
+          </li>
+          <li>
+            Which key verifies an RSA signature?
+            <details class="solution"><summary>Show solution</summary><p>The public key verifies.</p></details>
+          </li>
+          <li>
+            Why is textbook RSA not secure directly?
+            <details class="solution"><summary>Show solution</summary><p>It is deterministic, lacks secure padding, and has exploitable mathematical structure. Real RSA uses OAEP or PSS depending on the job.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          RSA’s formulas are simple to write but dangerous to misuse. The worked examples show why the inverse exponents recover the message and why the same exponent machinery can support signature verification intuition. The security lesson is just as important: real cryptography is not only the core equation; it is the equation plus padding, encoding, randomness, parameter size, and protocol context.</p>
+        <ul>
+          <li>RSA encryption shape: \(c\equiv m^e\pmod n\).</li>
+          <li>RSA decryption shape: \(m\equiv c^d\pmod n\).</li>
+          <li>RSA signing intuition: \(s\equiv m^d\pmod n\).</li>
+          <li>RSA verification intuition: \(m\equiv s^e\pmod n\).</li>
+          <li>Message representatives must be less than \(n\).</li>
+          <li>Textbook RSA is for learning, not direct use.</li>
+          <li>Real RSA encryption uses OAEP.</li>
+          <li>Real RSA signatures use PSS or another secure signature scheme.</li>
+          <li>Real systems usually combine RSA with symmetric encryption.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Toy RSA examples reveal the structure but are not secure.</li>
+            <li>Public key: \((n,e)\).</li>
+            <li>Private exponent: \(d\).</li>
+            <li>Encryption uses the public exponent.</li>
+            <li>Decryption uses the private exponent.</li>
+            <li>Signing uses the private exponent in the simplified math picture.</li>
+            <li>Verification uses the public exponent in the simplified math picture.</li>
+            <li>For \((n,e)=(55,3)\), \(m=7\) encrypts to \(c=13\).</li>
+            <li>With \(d=27\), \(13^{27}\bmod55=7\).</li>
+            <li>Message representatives must satisfy \(0\le m<n\).</li>
+            <li>Textbook RSA is deterministic and unsafe directly.</li>
+            <li>Use RSA-OAEP for real RSA encryption.</li>
+            <li>Use RSA-PSS for real RSA signatures.</li>
+            <li>Use hybrid encryption for real data.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              c\equiv m^e\pmod n
+            \]
+            \[
+              m\equiv c^d\pmod n
+            \]
+            \[
+              s\equiv m^d\pmod n
+            \]
+            \[
+              m\equiv s^e\pmod n
+            \]
+            \[
+              0\le m<n
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 59: RSA Worked Examples: Encryption, Decryption, and Signature Intuition</strong>. After that, the next tutorial can move into <strong>Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_59_rsa_worked_examples_encryption_decryption_and_signature_intuition_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_58_rsa_mathematics_primes_totients_modular_inverses_and_trapdoors_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_60_elliptic_curve_cryptography_points_addition_and_scalar_multiplication_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

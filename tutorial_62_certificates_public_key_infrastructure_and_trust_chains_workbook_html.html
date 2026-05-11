@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 62: Certificates, Public Key Infrastructure, and Trust Chains | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 62</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Certificates, Public Key Infrastructure, and Trust Chains</h1>
+      <p class="subtitle">
+        Printable practice for certificate fields, CA roles, trust chains, root stores, hostname validation, expiration, key usage, revocation, Certificate Transparency, and Transport Layer Security authentication.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat certificates as signed public-key identity cards. Your goal is to understand what is being bound, who signed it, how the chain is verified, and why name, time, purpose, and revocation checks all matter.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Certificate signature pattern</div>
+            <div class="math-display">
+              \[
+                signature=Sign_{CA\ private\ key}(certificate\ data)
+              \]
+              \[
+                Verify_{CA\ public\ key}(certificate\ data,signature)=valid/invalid
+              \]
+            </div>
+          </div>
+
+          <div class="box pki-box">
+            <div class="box-title">Trust-chain pattern</div>
+            <pre><code>Leaf certificate → Intermediate CA → Root CA → Root store trust anchor</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a certificate?</td><td></td></tr>
+            <tr><td>A2. What does CA stand for?</td><td></td></tr>
+            <tr><td>A3. What is a root CA?</td><td></td></tr>
+            <tr><td>A4. What is an intermediate CA?</td><td></td></tr>
+            <tr><td>A5. What is a leaf certificate?</td><td></td></tr>
+            <tr><td>A6. What is the subject of a certificate?</td><td></td></tr>
+            <tr><td>A7. What is the issuer of a certificate?</td><td></td></tr>
+            <tr><td>A8. What does SAN stand for?</td><td></td></tr>
+            <tr><td>A9. What is a root store?</td><td></td></tr>
+            <tr><td>A10. What is a chain of trust?</td><td></td></tr>
+            <tr><td>A11. What is revocation?</td><td></td></tr>
+            <tr><td>A12. What does OCSP stand for?</td><td></td></tr>
+            <tr><td>A13. What does CRL stand for?</td><td></td></tr>
+            <tr><td>A14. What does CT stand for?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="certificate-fields">
+        <h2>Part B: Certificate fields</h2>
+        <table class="pki-table">
+          <thead><tr><th>Certificate field</th><th>Question it answers</th></tr></thead>
+          <tbody>
+            <tr><td>Subject</td><td></td></tr>
+            <tr><td>Subject public key</td><td></td></tr>
+            <tr><td>Issuer</td><td></td></tr>
+            <tr><td>Validity period</td><td></td></tr>
+            <tr><td>Subject Alternative Name</td><td></td></tr>
+            <tr><td>Key usage / extended key usage</td><td></td></tr>
+            <tr><td>Signature</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. In one sentence, explain what a certificate binds together.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="certificate-signature">
+        <h2>Part C: Signature on a certificate</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            signature=Sign_{CA\ private\ key}(certificate\ data)
+          \]
+          \[
+            Verify_{CA\ public\ key}(certificate\ data,signature)=valid/invalid
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C1. Who creates the signature on a certificate?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. What happens if someone changes certificate data after it has been signed?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="pki-components">
+        <h2>Part D: Public Key Infrastructure components</h2>
+        <table class="lesson-table">
+          <thead><tr><th>PKI component</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Root CA</td><td></td></tr>
+            <tr><td>Intermediate CA</td><td></td></tr>
+            <tr><td>Leaf certificate</td><td></td></tr>
+            <tr><td>Root store</td><td></td></tr>
+            <tr><td>Validation software</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Define Public Key Infrastructure in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="chain-of-trust">
+        <h2>Part E: Chain of trust</h2>
+        <p>Complete the chain:</p>
+        <pre><code>________________ → __________________ → ________________ → __________________________</code></pre>
+
+        <table class="step-table">
+          <thead><tr><th>Validation step</th><th>What the client checks</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td></td></tr>
+            <tr><td>2</td><td></td></tr>
+            <tr><td>3</td><td></td></tr>
+            <tr><td>4</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does a chain usually include an intermediate CA instead of the root CA signing every website directly?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="root-stores">
+        <h2>Part F: Root stores and trust anchors</h2>
+        <table class="compare-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>Why trust a root CA?</td><td></td></tr>
+            <tr><td>Who maintains root stores?</td><td></td></tr>
+            <tr><td>Can roots be removed?</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why does “self-signed” not automatically mean “trusted”?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="hostname-validation">
+        <h2>Part G: Hostname validation</h2>
+        <table class="pki-table">
+          <thead><tr><th>Browser visits</th><th>Certificate SAN contains</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>www.example.com</td><td>www.example.com</td><td></td></tr>
+            <tr><td>shop.example.com</td><td>www.example.com</td><td></td></tr>
+            <tr><td>mail.example.com</td><td>*.example.com</td><td></td></tr>
+            <tr><td>a.b.example.com</td><td>*.example.com</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why can a certificate be signed by a trusted CA and still fail validation?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="validity-key-usage">
+        <h2>Part H: Validity periods and key usage</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Field</th><th>Question answered</th></tr></thead>
+          <tbody>
+            <tr><td>Not Before</td><td></td></tr>
+            <tr><td>Not After</td><td></td></tr>
+            <tr><td>Key Usage</td><td></td></tr>
+            <tr><td>Extended Key Usage</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why is certificate validation more than checking one signature?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="revocation">
+        <h2>Part I: Revocation</h2>
+        <table class="compare-table">
+          <thead><tr><th>Mechanism</th><th>Meaning</th><th>Basic idea</th></tr></thead>
+          <tbody>
+            <tr><td>CRL</td><td></td><td></td></tr>
+            <tr><td>OCSP</td><td></td><td></td></tr>
+            <tr><td>OCSP stapling</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain the difference between expiration and revocation.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="certificate-transparency">
+        <h2>Part J: Certificate Transparency</h2>
+        <table class="lesson-table">
+          <thead><tr><th>CT idea</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Public append-only logs</td><td></td></tr>
+            <tr><td>Visibility into issuance</td><td></td></tr>
+            <tr><td>Accountability pressure</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Why does public logging make mistaken or malicious certificates easier to detect?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="browser-checks">
+        <h2>Part K: What a browser checks</h2>
+        <table class="step-table">
+          <thead><tr><th>Check</th><th>Question</th></tr></thead>
+          <tbody>
+            <tr><td>Signature chain</td><td></td></tr>
+            <tr><td>Trusted root</td><td></td></tr>
+            <tr><td>Hostname</td><td></td></tr>
+            <tr><td>Validity period</td><td></td></tr>
+            <tr><td>Key usage</td><td></td></tr>
+            <tr><td>Revocation/status policy</td><td></td></tr>
+            <tr><td>Certificate Transparency policy</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tls-context">
+        <h2>Part L: How certificates fit into Transport Layer Security</h2>
+        <pre><code>1. Client connects to server.
+2. Server sends certificate chain.
+3. Client validates the certificate chain and hostname.
+4. Client and server perform authenticated key exchange.
+5. KDF derives traffic keys.
+6. Symmetric AEAD protects the application data.</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">L1. In modern TLS, what job does the certificate usually do?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">L2. What usually protects the actual application data after the handshake?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="public-private-pki">
+        <h2>Part M: Public versus private PKI</h2>
+        <table class="compare-table">
+          <thead><tr><th>PKI type</th><th>Trusted by</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td>Public PKI</td><td></td><td></td></tr>
+            <tr><td>Private PKI</td><td></td><td></td></tr>
+            <tr><td>Self-signed leaf certificate</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part N: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate is signed by a trusted CA but the hostname does not match.</td><td></td></tr>
+            <tr><td>A website presents a valid leaf certificate and intermediate certificate chaining to a trusted root.</td><td></td></tr>
+            <tr><td>A certificate expired yesterday.</td><td></td></tr>
+            <tr><td>A server certificate is valid for code signing but not server authentication.</td><td></td></tr>
+            <tr><td>A private key for a certificate is stolen before the certificate expires.</td><td></td></tr>
+            <tr><td>An organization installs its private root CA on managed devices.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part O: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate binds a public key to a subject/name.</td><td></td><td></td></tr>
+            <tr><td>A CA signs certificates with its private key.</td><td></td><td></td></tr>
+            <tr><td>A root CA is trusted because the certificate signed itself.</td><td></td><td></td></tr>
+            <tr><td>Hostname validation checks whether the certificate covers the requested site name.</td><td></td><td></td></tr>
+            <tr><td>Revocation means a certificate is distrusted before expiration.</td><td></td><td></td></tr>
+            <tr><td>Certificates usually encrypt all Transport Layer Security application data by themselves.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part P: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">P1. Explain certificates in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P2. Explain trust chains in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P3. Explain what a browser checks before trusting a certificate for HTTPS.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate is a signed statement about a public key.</td><td></td></tr>
+            <tr><td>A Certificate Authority signs certificates.</td><td></td></tr>
+            <tr><td>A trust chain can include a leaf, intermediate, and root certificate.</td><td></td></tr>
+            <tr><td>A trusted signature always means the hostname matches.</td><td></td></tr>
+            <tr><td>Certificates have validity periods.</td><td></td></tr>
+            <tr><td>Revocation can distrust a certificate before expiration.</td><td></td></tr>
+            <tr><td>Modern TLS typically uses symmetric traffic keys to protect application data.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that certificates do not merely contain public keys; they make signed claims about whose public key it is and what that key may be used for.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a certificate?</td><td>A signed data object that binds a subject/name to a public key and metadata.</td></tr>
+            <tr><td>A2. What does CA stand for?</td><td>Certificate Authority.</td></tr>
+            <tr><td>A3. What is a root CA?</td><td>A top-level trusted Certificate Authority used as a trust anchor.</td></tr>
+            <tr><td>A4. What is an intermediate CA?</td><td>A CA certified by another CA, often used to issue leaf certificates.</td></tr>
+            <tr><td>A5. What is a leaf certificate?</td><td>An end-entity certificate, such as a server certificate.</td></tr>
+            <tr><td>A6. What is the subject of a certificate?</td><td>The entity the certificate is about.</td></tr>
+            <tr><td>A7. What is the issuer of a certificate?</td><td>The CA that signed/issued the certificate.</td></tr>
+            <tr><td>A8. What does SAN stand for?</td><td>Subject Alternative Name.</td></tr>
+            <tr><td>A9. What is a root store?</td><td>A set of trusted root CA certificates maintained by an operating system, browser, or application.</td></tr>
+            <tr><td>A10. What is a chain of trust?</td><td>A sequence of certificates from leaf to intermediate to trusted root.</td></tr>
+            <tr><td>A11. What is revocation?</td><td>Distrusting a certificate before its expiration date.</td></tr>
+            <tr><td>A12. What does OCSP stand for?</td><td>Online Certificate Status Protocol.</td></tr>
+            <tr><td>A13. What does CRL stand for?</td><td>Certificate Revocation List.</td></tr>
+            <tr><td>A14. What does CT stand for?</td><td>Certificate Transparency.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Certificate fields</h3>
+        <table class="answer-table">
+          <thead><tr><th>Certificate field</th><th>Question it answers</th></tr></thead>
+          <tbody>
+            <tr><td>Subject</td><td>Who is this certificate about?</td></tr>
+            <tr><td>Subject public key</td><td>What public key is being certified?</td></tr>
+            <tr><td>Issuer</td><td>Who signed this certificate?</td></tr>
+            <tr><td>Validity period</td><td>When is this certificate valid?</td></tr>
+            <tr><td>Subject Alternative Name</td><td>Which domain names or identities does this certificate cover?</td></tr>
+            <tr><td>Key usage / extended key usage</td><td>What may this certificate be used for?</td></tr>
+            <tr><td>Signature</td><td>How can the certificate be verified?</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> A certificate binds a subject or name to a public key under the signature of an issuer.</p></div>
+
+        <h3>Part C: Signature on a certificate</h3>
+        <div class="answer-step">
+          <p><strong>C1 answer.</strong> The issuing Certificate Authority creates the signature using its private key.</p>
+          <p><strong>C2 answer.</strong> The certificate signature check fails because the signed data no longer matches the signature.</p>
+        </div>
+
+        <h3>Part D: Public Key Infrastructure components</h3>
+        <table class="answer-table">
+          <thead><tr><th>PKI component</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Root CA</td><td>Acts as a trust anchor.</td></tr>
+            <tr><td>Intermediate CA</td><td>Issues certificates while keeping root keys safer.</td></tr>
+            <tr><td>Leaf certificate</td><td>Identifies a server, user, device, or service.</td></tr>
+            <tr><td>Root store</td><td>Holds trusted root certificates.</td></tr>
+            <tr><td>Validation software</td><td>Checks signatures, names, dates, usage, and revocation information.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> Public Key Infrastructure is the system of authorities, certificates, trust stores, policies, and validation rules that lets public keys be tied to trusted identities.</p></div>
+
+        <h3>Part E: Chain of trust</h3>
+        <div class="answer-step"><p><strong>Chain answer.</strong> Leaf certificate → Intermediate CA → Root CA → Root store trust anchor.</p></div>
+        <table class="answer-table">
+          <thead><tr><th>Validation step</th><th>What the client checks</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>The leaf certificate signature verifies under the intermediate CA public key.</td></tr>
+            <tr><td>2</td><td>The intermediate certificate signature verifies under the root CA public key.</td></tr>
+            <tr><td>3</td><td>The root CA is trusted by the client’s root store.</td></tr>
+            <tr><td>4</td><td>The chain is valid for the intended use, time, and name.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> Intermediate CAs let the root key stay more protected and offline while intermediates perform day-to-day certificate issuance.</p></div>
+
+        <h3>Part F: Root stores and trust anchors</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>Why trust a root CA?</td><td>Because it is included as a trust anchor in the root store.</td></tr>
+            <tr><td>Who maintains root stores?</td><td>Operating systems, browsers, applications, and platform vendors.</td></tr>
+            <tr><td>Can roots be removed?</td><td>Yes, root programs can distrust or remove CAs that violate rules.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> A self-signed certificate is only trusted if the client already trusts it, usually because it is in a root store or was explicitly installed. Signing itself does not create public trust.</p></div>
+
+        <h3>Part G: Hostname validation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Browser visits</th><th>Certificate SAN contains</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>www.example.com</td><td>www.example.com</td><td>Name matches.</td></tr>
+            <tr><td>shop.example.com</td><td>www.example.com</td><td>Name mismatch.</td></tr>
+            <tr><td>mail.example.com</td><td>*.example.com</td><td>Wildcard may match one label.</td></tr>
+            <tr><td>a.b.example.com</td><td>*.example.com</td><td>Wildcard usually does not match multiple labels.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> A certificate can have a valid signature but fail for the specific site if the hostname is not listed in the Subject Alternative Name field.</p></div>
+
+        <h3>Part H: Validity periods and key usage</h3>
+        <table class="answer-table">
+          <thead><tr><th>Field</th><th>Question answered</th></tr></thead>
+          <tbody>
+            <tr><td>Not Before</td><td>Has the certificate become valid yet?</td></tr>
+            <tr><td>Not After</td><td>Has the certificate expired?</td></tr>
+            <tr><td>Key Usage</td><td>What cryptographic operations are allowed?</td></tr>
+            <tr><td>Extended Key Usage</td><td>What application purposes are allowed, such as server authentication?</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> The client must check signatures, trust chain, hostname, validity dates, key usage, and status/revocation policy. A correct signature alone is not enough.</p></div>
+
+        <h3>Part I: Revocation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Mechanism</th><th>Meaning</th><th>Basic idea</th></tr></thead>
+          <tbody>
+            <tr><td>CRL</td><td>Certificate Revocation List</td><td>A list of revoked certificates.</td></tr>
+            <tr><td>OCSP</td><td>Online Certificate Status Protocol</td><td>A status check for a particular certificate.</td></tr>
+            <tr><td>OCSP stapling</td><td>Server provides recent OCSP proof</td><td>Reduces direct client lookup needs.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Expiration is the certificate naturally reaching its end date. Revocation means the certificate is distrusted early before that date, often because of compromise or incorrect issuance.</p></div>
+
+        <h3>Part J: Certificate Transparency</h3>
+        <table class="answer-table">
+          <thead><tr><th>CT idea</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Public append-only logs</td><td>Certificates can be monitored by domain owners and researchers.</td></tr>
+            <tr><td>Visibility into issuance</td><td>Unexpected certificates are easier to spot.</td></tr>
+            <tr><td>Accountability pressure</td><td>CAs are more observable when they issue certificates.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> Public logs let domain owners and researchers monitor issued certificates, making unexpected or malicious certificates more visible.</p></div>
+
+        <h3>Part K: What a browser checks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Check</th><th>Question</th></tr></thead>
+          <tbody>
+            <tr><td>Signature chain</td><td>Does each certificate verify under the next issuer’s public key?</td></tr>
+            <tr><td>Trusted root</td><td>Does the chain end at a trusted root?</td></tr>
+            <tr><td>Hostname</td><td>Does the certificate cover the site name?</td></tr>
+            <tr><td>Validity period</td><td>Is the certificate currently valid?</td></tr>
+            <tr><td>Key usage</td><td>Is the certificate allowed for this purpose?</td></tr>
+            <tr><td>Revocation/status policy</td><td>Is there evidence it has been revoked?</td></tr>
+            <tr><td>Certificate Transparency policy</td><td>Does it meet logging requirements where applicable?</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: How certificates fit into Transport Layer Security</h3>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> The certificate usually authenticates the server’s public key and identity during the handshake.</p>
+          <p><strong>L2 sample answer.</strong> Symmetric traffic keys, usually derived during the handshake and used with AEAD, protect the actual application data.</p>
+        </div>
+
+        <h3>Part M: Public versus private PKI</h3>
+        <table class="answer-table">
+          <thead><tr><th>PKI type</th><th>Trusted by</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td>Public PKI</td><td>Browsers and operating systems by default</td><td>Public HTTPS websites.</td></tr>
+            <tr><td>Private PKI</td><td>Devices where the organization installs the root</td><td>Internal systems, enterprise devices, VPNs, labs.</td></tr>
+            <tr><td>Self-signed leaf certificate</td><td>Only if explicitly trusted</td><td>Testing, labs, small private systems.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate is signed by a trusted CA but the hostname does not match.</td><td>Validation fails due to hostname mismatch.</td></tr>
+            <tr><td>A website presents a valid leaf certificate and intermediate certificate chaining to a trusted root.</td><td>Good chain structure, assuming other checks pass.</td></tr>
+            <tr><td>A certificate expired yesterday.</td><td>Validation should fail due to expiration.</td></tr>
+            <tr><td>A server certificate is valid for code signing but not server authentication.</td><td>Wrong key usage or extended key usage.</td></tr>
+            <tr><td>A private key for a certificate is stolen before the certificate expires.</td><td>Certificate should be revoked/replaced.</td></tr>
+            <tr><td>An organization installs its private root CA on managed devices.</td><td>Private PKI can be trusted by those managed devices.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate binds a public key to a subject/name.</td><td>Valid</td><td>That is the core certificate job.</td></tr>
+            <tr><td>A CA signs certificates with its private key.</td><td>Valid</td><td>The signature is created with the issuer’s private key.</td></tr>
+            <tr><td>A root CA is trusted because the certificate signed itself.</td><td>Mistaken</td><td>It is trusted because it is in a root store or explicitly trusted.</td></tr>
+            <tr><td>Hostname validation checks whether the certificate covers the requested site name.</td><td>Valid</td><td>The name is usually checked against the SAN extension.</td></tr>
+            <tr><td>Revocation means a certificate is distrusted before expiration.</td><td>Valid</td><td>It is an early distrust mechanism.</td></tr>
+            <tr><td>Certificates usually encrypt all Transport Layer Security application data by themselves.</td><td>Mistaken</td><td>Certificates authenticate; symmetric traffic keys protect data.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part P: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>P1 sample answer.</strong> A certificate is a signed statement that binds a public key to a subject or name. It includes metadata such as issuer, validity dates, permitted uses, and names covered. The issuer’s signature lets clients verify that the certificate has not been altered.</p>
+          <p><strong>P2 sample answer.</strong> A trust chain connects a leaf certificate to one or more intermediate certificates and finally to a trusted root in the client’s root store. Each certificate is verified using the public key of its issuer, and the chain must end at a trusted anchor.</p>
+          <p><strong>P3 sample answer.</strong> A browser checks the certificate signature chain, whether the chain ends in a trusted root, whether the hostname matches, whether the certificate is within its validity period, whether the key usage is appropriate, and whether revocation and Certificate Transparency policies are satisfied.</p>
+          <p><strong>P4 sample answer.</strong> This tutorial explained how certificates and Public Key Infrastructure turn raw public keys into trusted identity claims. Certificate authorities sign certificates, clients validate trust chains, and browsers check hostname, time, usage, and status. In modern TLS, certificates authenticate the handshake, while derived symmetric keys protect the data.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A certificate is a signed statement about a public key.</td><td>True</td><td>It binds a public key to a subject/name and metadata.</td></tr>
+            <tr><td>A Certificate Authority signs certificates.</td><td>True</td><td>That is the CA’s core role.</td></tr>
+            <tr><td>A trust chain can include a leaf, intermediate, and root certificate.</td><td>True</td><td>That is a common chain structure.</td></tr>
+            <tr><td>A trusted signature always means the hostname matches.</td><td>False</td><td>Hostname validation is a separate check.</td></tr>
+            <tr><td>Certificates have validity periods.</td><td>True</td><td>They include not-before and not-after dates.</td></tr>
+            <tr><td>Revocation can distrust a certificate before expiration.</td><td>True</td><td>That is the purpose of revocation.</td></tr>
+            <tr><td>Modern TLS typically uses symmetric traffic keys to protect application data.</td><td>True</td><td>The certificate authenticates the handshake; traffic keys protect data.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 62: Certificates, Public Key Infrastructure, and Trust Chains.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_62_certificates_public_key_infrastructure_and_trust_chains_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_61_elliptic_curve_diffie_hellman_and_digital_signatures_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_63_tls_handshake_mathematics_key_exchange_authentication_and_session_keys_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

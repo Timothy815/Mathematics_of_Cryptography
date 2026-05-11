@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 61: Elliptic Curve Diffie-Hellman and Digital Signatures | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 61</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Elliptic Curve Diffie-Hellman and Digital Signatures</h1>
+      <p class="subtitle">
+        Printable practice for ECDH shared points, KDF inputs, authentication, static versus ephemeral key exchange, elliptic-curve signature roles, ECDSA nonce danger, EdDSA comparison, and protocol composition.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Connect the point machinery from Tutorial 60 to real cryptographic jobs. ECDH creates shared secret material. Digital signatures prove message authenticity. KDFs, nonces, authentication, and protocol context keep the machine from shedding gears.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">ECDH core</div>
+            <div class="math-display">
+              \[
+                A=aG
+              \]
+              \[
+                B=bG
+              \]
+              \[
+                S_A=aB=a(bG)=abG
+              \]
+              \[
+                S_B=bA=b(aG)=abG
+              \]
+            </div>
+          </div>
+
+          <div class="box ecc-box">
+            <div class="box-title">KDF and signature pattern</div>
+            <div class="math-display">
+              \[
+                traffic\ keys=KDF(shared\ material, transcript, identities, algorithms)
+              \]
+              \[
+                signature=(r,s)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(G\) represent?</td><td></td></tr>
+            <tr><td>A2. What do \(a,b\) represent?</td><td></td></tr>
+            <tr><td>A3. What does \(A=aG\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(B=bG\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(S\) represent?</td><td></td></tr>
+            <tr><td>A6. What does KDF stand for?</td><td></td></tr>
+            <tr><td>A7. What does ECDH stand for?</td><td></td></tr>
+            <tr><td>A8. What does ECDSA stand for?</td><td></td></tr>
+            <tr><td>A9. What does EdDSA stand for?</td><td></td></tr>
+            <tr><td>A10. What is a signing nonce?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ecdh-flow">
+        <h2>Part B: ECDH big picture</h2>
+        <table class="ecc-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td></td><td></td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. What is the main purpose of ECDH?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="shared-points-match">
+        <h2>Part C: Why the shared points match</h2>
+        <p>Complete the derivation.</p>
+        <table class="math-table">
+          <thead><tr><th>Party</th><th>Computation</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(S_A=aB=a(bG)\)</td><td></td></tr>
+            <tr><td>Bob</td><td>\(S_B=bA=b(aG)\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Explain why \(a(bG)\) and \(b(aG)\) reach the same point.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="kdf">
+        <h2>Part D: From shared point to usable keys</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            traffic\ keys=KDF(shared\ material, transcript, identities, algorithms)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>KDF input</th><th>Why include it?</th></tr></thead>
+          <tbody>
+            <tr><td>Shared material</td><td></td></tr>
+            <tr><td>Transcript</td><td></td></tr>
+            <tr><td>Identities</td><td></td></tr>
+            <tr><td>Algorithms</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why should the raw ECDH shared point not usually be used directly as an encryption key?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="authentication">
+        <h2>Part E: ECDH still needs authentication</h2>
+        <table class="danger-table">
+          <thead><tr><th>Situation</th><th>Problem</th><th>Needed defense</th></tr></thead>
+          <tbody>
+            <tr><td>Alice accepts any public point as Bob’s.</td><td></td><td></td></tr>
+            <tr><td>Bob accepts any public point as Alice’s.</td><td></td><td></td></tr>
+            <tr><td>Protocol omits transcript binding.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Explain the warning: “ECDH creates a shared secret. Authentication tells you who shared it with you.”</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="static-ephemeral">
+        <h2>Part F: Static and ephemeral ECDH</h2>
+        <table class="compare-table">
+          <thead><tr><th>Type</th><th>Meaning</th><th>Security intuition</th></tr></thead>
+          <tbody>
+            <tr><td>Static ECDH</td><td></td><td></td></tr>
+            <tr><td>Ephemeral ECDH</td><td></td><td></td></tr>
+            <tr><td>Authenticated ephemeral ECDH</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Define forward secrecy in your own words.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="signature-big-picture">
+        <h2>Part G: Elliptic-curve digital signatures</h2>
+        <table class="ecc-table">
+          <thead><tr><th>Role</th><th>Uses</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Signer</td><td></td><td></td></tr>
+            <tr><td>Verifier</td><td></td><td></td></tr>
+            <tr><td>Attacker</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. What does a valid digital signature show at a high level?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ecdsa-shape">
+        <h2>Part H: ECDSA shape</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            signature=(r,s)
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td></td></tr>
+            <tr><td>2</td><td></td></tr>
+            <tr><td>3</td><td></td></tr>
+            <tr><td>4</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why did the tutorial avoid diving into the full ECDSA equations immediately?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="nonce-danger">
+        <h2>Part I: Signing nonce danger</h2>
+        <table class="danger-table">
+          <thead><tr><th>Nonce problem</th><th>Consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Same nonce reused for two messages</td><td></td></tr>
+            <tr><td>Nonce partially predictable</td><td></td></tr>
+            <tr><td>Weak random generator</td><td></td></tr>
+            <tr><td>Deterministic nonce generated incorrectly</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why is nonce failure private-key failure in ECDSA?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="eddsa-preview">
+        <h2>Part J: EdDSA preview</h2>
+        <table class="compare-table">
+          <thead><tr><th>Signature family</th><th>Nonce handling intuition</th><th>Common examples</th></tr></thead>
+          <tbody>
+            <tr><td>ECDSA</td><td></td><td></td></tr>
+            <tr><td>EdDSA</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Why does deterministic nonce generation reduce one class of signing risk?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ecdh-vs-signatures">
+        <h2>Part K: ECDH versus signatures</h2>
+        <table class="compare-table">
+          <thead><tr><th>Job</th><th>Uses private scalar to...</th><th>Public key used to...</th><th>Main result</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH</td><td></td><td></td><td></td></tr>
+            <tr><td>Signature</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. In one sentence, contrast ECDH with digital signatures.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="protocol-combination">
+        <h2>Part L: How protocols combine them</h2>
+        <pre><code>1. Alice and Bob exchange ephemeral ECDH public points.
+2. They authenticate the exchange using signatures, certificates, or existing trust.
+3. Both compute the ECDH shared point.
+4. A KDF derives traffic keys from the shared material and transcript.
+5. Symmetric AEAD protects the data.</code></pre>
+
+        <table class="lesson-table">
+          <thead><tr><th>Component</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Ephemeral ECDH</td><td></td></tr>
+            <tr><td>Signature/certificate</td><td></td></tr>
+            <tr><td>KDF</td><td></td></tr>
+            <tr><td>AEAD</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Alice and Bob perform ECDH and feed the shared point into a KDF with transcript context.</td><td></td></tr>
+            <tr><td>A protocol accepts any ECDH public point without authenticating the peer.</td><td></td></tr>
+            <tr><td>A system reuses the same ECDSA nonce for two different messages.</td><td></td></tr>
+            <tr><td>A secure channel uses ephemeral ECDH and authenticates the transcript with certificates.</td><td></td></tr>
+            <tr><td>A developer treats a signature key and ECDH key as freely interchangeable.</td><td></td></tr>
+            <tr><td>A signature verifies under a trusted public key and matching message.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH public points can be written \(A=aG\) and \(B=bG\).</td><td></td><td></td></tr>
+            <tr><td>Alice computes \(aB=a(bG)=abG\).</td><td></td><td></td></tr>
+            <tr><td>The raw ECDH shared point should always be used directly as the AES key.</td><td></td><td></td></tr>
+            <tr><td>ECDH alone automatically proves identity.</td><td></td><td></td></tr>
+            <tr><td>Digital signatures use private keys to sign and public keys to verify.</td><td></td><td></td></tr>
+            <tr><td>ECDSA nonce reuse can reveal the private key.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain ECDH in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain why KDFs and authentication are needed after ECDH.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain elliptic-curve digital signatures in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH stands for Elliptic Curve Diffie-Hellman.</td><td></td></tr>
+            <tr><td>Alice’s ECDH public point is \(A=aG\).</td><td></td></tr>
+            <tr><td>Bob’s ECDH public point is \(B=bG\).</td><td></td></tr>
+            <tr><td>Alice and Bob both reach \(abG\).</td><td></td></tr>
+            <tr><td>ECDH does not need a KDF.</td><td></td></tr>
+            <tr><td>Digital signatures prove possession/use of a private key under a verification scheme.</td><td></td></tr>
+            <tr><td>ECDSA nonce reuse is harmless.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central distinction is this: ECDH creates shared secret material; signatures authenticate messages or transcripts. Modern protocols usually need both.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(G\) represent?</td><td>The public base point or generator point.</td></tr>
+            <tr><td>A2. What do \(a,b\) represent?</td><td>Alice and Bob’s private scalars.</td></tr>
+            <tr><td>A3. What does \(A=aG\) represent?</td><td>Alice’s public ECDH point.</td></tr>
+            <tr><td>A4. What does \(B=bG\) represent?</td><td>Bob’s public ECDH point.</td></tr>
+            <tr><td>A5. What does \(S\) represent?</td><td>The ECDH shared result or shared secret material.</td></tr>
+            <tr><td>A6. What does KDF stand for?</td><td>Key Derivation Function.</td></tr>
+            <tr><td>A7. What does ECDH stand for?</td><td>Elliptic Curve Diffie-Hellman.</td></tr>
+            <tr><td>A8. What does ECDSA stand for?</td><td>Elliptic Curve Digital Signature Algorithm.</td></tr>
+            <tr><td>A9. What does EdDSA stand for?</td><td>Edwards-curve Digital Signature Algorithm.</td></tr>
+            <tr><td>A10. What is a signing nonce?</td><td>A one-time secret value used during some signature generation algorithms.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: ECDH big picture</h3>
+        <table class="answer-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td>\(A=aG\)</td><td>\(S_A=aB=a(bG)=abG\)</td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td>\(B=bG\)</td><td>\(S_B=bA=b(aG)=abG\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> ECDH lets two parties derive shared secret material over a public channel using their private scalars and each other’s public points.</p></div>
+
+        <h3>Part C: Why the shared points match</h3>
+        <table class="answer-table">
+          <thead><tr><th>Party</th><th>Computation</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(S_A=aB=a(bG)\)</td><td>\(abG\)</td></tr>
+            <tr><td>Bob</td><td>\(S_B=bA=b(aG)\)</td><td>\(abG\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> Alice applies her scalar to Bob’s public point, and Bob applies his scalar to Alice’s public point. Both operations produce the same scalar multiple of \(G\): \(abG\).</p></div>
+
+        <h3>Part D: From shared point to usable keys</h3>
+        <table class="answer-table">
+          <thead><tr><th>KDF input</th><th>Why include it?</th></tr></thead>
+          <tbody>
+            <tr><td>Shared material</td><td>Core secret produced by ECDH.</td></tr>
+            <tr><td>Transcript</td><td>Binds keys to the exchanged messages.</td></tr>
+            <tr><td>Identities</td><td>Helps bind keys to the intended parties.</td></tr>
+            <tr><td>Algorithms</td><td>Prevents confusion about negotiated cryptographic choices.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> The raw shared point is not formatted as separated, context-bound traffic keys. A KDF turns it into usable key material and binds it to the session transcript, identities, and algorithms.</p></div>
+
+        <h3>Part E: ECDH still needs authentication</h3>
+        <table class="answer-table">
+          <thead><tr><th>Situation</th><th>Problem</th><th>Needed defense</th></tr></thead>
+          <tbody>
+            <tr><td>Alice accepts any public point as Bob’s.</td><td>Attacker can substitute their own point.</td><td>Authenticate Bob’s public key or transcript.</td></tr>
+            <tr><td>Bob accepts any public point as Alice’s.</td><td>Attacker can create separate secrets with both sides.</td><td>Use signatures, certificates, fingerprints, or pre-shared trust.</td></tr>
+            <tr><td>Protocol omits transcript binding.</td><td>Keys may not be bound to the exact exchange.</td><td>Use a KDF with transcript/context.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> ECDH can create shared secret material, but without authentication you may create that secret with an attacker. Authentication binds the exchange to the intended party or trusted identity.</p></div>
+
+        <h3>Part F: Static and ephemeral ECDH</h3>
+        <table class="answer-table">
+          <thead><tr><th>Type</th><th>Meaning</th><th>Security intuition</th></tr></thead>
+          <tbody>
+            <tr><td>Static ECDH</td><td>Long-term ECDH key pair is reused.</td><td>Can authenticate identity but gives weaker forward secrecy.</td></tr>
+            <tr><td>Ephemeral ECDH</td><td>Fresh ECDH key pair is generated for a session.</td><td>Supports forward secrecy when combined with authentication.</td></tr>
+            <tr><td>Authenticated ephemeral ECDH</td><td>Fresh ECDH shares are authenticated.</td><td>Common modern secure-channel pattern.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Forward secrecy means that if a long-term key is compromised later, past session keys are not automatically exposed.</p></div>
+
+        <h3>Part G: Elliptic-curve digital signatures</h3>
+        <table class="answer-table">
+          <thead><tr><th>Role</th><th>Uses</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Signer</td><td>Private scalar \(d\)</td><td>Create a signature for a message.</td></tr>
+            <tr><td>Verifier</td><td>Public key point \(Q=dG\)</td><td>Check that the signature is valid.</td></tr>
+            <tr><td>Attacker</td><td>Public key and signatures</td><td>Should not be able to forge new valid signatures.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> A valid digital signature shows that someone with the private key produced a signature for that message under the relevant signature scheme, assuming the public key is trusted.</p></div>
+
+        <h3>Part H: ECDSA shape</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Hash the message.</td></tr>
+            <tr><td>2</td><td>Use private key \(d\) and a fresh nonce \(k\).</td></tr>
+            <tr><td>3</td><td>Compute signature values \((r,s)\).</td></tr>
+            <tr><td>4</td><td>Verifier uses public key \(Q\), message hash, and \((r,s)\) to check validity.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> The tutorial focused on roles first: private key signs, public key verifies, message hash is involved, and nonce handling is critical. The full formulas are easier after those roles are clear.</p></div>
+
+        <h3>Part I: Signing nonce danger</h3>
+        <table class="answer-table">
+          <thead><tr><th>Nonce problem</th><th>Consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Same nonce reused for two messages</td><td>Private key may be recoverable.</td></tr>
+            <tr><td>Nonce partially predictable</td><td>Private key may become vulnerable.</td></tr>
+            <tr><td>Weak random generator</td><td>Signatures may leak secrets.</td></tr>
+            <tr><td>Deterministic nonce generated incorrectly</td><td>Private key may be exposed.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> ECDSA’s equations connect the nonce, message hash, signature, and private key. If the nonce is reused or predictable, attackers may solve for the private key.</p></div>
+
+        <h3>Part J: EdDSA preview</h3>
+        <table class="answer-table">
+          <thead><tr><th>Signature family</th><th>Nonce handling intuition</th><th>Common examples</th></tr></thead>
+          <tbody>
+            <tr><td>ECDSA</td><td>Needs a unique secret nonce per signature; failures are dangerous.</td><td>ECDSA over P-256 and similar curves.</td></tr>
+            <tr><td>EdDSA</td><td>Often deterministic nonce generation, reducing random-number failure risk.</td><td>Ed25519, Ed448.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> Deterministic nonce generation can reduce reliance on fresh randomness for every signature. That helps avoid failures caused by weak random number generation, though implementations still must be correct.</p></div>
+
+        <h3>Part K: ECDH versus signatures</h3>
+        <table class="answer-table">
+          <thead><tr><th>Job</th><th>Uses private scalar to...</th><th>Public key used to...</th><th>Main result</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH</td><td>Combine with peer public point.</td><td>Let peer compute matching shared point.</td><td>Shared secret material.</td></tr>
+            <tr><td>Signature</td><td>Produce proof for a message.</td><td>Verify the proof.</td><td>Authenticity and integrity.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>K1 sample answer.</strong> ECDH creates shared secret material, while digital signatures prove authenticity and integrity for messages or transcripts.</p></div>
+
+        <h3>Part L: How protocols combine them</h3>
+        <table class="answer-table">
+          <thead><tr><th>Component</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Ephemeral ECDH</td><td>Creates fresh shared secret material.</td></tr>
+            <tr><td>Signature/certificate</td><td>Authenticates who is participating.</td></tr>
+            <tr><td>KDF</td><td>Turns shared material into context-bound keys.</td></tr>
+            <tr><td>AEAD</td><td>Encrypts and authenticates application data.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Alice and Bob perform ECDH and feed the shared point into a KDF with transcript context.</td><td>Good practice.</td></tr>
+            <tr><td>A protocol accepts any ECDH public point without authenticating the peer.</td><td>Man-in-the-middle risk.</td></tr>
+            <tr><td>A system reuses the same ECDSA nonce for two different messages.</td><td>Severe private-key exposure risk.</td></tr>
+            <tr><td>A secure channel uses ephemeral ECDH and authenticates the transcript with certificates.</td><td>Strong modern pattern.</td></tr>
+            <tr><td>A developer treats a signature key and ECDH key as freely interchangeable.</td><td>Bad key-usage separation.</td></tr>
+            <tr><td>A signature verifies under a trusted public key and matching message.</td><td>Supports authenticity/integrity for that message.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH public points can be written \(A=aG\) and \(B=bG\).</td><td>Valid</td><td>These are Alice and Bob’s public ECDH shares.</td></tr>
+            <tr><td>Alice computes \(aB=a(bG)=abG\).</td><td>Valid</td><td>That is Alice’s shared-point computation.</td></tr>
+            <tr><td>The raw ECDH shared point should always be used directly as the AES key.</td><td>Mistaken</td><td>Use a KDF with context.</td></tr>
+            <tr><td>ECDH alone automatically proves identity.</td><td>Mistaken</td><td>Authentication is separate.</td></tr>
+            <tr><td>Digital signatures use private keys to sign and public keys to verify.</td><td>Valid</td><td>That is the core signature role split.</td></tr>
+            <tr><td>ECDSA nonce reuse can reveal the private key.</td><td>Valid</td><td>Nonce reuse can expose algebraic information about the private key.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> ECDH is an elliptic-curve key exchange method. Alice publishes \(A=aG\), Bob publishes \(B=bG\), and they compute the same shared point because Alice computes \(aB=a(bG)=abG\) and Bob computes \(bA=b(aG)=abG\).</p>
+          <p><strong>O2 sample answer.</strong> A KDF turns the raw shared material into usable, separated, context-bound traffic keys. Authentication is needed because ECDH alone does not prove that the public point belongs to the intended party.</p>
+          <p><strong>O3 sample answer.</strong> Elliptic-curve digital signatures let a private-key holder sign a message. A verifier uses the public key, the message, and the signature to check validity. ECDSA requires careful nonce handling because nonce reuse can reveal the private key.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial showed how elliptic-curve point multiplication supports both ECDH and digital signatures. ECDH creates shared secret material that should go into a KDF, while signatures authenticate messages and transcripts. Modern protocols often combine ephemeral ECDH, signatures or certificates, KDFs, and symmetric AEAD.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH stands for Elliptic Curve Diffie-Hellman.</td><td>True</td><td>That is the full name.</td></tr>
+            <tr><td>Alice’s ECDH public point is \(A=aG\).</td><td>True</td><td>Private scalar times base point.</td></tr>
+            <tr><td>Bob’s ECDH public point is \(B=bG\).</td><td>True</td><td>Private scalar times base point.</td></tr>
+            <tr><td>Alice and Bob both reach \(abG\).</td><td>True</td><td>They apply scalars in opposite order to public points.</td></tr>
+            <tr><td>ECDH does not need a KDF.</td><td>False</td><td>A KDF derives usable context-bound keys.</td></tr>
+            <tr><td>Digital signatures prove possession/use of a private key under a verification scheme.</td><td>True</td><td>That is the signature intuition.</td></tr>
+            <tr><td>ECDSA nonce reuse is harmless.</td><td>False</td><td>It may reveal the private key.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 61: Elliptic Curve Diffie-Hellman and Digital Signatures.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_61_elliptic_curve_diffie_hellman_and_digital_signatures_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_60_elliptic_curve_cryptography_points_addition_and_scalar_multiplication_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_62_certificates_public_key_infrastructure_and_trust_chains_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TLS Handshake Mathematics: Key Exchange, Authentication, and Session Keys | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 63</div>
+      <div class="volume-label">Volume 4: Protocols & Real-World Engineering</div>
+      
+      <h1>TLS Handshake Mathematics: Key Exchange, Authentication, and Session Keys</h1>
+      <p class="subtitle">
+        How Transport Layer Security turns certificates, ephemeral Diffie-Hellman, transcript hashing, key derivation, and symmetric authenticated encryption into a secure session.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 62 explained certificates and trust chains. This tutorial shows how those certificates fit into the Transport Layer Security handshake. The key idea is that a secure web session is not made from one magic equation. It is a carefully staged ritual: negotiate, authenticate, exchange key material, derive keys, verify the transcript, then encrypt application data with symmetric keys.</p>
+        </div>
+
+        <p class="lead">
+          TLS is a cryptographic handshake with a memory. Every important message becomes part of the transcript. The final keys are not just born from a shared secret; they are braided from the shared secret, the conversation, the identities, and the chosen algorithms.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know ECDH or Diffie-Hellman key exchange, digital signatures, certificates, trust chains, Key Derivation Functions, and authenticated encryption. TLS combines those ideas into a protocol that lets a client and server create fresh traffic keys while authenticating the server, and sometimes the client.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols and terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>TLS</td><td>The secure web-session protocol.</td><td>Transport Layer Security.</td></tr>
+            <tr><td>ClientHello</td><td>Client’s opening offer.</td><td>Message listing supported versions, cipher suites, random value, and key share.</td></tr>
+            <tr><td>ServerHello</td><td>Server’s selected choices.</td><td>Message choosing protocol parameters and giving server key share.</td></tr>
+            <tr><td>ECDHE</td><td>Fresh elliptic-curve key exchange.</td><td>Ephemeral Elliptic Curve Diffie-Hellman.</td></tr>
+            <tr><td>Certificate</td><td>Server’s signed public-key ID card.</td><td>Certificate chain binding the server name to a public key.</td></tr>
+            <tr><td>Transcript</td><td>The handshake conversation so far.</td><td>Ordered handshake messages included in hashes and authentication checks.</td></tr>
+            <tr><td>Handshake secret</td><td>Secret derived during handshake.</td><td>KDF output based on key exchange material and transcript context.</td></tr>
+            <tr><td>Traffic keys</td><td>Symmetric keys for protecting records.</td><td>Keys used by AEAD algorithms to encrypt and authenticate data.</td></tr>
+            <tr><td>Finished message</td><td>Proof that both sides derived the same keys.</td><td>Authenticated check over the transcript.</td></tr>
+            <tr><td>AEAD</td><td>Encrypt-and-authenticate mode.</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>Forward secrecy</td><td>Past sessions survive later long-term key compromise.</td><td>Property provided by properly authenticated ephemeral key exchange.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tls-big-picture">
+        <h2>TLS handshake big picture</h2>
+        <p>
+          In a simplified modern TLS handshake, the client and server negotiate choices, exchange ephemeral key shares, authenticate the server certificate, derive secrets, verify the transcript, and then protect data with symmetric AEAD.</p>
+
+        <div class="diagram" role="img" aria-label="Simplified TLS handshake flow">
+          <div class="diagram-title">Simplified TLS handshake flow</div>
+          <div class="flow-row">
+            <div class="flow-node hello-node">ClientHello<br>offers + key share</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node hello-node">ServerHello<br>choices + key share</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node cert-node">Certificate<br>server identity</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node key-node">KDF<br>derive secrets</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node traffic-node">AEAD<br>protect data</div>
+          </div>
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Stage</th><th>Main job</th></tr></thead>
+          <tbody>
+            <tr><td>Negotiation</td><td>Agree on protocol version, cipher suite, groups, and extensions.</td></tr>
+            <tr><td>Key exchange</td><td>Use ephemeral Diffie-Hellman to create shared secret material.</td></tr>
+            <tr><td>Authentication</td><td>Use certificates/signatures to prove server identity.</td></tr>
+            <tr><td>Key derivation</td><td>Use a KDF to derive handshake and application traffic keys.</td></tr>
+            <tr><td>Finished verification</td><td>Prove both sides agree on the transcript and keys.</td></tr>
+            <tr><td>Record protection</td><td>Use symmetric AEAD for application data.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="clienthello-serverhello">
+        <h2>ClientHello and ServerHello</h2>
+        <p>
+          The handshake begins with offers and choices. The client sends a ClientHello. The server responds with a ServerHello.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Message</th><th>Contains</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>ClientHello</td><td>Supported versions, cipher suites, random value, extensions, key share.</td><td>Client says what it supports.</td></tr>
+            <tr><td>ServerHello</td><td>Chosen version, chosen cipher suite, random value, selected key share.</td><td>Server chooses compatible parameters.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            ClientHello is the menu. ServerHello is the order slip. The rest of the handshake cooks the keys.</p>
+        </div>
+      </section>
+
+      <section id="ephemeral-key-exchange">
+        <h2>Ephemeral key exchange</h2>
+        <p>
+          Modern TLS commonly uses ephemeral Diffie-Hellman, often ECDHE. Each side creates a fresh temporary private scalar and public key share for the session.</p>
+
+        <div class="math-display">
+          \[
+            A=aG
+          \]
+          \[
+            B=bG
+          \]
+          \[
+            S_A=aB=a(bG)=abG
+          \]
+          \[
+            S_B=bA=b(aG)=abG
+          \]
+        </div>
+
+        <p>
+          The shared point or shared secret material is not the final session key. It is input to a key schedule.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: ephemeral</div>
+          <p>
+            Ephemeral means temporary and fresh for this session. Ephemeral key exchange helps provide forward secrecy because the temporary secret is not the long-term server private key.</p>
+        </div>
+      </section>
+
+      <section id="certificate-authentication">
+        <h2>Certificate authentication in TLS</h2>
+        <p>
+          The server sends a certificate chain. The client validates that the certificate chain leads to a trusted root, matches the hostname, is valid for the current time, and is allowed for server authentication.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Certificate check</th><th>Question</th></tr></thead>
+          <tbody>
+            <tr><td>Chain signature</td><td>Does each certificate verify under the next issuer?</td></tr>
+            <tr><td>Trusted root</td><td>Does the chain end at a trusted root?</td></tr>
+            <tr><td>Hostname</td><td>Does the certificate cover the requested site?</td></tr>
+            <tr><td>Validity period</td><td>Is the certificate valid right now?</td></tr>
+            <tr><td>Key usage</td><td>Is it allowed for server authentication?</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          The certificate authenticates the server’s identity and public key. It does not by itself generate the final traffic keys.</p>
+      </section>
+
+      <section id="transcript-binding">
+        <h2>Transcript binding</h2>
+        <p>
+          TLS keeps a transcript of handshake messages. Key derivation and authentication checks depend on this transcript so that attackers cannot quietly rewrite the conversation.</p>
+
+        <div class="math-display">
+          \[
+            transcript\ hash = H(ClientHello \parallel ServerHello \parallel Certificate \parallel \cdots)
+          \]
+        </div>
+
+        <p>
+          The transcript hash acts like a fingerprint of the handshake so far. If a handshake message changes, the transcript hash changes, and later verification fails.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            The transcript hash is the handshake’s black-box recorder. If someone edits the flight path, the recorder disagrees.</p>
+        </div>
+      </section>
+
+      <section id="kdf-key-schedule">
+        <h2>KDF and key schedule</h2>
+        <p>
+          TLS uses a key schedule to derive multiple secrets from shared secret material and transcript context. The exact details depend on the TLS version, but the pattern is:</p>
+
+        <div class="math-display">
+          \[
+            shared\ secret = ECDHE(a,b)
+          \]
+          \[
+            handshake\ secrets = KDF(shared\ secret, transcript\ hash, labels)
+          \]
+          \[
+            application\ traffic\ keys = KDF(handshake\ secrets, updated\ transcript\ hash, labels)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>KDF input</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Shared secret</td><td>Provides the hidden material only the two parties should know.</td></tr>
+            <tr><td>Transcript hash</td><td>Binds keys to the exact handshake.</td></tr>
+            <tr><td>Labels</td><td>Separate different keys for different purposes.</td></tr>
+            <tr><td>Direction/context</td><td>Separates client-to-server keys from server-to-client keys.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="finished-messages">
+        <h2>Finished messages</h2>
+        <p>
+          Finished messages prove that each side derived the correct secrets and saw the same transcript. They are authenticated checks over the handshake transcript.</p>
+
+        <div class="math-display">
+          \[
+            Finished = MAC(finished\ key, transcript\ hash)
+          \]
+        </div>
+
+        <p>
+          If a man-in-the-middle changes the handshake, the transcript hashes and Finished checks will not match. This makes the handshake self-checking.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Why Finished matters</div>
+          <p>
+            The Finished message is where the handshake says, “We agree on what just happened, and we derived the same keys from it.”</p>
+        </div>
+      </section>
+
+      <section id="traffic-keys">
+        <h2>Traffic keys and symmetric protection</h2>
+        <p>
+          Once the handshake derives traffic keys, TLS protects application data using symmetric authenticated encryption.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Cryptographic tool</th><th>Job in TLS</th></tr></thead>
+          <tbody>
+            <tr><td>ECDHE</td><td>Creates fresh shared secret material.</td></tr>
+            <tr><td>Certificate/signature</td><td>Authenticates the server and handshake.</td></tr>
+            <tr><td>KDF</td><td>Derives multiple purpose-specific secrets and keys.</td></tr>
+            <tr><td>AEAD</td><td>Encrypts and authenticates application records.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            ciphertext, tag = AEAD\_Encrypt(traffic\ key, nonce, plaintext, associated\ data)
+          \]
+          \[
+            plaintext = AEAD\_Decrypt(traffic\ key, nonce, ciphertext, tag, associated\ data)
+          \]
+        </div>
+
+        <p>
+          Public-key cryptography helps set up the secure session. Symmetric cryptography carries the heavy cargo.</p>
+      </section>
+
+      <section id="forward-secrecy">
+        <h2>Forward secrecy</h2>
+        <p>
+          Ephemeral key exchange helps provide forward secrecy. If the server’s long-term certificate private key is compromised later, past session traffic should not automatically become decryptable, because the session keys came from temporary ECDHE secrets.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Without ephemeral key exchange</th><th>With ephemeral key exchange</th></tr></thead>
+          <tbody>
+            <tr><td>Long-term key compromise may threaten old sessions.</td><td>Past session secrets depend on temporary values.</td></tr>
+            <tr><td>Less protection for recorded traffic.</td><td>Better protection for previously recorded traffic.</td></tr>
+            <tr><td>Older design style.</td><td>Modern secure-channel pattern.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tls13-vs-older">
+        <h2>TLS 1.3 versus older intuition</h2>
+        <p>
+          TLS 1.3 simplified and strengthened the handshake compared with older TLS versions. For this math course, the important lesson is the modern shape: ephemeral key exchange, transcript-bound key derivation, and authenticated encryption.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Older intuition to avoid</th><th>Modern intuition</th></tr></thead>
+          <tbody>
+            <tr><td>The server certificate encrypts the whole session.</td><td>The certificate authenticates; key exchange and KDF derive traffic keys.</td></tr>
+            <tr><td>One key protects everything.</td><td>Many derived secrets protect different stages and directions.</td></tr>
+            <tr><td>The handshake is just negotiation.</td><td>The transcript is cryptographically bound into the keys and Finished checks.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="client-authentication">
+        <h2>Client authentication</h2>
+        <p>
+          Most public web browsing authenticates the server but not the client with a certificate. Some environments, such as enterprise systems, VPNs, mutual TLS, and device authentication, may also require a client certificate.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Mode</th><th>Who presents a certificate?</th><th>Common use</th></tr></thead>
+          <tbody>
+            <tr><td>Normal HTTPS</td><td>Server</td><td>Public websites.</td></tr>
+            <tr><td>Mutual TLS</td><td>Server and client</td><td>Enterprise services, APIs, device authentication.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking the certificate encrypts all traffic</div>
+          <p>
+            Certificates authenticate identities and public keys. Traffic is protected by symmetric keys derived during the handshake.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: ignoring transcript binding</div>
+          <p>
+            The transcript prevents attackers from quietly changing handshake messages without detection.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using the raw shared secret directly</div>
+          <p>
+            The shared secret must feed a key schedule/KDF to create separate keys for specific purposes.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: assuming encryption means authentication</div>
+          <p>
+            A secure channel needs both confidentiality and authentication. TLS carefully provides both.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What does TLS stand for?
+            <details class="solution"><summary>Show solution</summary><p>Transport Layer Security.</p></details>
+          </li>
+          <li>
+            What is the main purpose of ClientHello?
+            <details class="solution"><summary>Show solution</summary><p>It tells the server what protocol versions, cipher suites, extensions, and key shares the client supports.</p></details>
+          </li>
+          <li>
+            What does ECDHE provide in modern TLS?
+            <details class="solution"><summary>Show solution</summary><p>Fresh shared secret material and support for forward secrecy.</p></details>
+          </li>
+          <li>
+            What does the server certificate authenticate?
+            <details class="solution"><summary>Show solution</summary><p>The server’s identity/public key, assuming the certificate validates for the hostname and trust chain.</p></details>
+          </li>
+          <li>
+            Why is the transcript hash important?
+            <details class="solution"><summary>Show solution</summary><p>It binds key derivation and verification to the exact handshake messages.</p></details>
+          </li>
+          <li>
+            What protects application data after the handshake?
+            <details class="solution"><summary>Show solution</summary><p>Symmetric AEAD using derived traffic keys.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          TLS is where many mathematical ideas become a living protocol. Certificates bind public keys to names. Ephemeral Diffie-Hellman creates fresh shared secret material. KDFs turn that material into separate keys. Transcript hashes bind the keys to the exact negotiation. Finished messages prove both parties agree. AEAD protects the actual data.</p>
+        <ul>
+          <li>ClientHello and ServerHello negotiate supported choices.</li>
+          <li>ECDHE provides fresh shared secret material.</li>
+          <li>Certificates authenticate the server identity and key.</li>
+          <li>Transcript hashes bind the handshake messages.</li>
+          <li>KDFs derive separate secrets and traffic keys.</li>
+          <li>Finished messages verify the transcript and derived keys.</li>
+          <li>AEAD protects application records.</li>
+          <li>Ephemeral key exchange supports forward secrecy.</li>
+          <li>Mutual TLS can authenticate both client and server.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>TLS stands for Transport Layer Security.</li>
+            <li>TLS combines negotiation, authentication, key exchange, KDFs, and symmetric protection.</li>
+            <li>ClientHello lists what the client supports.</li>
+            <li>ServerHello selects compatible parameters.</li>
+            <li>ECDHE creates fresh shared secret material.</li>
+            <li>The server certificate authenticates the server’s public key and identity.</li>
+            <li>The certificate must validate for chain, hostname, time, and usage.</li>
+            <li>The transcript hash fingerprints the handshake messages.</li>
+            <li>The KDF/key schedule derives handshake and application traffic keys.</li>
+            <li>The Finished message proves both sides agree on transcript and keys.</li>
+            <li>AEAD protects application data.</li>
+            <li>Forward secrecy depends on ephemeral key exchange.</li>
+            <li>Normal HTTPS usually authenticates the server.</li>
+            <li>Mutual TLS authenticates both server and client.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              A=aG,\quad B=bG
+            \]
+            \[
+              S_A=aB=a(bG)=abG
+            \]
+            \[
+              S_B=bA=b(aG)=abG
+            \]
+            \[
+              transcript\ hash=H(handshake\ messages)
+            \]
+            \[
+              traffic\ keys=KDF(shared\ secret, transcript\ hash, labels, context)
+            \]
+            \[
+              Finished=MAC(finished\ key, transcript\ hash)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 63: TLS Handshake Mathematics: Key Exchange, Authentication, and Session Keys</strong>. After that, the next tutorial can move into <strong>Hash-Based Authentication: HMAC, HKDF, and Transcript Binding</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_63_tls_handshake_mathematics_key_exchange_authentication_and_session_keys_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_62_certificates_public_key_infrastructure_and_trust_chains_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_64_hash_based_authentication_hmac_hkdf_and_transcript_binding_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

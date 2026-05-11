@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 73: Real-World Protocol Case Studies: TLS, Signal, SSH, and WireGuard | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 73</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Real-World Protocol Case Studies: TLS, Signal, SSH, and WireGuard</h1>
+      <p class="subtitle">
+        Printable practice for comparing real-world protocol designs: TLS, Signal, SSH, and WireGuard. Focus areas include identity models, transcript binding, key schedules, ratcheting, Trust On First Use, replay control, metadata limits, and protocol tradeoffs.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat each protocol as a design case study. Do not memorize every implementation detail. Instead, identify what problem the protocol solves, how it authenticates identity, how it derives and updates keys, what prevents replay or downgrade, and what remains outside its protection.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">TLS-style key schedule idea</div>
+            <div class="math-display">
+              \[
+                traffic\_secret = KDF(handshake\_secret, transcript\_hash, label)
+              \]
+            </div>
+          </div>
+
+          <div class="box case-box">
+            <div class="box-title">Signal-style ratchet idea</div>
+            <div class="math-display">
+              \[
+                new\_chain\_key, message\_key = KDF(old\_chain\_key)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is TLS?</td><td></td></tr>
+            <tr><td>A2. What is the Signal Protocol?</td><td></td></tr>
+            <tr><td>A3. What is SSH?</td><td></td></tr>
+            <tr><td>A4. What is WireGuard?</td><td></td></tr>
+            <tr><td>A5. What is a handshake?</td><td></td></tr>
+            <tr><td>A6. What is a transcript?</td><td></td></tr>
+            <tr><td>A7. What is forward secrecy?</td><td></td></tr>
+            <tr><td>A8. What is a key schedule?</td><td></td></tr>
+            <tr><td>A9. What does TOFU mean?</td><td></td></tr>
+            <tr><td>A10. What is a ratchet?</td><td></td></tr>
+            <tr><td>A11. What is Noise in this context?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="case-study-map">
+        <h2>Part B: Case-study map</h2>
+        <table class="case-table">
+          <thead><tr><th>Protocol</th><th>Main use</th><th>Identity model</th><th>Design emphasis</th></tr></thead>
+          <tbody>
+            <tr><td>TLS</td><td></td><td></td><td></td></tr>
+            <tr><td>Signal</td><td></td><td></td><td></td></tr>
+            <tr><td>SSH</td><td></td><td></td><td></td></tr>
+            <tr><td>WireGuard</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="tls">
+        <h2>Part C: TLS case study</h2>
+        <table class="lesson-table">
+          <thead><tr><th>TLS design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Server certificate</td><td></td></tr>
+            <tr><td>Ephemeral key exchange</td><td></td></tr>
+            <tr><td>Transcript hash</td><td></td></tr>
+            <tr><td>Authenticated encryption</td><td></td></tr>
+            <tr><td>Version/cipher negotiation protection</td><td></td></tr>
+            <tr><td>Key schedule</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is the transcript hash important in TLS-style design?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Why is a certificate validation failure a protocol failure, not merely a user-interface annoyance?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="tls-risks">
+        <h2>Part D: TLS composition lessons</h2>
+        <table class="danger-table">
+          <thead><tr><th>Problem class</th><th>TLS-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Identity confusion</td><td></td></tr>
+            <tr><td>Downgrade</td><td></td></tr>
+            <tr><td>Replay</td><td></td></tr>
+            <tr><td>Key reuse</td><td></td></tr>
+            <tr><td>Parsing and alerts</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="signal">
+        <h2>Part E: Signal Protocol case study</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Signal design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Identity keys</td><td></td></tr>
+            <tr><td>Prekeys</td><td></td></tr>
+            <tr><td>Triple/extended Diffie-Hellman-style setup</td><td></td></tr>
+            <tr><td>Double Ratchet</td><td></td></tr>
+            <tr><td>Message keys deleted after use</td><td></td></tr>
+            <tr><td>Safety numbers</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does asynchronous messaging need something like prekeys?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. Explain the ratchet idea in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="signal-risks">
+        <h2>Part F: Signal composition lessons</h2>
+        <table class="danger-table">
+          <thead><tr><th>Problem class</th><th>Signal-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Asynchronous messaging</td><td></td></tr>
+            <tr><td>Long conversations</td><td></td></tr>
+            <tr><td>Identity verification</td><td></td></tr>
+            <tr><td>Compromise recovery</td><td></td></tr>
+            <tr><td>Metadata</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ssh">
+        <h2>Part G: SSH case study</h2>
+        <table class="lesson-table">
+          <thead><tr><th>SSH design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Host key</td><td></td></tr>
+            <tr><td>Trust On First Use</td><td></td></tr>
+            <tr><td>Key exchange</td><td></td></tr>
+            <tr><td>User authentication</td><td></td></tr>
+            <tr><td>Strict host-key checking</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why is TOFU most vulnerable on first contact?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Why should an unexpected host-key change be investigated rather than blindly accepted?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ssh-risks">
+        <h2>Part H: SSH composition lessons</h2>
+        <table class="danger-table">
+          <thead><tr><th>Problem class</th><th>SSH-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>First connection trust</td><td></td></tr>
+            <tr><td>Host key changes</td><td></td></tr>
+            <tr><td>User authentication</td><td></td></tr>
+            <tr><td>Algorithm agility</td><td></td></tr>
+            <tr><td>Operational security</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="wireguard">
+        <h2>Part I: WireGuard case study</h2>
+        <table class="lesson-table">
+          <thead><tr><th>WireGuard design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Static public keys</td><td></td></tr>
+            <tr><td>Noise-based handshake</td><td></td></tr>
+            <tr><td>Small cryptographic suite</td><td></td></tr>
+            <tr><td>AEAD transport</td><td></td></tr>
+            <tr><td>Replay protection</td><td></td></tr>
+            <tr><td>Minimal codebase design goal</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why does a small cryptographic suite reduce downgrade surface?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. Why does static public-key identity require careful configuration?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="wireguard-risks">
+        <h2>Part J: WireGuard composition lessons</h2>
+        <table class="danger-table">
+          <thead><tr><th>Problem class</th><th>WireGuard-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Identity setup</td><td></td></tr>
+            <tr><td>Negotiation complexity</td><td></td></tr>
+            <tr><td>Replay</td><td></td></tr>
+            <tr><td>Configuration mistakes</td><td></td></tr>
+            <tr><td>Metadata</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="comparison">
+        <h2>Part K: Cross-protocol comparison</h2>
+        <table class="case-table">
+          <thead><tr><th>Feature</th><th>TLS</th><th>Signal</th><th>SSH</th><th>WireGuard</th></tr></thead>
+          <tbody>
+            <tr><td>Main setting</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Identity style</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Forward secrecy</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Key evolution</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Replay concern</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Composition lesson</td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="shared-lessons">
+        <h2>Part L: Shared protocol lessons</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Lesson</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Bind the transcript</td><td></td></tr>
+            <tr><td>Authenticate identities</td><td></td></tr>
+            <tr><td>Separate keys by purpose</td><td></td></tr>
+            <tr><td>Protect against replay</td><td></td></tr>
+            <tr><td>Prefer modern AEAD</td><td></td></tr>
+            <tr><td>Retire weak options</td><td></td></tr>
+            <tr><td>Keep state strict</td><td></td></tr>
+            <tr><td>Plan for key updates</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A browser validates a server certificate and binds the handshake transcript into derived traffic keys.</td><td></td></tr>
+            <tr><td>A chat app encrypts contents but still reveals message timing and approximate size.</td><td></td></tr>
+            <tr><td>An SSH client shows a changed host-key warning and the user clicks through without checking.</td><td></td></tr>
+            <tr><td>A WireGuard peer is configured with the wrong public key.</td><td></td></tr>
+            <tr><td>A protocol offers many legacy algorithms and does not protect negotiation.</td><td></td></tr>
+            <tr><td>A messaging protocol updates message keys and deletes old message keys after use.</td><td></td></tr>
+            <tr><td>A VPN encrypts packet contents but does not make traffic existence invisible.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>TLS is commonly used to secure HTTPS traffic.</td><td></td><td></td></tr>
+            <tr><td>Signal’s ratchet keeps using one permanent message key forever.</td><td></td><td></td></tr>
+            <tr><td>SSH host-key warnings should be ignored automatically.</td><td></td><td></td></tr>
+            <tr><td>WireGuard commonly identifies peers using configured static public keys.</td><td></td><td></td></tr>
+            <tr><td>Forward secrecy helps protect past sessions after later long-term key compromise.</td><td></td><td></td></tr>
+            <tr><td>Encryption of content always hides all metadata.</td><td></td><td></td></tr>
+            <tr><td>Different protocols can solve identity differently.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain TLS as a case study in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain Signal as a case study in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain SSH and WireGuard as contrasting identity models in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>TLS, Signal, SSH, and WireGuard all solve exactly the same problem in exactly the same way.</td><td></td></tr>
+            <tr><td>TLS commonly uses certificates for server identity.</td><td></td></tr>
+            <tr><td>Signal-style ratcheting updates keys across a conversation.</td><td></td></tr>
+            <tr><td>TOFU is strongest when the first connection is attacked.</td><td></td></tr>
+            <tr><td>WireGuard’s minimal design reduces negotiation complexity.</td><td></td></tr>
+            <tr><td>Encrypted content may still leave metadata visible.</td><td></td></tr>
+            <tr><td>Real protocols teach composition discipline.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that real protocols reveal different design answers to the same recurring questions: who is authenticated, how are keys derived, how is freshness proven, how are keys updated, and what remains outside the protection boundary?</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is TLS?</td><td>Transport Layer Security, widely used for HTTPS and secure transport.</td></tr>
+            <tr><td>A2. What is the Signal Protocol?</td><td>A protocol family for end-to-end encrypted messaging using asynchronous setup and ratcheting.</td></tr>
+            <tr><td>A3. What is SSH?</td><td>Secure Shell, used for secure remote login, file transfer, and tunneling.</td></tr>
+            <tr><td>A4. What is WireGuard?</td><td>A modern VPN protocol using static public keys and a compact Noise-based design.</td></tr>
+            <tr><td>A5. What is a handshake?</td><td>The setup conversation that negotiates parameters, authenticates parties, and derives keys.</td></tr>
+            <tr><td>A6. What is a transcript?</td><td>The ordered record of handshake messages.</td></tr>
+            <tr><td>A7. What is forward secrecy?</td><td>Protection of past sessions even if long-term keys are later compromised.</td></tr>
+            <tr><td>A8. What is a key schedule?</td><td>A structured pipeline for deriving purpose-specific keys and secrets.</td></tr>
+            <tr><td>A9. What does TOFU mean?</td><td>Trust On First Use.</td></tr>
+            <tr><td>A10. What is a ratchet?</td><td>A mechanism that updates keys forward and discards old keys.</td></tr>
+            <tr><td>A11. What is Noise in this context?</td><td>A framework for building authenticated key-exchange handshake patterns.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Case-study map</h3>
+        <table class="answer-table">
+          <thead><tr><th>Protocol</th><th>Main use</th><th>Identity model</th><th>Design emphasis</th></tr></thead>
+          <tbody>
+            <tr><td>TLS</td><td>Secure client-server transport.</td><td>Usually certificate authorities for server identity.</td><td>Negotiated secure channel with transcript-bound keys.</td></tr>
+            <tr><td>Signal</td><td>End-to-end encrypted messaging.</td><td>User identity keys plus safety-number verification.</td><td>Asynchronous setup, forward secrecy, post-compromise recovery.</td></tr>
+            <tr><td>SSH</td><td>Secure remote login and command execution.</td><td>Host keys often trusted on first use.</td><td>Authenticated encrypted remote access.</td></tr>
+            <tr><td>WireGuard</td><td>VPN tunnel.</td><td>Static public keys configured out of band.</td><td>Minimal, opinionated, modern cryptographic tunnel.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: TLS case study</h3>
+        <table class="answer-table">
+          <thead><tr><th>TLS design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Server certificate</td><td>Bind server identity to a public key.</td></tr>
+            <tr><td>Ephemeral key exchange</td><td>Provide forward secrecy.</td></tr>
+            <tr><td>Transcript hash</td><td>Bind the whole handshake into authentication and key derivation.</td></tr>
+            <tr><td>Authenticated encryption</td><td>Protect application data after the handshake.</td></tr>
+            <tr><td>Version/cipher negotiation protection</td><td>Reduce downgrade risk.</td></tr>
+            <tr><td>Key schedule</td><td>Separate handshake, application, and exporter secrets.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>C1 sample answer.</strong> The transcript hash binds the derived keys and authentication to the exact handshake messages, making tampering with the setup conversation detectable.</p>
+          <p><strong>C2 sample answer.</strong> Certificate validation binds the server identity to its public key. If validation fails, the client may be talking securely to the wrong party.</p>
+        </div>
+
+        <h3>Part D: TLS composition lessons</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem class</th><th>TLS-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Identity confusion</td><td>Certificates bind names to keys, but validation must be correct.</td></tr>
+            <tr><td>Downgrade</td><td>Negotiation must be protected and weak versions retired.</td></tr>
+            <tr><td>Replay</td><td>Early data and session resumption require careful replay controls.</td></tr>
+            <tr><td>Key reuse</td><td>Key schedule separates secrets by purpose.</td></tr>
+            <tr><td>Parsing and alerts</td><td>Error behavior must not become an oracle.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Signal Protocol case study</h3>
+        <table class="answer-table">
+          <thead><tr><th>Signal design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Identity keys</td><td>Long-term user identity anchor.</td></tr>
+            <tr><td>Prekeys</td><td>Allow asynchronous session setup.</td></tr>
+            <tr><td>Triple/extended Diffie-Hellman-style setup</td><td>Mix long-term and ephemeral contributions.</td></tr>
+            <tr><td>Double Ratchet</td><td>Continuously update message keys.</td></tr>
+            <tr><td>Message keys deleted after use</td><td>Limit damage from later compromise.</td></tr>
+            <tr><td>Safety numbers</td><td>Let users verify identity keys out of band.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>E1 sample answer.</strong> In messaging, both users may not be online at the same time. Prekeys let a sender start a secure session using key material published earlier by the recipient.</p>
+          <p><strong>E2 sample answer.</strong> A ratchet keeps moving keys forward. Each message gets fresh key material, and old message keys are deleted so later compromise does not automatically reveal old messages.</p>
+        </div>
+
+        <h3>Part F: Signal composition lessons</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem class</th><th>Signal-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Asynchronous messaging</td><td>Prekeys allow setup without both parties online.</td></tr>
+            <tr><td>Long conversations</td><td>Ratchets limit damage and refresh keys.</td></tr>
+            <tr><td>Identity verification</td><td>Safety numbers help detect identity-key changes.</td></tr>
+            <tr><td>Compromise recovery</td><td>New Diffie-Hellman ratchet steps can help recover secrecy after compromise.</td></tr>
+            <tr><td>Metadata</td><td>Message encryption does not automatically hide all metadata.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: SSH case study</h3>
+        <table class="answer-table">
+          <thead><tr><th>SSH design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Host key</td><td>Authenticate the server across connections.</td></tr>
+            <tr><td>Trust On First Use</td><td>Remember the first observed host key and warn on changes.</td></tr>
+            <tr><td>Key exchange</td><td>Derive session keys for encrypted transport.</td></tr>
+            <tr><td>User authentication</td><td>Authenticate the client/user after server setup.</td></tr>
+            <tr><td>Strict host-key checking</td><td>Detect possible man-in-the-middle attacks after first trust.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> TOFU trusts the first key it sees. If an attacker intercepts that first connection, the client may store the attacker’s key as trusted.</p>
+          <p><strong>G2 sample answer.</strong> A changed host key may mean a legitimate server rebuild, but it may also indicate a man-in-the-middle attack. It should be checked before acceptance.</p>
+        </div>
+
+        <h3>Part H: SSH composition lessons</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem class</th><th>SSH-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>First connection trust</td><td>TOFU can be vulnerable if first contact is attacked.</td></tr>
+            <tr><td>Host key changes</td><td>Unexpected changes need investigation, not blind acceptance.</td></tr>
+            <tr><td>User authentication</td><td>Server authentication and user authentication are separate goals.</td></tr>
+            <tr><td>Algorithm agility</td><td>Weak old algorithms must be disabled over time.</td></tr>
+            <tr><td>Operational security</td><td>Private keys need filesystem and passphrase protection.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: WireGuard case study</h3>
+        <table class="answer-table">
+          <thead><tr><th>WireGuard design feature</th><th>Security purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Static public keys</td><td>Identify peers through configured keys.</td></tr>
+            <tr><td>Noise-based handshake</td><td>Provide authenticated key exchange.</td></tr>
+            <tr><td>Small cryptographic suite</td><td>Reduce negotiation complexity and downgrade surface.</td></tr>
+            <tr><td>AEAD transport</td><td>Protect tunneled packets.</td></tr>
+            <tr><td>Replay protection</td><td>Reject repeated or stale packets.</td></tr>
+            <tr><td>Minimal codebase design goal</td><td>Improve auditability and reduce complexity.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Fewer algorithm choices mean fewer downgrade paths and less negotiation complexity for attackers to manipulate.</p>
+          <p><strong>I2 sample answer.</strong> If the wrong public key is configured, the protocol may authenticate the wrong peer or fail to connect securely to the intended one.</p>
+        </div>
+
+        <h3>Part J: WireGuard composition lessons</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem class</th><th>WireGuard-style lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Identity setup</td><td>Static public keys must be distributed/configured correctly.</td></tr>
+            <tr><td>Negotiation complexity</td><td>Minimal algorithm choice reduces downgrade surface.</td></tr>
+            <tr><td>Replay</td><td>Transport needs counters/windows to reject repeats.</td></tr>
+            <tr><td>Configuration mistakes</td><td>Allowed IPs, routing, and peer configs matter.</td></tr>
+            <tr><td>Metadata</td><td>A VPN protects packet contents but does not make traffic existence invisible.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Cross-protocol comparison</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>TLS</th><th>Signal</th><th>SSH</th><th>WireGuard</th></tr></thead>
+          <tbody>
+            <tr><td>Main setting</td><td>Web/client-server</td><td>Messaging</td><td>Remote login</td><td>VPN tunnel</td></tr>
+            <tr><td>Identity style</td><td>Certificates</td><td>Identity keys</td><td>Host keys / TOFU</td><td>Static public keys</td></tr>
+            <tr><td>Forward secrecy</td><td>Ephemeral key exchange</td><td>Ratchets and DH updates</td><td>Key exchange</td><td>Noise-style handshake</td></tr>
+            <tr><td>Key evolution</td><td>Handshake/application key schedule</td><td>Double Ratchet</td><td>Session keys / rekeying</td><td>Session keys / rekeying</td></tr>
+            <tr><td>Replay concern</td><td>Early data/resumption cases</td><td>Message ordering and skipped keys</td><td>Session/message integrity</td><td>Packet counters/windows</td></tr>
+            <tr><td>Composition lesson</td><td>Transcript binding</td><td>Ratcheting</td><td>First-trust risk</td><td>Minimalism and key identity</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Shared protocol lessons</h3>
+        <table class="answer-table">
+          <thead><tr><th>Lesson</th><th>Why it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Bind the transcript</td><td>Prevents tampering with the setup conversation.</td></tr>
+            <tr><td>Authenticate identities</td><td>Prevents talking securely to the wrong party.</td></tr>
+            <tr><td>Separate keys by purpose</td><td>Prevents cross-use surprises.</td></tr>
+            <tr><td>Protect against replay</td><td>Valid old messages are not automatically safe.</td></tr>
+            <tr><td>Prefer modern AEAD</td><td>Confidentiality and integrity belong together.</td></tr>
+            <tr><td>Retire weak options</td><td>Backward compatibility can become a trapdoor.</td></tr>
+            <tr><td>Keep state strict</td><td>Wrong-message wrong-phase acceptance is dangerous.</td></tr>
+            <tr><td>Plan for key updates</td><td>Limits the damage of long-lived sessions or compromise.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A browser validates a server certificate and binds the handshake transcript into derived traffic keys.</td><td>Good TLS-style identity and transcript binding.</td></tr>
+            <tr><td>A chat app encrypts contents but still reveals message timing and approximate size.</td><td>Content encryption does not automatically hide metadata.</td></tr>
+            <tr><td>An SSH client shows a changed host-key warning and the user clicks through without checking.</td><td>Dangerous; could ignore a man-in-the-middle warning.</td></tr>
+            <tr><td>A WireGuard peer is configured with the wrong public key.</td><td>Identity/configuration failure.</td></tr>
+            <tr><td>A protocol offers many legacy algorithms and does not protect negotiation.</td><td>Downgrade risk.</td></tr>
+            <tr><td>A messaging protocol updates message keys and deletes old message keys after use.</td><td>Good ratcheting/forward-secrecy habit.</td></tr>
+            <tr><td>A VPN encrypts packet contents but does not make traffic existence invisible.</td><td>Metadata/traffic-analysis limitation.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>TLS is commonly used to secure HTTPS traffic.</td><td>Valid</td><td>That is its familiar use.</td></tr>
+            <tr><td>Signal’s ratchet keeps using one permanent message key forever.</td><td>Mistaken</td><td>Ratchets update keys and discard old material.</td></tr>
+            <tr><td>SSH host-key warnings should be ignored automatically.</td><td>Mistaken</td><td>A changed host key may indicate attack or reconfiguration.</td></tr>
+            <tr><td>WireGuard commonly identifies peers using configured static public keys.</td><td>Valid</td><td>That is a core identity model.</td></tr>
+            <tr><td>Forward secrecy helps protect past sessions after later long-term key compromise.</td><td>Valid</td><td>That is the forward-secrecy goal.</td></tr>
+            <tr><td>Encryption of content always hides all metadata.</td><td>Mistaken</td><td>Timing, endpoints, sizes, and traffic patterns may remain visible.</td></tr>
+            <tr><td>Different protocols can solve identity differently.</td><td>Valid</td><td>TLS, Signal, SSH, and WireGuard use different models.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> TLS provides secure client-server transport, especially for HTTPS. Its design lessons include certificate-based server identity, ephemeral key exchange, transcript binding, authenticated encryption, protected negotiation, and purpose-separated key schedules.</p>
+          <p><strong>O2 sample answer.</strong> Signal is designed for end-to-end encrypted messaging, including asynchronous conversation setup. It uses identity keys, prekeys, Diffie-Hellman-style setup, ratcheting, deletion of old message keys, and safety numbers for out-of-band identity verification.</p>
+          <p><strong>O3 sample answer.</strong> SSH often uses Trust On First Use for host keys, making the first connection especially important. WireGuard uses configured static public keys, which reduces negotiation complexity but makes correct key distribution and configuration essential.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial compared TLS, Signal, SSH, and WireGuard as real-world examples of protocol composition. It emphasized identity models, transcript binding, key schedules, ratchets, TOFU, minimalism, replay protection, downgrade resistance, metadata limits, and operational setup.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>TLS, Signal, SSH, and WireGuard all solve exactly the same problem in exactly the same way.</td><td>False</td><td>They serve different settings and use different identity models.</td></tr>
+            <tr><td>TLS commonly uses certificates for server identity.</td><td>True</td><td>This is central to common TLS use.</td></tr>
+            <tr><td>Signal-style ratcheting updates keys across a conversation.</td><td>True</td><td>That is the ratchet purpose.</td></tr>
+            <tr><td>TOFU is strongest when the first connection is attacked.</td><td>False</td><td>First contact is TOFU’s weak point.</td></tr>
+            <tr><td>WireGuard’s minimal design reduces negotiation complexity.</td><td>True</td><td>Fewer choices reduce downgrade surface.</td></tr>
+            <tr><td>Encrypted content may still leave metadata visible.</td><td>True</td><td>Traffic patterns, endpoints, sizes, and timing may remain visible.</td></tr>
+            <tr><td>Real protocols teach composition discipline.</td><td>True</td><td>They show how primitives become systems.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 73: Real-World Protocol Case Studies: TLS, Signal, SSH, and WireGuard.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_71_fault_attacks_glitching_and_defensive_verification_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_76_lattice_intuition_vectors_grids_closest_vectors_noisy_equations_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

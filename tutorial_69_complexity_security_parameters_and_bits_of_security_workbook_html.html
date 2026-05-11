@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 69: Complexity, Security Parameters, and Bits of Security | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 69</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Complexity, Security Parameters, and Bits of Security</h1>
+      <p class="subtitle">
+        Printable practice for security parameters, work factors, brute-force estimates, exponential growth, birthday bounds, symmetric versus public-key sizing, quantum attackers, parameter aging, and security margins.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat each “security level” as an estimated attack cost, not merely a number of stored bits. Your job is to connect parameter size, best known attack, data lifetime, and threat model.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Security and brute force</div>
+            <div class="math-display">
+              \[
+                n\text{-bit security}\approx 2^n\ attack\ work
+              \]
+              \[
+                keyspace=2^n
+              \]
+              \[
+                average\ brute\ force\ work\approx 2^{n-1}
+              \]
+            </div>
+          </div>
+
+          <div class="box complexity-box">
+            <div class="box-title">Growth and birthday bound</div>
+            <div class="math-display">
+              \[
+                2^{n+1}=2\cdot 2^n
+              \]
+              \[
+                2^{n+10}=1024\cdot 2^n
+              \]
+              \[
+                collision\ work\approx 2^{n/2}
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is the security parameter \(\lambda\)?</td><td></td></tr>
+            <tr><td>A2. What are bits of security?</td><td></td></tr>
+            <tr><td>A3. What is a work factor?</td><td></td></tr>
+            <tr><td>A4. What is brute force?</td><td></td></tr>
+            <tr><td>A5. What is polynomial time?</td><td></td></tr>
+            <tr><td>A6. What is exponential time?</td><td></td></tr>
+            <tr><td>A7. What does negligible mean?</td><td></td></tr>
+            <tr><td>A8. What is the birthday bound?</td><td></td></tr>
+            <tr><td>A9. What is a classical attacker?</td><td></td></tr>
+            <tr><td>A10. What is a quantum attacker?</td><td></td></tr>
+            <tr><td>A11. What is a security margin?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="security-parameter">
+        <h2>Part B: Security parameter</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Primitive or system</th><th>Parameter example</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric encryption</td><td></td></tr>
+            <tr><td>Hash function</td><td></td></tr>
+            <tr><td>RSA</td><td></td></tr>
+            <tr><td>Elliptic-curve cryptography</td><td></td></tr>
+            <tr><td>AEAD</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain why the security parameter is like a “size knob.”</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="bits-of-security">
+        <h2>Part C: Bits of security</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            n\text{-bit security}\approx 2^n\ attack\ work
+          \]
+        </div>
+
+        <table class="complexity-table">
+          <thead><tr><th>Security level</th><th>Approximate work factor</th><th>Plain meaning</th></tr></thead>
+          <tbody>
+            <tr><td>40-bit</td><td></td><td></td></tr>
+            <tr><td>64-bit</td><td></td><td></td></tr>
+            <tr><td>80-bit</td><td></td><td></td></tr>
+            <tr><td>112-bit</td><td></td><td></td></tr>
+            <tr><td>128-bit</td><td></td><td></td></tr>
+            <tr><td>256-bit</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why are bits of security attack-cost exponents rather than just storage bits?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="exponential-growth">
+        <h2>Part D: Exponential growth</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            2^{n+1}=2\cdot 2^n
+          \]
+          \[
+            2^{n+10}=1024\cdot 2^n
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Extra bits</th><th>Multiplier</th></tr></thead>
+          <tbody>
+            <tr><td>+1</td><td></td></tr>
+            <tr><td>+2</td><td></td></tr>
+            <tr><td>+10</td><td></td></tr>
+            <tr><td>+20</td><td></td></tr>
+            <tr><td>+30</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why does adding 10 bits matter so much?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="brute-force">
+        <h2>Part E: Brute-force key search</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            keyspace=2^n
+          \]
+          \[
+            average\ brute\ force\ work\approx 2^{n-1}
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Key length</th><th>Full keyspace</th><th>Average brute-force work</th></tr></thead>
+          <tbody>
+            <tr><td>40 bits</td><td></td><td></td></tr>
+            <tr><td>64 bits</td><td></td><td></td></tr>
+            <tr><td>80 bits</td><td></td><td></td></tr>
+            <tr><td>128 bits</td><td></td><td></td></tr>
+            <tr><td>256 bits</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why do people still call an ideal 128-bit key “128-bit security” even though average brute force is about \(2^{127}\)?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="polynomial-exponential">
+        <h2>Part F: Polynomial versus exponential time</h2>
+        <table class="compare-table">
+          <thead><tr><th>Runtime</th><th>Growth shape</th><th>Cryptographic meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(n^2\)</td><td></td><td></td></tr>
+            <tr><td>\(n^3\)</td><td></td><td></td></tr>
+            <tr><td>\(2^n\)</td><td></td><td></td></tr>
+            <tr><td>\(2^{n/2}\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why does exponential growth become infeasible quickly?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="birthday-bound">
+        <h2>Part G: Birthday bound</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            collision\ work\approx 2^{n/2}
+          \]
+        </div>
+
+        <table class="complexity-table">
+          <thead><tr><th>Hash output length</th><th>Approximate collision security</th></tr></thead>
+          <tbody>
+            <tr><td>128-bit digest</td><td></td></tr>
+            <tr><td>160-bit digest</td><td></td></tr>
+            <tr><td>256-bit digest</td><td></td></tr>
+            <tr><td>384-bit digest</td><td></td></tr>
+            <tr><td>512-bit digest</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why does a 256-bit hash output give about 128-bit collision security?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hash-security-types">
+        <h2>Part H: Hash security types</h2>
+        <table class="compare-table">
+          <thead><tr><th>Goal</th><th>Attacker wants...</th><th>Ideal \(n\)-bit hash work</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Second-preimage resistance</td><td></td><td></td></tr>
+            <tr><td>Collision resistance</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="public-key-sizing">
+        <h2>Part I: Symmetric versus public-key parameter sizes</h2>
+        <table class="danger-table">
+          <thead><tr><th>Misleading thought</th><th>Better thought</th></tr></thead>
+          <tbody>
+            <tr><td>“RSA-2048 means 2048-bit security.”</td><td></td></tr>
+            <tr><td>“A 256-bit ECC key equals a 256-bit symmetric key.”</td><td></td></tr>
+            <tr><td>“All key bits count the same way.”</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Explain why parameter size is not always the same thing as bits of security.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="classical-quantum">
+        <h2>Part J: Classical versus quantum attackers</h2>
+        <table class="compare-table">
+          <thead><tr><th>Attack context</th><th>Classical estimate</th><th>Quantum concern</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric brute force</td><td></td><td></td></tr>
+            <tr><td>Hash collision</td><td></td><td></td></tr>
+            <tr><td>RSA factoring</td><td></td><td></td></tr>
+            <tr><td>Discrete logarithm / ECC</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Explain the difference between Grover’s and Shor’s impact in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="parameter-aging">
+        <h2>Part K: Parameter aging and security margins</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Reason parameters age</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Hardware improves</td><td></td></tr>
+            <tr><td>Algorithms improve</td><td></td></tr>
+            <tr><td>Systems live longer than expected</td><td></td></tr>
+            <tr><td>Attackers store now, decrypt later</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why do security margins matter?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="security-lifetime">
+        <h2>Part L: Choosing parameters by security lifetime</h2>
+        <table class="complexity-table">
+          <thead><tr><th>Use case</th><th>Security lifetime concern</th><th>Parameter attitude</th></tr></thead>
+          <tbody>
+            <tr><td>Short-lived session data</td><td></td><td></td></tr>
+            <tr><td>Personal records</td><td></td><td></td></tr>
+            <tr><td>Government or medical records</td><td></td><td></td></tr>
+            <tr><td>Post-quantum-sensitive secrets</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system claims RSA-2048 gives 2048 bits of security.</td><td></td></tr>
+            <tr><td>A 256-bit hash is used where 128-bit collision security is desired.</td><td></td></tr>
+            <tr><td>A 64-bit symmetric key is used for long-term sensitive records.</td><td></td></tr>
+            <tr><td>A design includes a security margin because data must remain secret for decades.</td><td></td></tr>
+            <tr><td>A developer says Grover and Shor affect all cryptography in the exact same way.</td><td></td></tr>
+            <tr><td>A protocol uses old parameters because they were acceptable twenty years ago.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Adding one key bit doubles the brute-force keyspace.</td><td></td><td></td></tr>
+            <tr><td>Adding ten key bits multiplies the search space by 1024.</td><td></td><td></td></tr>
+            <tr><td>An \(n\)-bit hash has about \(n\)-bit collision security.</td><td></td><td></td></tr>
+            <tr><td>Parameter size and bits of security are always identical.</td><td></td><td></td></tr>
+            <tr><td>Security parameters can age as hardware and attacks improve.</td><td></td><td></td></tr>
+            <tr><td>Shor’s algorithm threatens RSA and traditional ECC if large-scale quantum computers become practical.</td><td></td><td></td></tr>
+            <tr><td>Security lifetime should influence parameter choices.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain bits of security in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain the birthday bound in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain why RSA, ECC, hashes, and symmetric keys do not translate parameter length into security in the same way.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>\(n\)-bit security means the best known attack costs roughly \(2^n\) operations.</td><td></td></tr>
+            <tr><td>Adding one bit halves the brute-force search space.</td><td></td></tr>
+            <tr><td>A 256-bit hash has about 128-bit collision security.</td><td></td></tr>
+            <tr><td>RSA-2048 means 2048-bit security.</td><td></td></tr>
+            <tr><td>Grover’s algorithm gives a quadratic speedup for brute-force search.</td><td></td></tr>
+            <tr><td>Parameters that were safe decades ago are automatically safe forever.</td><td></td></tr>
+            <tr><td>Security margins help account for future improvements in attacks and hardware.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that bits of security estimate attack cost. Parameter size matters only after you ask what the best known attack against that parameter actually costs.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is the security parameter \(\lambda\)?</td><td>The adjustable size parameter controlling attack difficulty.</td></tr>
+            <tr><td>A2. What are bits of security?</td><td>An attack-cost estimate measured in powers of two.</td></tr>
+            <tr><td>A3. What is a work factor?</td><td>The estimated computational effort required for an attack.</td></tr>
+            <tr><td>A4. What is brute force?</td><td>Trying every candidate, such as every possible key.</td></tr>
+            <tr><td>A5. What is polynomial time?</td><td>Runtime growing like \(n^c\) for some constant \(c\).</td></tr>
+            <tr><td>A6. What is exponential time?</td><td>Runtime growing like \(2^n\) or \(c^n\).</td></tr>
+            <tr><td>A7. What does negligible mean?</td><td>Too small to matter at cryptographic scale, formally shrinking very quickly with the security parameter.</td></tr>
+            <tr><td>A8. What is the birthday bound?</td><td>The fact that collisions in an \(n\)-bit output become likely around \(2^{n/2}\) samples.</td></tr>
+            <tr><td>A9. What is a classical attacker?</td><td>An attacker using ordinary non-quantum computers.</td></tr>
+            <tr><td>A10. What is a quantum attacker?</td><td>An attacker using quantum algorithms/computers.</td></tr>
+            <tr><td>A11. What is a security margin?</td><td>Extra buffer between current known attacks and the intended security target.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Security parameter</h3>
+        <table class="answer-table">
+          <thead><tr><th>Primitive or system</th><th>Parameter example</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric encryption</td><td>Key length, such as 128 or 256 bits.</td></tr>
+            <tr><td>Hash function</td><td>Digest length, such as 256 bits.</td></tr>
+            <tr><td>RSA</td><td>Modulus length, such as 2048, 3072, or 4096 bits.</td></tr>
+            <tr><td>Elliptic-curve cryptography</td><td>Group size / curve strength, such as a 256-bit curve.</td></tr>
+            <tr><td>AEAD</td><td>Key length, nonce length, and tag length.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> The security parameter is like a size knob because increasing it usually increases the amount of work an attacker must do.</p></div>
+
+        <h3>Part C: Bits of security</h3>
+        <table class="answer-table">
+          <thead><tr><th>Security level</th><th>Approximate work factor</th><th>Plain meaning</th></tr></thead>
+          <tbody>
+            <tr><td>40-bit</td><td>\(2^{40}\)</td><td>Far too small today.</td></tr>
+            <tr><td>64-bit</td><td>\(2^{64}\)</td><td>Not enough for serious long-term security.</td></tr>
+            <tr><td>80-bit</td><td>\(2^{80}\)</td><td>Historically important, now generally too low for new systems.</td></tr>
+            <tr><td>112-bit</td><td>\(2^{112}\)</td><td>Common minimum legacy-ish security target.</td></tr>
+            <tr><td>128-bit</td><td>\(2^{128}\)</td><td>Strong standard target for symmetric security.</td></tr>
+            <tr><td>256-bit</td><td>\(2^{256}\)</td><td>Enormous classical brute-force margin.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> Bits of security describe the exponent in the best known attack cost. A parameter may be stored using many bits but provide fewer bits of actual attack resistance.</p></div>
+
+        <h3>Part D: Exponential growth</h3>
+        <table class="answer-table">
+          <thead><tr><th>Extra bits</th><th>Multiplier</th></tr></thead>
+          <tbody>
+            <tr><td>+1</td><td>\(2\times\)</td></tr>
+            <tr><td>+2</td><td>\(4\times\)</td></tr>
+            <tr><td>+10</td><td>\(1024\times\)</td></tr>
+            <tr><td>+20</td><td>About \(1,000,000\times\)</td></tr>
+            <tr><td>+30</td><td>About \(1,000,000,000\times\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> Adding 10 bits multiplies the search space by \(2^{10}=1024\), which is roughly a thousand times more work.</p></div>
+
+        <h3>Part E: Brute-force key search</h3>
+        <table class="answer-table">
+          <thead><tr><th>Key length</th><th>Full keyspace</th><th>Average brute-force work</th></tr></thead>
+          <tbody>
+            <tr><td>40 bits</td><td>\(2^{40}\)</td><td>\(2^{39}\)</td></tr>
+            <tr><td>64 bits</td><td>\(2^{64}\)</td><td>\(2^{63}\)</td></tr>
+            <tr><td>80 bits</td><td>\(2^{80}\)</td><td>\(2^{79}\)</td></tr>
+            <tr><td>128 bits</td><td>\(2^{128}\)</td><td>\(2^{127}\)</td></tr>
+            <tr><td>256 bits</td><td>\(2^{256}\)</td><td>\(2^{255}\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> Constant factors like one-half do not change the exponential security scale, so the security level is still described by the size of the keyspace exponent.</p></div>
+
+        <h3>Part F: Polynomial versus exponential time</h3>
+        <table class="answer-table">
+          <thead><tr><th>Runtime</th><th>Growth shape</th><th>Cryptographic meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(n^2\)</td><td>Polynomial</td><td>Usually considered efficient in theory.</td></tr>
+            <tr><td>\(n^3\)</td><td>Polynomial</td><td>Often feasible for moderate sizes.</td></tr>
+            <tr><td>\(2^n\)</td><td>Exponential</td><td>Becomes infeasible quickly.</td></tr>
+            <tr><td>\(2^{n/2}\)</td><td>Exponential but smaller</td><td>Often appears in birthday or quantum-search contexts.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Exponential growth doubles or multiplies rapidly as size increases, so even modest increases in parameter size can create enormous increases in attack cost.</p></div>
+
+        <h3>Part G: Birthday bound</h3>
+        <table class="answer-table">
+          <thead><tr><th>Hash output length</th><th>Approximate collision security</th></tr></thead>
+          <tbody>
+            <tr><td>128-bit digest</td><td>About 64-bit collision security.</td></tr>
+            <tr><td>160-bit digest</td><td>About 80-bit collision security.</td></tr>
+            <tr><td>256-bit digest</td><td>About 128-bit collision security.</td></tr>
+            <tr><td>384-bit digest</td><td>About 192-bit collision security.</td></tr>
+            <tr><td>512-bit digest</td><td>About 256-bit collision security.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> Collision attacks do not target one specific digest. They look for any matching pair, and the birthday bound says such collisions become likely after about \(2^{n/2}\) samples.</p></div>
+
+        <h3>Part H: Hash security types</h3>
+        <table class="answer-table">
+          <thead><tr><th>Goal</th><th>Attacker wants...</th><th>Ideal \(n\)-bit hash work</th></tr></thead>
+          <tbody>
+            <tr><td>Preimage resistance</td><td>Given \(h\), find \(m\) such that \(H(m)=h\).</td><td>About \(2^n\).</td></tr>
+            <tr><td>Second-preimage resistance</td><td>Given \(m_1\), find different \(m_2\) with same hash.</td><td>About \(2^n\).</td></tr>
+            <tr><td>Collision resistance</td><td>Find any \(m_1,m_2\) with same hash.</td><td>About \(2^{n/2}\).</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part I: Symmetric versus public-key parameter sizes</h3>
+        <table class="answer-table">
+          <thead><tr><th>Misleading thought</th><th>Better thought</th></tr></thead>
+          <tbody>
+            <tr><td>“RSA-2048 means 2048-bit security.”</td><td>RSA-2048 gives much less than 2048 bits of security.</td></tr>
+            <tr><td>“A 256-bit ECC key equals a 256-bit symmetric key.”</td><td>A common 256-bit curve targets roughly 128-bit classical security.</td></tr>
+            <tr><td>“All key bits count the same way.”</td><td>Security depends on the best known attack against the problem.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Parameter size is representation length. Bits of security estimate attack cost. RSA, ECC, hashes, and symmetric keys have different best known attacks, so their sizes translate differently into security levels.</p></div>
+
+        <h3>Part J: Classical versus quantum attackers</h3>
+        <table class="answer-table">
+          <thead><tr><th>Attack context</th><th>Classical estimate</th><th>Quantum concern</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric brute force</td><td>\(2^n\)</td><td>Grover-like search roughly \(2^{n/2}\) queries.</td></tr>
+            <tr><td>Hash collision</td><td>Birthday-style \(2^{n/2}\)</td><td>Quantum collision algorithms can change estimates, but not simply by halving every security goal.</td></tr>
+            <tr><td>RSA factoring</td><td>Sub-exponential classical attacks.</td><td>Shor breaks factoring efficiently on a large enough quantum computer.</td></tr>
+            <tr><td>Discrete logarithm / ECC</td><td>Exponential-ish generic attacks for ECC.</td><td>Shor breaks discrete log efficiently on a large enough quantum computer.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> Grover gives a quadratic speedup for search, reducing the effective exponent for symmetric brute force. Shor is more dramatic for RSA and traditional ECC because it attacks the mathematical trapdoor problems directly.</p></div>
+
+        <h3>Part K: Parameter aging and security margins</h3>
+        <table class="answer-table">
+          <thead><tr><th>Reason parameters age</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Hardware improves</td><td>More guesses per second become affordable.</td></tr>
+            <tr><td>Algorithms improve</td><td>Better cryptanalysis reduces the work factor.</td></tr>
+            <tr><td>Systems live longer than expected</td><td>Encrypted records may need confidentiality for decades.</td></tr>
+            <tr><td>Attackers store now, decrypt later</td><td>Long-term secrets may be vulnerable to future methods.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>K1 sample answer.</strong> Security margins provide breathing room for future hardware improvements, algorithmic improvements, long data lifetimes, and changes in attacker capability.</p></div>
+
+        <h3>Part L: Choosing parameters by security lifetime</h3>
+        <table class="answer-table">
+          <thead><tr><th>Use case</th><th>Security lifetime concern</th><th>Parameter attitude</th></tr></thead>
+          <tbody>
+            <tr><td>Short-lived session data</td><td>Minutes to days.</td><td>Modern standard parameters may be sufficient.</td></tr>
+            <tr><td>Personal records</td><td>Years.</td><td>Prefer strong modern defaults.</td></tr>
+            <tr><td>Government or medical records</td><td>Decades.</td><td>Use conservative parameters and migration plans.</td></tr>
+            <tr><td>Post-quantum-sensitive secrets</td><td>Future quantum threat.</td><td>Consider quantum-resistant migration.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system claims RSA-2048 gives 2048 bits of security.</td><td>Mistaken. Parameter size is not equal to bits of security.</td></tr>
+            <tr><td>A 256-bit hash is used where 128-bit collision security is desired.</td><td>Reasonable birthday-bound match.</td></tr>
+            <tr><td>A 64-bit symmetric key is used for long-term sensitive records.</td><td>Too weak for serious long-term security.</td></tr>
+            <tr><td>A design includes a security margin because data must remain secret for decades.</td><td>Good conservative design thinking.</td></tr>
+            <tr><td>A developer says Grover and Shor affect all cryptography in the exact same way.</td><td>Mistaken. Quantum algorithms affect primitives differently.</td></tr>
+            <tr><td>A protocol uses old parameters because they were acceptable twenty years ago.</td><td>Risky. Parameters age.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Adding one key bit doubles the brute-force keyspace.</td><td>Valid</td><td>\(2^{n+1}=2\cdot 2^n\).</td></tr>
+            <tr><td>Adding ten key bits multiplies the search space by 1024.</td><td>Valid</td><td>\(2^{10}=1024\).</td></tr>
+            <tr><td>An \(n\)-bit hash has about \(n\)-bit collision security.</td><td>Mistaken</td><td>Collision security is about \(n/2\) bits.</td></tr>
+            <tr><td>Parameter size and bits of security are always identical.</td><td>Mistaken</td><td>It depends on the best known attack.</td></tr>
+            <tr><td>Security parameters can age as hardware and attacks improve.</td><td>Valid</td><td>Attack costs change over time.</td></tr>
+            <tr><td>Shor’s algorithm threatens RSA and traditional ECC if large-scale quantum computers become practical.</td><td>Valid</td><td>Shor attacks factoring and discrete log.</td></tr>
+            <tr><td>Security lifetime should influence parameter choices.</td><td>Valid</td><td>Long-lived secrets need conservative choices.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> Bits of security estimate the cost of the best known attack in powers of two. A system with 128-bit security should require about \(2^{128}\) work to break by the best known method.</p>
+          <p><strong>O2 sample answer.</strong> The birthday bound says that collisions appear much sooner than a full search would suggest. For an \(n\)-bit hash, collision attacks take about \(2^{n/2}\) work, so a 256-bit digest gives about 128-bit collision security.</p>
+          <p><strong>O3 sample answer.</strong> Symmetric keys, hashes, RSA, and ECC have different mathematical structures and best known attacks. A 2048-bit RSA modulus, a 256-bit ECC key, and a 256-bit symmetric key do not all provide the same security level.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial explained how security parameters, bits of security, brute force, exponential growth, birthday attacks, public-key sizing, quantum attacks, parameter aging, and security margins shape practical cryptographic choices.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>\(n\)-bit security means the best known attack costs roughly \(2^n\) operations.</td><td>True</td><td>That is the meaning of bits of security.</td></tr>
+            <tr><td>Adding one bit halves the brute-force search space.</td><td>False</td><td>It doubles the search space.</td></tr>
+            <tr><td>A 256-bit hash has about 128-bit collision security.</td><td>True</td><td>Birthday bound.</td></tr>
+            <tr><td>RSA-2048 means 2048-bit security.</td><td>False</td><td>Parameter size is not equal to security level.</td></tr>
+            <tr><td>Grover’s algorithm gives a quadratic speedup for brute-force search.</td><td>True</td><td>That is the common quantum-search concern.</td></tr>
+            <tr><td>Parameters that were safe decades ago are automatically safe forever.</td><td>False</td><td>Parameters age as attacks and hardware improve.</td></tr>
+            <tr><td>Security margins help account for future improvements in attacks and hardware.</td><td>True</td><td>Margins provide conservative buffer.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 69: Complexity, Security Parameters, and Bits of Security.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_69_complexity_security_parameters_and_bits_of_security_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_68_attack_models_reductions_and_proof_sketches_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_70_side_channels_timing_leaks_and_constant_time_thinking_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

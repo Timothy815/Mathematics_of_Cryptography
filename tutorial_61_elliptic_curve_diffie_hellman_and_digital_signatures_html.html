@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elliptic Curve Diffie-Hellman and Digital Signatures | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 61</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Elliptic Curve Diffie-Hellman and Digital Signatures</h1>
+      <p class="subtitle">
+        Turning elliptic-curve point multiplication into cryptographic work: ECDH shared secrets, KDFs, digital signatures, verification, nonce danger, and authentication.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 60 introduced elliptic-curve points, point addition, point doubling, scalar multiplication, and public keys of the form \(Q=dG\). This tutorial uses those ideas for two major cryptographic jobs: key exchange and digital signatures.</p>
+        </div>
+
+        <p class="lead">
+          ECC gives us two kinds of cryptographic choreography. In ECDH, two dancers arrive at the same hidden point without announcing their steps. In elliptic-curve signatures, one dancer proves they knew the secret rhythm without giving the rhythm away.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should remember that \(G\) is a public base point, \(d\) is a private scalar, and \(Q=dG\) is a public key point. Scalar multiplication is efficient forward, while recovering \(d\) from \(G\) and \(Q\) is the elliptic-curve discrete logarithm problem.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(G\)</td><td>Starting point everyone agrees on.</td><td>Public base point or generator point.</td></tr>
+            <tr><td>\(a,b\)</td><td>Alice and Bob’s private numbers.</td><td>Private scalars.</td></tr>
+            <tr><td>\(A=aG\)</td><td>Alice’s public point.</td><td>Alice’s ECDH public key/share.</td></tr>
+            <tr><td>\(B=bG\)</td><td>Bob’s public point.</td><td>Bob’s ECDH public key/share.</td></tr>
+            <tr><td>\(S\)</td><td>Shared point or shared secret material.</td><td>ECDH shared result, often \(abG\).</td></tr>
+            <tr><td>KDF</td><td>Key-making machine.</td><td>Key Derivation Function.</td></tr>
+            <tr><td>ECDH</td><td>ECC key exchange.</td><td>Elliptic Curve Diffie-Hellman.</td></tr>
+            <tr><td>ECDSA</td><td>ECC signature scheme.</td><td>Elliptic Curve Digital Signature Algorithm.</td></tr>
+            <tr><td>EdDSA</td><td>Modern ECC signature family.</td><td>Edwards-curve Digital Signature Algorithm.</td></tr>
+            <tr><td>nonce \(k\)</td><td>One-time signing secret.</td><td>Ephemeral scalar used during some signature generation algorithms.</td></tr>
+            <tr><td>signature</td><td>Proof attached to a message.</td><td>Data that verifies under a public key.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ecdh-big-picture">
+        <h2>ECDH big picture</h2>
+        <p>
+          Elliptic Curve Diffie-Hellman lets two parties derive a shared secret from their own private scalar and the other party’s public point.</p>
+
+        <table class="ecc-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td>\(A=aG\)</td><td>\(S_A=aB=a(bG)=abG\)</td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td>\(B=bG\)</td><td>\(S_B=bA=b(aG)=abG\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            a(bG)=b(aG)=abG
+          \]
+        </div>
+
+        <div class="diagram" role="img" aria-label="ECDH flow">
+          <div class="diagram-title">ECDH flow</div>
+          <div class="flow-row">
+            <div class="flow-node private-node">Alice private<br>\(a\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">Alice public<br>\(A=aG\)</div>
+            <div class="flow-arrow">↔</div>
+            <div class="flow-node public-node">Bob public<br>\(B=bG\)</div>
+            <div class="flow-arrow">←</div>
+            <div class="flow-node private-node">Bob private<br>\(b\)</div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-node shared-node">Alice computes<br>\(aB=abG\)</div>
+            <div class="flow-arrow">=</div>
+            <div class="flow-node shared-node">Bob computes<br>\(bA=abG\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="why-shared-points-match">
+        <h2>Why the shared points match</h2>
+        <p>
+          Alice receives Bob’s point \(B=bG\) and multiplies it by her scalar \(a\). Bob receives Alice’s point \(A=aG\) and multiplies it by his scalar \(b\).</p>
+
+        <div class="math-display">
+          \[
+            S_A=aB=a(bG)=abG
+          \]
+          \[
+            S_B=bA=b(aG)=baG
+          \]
+          \[
+            abG=baG
+          \]
+        </div>
+
+        <p>
+          The private scalars are applied in different orders, but the final scalar product is the same. The two paths meet at the same shared point.</p>
+      </section>
+
+      <section id="from-shared-point-to-keys">
+        <h2>From shared point to usable keys</h2>
+        <p>
+          The ECDH shared point is not usually used directly as an encryption key. Instead, a representation of the shared point, often its \(x\)-coordinate or an encoded point value depending on the protocol, is fed into a KDF with context.</p>
+
+        <div class="math-display">
+          \[
+            shared\ material = encode(S)
+          \]
+          \[
+            traffic\ keys=KDF(shared\ material, transcript, identities, algorithms)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>KDF input</th><th>Why include it?</th></tr></thead>
+          <tbody>
+            <tr><td>Shared material</td><td>Core secret produced by ECDH.</td></tr>
+            <tr><td>Transcript</td><td>Binds keys to the exchanged messages.</td></tr>
+            <tr><td>Identities</td><td>Helps bind keys to the intended parties.</td></tr>
+            <tr><td>Algorithms</td><td>Prevents confusion about negotiated cryptographic choices.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="authentication-warning">
+        <h2>ECDH still needs authentication</h2>
+        <p>
+          ECDH protects against passive eavesdroppers when implemented correctly, but unauthenticated ECDH can still be attacked by an active man-in-the-middle.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Situation</th><th>Problem</th><th>Needed defense</th></tr></thead>
+          <tbody>
+            <tr><td>Alice accepts any public point as Bob’s.</td><td>Attacker can substitute their own point.</td><td>Authenticate Bob’s public key or transcript.</td></tr>
+            <tr><td>Bob accepts any public point as Alice’s.</td><td>Attacker can create separate secrets with both sides.</td><td>Use signatures, certificates, fingerprints, or pre-shared trust.</td></tr>
+            <tr><td>Protocol omits transcript binding.</td><td>Keys may not be bound to the exact exchange.</td><td>Use a KDF with transcript/context.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Core warning</div>
+          <p>
+            ECDH creates a shared secret. Authentication tells you who shared it with you.</p>
+        </div>
+      </section>
+
+      <section id="ephemeral-vs-static">
+        <h2>Static and ephemeral ECDH</h2>
+        <p>
+          ECDH can use long-term key pairs, fresh one-time key pairs, or a mixture of both.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Type</th><th>Meaning</th><th>Security intuition</th></tr></thead>
+          <tbody>
+            <tr><td>Static ECDH</td><td>Long-term ECDH key pair is reused.</td><td>Can authenticate identity but gives weaker forward secrecy.</td></tr>
+            <tr><td>Ephemeral ECDH</td><td>Fresh ECDH key pair is generated for a session.</td><td>Supports forward secrecy when combined with authentication.</td></tr>
+            <tr><td>Authenticated ephemeral ECDH</td><td>Fresh ECDH shares are authenticated.</td><td>Common modern secure-channel pattern.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: forward secrecy</div>
+          <p>
+            Forward secrecy means that compromise of a long-term key later does not automatically reveal past session keys.</p>
+        </div>
+      </section>
+
+      <section id="digital-signature-big-picture">
+        <h2>Elliptic-curve digital signatures big picture</h2>
+        <p>
+          Elliptic-curve signatures let a private-key holder produce a signature on a message. Anyone with the public key can verify that signature.</p>
+
+        <table class="ecc-table">
+          <thead><tr><th>Role</th><th>Uses</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Signer</td><td>Private scalar \(d\)</td><td>Create a signature for a message.</td></tr>
+            <tr><td>Verifier</td><td>Public key point \(Q=dG\)</td><td>Check that the signature is valid.</td></tr>
+            <tr><td>Attacker</td><td>Public key and signatures</td><td>Should not be able to forge new valid signatures.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="ECC signature flow">
+          <div class="diagram-title">ECC signature flow</div>
+          <div class="flow-row">
+            <div class="flow-node private-node">private key<br>\(d\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node shared-node">message<br>\(M\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">sign</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node signature-node">signature</div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-node public-node">public key<br>\(Q=dG\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node shared-node">message<br>\(M\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node signature-node">signature</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">verify</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">valid / invalid</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="ecdsa-shape">
+        <h2>ECDSA shape, without drowning in formulas</h2>
+        <p>
+          The Elliptic Curve Digital Signature Algorithm uses a private key, a message hash, and a fresh per-signature nonce. It outputs a pair of numbers, often written:</p>
+
+        <div class="math-display">
+          \[
+            signature=(r,s)
+          \]
+        </div>
+
+        <p>
+          At a high level:</p>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Hash the message.</td></tr>
+            <tr><td>2</td><td>Use private key \(d\) and a fresh nonce \(k\).</td></tr>
+            <tr><td>3</td><td>Compute signature values \((r,s)\).</td></tr>
+            <tr><td>4</td><td>Verifier uses public key \(Q\), message hash, and \((r,s)\) to check validity.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Why no full ECDSA formula yet?</div>
+          <p>
+            The full ECDSA equations are important, but this tutorial’s goal is conceptual alignment. We first need the roles clear: private key signs, public key verifies, and nonce handling is critical.</p>
+        </div>
+      </section>
+
+      <section id="nonce-danger">
+        <h2>The signing nonce danger</h2>
+        <p>
+          Some elliptic-curve signature schemes, especially ECDSA, require a fresh secret nonce for each signature. Reusing or leaking that nonce can reveal the private key.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Nonce problem</th><th>Consequence</th></tr></thead>
+          <tbody>
+            <tr><td>Same nonce reused for two messages</td><td>Private key may be recoverable.</td></tr>
+            <tr><td>Nonce partially predictable</td><td>Private key may become vulnerable.</td></tr>
+            <tr><td>Weak random generator</td><td>Signatures may leak secrets.</td></tr>
+            <tr><td>Deterministic nonce generated incorrectly</td><td>Private key may be exposed.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">The bright red lever</div>
+          <p>
+            In ECDSA, nonce failure can become private-key failure. This is one of the most important practical lessons in elliptic-curve signatures.</p>
+        </div>
+      </section>
+
+      <section id="eddsa-preview">
+        <h2>EdDSA preview</h2>
+        <p>
+          EdDSA is a modern elliptic-curve signature family designed to avoid several historical foot-guns. It commonly uses deterministic nonce generation derived from the private key material and the message, rather than relying directly on fresh random nonce generation for every signature.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Signature family</th><th>Nonce handling intuition</th><th>Common examples</th></tr></thead>
+          <tbody>
+            <tr><td>ECDSA</td><td>Needs a unique secret nonce per signature; failures are dangerous.</td><td>ECDSA over P-256 and similar curves.</td></tr>
+            <tr><td>EdDSA</td><td>Often deterministic nonce generation, reducing random-number failure risk.</td><td>Ed25519, Ed448.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Still use libraries</div>
+          <p>
+            EdDSA is friendlier in several ways, but signature implementation remains delicate. Use vetted libraries and protocols.</p>
+        </div>
+      </section>
+
+      <section id="ecdh-vs-signatures">
+        <h2>ECDH versus elliptic-curve signatures</h2>
+        <table class="compare-table">
+          <thead><tr><th>Job</th><th>Uses private scalar to...</th><th>Public key used to...</th><th>Main result</th></tr></thead>
+          <tbody>
+            <tr><td>ECDH</td><td>Combine with peer public point.</td><td>Let peer compute matching shared point.</td><td>Shared secret material.</td></tr>
+            <tr><td>Signature</td><td>Produce proof for a message.</td><td>Verify the proof.</td><td>Authenticity and integrity.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            ECDH says, “Let us build a shared secret.” Signatures say, “I can prove this came from the private key holder.”</p>
+        </div>
+      </section>
+
+      <section id="protocol-combination">
+        <h2>How protocols combine them</h2>
+        <p>
+          Modern secure channels often combine ephemeral ECDH with digital signatures or certificates.</p>
+
+        <pre><code>1. Alice and Bob exchange ephemeral ECDH public points.
+2. They authenticate the exchange using signatures, certificates, or existing trust.
+3. Both compute the ECDH shared point.
+4. A KDF derives traffic keys from the shared material and transcript.
+5. Symmetric AEAD protects the data.</code></pre>
+
+        <table class="lesson-table">
+          <thead><tr><th>Component</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Ephemeral ECDH</td><td>Creates fresh shared secret material.</td></tr>
+            <tr><td>Signature/certificate</td><td>Authenticates who is participating.</td></tr>
+            <tr><td>KDF</td><td>Turns shared material into context-bound keys.</td></tr>
+            <tr><td>AEAD</td><td>Encrypts and authenticates application data.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking ECDH alone proves identity</div>
+          <p>
+            ECDH creates a shared secret. Authentication is separate.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: using raw shared point directly as an encryption key</div>
+          <p>
+            Feed encoded shared material into a KDF with transcript and context.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: treating signature nonces casually</div>
+          <p>
+            In ECDSA, repeated or predictable nonces can expose the private key.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: mixing key purposes</div>
+          <p>
+            Key-exchange keys and signing keys should be used according to protocol rules and key-usage expectations.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            In ECDH, Alice has private scalar \(a\). What is Alice’s public point?
+            <details class="solution"><summary>Show solution</summary><p>\(A=aG\).</p></details>
+          </li>
+          <li>
+            In ECDH, Bob has private scalar \(b\). What is Bob’s public point?
+            <details class="solution"><summary>Show solution</summary><p>\(B=bG\).</p></details>
+          </li>
+          <li>
+            Why do Alice and Bob compute the same shared point?
+            <details class="solution"><summary>Show solution</summary><p>Alice computes \(aB=a(bG)=abG\), and Bob computes \(bA=b(aG)=abG\).</p></details>
+          </li>
+          <li>
+            What should happen to the ECDH shared point before it becomes encryption keys?
+            <details class="solution"><summary>Show solution</summary><p>It should be encoded and fed into a KDF with transcript and context.</p></details>
+          </li>
+          <li>
+            What does a digital signature prove, at a high level?
+            <details class="solution"><summary>Show solution</summary><p>That someone with the private key produced a valid signature for the message, assuming the scheme and key are trusted.</p></details>
+          </li>
+          <li>
+            Why are ECDSA nonces dangerous if reused?
+            <details class="solution"><summary>Show solution</summary><p>Nonce reuse can reveal enough algebraic information to recover the private key.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          ECDH and elliptic-curve signatures are among the most important modern uses of public-key cryptography. ECDH creates shared secret material efficiently. Signatures authenticate messages and protocol transcripts. Real systems combine them with KDFs, certificates, transcript binding, and symmetric authenticated encryption.</p>
+        <ul>
+          <li>ECDH public points have the form \(A=aG\) and \(B=bG\).</li>
+          <li>Alice computes \(aB=abG\).</li>
+          <li>Bob computes \(bA=abG\).</li>
+          <li>The raw shared point must feed a KDF.</li>
+          <li>ECDH alone does not prove identity.</li>
+          <li>Digital signatures use private keys to sign and public keys to verify.</li>
+          <li>ECDSA signatures are often written as \((r,s)\).</li>
+          <li>ECDSA nonce reuse can expose the private key.</li>
+          <li>EdDSA reduces some nonce-generation risks through deterministic design choices.</li>
+          <li>Modern secure channels often use ephemeral ECDH plus signatures/certificates plus AEAD.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>ECDH stands for Elliptic Curve Diffie-Hellman.</li>
+            <li>Alice’s private scalar is \(a\), and her public point is \(A=aG\).</li>
+            <li>Bob’s private scalar is \(b\), and his public point is \(B=bG\).</li>
+            <li>Alice computes \(S_A=aB=a(bG)=abG\).</li>
+            <li>Bob computes \(S_B=bA=b(aG)=abG\).</li>
+            <li>The shared point should be encoded and fed into a KDF.</li>
+            <li>The KDF should include transcript/context information.</li>
+            <li>ECDH still needs authentication.</li>
+            <li>Ephemeral ECDH supports forward secrecy when authenticated properly.</li>
+            <li>Digital signatures use a private key to sign.</li>
+            <li>Verification uses the public key.</li>
+            <li>ECDSA signatures are commonly represented as \((r,s)\).</li>
+            <li>ECDSA nonce reuse or predictability can reveal the private key.</li>
+            <li>EdDSA is a modern ECC signature family, including Ed25519 and Ed448.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              A=aG
+            \]
+            \[
+              B=bG
+            \]
+            \[
+              S_A=aB=a(bG)=abG
+            \]
+            \[
+              S_B=bA=b(aG)=abG
+            \]
+            \[
+              traffic\ keys=KDF(shared\ material, transcript, identities, algorithms)
+            \]
+            \[
+              signature=(r,s)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 61: Elliptic Curve Diffie-Hellman and Digital Signatures</strong>. After that, the next tutorial can move into <strong>Certificates, Public Key Infrastructure, and Trust Chains</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_61_elliptic_curve_diffie_hellman_and_digital_signatures_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_60_elliptic_curve_cryptography_points_addition_and_scalar_multiplication_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_62_certificates_public_key_infrastructure_and_trust_chains_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

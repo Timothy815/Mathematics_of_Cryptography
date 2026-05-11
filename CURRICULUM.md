@@ -1,6 +1,6 @@
 # Mathematics of Cryptography: Master Curriculum Guide
 
-This document is the definitive roadmap for the curriculum. It tracks the actual progression of the 55 modules currently implemented in the library.
+This document is the definitive roadmap for the curriculum. It tracks the actual progression of the 76 modules currently implemented in the library.
 
 ## Volume 1: Foundations, Finite Fields, and AES
 *Focused on reversible transformations, bit-level logic, and the architecture of the world's most trusted block cipher.*
@@ -83,7 +83,55 @@ This document is the definitive roadmap for the curriculum. It tracks the actual
 
 ---
 
-## Future Volumes (Planned)
-*   **Volume 3:** Number Theory & Public-Key Cryptography (RSA, Diffie-Hellman)
-*   **Volume 4:** Elliptic Curve Cryptography (ECDSA, EdDSA)
-*   **Volume 5:** Post-Quantum Foundations (Lattices, LWE)
+## Volume 3: Public-Key Cryptography & PKI
+*Focused on number theory, asymmetric mathematics, and the trust architecture of the internet.*
+
+### IX. Asymmetric Foundations (RSA & DH)
+56. **Module 56:** One-Way Functions, Trapdoors, and Key Exchange
+57. **Module 57:** Diffie-Hellman Mathematics: Modular Exponentiation
+58. **Module 58:** RSA Mathematics: Primes, Totients, and Inverses
+59. **Module 59:** RSA Worked Examples: Encryption & Signatures
+
+### X. Elliptic Curve Cryptography
+60. **Module 60:** ECC Points, Addition, and Scalar Multiplication
+61. **Module 61:** Elliptic Curve Diffie-Hellman (ECDH) & Signatures
+
+### XI. Public Key Infrastructure (PKI)
+62. **Module 62:** Certificates, PKI, and Trust Chains
+
+---
+
+## Volume 4: Protocols & Real-World Engineering
+*Focused on how primitives are composed into secure communication systems.*
+
+### XII. Protocol Architecture
+63. **Module 63:** TLS Handshake Mathematics
+64. **Module 64:** Hash-Based Authentication & HKDF
+65. **Module 65:** Randomness: Nonces, Salts, and IVs
+66. **Module 66:** AEAD Composition: GCM, ChaCha20-Poly1305
+
+---
+
+## Volume 5: Foundations of Security Analysis
+*Focused on formal goals, attack models, and the limits of modern cryptography.*
+
+### XIII. Security Models & Proofs
+67. **Module 67:** Formal Security Goals (IND-CPA, IND-CCA)
+68. **Module 68:** Attack Models & Reduction Sketches
+69. **Module 69:** Complexity, Parameters, and Bits of Security
+
+### XIV. Implementation & Physical Security
+70. **Module 70:** Side Channels: Timing Leaks & Constant-Time
+71. **Module 71:** Fault Attacks: Glitching & Verification
+
+### XV. Protocol Composition
+72. **Module 72:** Secure Primitives, Insecure Systems
+73. **Module 73:** Case Studies: TLS, Signal, SSH, Wireguard
+
+---
+
+## Volume 6: Post-Quantum Foundations
+*Focused on the mathematical frontier of quantum-resistant structures.*
+
+### XVI. Lattice-Based Cryptography
+76. **Module 76:** Lattice Intuition: Vectors, Grids, and Noise

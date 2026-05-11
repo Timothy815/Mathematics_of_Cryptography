@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Side Channels, Timing Leaks, and Constant-Time Thinking | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 70</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Side Channels, Timing Leaks, and Constant-Time Thinking</h1>
+      <p class="subtitle">
+        When secure mathematics leaks through insecure behavior: timing attacks, cache attacks, power analysis, error oracles, branch leaks, lookup-table leaks, constant-time coding, blinding, masking, and fail-closed implementation habits.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 69 explained security levels and work factors. But real systems can fail without anyone brute-forcing the key or breaking the math. Side-channel attacks exploit information leaked by the implementation: time, power, cache behavior, branching, memory access, error messages, or physical signals.</p>
+        </div>
+
+        <p class="lead">
+          A cipher can be mathematically silent and physically chatty. Side channels are the squeaky floorboards of cryptography: the secret may stay locked in the room, but the footsteps reveal where it went.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know symmetric encryption, public-key operations, MACs, AEAD tag verification, security games, and implementation basics such as conditionals, loops, arrays, and memory access. The key shift here is from abstract algorithms to physical and software behavior.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols and terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Side channel</td><td>A leak outside the intended output.</td><td>Information revealed by implementation behavior rather than algorithmic output.</td></tr>
+            <tr><td>Timing leak</td><td>Time tells secrets.</td><td>Secret-dependent execution time reveals information.</td></tr>
+            <tr><td>Cache leak</td><td>Memory path tells secrets.</td><td>Secret-dependent cache behavior reveals information.</td></tr>
+            <tr><td>Power analysis</td><td>Electric use tells secrets.</td><td>Power consumption patterns reveal information about secret data.</td></tr>
+            <tr><td>Error oracle</td><td>Error messages answer hidden questions.</td><td>Different failure behaviors reveal cryptographic state or validity.</td></tr>
+            <tr><td>Constant-time</td><td>No secret-shaped timing.</td><td>Implementation avoids secret-dependent timing, branches, and memory access where required.</td></tr>
+            <tr><td>Branch</td><td>An if/else decision.</td><td>A control-flow path that may leak if chosen based on secret data.</td></tr>
+            <tr><td>Lookup table</td><td>Array-based shortcut.</td><td>Precomputed table that may leak through cache if indexed by secrets.</td></tr>
+            <tr><td>Blinding</td><td>Hide the secret behind randomization.</td><td>Randomizing an operation so side-channel observations do not directly reveal the secret.</td></tr>
+            <tr><td>Masking</td><td>Split secrets into shares.</td><td>Representing sensitive values in randomized parts to reduce leakage.</td></tr>
+            <tr><td>Fail closed</td><td>Reject safely.</td><td>On failure, reveal as little as possible and do not continue unsafe processing.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="what-side-channels-are">
+        <h2>What side channels are</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: side channel</div>
+          <p>
+            A side channel is information leaked through implementation behavior rather than through the intended mathematical output of the algorithm.</p>
+        </div>
+
+        <p>
+          A formal proof might model an attacker as seeing ciphertexts, tags, signatures, or oracle responses. A side-channel attacker may see how long a computation takes, which memory locations are touched, how much power is consumed, or what error message appears.</p>
+
+        <div class="diagram" role="img" aria-label="Side channel flow">
+          <div class="diagram-title">The intended channel and the side channel</div>
+          <div class="flow-row">
+            <div class="flow-node secret-node">secret key</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">cryptographic operation</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node context-node">intended output<br>ciphertext/tag/signature</div>
+          </div>
+          <div class="flow-row">
+            <div class="machine-node">same operation</div>
+            <div class="flow-arrow">leaks</div>
+            <div class="flow-node leak-node">time, cache, power,<br>errors, branches</div>
+            <div class="flow-arrow">observed by</div>
+            <div class="flow-node observer-node">attacker</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="side-channel-types">
+        <h2>Common side-channel types</h2>
+        <table class="side-table">
+          <thead><tr><th>Side channel</th><th>What leaks?</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Timing</td><td>How long an operation takes.</td><td>Password comparison exits early when first mismatch is found.</td></tr>
+            <tr><td>Cache</td><td>Which memory locations were touched.</td><td>Secret-indexed lookup table leaves cache traces.</td></tr>
+            <tr><td>Power</td><td>Power consumption patterns.</td><td>Smart card power use varies with key-dependent operations.</td></tr>
+            <tr><td>Electromagnetic</td><td>EM emissions.</td><td>Hardware emits patterns correlated with computation.</td></tr>
+            <tr><td>Error behavior</td><td>Different failure responses.</td><td>Padding error versus MAC error reveals validity clues.</td></tr>
+            <tr><td>Memory access</td><td>Which addresses are read or written.</td><td>Branching or table selection depends on a secret bit.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="timing-leaks">
+        <h2>Timing leaks</h2>
+        <p>
+          Timing leaks happen when secret data changes how long a computation takes. Even tiny differences can matter if an attacker can measure many trials and average out noise.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Classic example: early-exit comparison</div>
+          <p>
+            If a tag comparison stops as soon as it finds the first different byte, then a correct first byte may take slightly longer than an incorrect first byte. Repeated measurements can leak how many prefix bytes are correct.</p>
+        </div>
+
+        <pre><code>// Unsafe idea: stops early
+for i from 0 to length-1:
+    if supplied_tag[i] != real_tag[i]:
+        return false
+return true</code></pre>
+
+        <p>
+          The attacker does not need the program to print the secret. The clock becomes the confession booth.</p>
+      </section>
+
+      <section id="constant-time-comparison">
+        <h2>Constant-time comparison</h2>
+        <p>
+          A constant-time comparison checks all bytes and accumulates differences, rather than exiting early. The goal is to make runtime independent of how much of the secret value was guessed correctly.</p>
+
+        <pre><code>// Safer shape: checks every byte
+result = 0
+for i from 0 to length-1:
+    result = result OR (supplied_tag[i] XOR real_tag[i])
+return result == 0</code></pre>
+
+        <div class="math-display">
+          \[
+            result = \bigvee_i (a_i \oplus b_i)
+          \]
+        </div>
+
+        <p>
+          If any byte differs, the accumulated result becomes nonzero. But the loop still processes every byte.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Important caution</div>
+          <p>
+            Constant-time coding is subtle. Compilers, libraries, CPUs, and language runtimes may introduce behavior that defeats a naive attempt. Use vetted cryptographic library functions when possible.</p>
+        </div>
+      </section>
+
+      <section id="branches-and-memory">
+        <h2>Secret-dependent branches and memory access</h2>
+        <p>
+          Constant-time thinking is not only about total runtime. Branches and memory accesses can also reveal secrets.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Secret-dependent behavior</th><th>Leak risk</th></tr></thead>
+          <tbody>
+            <tr><td><code>if secret_bit == 1</code></td><td>Different control-flow path may be measurable.</td></tr>
+            <tr><td><code>table[secret_index]</code></td><td>Cache may reveal which table entry was used.</td></tr>
+            <tr><td>Loop count depends on secret</td><td>Runtime reveals information about secret size or value.</td></tr>
+            <tr><td>Error message depends on secret validity</td><td>Attacker learns which check failed.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Constant-time means the secret should not choose the path, the number of steps, or the footprints in memory.</p>
+        </div>
+      </section>
+
+      <section id="lookup-tables">
+        <h2>Lookup tables and cache leaks</h2>
+        <p>
+          Lookup tables can make cryptography fast, but secret-indexed tables can leak through cache behavior. The attacker may not see the index directly, but may infer which cache lines were loaded.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Pattern</th><th>Risk</th><th>Safer direction</th></tr></thead>
+          <tbody>
+            <tr><td>Secret-indexed table lookup</td><td>Cache reveals access pattern.</td><td>Avoid or use constant-time table techniques.</td></tr>
+            <tr><td>Public-indexed lookup</td><td>Usually less sensitive.</td><td>Still review in context.</td></tr>
+            <tr><td>Hardware-supported constant-time primitive</td><td>Often safer.</td><td>Use vetted platform support when available.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="error-oracles">
+        <h2>Error oracles</h2>
+        <p>
+          Error behavior can become a side channel. If a system reports different errors for different cryptographic failures, an attacker may use those distinctions as clues.</p>
+
+        <table class="side-table">
+          <thead><tr><th>Bad behavior</th><th>Possible leak</th><th>Safer behavior</th></tr></thead>
+          <tbody>
+            <tr><td>“Padding invalid” versus “MAC invalid”</td><td>Attacker learns which check passed.</td><td>Return one generic failure.</td></tr>
+            <tr><td>Different response times for different failures</td><td>Timing oracle.</td><td>Uniform failure path where practical.</td></tr>
+            <tr><td>Processing plaintext before verifying tag</td><td>Malformed data may trigger revealing behavior.</td><td>Authenticate before parsing/releasing plaintext.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Fail closed</div>
+          <p>
+            Cryptographic failure should produce a boring, generic rejection. No partial plaintext, no detailed diagnostic to the attacker, no parade of helpful clues.</p>
+        </div>
+      </section>
+
+      <section id="power-and-em">
+        <h2>Power and electromagnetic side channels</h2>
+        <p>
+          Physical devices may leak information through power use or electromagnetic emissions. These attacks are especially relevant for smart cards, embedded devices, hardware security modules, and devices in hostile physical environments.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Attack style</th><th>Idea</th><th>Defense direction</th></tr></thead>
+          <tbody>
+            <tr><td>Simple power analysis</td><td>Look for visible patterns in power traces.</td><td>Regularize operations; avoid secret-dependent behavior.</td></tr>
+            <tr><td>Differential power analysis</td><td>Use statistics across many traces.</td><td>Masking, hiding, noise, hardware countermeasures.</td></tr>
+            <tr><td>Electromagnetic analysis</td><td>Observe emitted signals.</td><td>Shielding, layout design, masking, specialized hardware.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="blinding-and-masking">
+        <h2>Blinding and masking</h2>
+        <p>
+          Blinding and masking are families of countermeasures that make observed behavior less directly related to the secret.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Technique</th><th>Idea</th><th>Where it appears</th></tr></thead>
+          <tbody>
+            <tr><td>Blinding</td><td>Randomize the operation so traces are not directly tied to the secret.</td><td>RSA, ECC, signature operations.</td></tr>
+            <tr><td>Masking</td><td>Split secret values into randomized shares.</td><td>Hardware and embedded cryptography.</td></tr>
+            <tr><td>Hiding</td><td>Reduce signal clarity using noise or balanced operations.</td><td>Physical side-channel defenses.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Countermeasures compose carefully</div>
+          <p>
+            Side-channel defenses are delicate. A defense that works in one environment may fail in another because compilers, hardware, measurement capability, and protocol flow all matter.</p>
+        </div>
+      </section>
+
+      <section id="constant-time-thinking">
+        <h2>Constant-time thinking checklist</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Question</th><th>Safe instinct</th></tr></thead>
+          <tbody>
+            <tr><td>Does a branch depend on a secret?</td><td>Avoid it or use a constant-time alternative.</td></tr>
+            <tr><td>Does a table index depend on a secret?</td><td>Assume cache risk until proven otherwise.</td></tr>
+            <tr><td>Does a loop count depend on a secret?</td><td>Use fixed bounds where required.</td></tr>
+            <tr><td>Does failure reveal which check failed?</td><td>Use generic failure behavior.</td></tr>
+            <tr><td>Does code release plaintext before verification?</td><td>Reject before release.</td></tr>
+            <tr><td>Is this hand-rolled crypto code?</td><td>Prefer vetted libraries.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="where-formal-proofs-meet-implementation">
+        <h2>Where formal proofs meet implementation</h2>
+        <p>
+          A formal proof often assumes that the attacker sees only certain inputs and outputs. Side channels expand the attacker’s view. That means the proof may still be mathematically correct but irrelevant to the leaking implementation.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Formal model assumes...</th><th>Implementation may reveal...</th></tr></thead>
+          <tbody>
+            <tr><td>Only ciphertext and tags.</td><td>Timing differences.</td></tr>
+            <tr><td>Generic failure.</td><td>Detailed error messages.</td></tr>
+            <tr><td>Black-box computation.</td><td>Cache and memory access patterns.</td></tr>
+            <tr><td>Secret remains inside abstraction.</td><td>Power traces correlated with secret bits.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: assuming correct math means safe implementation</div>
+          <p>
+            Side channels can break systems without breaking the algorithm.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: early-exit secret comparisons</div>
+          <p>
+            Timing can reveal how much of a secret value was guessed correctly.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: secret-indexed lookup tables</div>
+          <p>
+            Cache behavior can reveal which table entries were used.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: detailed cryptographic error messages</div>
+          <p>
+            Error distinctions can become oracles.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: writing custom crypto primitives casually</div>
+          <p>
+            Constant-time implementation is difficult. Use vetted, maintained cryptographic libraries when possible.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is a side channel?
+            <details class="solution"><summary>Show solution</summary><p>A side channel is information leaked through implementation behavior rather than intended algorithmic output.</p></details>
+          </li>
+          <li>
+            Why is early-exit comparison dangerous for tags or MACs?
+            <details class="solution"><summary>Show solution</summary><p>It can leak how many leading bytes match through timing differences.</p></details>
+          </li>
+          <li>
+            What does constant-time mean in practical cryptographic coding?
+            <details class="solution"><summary>Show solution</summary><p>It means avoiding secret-dependent timing, branches, memory accesses, and other observable behavior where required.</p></details>
+          </li>
+          <li>
+            Why can lookup tables be risky?
+            <details class="solution"><summary>Show solution</summary><p>If indexed by secrets, cache behavior may reveal which entries were accessed.</p></details>
+          </li>
+          <li>
+            What is an error oracle?
+            <details class="solution"><summary>Show solution</summary><p>A system behavior where different error messages or failure timings reveal hidden cryptographic information.</p></details>
+          </li>
+          <li>
+            Name one defense against physical side-channel attacks.
+            <details class="solution"><summary>Show solution</summary><p>Examples include blinding, masking, hiding, shielding, regularized operations, and specialized hardware countermeasures.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Side-channel thinking is where cryptography becomes engineering. It is not enough for the formula to be secure if the code, device, or protocol behavior leaks the secret sideways. Constant-time thinking helps close the gap between formal security models and real-world attack surfaces.</p>
+        <ul>
+          <li>Side channels leak through behavior, not intended output.</li>
+          <li>Timing leaks can reveal secret-dependent computation paths.</li>
+          <li>Cache leaks can reveal secret-dependent memory access.</li>
+          <li>Error messages can become cryptographic oracles.</li>
+          <li>Power and electromagnetic traces can reveal physical computation patterns.</li>
+          <li>Constant-time code avoids secret-dependent timing and memory behavior.</li>
+          <li>Tag comparisons should not exit early based on secret-dependent matches.</li>
+          <li>Blinding and masking reduce direct correlation between observations and secrets.</li>
+          <li>Formal proofs may not cover implementation leakage.</li>
+          <li>Vetted libraries are safer than hand-rolled cryptographic code.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A side channel is an unintended information leak.</li>
+            <li>Side channels can leak through time, cache, memory, power, EM signals, or errors.</li>
+            <li>A timing leak occurs when secret data affects runtime.</li>
+            <li>Early-exit comparisons can leak matching prefixes.</li>
+            <li>Constant-time comparison checks all bytes.</li>
+            <li>Secret-dependent branches can leak control flow.</li>
+            <li>Secret-dependent table lookups can leak through cache behavior.</li>
+            <li>Error distinctions can become oracles.</li>
+            <li>AEAD decryption should reject before plaintext is released or parsed.</li>
+            <li>Power analysis and EM analysis matter in physical devices.</li>
+            <li>Blinding randomizes operations.</li>
+            <li>Masking splits secrets into randomized shares.</li>
+            <li>Formal proofs may not cover implementation leakage.</li>
+            <li>Prefer vetted cryptographic libraries.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core patterns</div>
+          <pre><code>Unsafe comparison:
+Stop at the first mismatch.
+Timing may reveal matching prefix length.
+
+Safer comparison shape:
+Check every byte.
+Accumulate differences.
+Return true only if the accumulated difference is zero.
+
+Constant-time instinct:
+Secret data should not control branches, loop counts, memory addresses, error distinctions, or release of plaintext.</code></pre>
+          <div class="math-display">
+            \[
+              result = \bigvee_i (a_i \oplus b_i)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 70: Side Channels, Timing Leaks, and Constant-Time Thinking</strong>. After that, the next tutorial can move into <strong>Fault Attacks, Glitching, and Defensive Verification</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_70_side_channels_timing_leaks_and_constant_time_thinking_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_69_complexity_security_parameters_and_bits_of_security_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_71_fault_attacks_glitching_and_defensive_verification_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

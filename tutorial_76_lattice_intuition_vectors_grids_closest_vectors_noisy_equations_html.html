@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lattice Intuition: Vectors, Grids, Closest Vectors, and Noisy Equations | Mathematics of Cryptography</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+    function updateLatticeDemo() {
+      const px = Number(document.getElementById('px').value);
+      const py = Number(document.getElementById('py').value);
+      document.getElementById('pxRead').textContent = px.toFixed(1);
+      document.getElementById('pyRead').textContent = py.toFixed(1);
+
+      const scale = 45;
+      const originX = 300;
+      const originY = 230;
+      const svgX = originX + px * scale;
+      const svgY = originY - py * scale;
+      const roundedX = Math.round(px);
+      const roundedY = Math.round(py);
+      const nearX = originX + roundedX * scale;
+      const nearY = originY - roundedY * scale;
+      const dx = px - roundedX;
+      const dy = py - roundedY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      document.getElementById('targetPoint').setAttribute('cx', svgX);
+      document.getElementById('targetPoint').setAttribute('cy', svgY);
+      document.getElementById('nearPoint').setAttribute('cx', nearX);
+      document.getElementById('nearPoint').setAttribute('cy', nearY);
+      document.getElementById('nearLine').setAttribute('x1', svgX);
+      document.getElementById('nearLine').setAttribute('y1', svgY);
+      document.getElementById('nearLine').setAttribute('x2', nearX);
+      document.getElementById('nearLine').setAttribute('y2', nearY);
+      document.getElementById('nearestReadout').textContent = '(' + roundedX + ', ' + roundedY + ')';
+      document.getElementById('distanceReadout').textContent = dist.toFixed(3);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('px')) {
+        document.getElementById('px').addEventListener('input', updateLatticeDemo);
+        document.getElementById('py').addEventListener('input', updateLatticeDemo);
+        updateLatticeDemo();
+      }
+    });
+  </script>
+</head>
+<body>
+<div class="page">
+<header class="page-header">
+<div class="course-label">Mathematics of Cryptography · Tutorial 76</div>
+      <div class="volume-label">Volume 6: Post-Quantum Foundations</div>
+
+<h1>Lattice Intuition: Vectors, Grids, Closest Vectors, and Noisy Equations</h1>
+<p class="subtitle">
+        A first geometric bridge into lattice-based cryptography: how vectors generate grids, why nearest lattice points can be easy in tiny examples but hard in high dimensions, and why adding a little noise can become a cryptographic shield.
+      </p>
+<nav aria-label="Tutorial navigation" class="nav no-print">
+<a class="nav-link" href="index.html">Roadmap</a>
+<a class="nav-link" href="75-quantum-threat-model-shor-grover-store-now-decrypt-later.html">Previous Tutorial</a>
+<a class="nav-link" href="76-lattice-intuition-vectors-grids-closest-vectors-noisy-equations-workbook.html">Workbook</a>
+<a class="nav-link" href="#practice">Practice</a>
+<a class="nav-link" href="#one-page-recap">One-page recap</a>
+<button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+</nav>
+</header>
+<main>
+
+<section id="why-this-tutorial-exists">
+<h2>Why this tutorial exists</h2>
+<div class="box purpose-box">
+<div class="box-title">Purpose</div>
+<p>
+            Tutorial 75 explained why quantum computers threaten RSA, Diffie-Hellman, and elliptic-curve cryptography. Now we begin looking at one of the major replacement families: lattice-based cryptography.
+          </p>
+</div>
+<p class="lead">
+          Lattice cryptography begins with a simple picture: points arranged in a repeating grid. The trap is that this friendly picture grows teeth in high dimensions. What looks like a sheet of graph paper in two dimensions becomes a vast crystal labyrinth when there are hundreds or thousands of dimensions.
+        </p>
+</section>
+<section id="what-you-should-know-first">
+<h2>What you should know first</h2>
+<p>
+          You should be comfortable with vectors, modular arithmetic, matrices at a beginner level, distance, dot products, and the post-quantum threat model from Tutorial 75. You do not need advanced linear algebra yet. We will build the mental machinery one gear at a time.
+        </p>
+</section>
+<section id="terms-used">
+<h2>Terms used in this tutorial</h2>
+<table>
+<thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+<tbody>
+<tr><td>Vector</td><td>An arrow or movement instruction.</td><td>An ordered list of numbers, such as <span class="math-fallback inline">(3,2)</span>.</td></tr>
+<tr><td>Basis vector</td><td>A reusable movement arrow.</td><td>A vector used as a generator for a vector space or lattice.</td></tr>
+<tr><td>Linear combination</td><td>A recipe made from scaled basis vectors.</td><td>An expression such as <span class="math-fallback inline">a<strong>b</strong><sub>1</sub>+b<strong>b</strong><sub>2</sub></span>.</td></tr>
+<tr><td>Integer combination</td><td>A recipe using whole-number amounts.</td><td>A linear combination where the coefficients are integers.</td></tr>
+<tr><td>Lattice</td><td>A repeating grid of reachable points.</td><td>The set of all integer combinations of basis vectors.</td></tr>
+<tr><td>Dimension</td><td>How many independent directions are involved.</td><td>The number of coordinates needed to describe the space.</td></tr>
+<tr><td>Closest Vector Problem, or CVP</td><td>Find the grid point nearest to a target point.</td><td>Given a lattice and target vector, find the lattice vector closest to the target.</td></tr>
+<tr><td>Shortest Vector Problem, or SVP</td><td>Find the shortest nonzero grid arrow.</td><td>Given a lattice basis, find a shortest nonzero lattice vector.</td></tr>
+<tr><td>Noise</td><td>A small intentional error.</td><td>A perturbation added to hide an exact algebraic relationship.</td></tr>
+<tr><td>Learning With Errors, or LWE</td><td>Learn a hidden rule from noisy clues.</td><td>A hardness assumption based on solving noisy linear equations.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="vectors-to-lattices">
+<h2>From vectors to a lattice</h2>
+<p>
+          A lattice is made by taking basis vectors and adding whole-number multiples of them. In two dimensions, suppose our basis vectors are:
+        </p>
+<div class="math-display">
+<div class="math-fallback display"><strong>b</strong><sub>1</sub>=(2,0),     <strong>b</strong><sub>2</sub>=(1,3)</div>
+</div>
+<p>
+          Every lattice point has the form:
+        </p>
+<div class="math-display">
+<div class="math-fallback display">m<strong>b</strong><sub>1</sub>+n<strong>b</strong><sub>2</sub>    where    m,n∈ℤ</div>
+</div>
+<p>
+          For example, choosing <span class="math-fallback inline">m=2</span> and <span class="math-fallback inline">n=1</span>:
+        </p>
+<div class="math-display">
+<div class="math-fallback display">2(2,0)+1(1,3)=(4,0)+(1,3)=(5,3)</div>
+</div>
+<div class="box intuition-box">
+<div class="box-title">Memory hook</div>
+<p>
+            A lattice basis is like a pair of legal chess moves. You may repeat them forward or backward, but only whole numbers of times. The lattice is every square you can land on by obeying those movement rules.
+          </p>
+</div>
+</section>
+<section id="basis-matters">
+<h2>The basis is not the lattice</h2>
+<p>
+          The same lattice can often be described by different bases. This is one of the first places where lattice cryptography becomes subtle. A basis can be neat and revealing, or awkward and concealing.
+        </p>
+<table class="center-table">
+<thead><tr><th>Basis type</th><th>What it feels like</th><th>Cryptographic intuition</th></tr></thead>
+<tbody>
+<tr><td>Good basis</td><td>Short, nearly perpendicular arrows.</td><td>Easy to navigate the lattice.</td></tr>
+<tr><td>Bad basis</td><td>Long, slanted, tangled arrows.</td><td>Hard to recognize nearby lattice points.</td></tr>
+</tbody>
+</table>
+<div class="box technical-box">
+<div class="box-title">Important idea</div>
+<p>
+            Lattice problems are often not hard because the lattice is mysterious. They are hard because the lattice is given through an inconvenient basis. It is the difference between receiving a clean street map and receiving a pile of twisted road names written during a thunderstorm.
+          </p>
+</div>
+</section>
+<section id="closest-vector">
+<h2>The Closest Vector Problem</h2>
+<p>
+          The Closest Vector Problem asks: given a target point that may not be on the lattice, which lattice point is nearest?
+        </p>
+<div class="math-display">
+<div class="math-fallback display">Given target  <strong>t</strong>,  find lattice vector  <strong>v</strong> ∈ L  minimizing  |<strong>t</strong>-<strong>v</strong>|.</div>
+</div>
+<p>
+          In a tiny two-dimensional grid, this may look easy. But in hundreds or thousands of dimensions, the number of possible nearby candidates can explode.
+        </p>
+<div aria-label="Interactive closest lattice point demonstration" class="lattice-widget no-print">
+<div class="diagram-title">Interactive mini-demo: nearest point on the standard integer lattice</div>
+<svg aria-label="Lattice points with target point and nearest point" role="img" viewbox="0 0 600 460">
+<defs>
+<pattern height="45" id="smallGrid" patternunits="userSpaceOnUse" width="45">
+<path d="M 45 0 L 0 0 0 45" fill="none" stroke="#e1e6ef" stroke-width="1"></path>
+</pattern>
+</defs>
+<rect fill="url(#smallGrid)" height="400" stroke="#cfd7e6" width="540" x="30" y="20"></rect>
+<line stroke="#94a3b8" stroke-width="2" x1="30" x2="570" y1="230" y2="230"></line>
+<line stroke="#94a3b8" stroke-width="2" x1="300" x2="300" y1="20" y2="420"></line>
+<g id="points">
+<script type="application/ecmascript"><![CDATA[
+              ]]></script>
+</g>
+<line id="nearLine" stroke="#d35f5f" stroke-dasharray="8 6" stroke-width="4" x1="0" x2="0" y1="0" y2="0"></line>
+<circle cx="300" cy="230" fill="#334e7d" id="nearPoint" r="9"></circle>
+<circle cx="300" cy="230" fill="#d35f5f" id="targetPoint" r="10" stroke="#7b2424" stroke-width="2"></circle>
+<text fill="#334e7d" font-size="15" x="40" y="445">Blue = nearest lattice point. Red = target point. Dashed line = distance.</text>
+<script type="application/ecmascript"><![CDATA[
+              const svg = document.currentScript.ownerSVGElement;
+              const originX = 300, originY = 230, scale = 45;
+              for (let i=-5; i<=5; i++) {
+                for (let j=-4; j<=4; j++) {
+                  const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+                  c.setAttribute('cx', originX + i*scale);
+                  c.setAttribute('cy', originY - j*scale);
+                  c.setAttribute('r', '4');
+                  c.setAttribute('fill', '#5d6f91');
+                  svg.insertBefore(c, document.getElementById('nearLine'));
+                }
+              }
+            ]]></script>
+</svg>
+<div class="controls">
+<div class="control-card">
+<label for="px">Target x-coordinate: <span id="pxRead">1.4</span></label>
+<input id="px" max="4" min="-4" step="0.1" type="range" value="1.4"/>
+</div>
+<div class="control-card">
+<label for="py">Target y-coordinate: <span id="pyRead">1.7</span></label>
+<input id="py" max="3" min="-3" step="0.1" type="range" value="1.7"/>
+</div>
+</div>
+<div class="readout">
+            nearest lattice point = <span id="nearestReadout">(1, 2)</span>; distance ≈ <span id="distanceReadout">0.500</span>
+</div>
+</div>
+</section>
+<section id="shortest-vector">
+<h2>The Shortest Vector Problem</h2>
+<p>
+          The Shortest Vector Problem asks for the shortest nonzero vector in a lattice. We ignore the zero vector because <span class="math-fallback inline">(0,0,ldots,0)</span> is always shortest but useless.
+        </p>
+<div class="math-display">
+<div class="math-fallback display">Find nonzero  <strong>v</strong>∈ L  minimizing  |<strong>v</strong>|.</div>
+</div>
+<p>
+          This problem matters because short vectors often reveal hidden structure. In lattice-based cryptography, attackers frequently try to turn secret recovery into a “find a short vector” problem.
+        </p>
+</section>
+<section id="distance">
+<h2>Distance: the ruler underneath the story</h2>
+<p>
+          The ordinary Euclidean distance between two points is found by subtracting coordinates, squaring, adding, and taking the square root.
+        </p>
+<div class="math-display">
+<div class="math-fallback display">d((x<sub>1</sub>,y<sub>1</sub>),(x<sub>2</sub>,y<sub>2</sub>))=sqrt{(x<sub>2</sub>-x<sub>1</sub>)<sup>2+</sup>(y<sub>2</sub>-y<sub>1</sub>)<sup>2</sup>}</div>
+</div>
+<p>
+          Example: the distance between <span class="math-fallback inline">(1.4,1.7)</span> and <span class="math-fallback inline">(1,2)</span> is:
+        </p>
+<div class="math-display">
+<div class="math-fallback display">sqrt{(1.4-1)<sup>2+</sup>(1.7-2)<sup>2</sup>}=sqrt{0.4<sup>2+</sup>(-0.3)<sup>2</sup>}=sqrt{0.25}=0.5</div>
+</div>
+</section>
+<section id="why-high-dimensions-change-everything">
+<h2>Why high dimensions change everything</h2>
+<p>
+          In two dimensions, you can draw the lattice. In three dimensions, you can still imagine it. In 500 dimensions, intuition starts wearing snowshoes. There are too many directions, too many combinations, and too many almost-near choices.
+        </p>
+<table class="center-table">
+<thead><tr><th>Dimension</th><th>Human intuition</th><th>Cryptographic meaning</th></tr></thead>
+<tbody>
+<tr><td>2</td><td>Graph paper.</td><td>Good for learning.</td></tr>
+<tr><td>3</td><td>Crystal grid.</td><td>Still visualizable.</td></tr>
+<tr><td>100+</td><td>Not drawable.</td><td>Search becomes combinatorially brutal.</td></tr>
+<tr><td>500+</td><td>Pure algebraic navigation.</td><td>Useful territory for lattice cryptography.</td></tr>
+</tbody>
+</table>
+</section>
+<section id="noise">
+<h2>Noisy equations: hiding the exact path</h2>
+<p>
+          Many lattice-based cryptosystems are connected to noisy linear equations. A clean equation is easy to solve:
+        </p>
+<div class="math-display">
+<div class="math-fallback display">a· s=b</div>
+</div>
+<p>
+          But a noisy equation looks like this:
+        </p>
+<div class="math-display">
+<div class="math-fallback display">a· s+e=b (mod q)</div>
+</div>
+<p>
+          Here, <span class="math-fallback inline">s</span> is the secret, <span class="math-fallback inline">a</span> is public, <span class="math-fallback inline">e</span> is a small error, and <span class="math-fallback inline">q</span> is a modulus. The noise <span class="math-fallback inline">e</span> is not a mistake. It is the fog machine.
+        </p>
+<div class="box intuition-box">
+<div class="box-title">Analogy</div>
+<p>
+            A clean linear equation is a perfectly straight trail of footprints. A noisy equation is the same trail after a light snowfall. The direction is still there, but recovering the exact path becomes much harder.
+          </p>
+</div>
+</section>
+<section id="lwe">
+<h2>Learning With Errors: the first doorway</h2>
+<p>
+          Learning With Errors, often abbreviated LWE, asks whether an attacker can recover a secret from many equations that are almost linear but slightly corrupted by small errors.
+        </p>
+<div class="math-display">
+<div class="math-fallback display">b<sub>i</sub> = ⟨ <strong>a</strong><sub>i</sub>,<strong>s</strong>⟩ + e<sub>i</sub> (mod q)</div>
+</div>
+<table>
+<thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><span class="math-fallback inline"><strong>a</strong><sub>i</sub></span></td><td>A public vector for equation <span class="math-fallback inline">i</span>.</td></tr>
+<tr><td><span class="math-fallback inline"><strong>s</strong></span></td><td>The secret vector.</td></tr>
+<tr><td><span class="math-fallback inline">e<sub>i</sub></span></td><td>A small error or noise term.</td></tr>
+<tr><td><span class="math-fallback inline">q</span></td><td>The modulus, meaning values wrap around.</td></tr>
+<tr><td><span class="math-fallback inline">b<sub>i</sub></span></td><td>The noisy public result.</td></tr>
+</tbody>
+</table>
+<p>
+          Without the errors, enough equations could reveal <span class="math-fallback inline"><strong>s</strong></span> using ordinary linear algebra. With the errors, the attacker has to solve a much nastier problem.
+        </p>
+</section>
+<section id="crypto-connection">
+<h2>Why this matters for cryptography</h2>
+<p>
+          Lattice-based cryptography uses problems believed to resist both classical and quantum attacks better than RSA and elliptic-curve systems. The heart of the idea is not “lattices are magical.” It is that certain lattice problems remain stubbornly hard when dimensions are high, bases are awkward, and equations are noisy.
+        </p>
+<div aria-label="Lattice cryptography idea flow" class="diagram" role="img">
+<div class="diagram-title">The idea pipeline</div>
+<div class="flow-row">
+<div class="flow-node">vectors</div>
+<div class="flow-arrow">→</div>
+<div class="flow-node">integer combinations</div>
+<div class="flow-arrow">→</div>
+<div class="flow-node">lattices</div>
+<div class="flow-arrow">→</div>
+<div class="flow-node">hard nearest/shortest problems</div>
+<div class="flow-arrow">→</div>
+<div class="machine-node">post-quantum cryptography</div>
+</div>
+</div>
+</section>
+<section id="common-mistakes">
+<h2>Common mistakes</h2>
+<div class="box mistake-box"><div class="box-title">Mistake 1: thinking every grid is hard</div><p>Small, clean, low-dimensional lattices are easy. Cryptographic hardness depends on high dimension, parameter choices, and problem structure.</p></div>
+<div class="box mistake-box"><div class="box-title">Mistake 2: confusing the basis with the lattice</div><p>A lattice can have different bases. Some reveal structure; others hide it.</p></div>
+<div class="box mistake-box"><div class="box-title">Mistake 3: treating noise as an error to remove</div><p>In LWE-style cryptography, noise is intentional. It is part of the security design.</p></div>
+<div class="box mistake-box"><div class="box-title">Mistake 4: assuming two-dimensional pictures prove high-dimensional security</div><p>Pictures build intuition, but the real hardness lives in dimensions where pictures surrender.</p></div>
+</section>
+<section id="practice">
+<h2>Practice problems</h2>
+<ol class="practice-list">
+<li>Given <span class="math-fallback inline"><strong>b</strong><sub>1</sub>=(2,0)</span>, <span class="math-fallback inline"><strong>b</strong><sub>2</sub>=(1,3)</span>, compute <span class="math-fallback inline">3<strong>b</strong><sub>1</sub>-<strong>b</strong><sub>2</sub></span>.
+            <details class="solution"><summary>Show solution</summary><p><span class="math-fallback inline">3(2,0)-1(1,3)=(6,0)-(1,3)=(5,-3)</span>.</p></details>
+</li>
+<li>Explain why <span class="math-fallback inline">(0,0)</span> is excluded from the Shortest Vector Problem.
+            <details class="solution"><summary>Show solution</summary><p>The zero vector is always shortest, so including it would make the problem trivial and useless.</p></details>
+</li>
+<li>For the standard integer lattice, what lattice point is closest to <span class="math-fallback inline">(2.2,-1.8)</span>?
+            <details class="solution"><summary>Show solution</summary><p>Round each coordinate: <span class="math-fallback inline">(2,-2)</span>.</p></details>
+</li>
+<li>Why does adding noise make linear equations harder to solve?
+            <details class="solution"><summary>Show solution</summary><p>Noise hides the exact relationship between the public values and the secret, preventing direct use of ordinary linear algebra.</p></details>
+</li>
+<li>In <span class="math-fallback inline">b<sub>i</sub>=⟨ <strong>a</strong><sub>i</sub>,<strong>s</strong>⟩+e<sub>i</sub> (mod q)</span>, identify the secret and the noise.
+            <details class="solution"><summary>Show solution</summary><p>The secret is <span class="math-fallback inline"><strong>s</strong></span>. The noise is <span class="math-fallback inline">e<sub>i</sub></span>.</p></details>
+</li>
+</ol>
+</section>
+<section class="page-break" id="one-page-recap">
+<h2>One-page recap</h2>
+<div class="box recap-box">
+<div class="box-title">What to remember</div>
+<ul>
+<li>A vector is an ordered list of numbers that can be viewed as a movement instruction.</li>
+<li>A lattice is the set of all integer combinations of basis vectors.</li>
+<li>The same lattice may have multiple bases.</li>
+<li>A good basis makes the lattice easier to navigate.</li>
+<li>A bad basis can hide the structure of the lattice.</li>
+<li>The Closest Vector Problem asks for the lattice point nearest a target.</li>
+<li>The Shortest Vector Problem asks for the shortest nonzero lattice vector.</li>
+<li>Low-dimensional lattice pictures are friendly; high-dimensional lattices can be hard.</li>
+<li>Noise can hide an exact algebraic relationship.</li>
+<li>LWE is based on solving noisy linear equations.</li>
+<li>Lattice-based cryptography uses high-dimensional hardness assumptions as a post-quantum replacement direction.</li>
+</ul>
+</div>
+<div class="box technical-box">
+<div class="box-title">Core formulas</div>
+<div class="math-display">
+<div class="math-fallback display">L={m<strong>b</strong><sub>1</sub>+n<strong>b</strong><sub>2</sub>:m,n∈ℤ}</div>
+<div class="math-fallback display">d((x<sub>1</sub>,y<sub>1</sub>),(x<sub>2</sub>,y<sub>2</sub>))=sqrt{(x<sub>2</sub>-x<sub>1</sub>)<sup>2+</sup>(y<sub>2</sub>-y<sub>1</sub>)<sup>2</sup>}</div>
+<div class="math-fallback display">b<sub>i</sub> = ⟨ <strong>a</strong><sub>i</sub>,<strong>s</strong>⟩ + e<sub>i</sub> (mod q)</div>
+</div>
+</div>
+</section>
+<section id="next">
+<h2>What comes next</h2>
+<p>
+          The next paired step should be <strong>Workbook 76: Lattice Intuition</strong>. After that, Tutorial 77 can move into <strong>Learning With Errors in Small Numbers</strong>, where we manually compute tiny noisy equations before connecting them to ML-KEM-style intuition.
+        </p>
+</section>
+<p class="footer-note">Mathematics of Cryptography tutorial page. Volume 4: Post-Quantum Cryptography and Advanced Hardness Assumptions. Designed for self-study, later classroom use, and clean PDF printing.</p>
+
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_76_lattice_intuition_vectors_grids_closest_vectors_noisy_equations_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <span class="nav-item nav-primary nav-disabled">Next ➡️</span>
+        </div>
+      </nav>
+    </main>
+</div>
+</body>
+</html>

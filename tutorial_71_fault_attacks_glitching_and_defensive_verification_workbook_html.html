@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 71: Fault Attacks, Glitching, and Defensive Verification | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 71</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Fault Attacks, Glitching, and Defensive Verification</h1>
+      <p class="subtitle">
+        Printable practice for fault attacks, glitching, instruction skips, bit flips, differential fault analysis, Bellcore-style RSA fault intuition, redundancy, consistency checks, infective countermeasures, and defensive verification.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Think like a defensive hardware-security reviewer. For each case, ask: what computation is being disturbed, what security check might be skipped or corrupted, what faulty output might leak, and what verification should happen before release?</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Fault-output comparison</div>
+            <div class="math-display">
+              \[
+                correct\ output = F_K(x)
+              \]
+              \[
+                faulty\ output = F_K(x, fault)
+              \]
+              \[
+                difference = correct\ output \oplus faulty\ output
+              \]
+            </div>
+          </div>
+
+          <div class="box fault-box">
+            <div class="box-title">RSA-CRT fault warning</div>
+            <div class="math-display">
+              \[
+                N=pq
+              \]
+              \[
+                faulty\ signature\ may\ reveal\ gcd(N,\ difference)
+              \]
+            </div>
+            <p>Defensive lesson: verify before output.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a fault attack?</td><td></td></tr>
+            <tr><td>A2. What is fault injection?</td><td></td></tr>
+            <tr><td>A3. What is glitching?</td><td></td></tr>
+            <tr><td>A4. What is a voltage glitch?</td><td></td></tr>
+            <tr><td>A5. What is a clock glitch?</td><td></td></tr>
+            <tr><td>A6. What is a laser fault?</td><td></td></tr>
+            <tr><td>A7. What is an instruction skip?</td><td></td></tr>
+            <tr><td>A8. What is a bit flip?</td><td></td></tr>
+            <tr><td>A9. What is redundancy?</td><td></td></tr>
+            <tr><td>A10. What is a consistency check?</td><td></td></tr>
+            <tr><td>A11. What is an infective countermeasure?</td><td></td></tr>
+            <tr><td>A12. What is defensive verification?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="faults-vs-side-channels">
+        <h2>Part B: Fault attacks versus side channels</h2>
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>Side-channel attack</th><th>Fault attack</th></tr></thead>
+          <tbody>
+            <tr><td>Attacker posture</td><td></td><td></td></tr>
+            <tr><td>Information source</td><td></td><td></td></tr>
+            <tr><td>Typical goal</td><td></td><td></td></tr>
+            <tr><td>Defense style</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain the difference between listening to a computation and disturbing a computation.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="fault-injection-methods">
+        <h2>Part C: Fault injection methods</h2>
+        <table class="fault-table">
+          <thead><tr><th>Method</th><th>Basic idea</th><th>Possible effect</th></tr></thead>
+          <tbody>
+            <tr><td>Voltage glitch</td><td></td><td></td></tr>
+            <tr><td>Clock glitch</td><td></td><td></td></tr>
+            <tr><td>Laser fault</td><td></td><td></td></tr>
+            <tr><td>Electromagnetic pulse</td><td></td><td></td></tr>
+            <tr><td>Temperature stress</td><td></td><td></td></tr>
+            <tr><td>Software fault</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="instruction-skip">
+        <h2>Part D: Instruction skips and bypasses</h2>
+        <pre><code>if verify_signature(message, signature, public_key) == false:
+    reject()
+allow_access()</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">D1. What could happen if a fault skips the rejection branch?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. Why is a single critical check fragile?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="bit-flips">
+        <h2>Part E: Bit flips and corrupted state</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            correct\ output = F_K(x)
+          \]
+          \[
+            faulty\ output = F_K(x, fault)
+          \]
+          \[
+            difference = correct\ output \oplus faulty\ output
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>Correct output</th><th>Faulty output</th><th>XOR difference</th></tr></thead>
+          <tbody>
+            <tr><td>1010</td><td>1011</td><td></td></tr>
+            <tr><td>1100</td><td>0100</td><td></td></tr>
+            <tr><td>1111</td><td>0000</td><td></td></tr>
+            <tr><td>1001</td><td>1001</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why can the difference between correct and faulty outputs be useful to an attacker?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="differential-fault-analysis">
+        <h2>Part F: Differential fault analysis</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Step</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>1. Obtain correct output</td><td></td></tr>
+            <tr><td>2. Induce fault</td><td></td></tr>
+            <tr><td>3. Obtain faulty output</td><td></td></tr>
+            <tr><td>4. Compare outputs</td><td></td></tr>
+            <tr><td>5. Narrow secret candidates</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain differential fault analysis in your own words.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="rsa-bellcore">
+        <h2>Part G: Bellcore-style RSA fault idea</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            N=pq
+          \]
+          \[
+            faulty\ signature\ may\ reveal\ gcd(N,\ difference)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why can one unchecked faulty RSA-CRT signature be dangerous?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. What is the simple defensive lesson?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="defensive-verification">
+        <h2>Part H: Defensive verification</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Operation</th><th>Defensive check</th></tr></thead>
+          <tbody>
+            <tr><td>RSA signature generation</td><td></td></tr>
+            <tr><td>AEAD decryption</td><td></td></tr>
+            <tr><td>Boot verification</td><td></td></tr>
+            <tr><td>Access-control decision</td><td></td></tr>
+            <tr><td>Key derivation or key load</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why should cryptographic results be verified before release or trust?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="redundancy">
+        <h2>Part I: Redundancy and consistency checks</h2>
+        <table class="compare-table">
+          <thead><tr><th>Defense</th><th>Idea</th><th>Risk if done poorly</th></tr></thead>
+          <tbody>
+            <tr><td>Recompute and compare</td><td></td><td></td></tr>
+            <tr><td>Diverse computation</td><td></td><td></td></tr>
+            <tr><td>Invariant checks</td><td></td><td></td></tr>
+            <tr><td>Control-flow integrity</td><td></td><td></td></tr>
+            <tr><td>Sensors</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="infective-countermeasures">
+        <h2>Part J: Infective countermeasures</h2>
+        <table class="compare-table">
+          <thead><tr><th>Defense style</th><th>Behavior</th><th>Main concern</th></tr></thead>
+          <tbody>
+            <tr><td>Detect and branch</td><td></td><td></td></tr>
+            <tr><td>Infective</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Why might an infective countermeasure be useful if a reject branch can be skipped?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="fault-detection-habits">
+        <h2>Part K: Fault-detection design habits</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Habit</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Verify before release</td><td></td></tr>
+            <tr><td>Fail closed</td><td></td></tr>
+            <tr><td>Use redundant checks</td><td></td></tr>
+            <tr><td>Check control flow</td><td></td></tr>
+            <tr><td>Use sensors where physical attacks are plausible</td><td></td></tr>
+            <tr><td>Limit error detail</td><td></td></tr>
+            <tr><td>Use hardened libraries/hardware</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="faults-and-proofs">
+        <h2>Part L: Fault attacks and formal proofs</h2>
+        <table class="danger-table">
+          <thead><tr><th>Proof assumes...</th><th>Fault attack may cause...</th></tr></thead>
+          <tbody>
+            <tr><td>Correct computation.</td><td></td></tr>
+            <tr><td>Verification check executes.</td><td></td></tr>
+            <tr><td>Output is honestly generated.</td><td></td></tr>
+            <tr><td>Failure path is reliable.</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">L1. Why might a formal proof not apply cleanly to a faulted implementation?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A voltage glitch causes a signature check to be skipped.</td><td></td></tr>
+            <tr><td>An RSA device releases a faulty CRT signature without verifying it first.</td><td></td></tr>
+            <tr><td>A device recomputes a result and compares both outputs before release.</td><td></td></tr>
+            <tr><td>An error handler reveals exactly which internal check failed after a suspected fault.</td><td></td></tr>
+            <tr><td>A bootloader verifies firmware before executing it.</td><td></td></tr>
+            <tr><td>A system assumes physical attackers only observe and never disturb the device.</td><td></td></tr>
+            <tr><td>A defense relies on one reject branch that could itself be skipped.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Fault attacks actively disturb computation.</td><td></td><td></td></tr>
+            <tr><td>Side-channel attacks and fault attacks are exactly the same.</td><td></td><td></td></tr>
+            <tr><td>Instruction skips can bypass security checks.</td><td></td><td></td></tr>
+            <tr><td>Differential fault analysis compares correct and faulty outputs.</td><td></td><td></td></tr>
+            <tr><td>RSA-CRT signatures should never need checking before output.</td><td></td><td></td></tr>
+            <tr><td>Redundancy can help detect faults.</td><td></td><td></td></tr>
+            <tr><td>Formal proofs may assume correct execution and not model induced faults.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain fault attacks in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain differential fault analysis and RSA-CRT fault intuition in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain defensive verification, redundancy, and infective countermeasures in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A fault attack can make a correct algorithm compute incorrectly.</td><td></td></tr>
+            <tr><td>A side-channel attack mostly observes, while a fault attack actively disturbs.</td><td></td></tr>
+            <tr><td>Instruction skips are harmless because the math is still secure.</td><td></td></tr>
+            <tr><td>Faulty outputs can sometimes reveal secret information.</td><td></td></tr>
+            <tr><td>Defensive verification means checking results before releasing or trusting them.</td><td></td></tr>
+            <tr><td>Infective countermeasures try to make faulty outputs useless.</td><td></td></tr>
+            <tr><td>Fault defenses never need testing because they are always simple.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that fault attacks break the assumption of correct execution. A secure implementation must detect, resist, or safely fail when computation has been disturbed.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is a fault attack?</td><td>An attack that induces computational errors and uses faulty behavior or output.</td></tr>
+            <tr><td>A2. What is fault injection?</td><td>A physical or logical method for forcing an error into a device or computation.</td></tr>
+            <tr><td>A3. What is glitching?</td><td>A precisely timed disturbance to voltage, clock, reset, or environment.</td></tr>
+            <tr><td>A4. What is a voltage glitch?</td><td>A temporary power disturbance that can cause incorrect computation.</td></tr>
+            <tr><td>A5. What is a clock glitch?</td><td>An abnormal clock pulse or timing disturbance that can cause skipped or malformed operations.</td></tr>
+            <tr><td>A6. What is a laser fault?</td><td>A focused light-induced disturbance to a chip region.</td></tr>
+            <tr><td>A7. What is an instruction skip?</td><td>A fault causing an instruction not to execute correctly.</td></tr>
+            <tr><td>A8. What is a bit flip?</td><td>A fault that changes one or more bits in state, memory, or computation.</td></tr>
+            <tr><td>A9. What is redundancy?</td><td>Extra computation or data used to detect faults.</td></tr>
+            <tr><td>A10. What is a consistency check?</td><td>A verification that output satisfies expected relationships.</td></tr>
+            <tr><td>A11. What is an infective countermeasure?</td><td>A defense that makes faulty outputs useless rather than relying only on a reject branch.</td></tr>
+            <tr><td>A12. What is defensive verification?</td><td>Checking cryptographic results before outputting or trusting them.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Fault attacks versus side channels</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>Side-channel attack</th><th>Fault attack</th></tr></thead>
+          <tbody>
+            <tr><td>Attacker posture</td><td>Mostly observes.</td><td>Actively disturbs.</td></tr>
+            <tr><td>Information source</td><td>Timing, power, cache, errors, emissions.</td><td>Faulty outputs, skipped checks, corrupted state.</td></tr>
+            <tr><td>Typical goal</td><td>Infer secrets from leakage.</td><td>Force useful errors or bypasses.</td></tr>
+            <tr><td>Defense style</td><td>Constant-time, masking, hiding.</td><td>Redundancy, verification, sensors, fault detection.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Listening observes unintended leaks such as time or power. Disturbing intentionally changes the computation, causing skipped checks, corrupted state, or faulty outputs.</p></div>
+
+        <h3>Part C: Fault injection methods</h3>
+        <table class="answer-table">
+          <thead><tr><th>Method</th><th>Basic idea</th><th>Possible effect</th></tr></thead>
+          <tbody>
+            <tr><td>Voltage glitch</td><td>Briefly disturb power.</td><td>Wrong instruction, bit flip, failed memory read.</td></tr>
+            <tr><td>Clock glitch</td><td>Abnormal clock edge or timing.</td><td>Instruction skip or timing violation.</td></tr>
+            <tr><td>Laser fault</td><td>Target a chip region with light.</td><td>Localized bit or logic disturbance.</td></tr>
+            <tr><td>Electromagnetic pulse</td><td>Inject EM disturbance.</td><td>Register or memory corruption.</td></tr>
+            <tr><td>Temperature stress</td><td>Operate outside normal thermal range.</td><td>Unstable hardware behavior.</td></tr>
+            <tr><td>Software fault</td><td>Induce unexpected state or skip checks logically.</td><td>Bypass validation or corrupt internal state.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Instruction skips and bypasses</h3>
+        <div class="answer-step">
+          <p><strong>D1 answer.</strong> Access might be allowed even though signature verification failed or did not execute correctly.</p>
+          <p><strong>D2 sample answer.</strong> If one critical check is the only barrier, skipping or corrupting that check may collapse security. Redundant or diverse checks reduce that single-point-of-failure risk.</p>
+        </div>
+
+        <h3>Part E: Bit flips and corrupted state</h3>
+        <table class="answer-table">
+          <thead><tr><th>Correct output</th><th>Faulty output</th><th>XOR difference</th></tr></thead>
+          <tbody>
+            <tr><td>1010</td><td>1011</td><td>0001</td></tr>
+            <tr><td>1100</td><td>0100</td><td>1000</td></tr>
+            <tr><td>1111</td><td>0000</td><td>1111</td></tr>
+            <tr><td>1001</td><td>1001</td><td>0000</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> The difference can reveal how the fault propagated through the algorithm. That pattern may narrow possible secret states or keys.</p></div>
+
+        <h3>Part F: Differential fault analysis</h3>
+        <table class="answer-table">
+          <thead><tr><th>Step</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>1. Obtain correct output</td><td>Run the device normally.</td></tr>
+            <tr><td>2. Induce fault</td><td>Disturb one operation, round, register, or memory value.</td></tr>
+            <tr><td>3. Obtain faulty output</td><td>Record the altered result.</td></tr>
+            <tr><td>4. Compare outputs</td><td>Study how the difference propagates.</td></tr>
+            <tr><td>5. Narrow secret candidates</td><td>Use the fault pattern to reduce the key/state search.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Differential fault analysis compares normal and faulted outputs. The way the output changes can reveal information about internal state or key material.</p></div>
+
+        <h3>Part G: Bellcore-style RSA fault idea</h3>
+        <div class="answer-step">
+          <p><strong>G1 sample answer.</strong> In RSA-CRT, a fault in one modular branch can produce an output mathematically related to only part of the secret factorization. Comparing the faulty relation can reveal a factor of \(N\).</p>
+          <p><strong>G2 answer.</strong> Verify private-key results, such as signatures, before releasing them.</p>
+        </div>
+
+        <h3>Part H: Defensive verification</h3>
+        <table class="answer-table">
+          <thead><tr><th>Operation</th><th>Defensive check</th></tr></thead>
+          <tbody>
+            <tr><td>RSA signature generation</td><td>Verify signature before output.</td></tr>
+            <tr><td>AEAD decryption</td><td>Verify tag before releasing plaintext.</td></tr>
+            <tr><td>Boot verification</td><td>Check signature/hash before executing firmware.</td></tr>
+            <tr><td>Access-control decision</td><td>Use redundant checks or state consistency validation.</td></tr>
+            <tr><td>Key derivation or key load</td><td>Check integrity, version, and expected state.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> Verification prevents faulty or corrupted results from being released, trusted, or used as attacker tools.</p></div>
+
+        <h3>Part I: Redundancy and consistency checks</h3>
+        <table class="answer-table">
+          <thead><tr><th>Defense</th><th>Idea</th><th>Risk if done poorly</th></tr></thead>
+          <tbody>
+            <tr><td>Recompute and compare</td><td>Run operation twice and compare outputs.</td><td>Same fault may affect both runs.</td></tr>
+            <tr><td>Diverse computation</td><td>Compute by two different methods.</td><td>More complexity can create bugs.</td></tr>
+            <tr><td>Invariant checks</td><td>Verify expected mathematical relationships.</td><td>Incomplete checks may miss faults.</td></tr>
+            <tr><td>Control-flow integrity</td><td>Detect skipped or reordered steps.</td><td>Implementation must be carefully protected.</td></tr>
+            <tr><td>Sensors</td><td>Detect voltage, clock, light, or temperature anomalies.</td><td>Attackers may bypass or tune around sensors.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: Infective countermeasures</h3>
+        <table class="answer-table">
+          <thead><tr><th>Defense style</th><th>Behavior</th><th>Main concern</th></tr></thead>
+          <tbody>
+            <tr><td>Detect and branch</td><td>If fault detected, reject.</td><td>Branch may itself be skipped.</td></tr>
+            <tr><td>Infective</td><td>If fault detected, corrupt/poison the output.</td><td>Must be designed carefully to avoid new leaks.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> If an attacker can skip the reject branch, a normal detect-and-branch defense may fail. Infective logic aims to make the output useless even if the branch is skipped.</p></div>
+
+        <h3>Part K: Fault-detection design habits</h3>
+        <table class="answer-table">
+          <thead><tr><th>Habit</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Verify before release</td><td>Prevents faulty outputs from becoming attacker tools.</td></tr>
+            <tr><td>Fail closed</td><td>Unsafe or uncertain state leads to rejection.</td></tr>
+            <tr><td>Use redundant checks</td><td>Makes one skipped or corrupted step less likely to succeed.</td></tr>
+            <tr><td>Check control flow</td><td>Detects skipped instructions or unexpected paths.</td></tr>
+            <tr><td>Use sensors where physical attacks are plausible</td><td>Detects voltage, clock, light, or temperature abuse.</td></tr>
+            <tr><td>Limit error detail</td><td>Avoids turning fault handling into an oracle.</td></tr>
+            <tr><td>Use hardened libraries/hardware</td><td>Specialized implementations are more likely to include fault protections.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Fault attacks and formal proofs</h3>
+        <table class="answer-table">
+          <thead><tr><th>Proof assumes...</th><th>Fault attack may cause...</th></tr></thead>
+          <tbody>
+            <tr><td>Correct computation.</td><td>Corrupted intermediate state.</td></tr>
+            <tr><td>Verification check executes.</td><td>Instruction skip bypasses check.</td></tr>
+            <tr><td>Output is honestly generated.</td><td>Faulty output related to secret state.</td></tr>
+            <tr><td>Failure path is reliable.</td><td>Error branch skipped or corrupted.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>L1 sample answer.</strong> A proof may assume the algorithm executes correctly. A faulted device may skip instructions, corrupt state, or release faulty outputs, so the implementation no longer matches the proof model.</p></div>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A voltage glitch causes a signature check to be skipped.</td><td>Instruction-skip/bypass risk; use redundancy and control-flow checks.</td></tr>
+            <tr><td>An RSA device releases a faulty CRT signature without verifying it first.</td><td>Dangerous; may reveal a factor of \(N\).</td></tr>
+            <tr><td>A device recomputes a result and compares both outputs before release.</td><td>Redundancy can help detect faults.</td></tr>
+            <tr><td>An error handler reveals exactly which internal check failed after a suspected fault.</td><td>May create an oracle; use generic failure.</td></tr>
+            <tr><td>A bootloader verifies firmware before executing it.</td><td>Good defensive verification.</td></tr>
+            <tr><td>A system assumes physical attackers only observe and never disturb the device.</td><td>Incomplete model for fault-capable attackers.</td></tr>
+            <tr><td>A defense relies on one reject branch that could itself be skipped.</td><td>Fragile; consider redundancy or infective design.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Fault attacks actively disturb computation.</td><td>Valid</td><td>That is the fault-attack idea.</td></tr>
+            <tr><td>Side-channel attacks and fault attacks are exactly the same.</td><td>Mistaken</td><td>Side channels observe; fault attacks disturb.</td></tr>
+            <tr><td>Instruction skips can bypass security checks.</td><td>Valid</td><td>A skipped check may allow unsafe behavior.</td></tr>
+            <tr><td>Differential fault analysis compares correct and faulty outputs.</td><td>Valid</td><td>It studies fault propagation.</td></tr>
+            <tr><td>RSA-CRT signatures should never need checking before output.</td><td>Mistaken</td><td>Verification can prevent releasing dangerous faulty results.</td></tr>
+            <tr><td>Redundancy can help detect faults.</td><td>Valid</td><td>Extra checks can catch disturbed computation.</td></tr>
+            <tr><td>Formal proofs may assume correct execution and not model induced faults.</td><td>Valid</td><td>Faults can violate the proof model.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> Fault attacks intentionally disturb cryptographic computation. The attacker may use voltage, clock, laser, electromagnetic, temperature, or software techniques to cause skipped instructions, bit flips, corrupted state, faulty outputs, or bypassed checks.</p>
+          <p><strong>O2 sample answer.</strong> Differential fault analysis compares correct and faulty outputs to learn how a fault moved through the algorithm. In RSA-CRT, a faulty signature can sometimes reveal a factor of the modulus if released unchecked, so implementations should verify signatures before output.</p>
+          <p><strong>O3 sample answer.</strong> Defensive verification checks results before releasing or trusting them. Redundancy repeats or cross-checks computation to detect faults. Infective countermeasures try to poison faulty outputs so they are useless even if a reject branch is skipped.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial explained how fault attacks disturb computation and how glitches, instruction skips, bit flips, and faulty outputs can bypass checks or reveal secrets. It covered differential fault analysis, RSA-CRT fault intuition, verification, redundancy, infective countermeasures, and proof-model limits.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A fault attack can make a correct algorithm compute incorrectly.</td><td>True</td><td>Faults disturb execution.</td></tr>
+            <tr><td>A side-channel attack mostly observes, while a fault attack actively disturbs.</td><td>True</td><td>That is the key distinction.</td></tr>
+            <tr><td>Instruction skips are harmless because the math is still secure.</td><td>False</td><td>Skipping checks can bypass security.</td></tr>
+            <tr><td>Faulty outputs can sometimes reveal secret information.</td><td>True</td><td>Fault patterns may expose key/state information.</td></tr>
+            <tr><td>Defensive verification means checking results before releasing or trusting them.</td><td>True</td><td>That is the central defense.</td></tr>
+            <tr><td>Infective countermeasures try to make faulty outputs useless.</td><td>True</td><td>They poison the result under fault conditions.</td></tr>
+            <tr><td>Fault defenses never need testing because they are always simple.</td><td>False</td><td>Fault defenses are delicate and must be tested carefully.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 71: Fault Attacks, Glitching, and Defensive Verification.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_71_fault_attacks_glitching_and_defensive_verification_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_70_side_channels_timing_leaks_and_constant_time_thinking_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

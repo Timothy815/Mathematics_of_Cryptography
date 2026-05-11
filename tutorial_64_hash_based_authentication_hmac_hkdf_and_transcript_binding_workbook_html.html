@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 64: Hash-Based Authentication: HMAC, HKDF, and Transcript Binding | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 64</div>
+      <div class="volume-label">Volume 4: Protocols & Real-World Engineering</div>
+      
+      <h1>Hash-Based Authentication: HMAC, HKDF, and Transcript Binding</h1>
+      <p class="subtitle">
+        Printable practice for plain hashes versus keyed authentication, Message Authentication Codes, HMAC structure, HKDF extract-and-expand, labels, domain separation, transcript binding, and Finished-message checks.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Treat this as a bridge between hash functions and full protocols. The core question is: when does a hash merely summarize data, and when does it authenticate, derive, or bind protocol state?</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">MAC and HMAC</div>
+            <div class="math-display">
+              \[
+                tag=MAC(K,m)
+              \]
+              \[
+                Verify(K,m,tag)=valid/invalid
+              \]
+              \[
+                HMAC(K,m)=H((K'\oplus opad)\parallel H((K'\oplus ipad)\parallel m))
+              \]
+            </div>
+          </div>
+
+          <div class="box hash-box">
+            <div class="box-title">HKDF and transcript binding</div>
+            <div class="math-display">
+              \[
+                PRK=HMAC(salt,IKM)
+              \]
+              \[
+                OKM=HKDF\text{-}Expand(PRK,info,L)
+              \]
+              \[
+                Finished=MAC(finished\ key,transcript\ hash)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(H(m)\) represent?</td><td></td></tr>
+            <tr><td>A2. What does MAC stand for?</td><td></td></tr>
+            <tr><td>A3. What is HMAC?</td><td></td></tr>
+            <tr><td>A4. What does \(K\) represent?</td><td></td></tr>
+            <tr><td>A5. What is a tag?</td><td></td></tr>
+            <tr><td>A6. What does HKDF stand for?</td><td></td></tr>
+            <tr><td>A7. What does IKM stand for?</td><td></td></tr>
+            <tr><td>A8. What is salt in HKDF?</td><td></td></tr>
+            <tr><td>A9. What does PRK stand for?</td><td></td></tr>
+            <tr><td>A10. What is info in HKDF?</td><td></td></tr>
+            <tr><td>A11. What does OKM stand for?</td><td></td></tr>
+            <tr><td>A12. What is domain separation?</td><td></td></tr>
+            <tr><td>A13. What is transcript binding?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="plain-hash-vs-keyed">
+        <h2>Part B: Plain hash versus keyed authentication</h2>
+        <table class="compare-table">
+          <thead><tr><th>Construction</th><th>Uses secret key?</th><th>What it proves</th></tr></thead>
+          <tbody>
+            <tr><td>\(H(m)\)</td><td></td><td></td></tr>
+            <tr><td>\(HMAC(K,m)\)</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why does a plain hash not prove that the sender knew a secret?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="macs">
+        <h2>Part C: Message Authentication Codes</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            tag=MAC(K,m)
+          \]
+          \[
+            Verify(K,m,tag)=valid/invalid
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C1. What two properties does a MAC provide under a shared secret key?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. What should happen if the message changes but the old tag is reused?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hmac-formula">
+        <h2>Part D: HMAC formula interpretation</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            HMAC(K,m)=H((K'\oplus opad)\parallel H((K'\oplus ipad)\parallel m))
+          \]
+        </div>
+
+        <table class="hash-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(K'\)</td><td></td></tr>
+            <tr><td>\(ipad\)</td><td></td></tr>
+            <tr><td>\(opad\)</td><td></td></tr>
+            <tr><td>\(\oplus\)</td><td></td></tr>
+            <tr><td>\(\parallel\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why is HMAC preferable to simply hashing \(K\parallel m\)?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="hmac-uses">
+        <h2>Part E: Where HMAC is used</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Use</th><th>Role of HMAC</th></tr></thead>
+          <tbody>
+            <tr><td>API request signing</td><td></td></tr>
+            <tr><td>Token integrity</td><td></td></tr>
+            <tr><td>Key derivation</td><td></td></tr>
+            <tr><td>Protocol finished checks</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="hkdf-big-picture">
+        <h2>Part F: HKDF big picture</h2>
+        <table class="step-table">
+          <thead><tr><th>Stage</th><th>Formula shape</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Extract</td><td>\(PRK=HMAC(salt,IKM)\)</td><td></td></tr>
+            <tr><td>Expand</td><td>\(OKM=HKDF\text{-}Expand(PRK,info,L)\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain the “refining furnace and casting mold” analogy for HKDF.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="extract-stage">
+        <h2>Part G: HKDF-Extract</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(IKM\)</td><td></td></tr>
+            <tr><td>\(salt\)</td><td></td></tr>
+            <tr><td>\(PRK\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why might raw shared material need an extract stage before expansion?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="expand-stage">
+        <h2>Part H: HKDF-Expand</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(PRK\)</td><td></td></tr>
+            <tr><td>\(info\)</td><td></td></tr>
+            <tr><td>\(L\)</td><td></td></tr>
+            <tr><td>\(OKM\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. What does HKDF-Expand produce?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="domain-separation">
+        <h2>Part I: Domain separation with labels</h2>
+        <table class="example-table">
+          <thead><tr><th>Purpose</th><th>Example label / info value</th></tr></thead>
+          <tbody>
+            <tr><td>Client handshake traffic key</td><td></td></tr>
+            <tr><td>Server handshake traffic key</td><td></td></tr>
+            <tr><td>Client application traffic key</td><td></td></tr>
+            <tr><td>Server application traffic key</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">I1. Why is using different labels important?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="transcript-binding">
+        <h2>Part J: Transcript binding</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            transcript\ hash=H(m_1\parallel m_2\parallel m_3\parallel\cdots)
+          \]
+          \[
+            key=HKDF\text{-}Expand(PRK,transcript\ hash\parallel label,L)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J1. What happens to transcript-bound derived keys if an attacker changes a handshake message?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">J2. Explain transcript binding in ordinary language.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="finished-messages">
+        <h2>Part K: Finished messages</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            Finished=MAC(finished\ key,transcript\ hash)
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K1. What does a Finished message prove?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">K2. Why does a Finished message fail if the transcript or keys differ?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hash-mac-kdf">
+        <h2>Part L: Hashes versus MACs versus KDFs</h2>
+        <table class="compare-table">
+          <thead><tr><th>Tool</th><th>Input</th><th>Output</th><th>Main job</th></tr></thead>
+          <tbody>
+            <tr><td>Hash</td><td></td><td></td><td></td></tr>
+            <tr><td>MAC/HMAC</td><td></td><td></td><td></td></tr>
+            <tr><td>KDF/HKDF</td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part M: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer uses \(H(m)\) as proof that the sender knew a secret.</td><td></td></tr>
+            <tr><td>An API request includes \(HMAC(K,m)\), and the server recomputes it with the shared key.</td><td></td></tr>
+            <tr><td>A protocol derives client and server traffic keys with the exact same label.</td><td></td></tr>
+            <tr><td>A key exchange shared secret is fed into HKDF-Extract before expansion.</td><td></td></tr>
+            <tr><td>A Finished message authenticates the transcript hash with a derived finished key.</td><td></td></tr>
+            <tr><td>An attacker changes ClientHello but the protocol never binds the transcript into later checks.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part N: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A plain hash is unkeyed.</td><td></td><td></td></tr>
+            <tr><td>HMAC uses a secret key and message to produce an authentication tag.</td><td></td><td></td></tr>
+            <tr><td>HKDF-Extract produces \(OKM\) directly.</td><td></td><td></td></tr>
+            <tr><td>HKDF-Expand uses context information such as \(info\).</td><td></td><td></td></tr>
+            <tr><td>Domain separation helps prevent key-purpose confusion.</td><td></td><td></td></tr>
+            <tr><td>Transcript binding ties keys or checks to protocol messages.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part O: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">O1. Explain the difference between a hash and a MAC in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O2. Explain HKDF extract-and-expand in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O3. Explain domain separation and transcript binding in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">O4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A plain hash proves the sender knew a shared secret.</td><td></td></tr>
+            <tr><td>A MAC uses a secret key.</td><td></td></tr>
+            <tr><td>HMAC is based on a cryptographic hash function.</td><td></td></tr>
+            <tr><td>HKDF has Extract and Expand stages.</td><td></td></tr>
+            <tr><td>\(PRK=HMAC(salt,IKM)\).</td><td></td></tr>
+            <tr><td>Using the same label for every derived key is good domain separation.</td><td></td></tr>
+            <tr><td>Finished messages can use MAC-style checks over transcript hashes.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that hashes become protocol tools when they are keyed, labeled, contextualized, and bound to transcript state.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does \(H(m)\) represent?</td><td>A hash digest of message \(m\).</td></tr>
+            <tr><td>A2. What does MAC stand for?</td><td>Message Authentication Code.</td></tr>
+            <tr><td>A3. What is HMAC?</td><td>A hash-based Message Authentication Code construction.</td></tr>
+            <tr><td>A4. What does \(K\) represent?</td><td>A secret key.</td></tr>
+            <tr><td>A5. What is a tag?</td><td>The authenticator output from a MAC.</td></tr>
+            <tr><td>A6. What does HKDF stand for?</td><td>HMAC-based Key Derivation Function.</td></tr>
+            <tr><td>A7. What does IKM stand for?</td><td>Input Keying Material.</td></tr>
+            <tr><td>A8. What is salt in HKDF?</td><td>An optional non-secret value used to help extraction.</td></tr>
+            <tr><td>A9. What does PRK stand for?</td><td>Pseudorandom Key.</td></tr>
+            <tr><td>A10. What is info in HKDF?</td><td>Context or label information used during expansion.</td></tr>
+            <tr><td>A11. What does OKM stand for?</td><td>Output Key Material.</td></tr>
+            <tr><td>A12. What is domain separation?</td><td>Using different labels/context so keys or outputs are not confused across purposes.</td></tr>
+            <tr><td>A13. What is transcript binding?</td><td>Including transcript hashes in authentication or key derivation to bind results to protocol messages.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Plain hash versus keyed authentication</h3>
+        <table class="answer-table">
+          <thead><tr><th>Construction</th><th>Uses secret key?</th><th>What it proves</th></tr></thead>
+          <tbody>
+            <tr><td>\(H(m)\)</td><td>No</td><td>Only a digest/fingerprint of the message.</td></tr>
+            <tr><td>\(HMAC(K,m)\)</td><td>Yes</td><td>Message was authenticated by someone who knows \(K\).</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Anyone can compute a plain hash of a message, so a plain hash does not prove knowledge of a shared secret. A keyed MAC is needed for that.</p></div>
+
+        <h3>Part C: Message Authentication Codes</h3>
+        <div class="answer-step">
+          <p><strong>C1 answer.</strong> A MAC provides message integrity and authenticity under a shared secret key.</p>
+          <p><strong>C2 answer.</strong> Verification should fail because the tag no longer matches the modified message.</p>
+        </div>
+
+        <h3>Part D: HMAC formula interpretation</h3>
+        <table class="answer-table">
+          <thead><tr><th>Piece</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(K'\)</td><td>The key adjusted to the hash block size.</td></tr>
+            <tr><td>\(ipad\)</td><td>Inner padding constant.</td></tr>
+            <tr><td>\(opad\)</td><td>Outer padding constant.</td></tr>
+            <tr><td>\(\oplus\)</td><td>Exclusive OR.</td></tr>
+            <tr><td>\(\parallel\)</td><td>Concatenation.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> HMAC is designed to be robust and analyzable. Simply hashing \(K\parallel m\) can interact badly with some hash constructions and is not the standard secure MAC construction.</p></div>
+
+        <h3>Part E: Where HMAC is used</h3>
+        <table class="answer-table">
+          <thead><tr><th>Use</th><th>Role of HMAC</th></tr></thead>
+          <tbody>
+            <tr><td>API request signing</td><td>Prove that a request came from someone with the shared secret.</td></tr>
+            <tr><td>Token integrity</td><td>Detect tampering with signed tokens.</td></tr>
+            <tr><td>Key derivation</td><td>Serve as the core primitive inside HKDF.</td></tr>
+            <tr><td>Protocol finished checks</td><td>Authenticate transcript-derived values.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: HKDF big picture</h3>
+        <table class="answer-table">
+          <thead><tr><th>Stage</th><th>Formula shape</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>Extract</td><td>\(PRK=HMAC(salt,IKM)\)</td><td>Condense raw input into a clean pseudorandom key.</td></tr>
+            <tr><td>Expand</td><td>\(OKM=HKDF\text{-}Expand(PRK,info,L)\)</td><td>Generate output key material for specific purposes.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> Extract is like refining raw secret material into cleaner internal key material. Expand is like casting that material into separate tools for different protocol jobs.</p></div>
+
+        <h3>Part G: HKDF-Extract</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(IKM\)</td><td>Raw input keying material, such as an ECDHE shared secret.</td></tr>
+            <tr><td>\(salt\)</td><td>Optional non-secret value that helps extraction.</td></tr>
+            <tr><td>\(PRK\)</td><td>Pseudorandom key output from extraction.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> Raw shared material may not be perfectly uniform or directly suitable as key material. Extract condenses it into a cleaner pseudorandom key.</p></div>
+
+        <h3>Part H: HKDF-Expand</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(PRK\)</td><td>Clean pseudorandom key from Extract.</td></tr>
+            <tr><td>\(info\)</td><td>Context label describing the purpose.</td></tr>
+            <tr><td>\(L\)</td><td>Length of output key material needed.</td></tr>
+            <tr><td>\(OKM\)</td><td>Output key material.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 answer.</strong> HKDF-Expand produces output key material of the desired length for a specific context or purpose.</p></div>
+
+        <h3>Part I: Domain separation with labels</h3>
+        <table class="answer-table">
+          <thead><tr><th>Purpose</th><th>Example label / info value</th></tr></thead>
+          <tbody>
+            <tr><td>Client handshake traffic key</td><td>\(info=\text{"client handshake traffic"}\)</td></tr>
+            <tr><td>Server handshake traffic key</td><td>\(info=\text{"server handshake traffic"}\)</td></tr>
+            <tr><td>Client application traffic key</td><td>\(info=\text{"client application traffic"}\)</td></tr>
+            <tr><td>Server application traffic key</td><td>\(info=\text{"server application traffic"}\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>I1 sample answer.</strong> Different labels ensure that keys for different jobs and directions are distinct even if they come from the same underlying secret material.</p></div>
+
+        <h3>Part J: Transcript binding</h3>
+        <div class="answer-step">
+          <p><strong>J1 sample answer.</strong> The transcript hash changes, so transcript-bound derived keys or checks change too.</p>
+          <p><strong>J2 sample answer.</strong> Transcript binding means tying keys or authentication checks to the exact protocol conversation, so changing the conversation changes the cryptographic results.</p>
+        </div>
+
+        <h3>Part K: Finished messages</h3>
+        <div class="answer-step">
+          <p><strong>K1 sample answer.</strong> A Finished message proves that the party knows the finished key and agrees on the transcript hash.</p>
+          <p><strong>K2 sample answer.</strong> The MAC is computed from both the finished key and transcript hash. If either differs, the recomputed MAC will not match.</p>
+        </div>
+
+        <h3>Part L: Hashes versus MACs versus KDFs</h3>
+        <table class="answer-table">
+          <thead><tr><th>Tool</th><th>Input</th><th>Output</th><th>Main job</th></tr></thead>
+          <tbody>
+            <tr><td>Hash</td><td>Message</td><td>Digest</td><td>Fingerprint data.</td></tr>
+            <tr><td>MAC/HMAC</td><td>Secret key + message</td><td>Tag</td><td>Authenticate data with a shared secret.</td></tr>
+            <tr><td>KDF/HKDF</td><td>Secret material + context</td><td>Derived keys</td><td>Turn shared material into purpose-specific keys.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A developer uses \(H(m)\) as proof that the sender knew a secret.</td><td>Mistaken. Plain hashes are unkeyed.</td></tr>
+            <tr><td>An API request includes \(HMAC(K,m)\), and the server recomputes it with the shared key.</td><td>Good MAC verification pattern.</td></tr>
+            <tr><td>A protocol derives client and server traffic keys with the exact same label.</td><td>Bad domain separation.</td></tr>
+            <tr><td>A key exchange shared secret is fed into HKDF-Extract before expansion.</td><td>Good HKDF pattern.</td></tr>
+            <tr><td>A Finished message authenticates the transcript hash with a derived finished key.</td><td>Good transcript agreement check.</td></tr>
+            <tr><td>An attacker changes ClientHello but the protocol never binds the transcript into later checks.</td><td>Dangerous tampering risk.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>A plain hash is unkeyed.</td><td>Valid</td><td>Anyone can compute it.</td></tr>
+            <tr><td>HMAC uses a secret key and message to produce an authentication tag.</td><td>Valid</td><td>That is HMAC’s purpose.</td></tr>
+            <tr><td>HKDF-Extract produces \(OKM\) directly.</td><td>Mistaken</td><td>Extract produces \(PRK\); Expand produces \(OKM\).</td></tr>
+            <tr><td>HKDF-Expand uses context information such as \(info\).</td><td>Valid</td><td>\(info\) helps label the purpose.</td></tr>
+            <tr><td>Domain separation helps prevent key-purpose confusion.</td><td>Valid</td><td>Different labels create different outputs for different jobs.</td></tr>
+            <tr><td>Transcript binding ties keys or checks to protocol messages.</td><td>Valid</td><td>Transcript hashes bind cryptographic results to the conversation.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>O1 sample answer.</strong> A hash is an unkeyed digest of data, so anyone can compute it. A MAC uses a secret key and a message to produce a tag, so it can prove that someone with the shared secret authenticated that message.</p>
+          <p><strong>O2 sample answer.</strong> HKDF has two main stages. Extract uses HMAC with a salt and input keying material to produce a pseudorandom key. Expand uses that pseudorandom key, context information, and a desired length to produce output key material for specific purposes.</p>
+          <p><strong>O3 sample answer.</strong> Domain separation uses different labels or context strings so derived keys are not confused across purposes. Transcript binding includes a hash of protocol messages in derivation or authentication so keys and checks are tied to the exact conversation.</p>
+          <p><strong>O4 sample answer.</strong> This tutorial showed how hashes become authentication and key-derivation tools. HMAC uses a secret key to authenticate messages, HKDF uses HMAC to extract and expand key material, labels provide domain separation, and transcript binding ties protocol keys and Finished checks to the exact handshake.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A plain hash proves the sender knew a shared secret.</td><td>False</td><td>A plain hash is unkeyed.</td></tr>
+            <tr><td>A MAC uses a secret key.</td><td>True</td><td>That is what makes it authenticate under a shared secret.</td></tr>
+            <tr><td>HMAC is based on a cryptographic hash function.</td><td>True</td><td>HMAC is a hash-based MAC.</td></tr>
+            <tr><td>HKDF has Extract and Expand stages.</td><td>True</td><td>Those are the two main HKDF stages.</td></tr>
+            <tr><td>\(PRK=HMAC(salt,IKM)\).</td><td>True</td><td>That is the HKDF-Extract formula shape.</td></tr>
+            <tr><td>Using the same label for every derived key is good domain separation.</td><td>False</td><td>Good domain separation uses distinct labels/context.</td></tr>
+            <tr><td>Finished messages can use MAC-style checks over transcript hashes.</td><td>True</td><td>They authenticate transcript agreement.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 64: Hash-Based Authentication: HMAC, HKDF, and Transcript Binding.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_64_hash_based_authentication_hmac_hkdf_and_transcript_binding_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_63_tls_handshake_mathematics_key_exchange_authentication_and_session_keys_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_65_randomness_nonces_salts_and_initialization_vectors_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

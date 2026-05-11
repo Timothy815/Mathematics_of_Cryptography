@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protocol Composition: Secure Primitives, Insecure Systems | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 72</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Protocol Composition: Secure Primitives, Insecure Systems</h1>
+      <p class="subtitle">
+        Why good cryptographic ingredients can still make a bad protocol: ordering mistakes, missing identity binding, replay attacks, downgrade attacks, state confusion, key reuse, context separation failures, error oracles, and composition discipline.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorial 71 showed that correct algorithms can fail when computation is disturbed. This tutorial shows a different danger: correct primitives can fail when combined incorrectly. A protocol is not merely a bag of strong parts. The order, context, identities, state, error behavior, and binding rules matter.</p>
+        </div>
+
+        <p class="lead">
+          Cryptographic primitives are strong bricks. Protocol composition is architecture. A pile of excellent bricks can still become a house with doors that open into the moat and windows labeled “please attack here.”</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know hashes, MACs, digital signatures, key exchange, AEAD, nonces, replay protection, formal security goals, side channels, and fail-closed behavior. The central idea is that systems require secure interaction, not just secure components.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols and terms used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Term</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Primitive</td><td>A cryptographic building block.</td><td>Hash, MAC, signature, encryption scheme, key exchange, KDF, etc.</td></tr>
+            <tr><td>Protocol</td><td>A structured conversation.</td><td>A sequence of messages and state transitions using primitives to achieve a security goal.</td></tr>
+            <tr><td>Composition</td><td>Combining parts.</td><td>Using multiple primitives/protocol steps together.</td></tr>
+            <tr><td>Binding</td><td>Tying facts together.</td><td>Cryptographically linking identities, keys, transcript, context, or purpose.</td></tr>
+            <tr><td>Transcript</td><td>The conversation record.</td><td>The ordered list of protocol messages exchanged.</td></tr>
+            <tr><td>Replay attack</td><td>Reuse an old valid message.</td><td>Attack where a previous message is accepted again out of context.</td></tr>
+            <tr><td>Downgrade attack</td><td>Force weaker settings.</td><td>Attack that tricks parties into using weaker algorithms or protocol versions.</td></tr>
+            <tr><td>Context separation</td><td>Do not let one purpose masquerade as another.</td><td>Use domain labels, key separation, and transcript binding to prevent cross-use confusion.</td></tr>
+            <tr><td>Key separation</td><td>Different keys for different jobs.</td><td>Deriving separate keys for encryption, MAC, handshake, export, etc.</td></tr>
+            <tr><td>State machine</td><td>The protocol’s rulebook of stages.</td><td>Formal model of which messages are valid in which state.</td></tr>
+            <tr><td>Fail closed</td><td>Reject safely.</td><td>Invalid or uncertain protocol state leads to safe rejection.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="primitive-vs-protocol">
+        <h2>Primitive security versus protocol security</h2>
+        <p>
+          A primitive can be secure in isolation while the protocol using it is insecure. The primitive promises a narrow property under specific assumptions. The protocol must ensure the right data is protected, the right keys are used, the right messages are accepted, and the right failures are handled safely.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Layer</th><th>Question</th><th>Example failure</th></tr></thead>
+          <tbody>
+            <tr><td>Primitive</td><td>Is this building block secure under its definition?</td><td>Using a weak MAC or broken cipher.</td></tr>
+            <tr><td>Mode</td><td>Is the primitive used safely?</td><td>Nonce reuse in GCM.</td></tr>
+            <tr><td>Protocol</td><td>Are messages, identities, keys, and state bound correctly?</td><td>Replay, downgrade, unknown-key-share, state confusion.</td></tr>
+            <tr><td>Implementation</td><td>Does the code leak or fail incorrectly?</td><td>Timing leak, fault attack, parsing oracle.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="composition-shape">
+        <h2>The composition problem</h2>
+        <div class="diagram" role="img" aria-label="Secure primitives forming insecure protocol">
+          <div class="diagram-title">Secure parts do not automatically create a secure whole</div>
+          <div class="flow-row">
+            <div class="flow-node primitive-node">secure hash</div>
+            <div class="flow-node primitive-node">secure AEAD</div>
+            <div class="flow-node primitive-node">secure signature</div>
+            <div class="flow-node primitive-node">secure KDF</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">protocol design</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node attacker-node">still may fail</div>
+          </div>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Security is not ingredient purity. It is recipe discipline.</p>
+        </div>
+      </section>
+
+      <section id="binding">
+        <h2>Binding: the protocol glue</h2>
+        <p>
+          Binding means making sure important facts cannot be separated or swapped. A protocol often needs to bind identities, public keys, negotiated algorithms, transcript messages, nonces, session identifiers, and intended usage.</p>
+
+        <div class="math-display">
+          \[
+            session\_key = KDF(shared\_secret, transcript, identities, context)
+          \]
+        </div>
+
+        <p>
+          This formula is not a universal construction, but it shows the design instinct: the key should depend not only on the raw secret, but also on what conversation produced it and who it belongs to.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Bind this...</th><th>To prevent...</th></tr></thead>
+          <tbody>
+            <tr><td>Identity to key</td><td>Unknown-key-share or impersonation confusion.</td></tr>
+            <tr><td>Transcript to session</td><td>Message splicing or handshake tampering.</td></tr>
+            <tr><td>Algorithm choices to transcript</td><td>Downgrade attacks.</td></tr>
+            <tr><td>Nonce/counter to message</td><td>Replay or reordering confusion.</td></tr>
+            <tr><td>Context label to derived key</td><td>Key reuse across purposes.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="identity-binding">
+        <h2>Identity binding</h2>
+        <p>
+          Identity binding prevents a key or message from being accepted under the wrong identity. A signature over a public key may not be enough if the signature does not also bind the role, protocol, session, or intended peer.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Missing binding</th><th>Possible result</th></tr></thead>
+          <tbody>
+            <tr><td>Public key not bound to identity.</td><td>Impersonation.</td></tr>
+            <tr><td>Identity not included in key derivation.</td><td>Unknown-key-share confusion.</td></tr>
+            <tr><td>Role not bound.</td><td>Client/server reflection or role confusion.</td></tr>
+            <tr><td>Protocol name not bound.</td><td>Cross-protocol attack.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="replay-attacks">
+        <h2>Replay attacks</h2>
+        <p>
+          A replay attack occurs when an attacker records a valid message and sends it again later. Cryptographic validity alone does not prove freshness.</p>
+
+        <pre><code>Bad pattern:
+1. Alice sends signed command: "Pay Bob $100"
+2. Attacker records it.
+3. Attacker sends the same signed command again.
+4. System accepts it because signature is valid.</code></pre>
+
+        <p>
+          Replay defenses include nonces, timestamps, counters, sequence numbers, session identifiers, and server-side replay caches.</p>
+
+        <table class="lesson-table">
+          <thead><tr><th>Replay defense</th><th>Idea</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce challenge</td><td>Prove the response was made for this session.</td></tr>
+            <tr><td>Counter/sequence number</td><td>Reject old or repeated messages.</td></tr>
+            <tr><td>Timestamp</td><td>Accept only within a time window.</td></tr>
+            <tr><td>Session identifier</td><td>Bind messages to one session.</td></tr>
+            <tr><td>Replay cache</td><td>Remember used tokens/messages.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="downgrade-attacks">
+        <h2>Downgrade attacks</h2>
+        <p>
+          A downgrade attack tricks parties into using weaker algorithms, weaker protocol versions, or less secure options even though both support stronger choices.</p>
+
+        <pre><code>Client: I support StrongVersion and WeakVersion.
+Attacker modifies message:
+Client: I support WeakVersion.
+Server: OK, use WeakVersion.</code></pre>
+
+        <p>
+          A strong protocol authenticates the negotiation transcript so tampering with algorithm choices is detected.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Design instinct</div>
+          <p>
+            Negotiation is security-sensitive data. Treat supported versions, chosen ciphers, groups, and extensions as part of the authenticated transcript.</p>
+        </div>
+      </section>
+
+      <section id="state-confusion">
+        <h2>State confusion</h2>
+        <p>
+          Protocols are state machines. A message valid in one stage may be dangerous in another. State confusion happens when a system accepts a message in the wrong phase or under the wrong assumptions.</p>
+
+        <table class="protocol-table">
+          <thead><tr><th>State issue</th><th>Risk</th></tr></thead>
+          <tbody>
+            <tr><td>Accepting data before handshake complete.</td><td>Unauthenticated data processed too early.</td></tr>
+            <tr><td>Allowing old handshake messages in a new session.</td><td>Replay or transcript confusion.</td></tr>
+            <tr><td>Not separating client/server roles.</td><td>Reflection or role-confusion attack.</td></tr>
+            <tr><td>Continuing after failed verification.</td><td>Fail-open behavior.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="key-separation">
+        <h2>Key separation and context separation</h2>
+        <p>
+          Key separation means using different keys for different jobs. Context separation means making sure data from one context cannot be interpreted as data from another context.</p>
+
+        <div class="math-display">
+          \[
+            K_{enc}=KDF(master,\ \text{``encryption''}\parallel transcript)
+          \]
+          \[
+            K_{mac}=KDF(master,\ \text{``authentication''}\parallel transcript)
+          \]
+        </div>
+
+        <p>
+          Labels such as <code>"encryption"</code> and <code>"authentication"</code> are simple examples of domain separation. They prevent two keys from accidentally being the same when they serve different purposes.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">Key reuse warning</div>
+          <p>
+            Reusing the same key for encryption, authentication, export, and application-specific purposes can create interactions that the primitive security proof never promised to handle.</p>
+        </div>
+      </section>
+
+      <section id="parse-then-auth">
+        <h2>Parsing and authentication order</h2>
+        <p>
+          A common protocol mistake is parsing, decompressing, or acting on untrusted plaintext before authentication succeeds. This can create oracles, crashes, state changes, or side channels.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Pattern</th><th>Security meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Decrypt → parse → verify</td><td>Dangerous. Unverified data affects behavior.</td></tr>
+            <tr><td>Verify tag → decrypt/release → parse</td><td>Safer AEAD instinct.</td></tr>
+            <tr><td>Parse headers as AAD</td><td>Public metadata can be authenticated before use.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="composition-failure-patterns">
+        <h2>Common composition failure patterns</h2>
+        <table class="danger-table">
+          <thead><tr><th>Failure pattern</th><th>What went wrong?</th></tr></thead>
+          <tbody>
+            <tr><td>Secure encryption without authentication.</td><td>Tampering may go undetected.</td></tr>
+            <tr><td>Valid signature but no freshness.</td><td>Replay remains possible.</td></tr>
+            <tr><td>Key exchange without identity binding.</td><td>Man-in-the-middle or identity confusion.</td></tr>
+            <tr><td>Negotiation not authenticated.</td><td>Downgrade possible.</td></tr>
+            <tr><td>Same key reused for multiple roles.</td><td>Cross-purpose interactions.</td></tr>
+            <tr><td>Detailed error handling.</td><td>Protocol oracle.</td></tr>
+            <tr><td>State machine too permissive.</td><td>Messages accepted in wrong stage.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="composition-discipline">
+        <h2>Composition discipline checklist</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Question</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>What exactly is authenticated?</td><td>Include identities, transcript, algorithms, roles, and context.</td></tr>
+            <tr><td>What proves freshness?</td><td>Use nonces, counters, timestamps, or replay caches.</td></tr>
+            <tr><td>Are keys separated by purpose?</td><td>Use labeled KDF outputs.</td></tr>
+            <tr><td>Can old messages be accepted?</td><td>Bind messages to session and state.</td></tr>
+            <tr><td>Are negotiation choices protected?</td><td>Authenticate the transcript.</td></tr>
+            <tr><td>Can invalid data affect behavior?</td><td>Verify before parsing or acting.</td></tr>
+            <tr><td>Do errors leak state?</td><td>Use generic failure where appropriate.</td></tr>
+            <tr><td>Is the state machine strict?</td><td>Reject messages outside the expected phase.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-protocol-example">
+        <h2>Toy protocol example</h2>
+        <p>
+          Consider a toy authenticated key exchange. The unsafe version signs only the ephemeral key. The safer version signs the transcript and derives keys from the transcript, identities, and context.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Unsafe instinct</th><th>Safer instinct</th></tr></thead>
+          <tbody>
+            <tr><td>Sign only \(g^a\).</td><td>Sign transcript: identities, roles, \(g^a\), \(g^b\), algorithms.</td></tr>
+            <tr><td>Derive key only from shared secret.</td><td>Derive key from shared secret plus transcript/context.</td></tr>
+            <tr><td>Accept any valid signed old value.</td><td>Require freshness and session binding.</td></tr>
+            <tr><td>Continue after negotiation mismatch.</td><td>Fail closed on mismatch.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            unsafe:\ K=KDF(g^{ab})
+          \]
+          \[
+            safer:\ K=KDF(g^{ab}, transcript, identities, algorithms, context)
+          \]
+        </div>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: trusting primitives to fix protocol design</div>
+          <p>
+            Secure primitives do not automatically bind identities, freshness, roles, or state.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: authenticating too little</div>
+          <p>
+            If the transcript, identities, or algorithms are not authenticated, attackers may tamper with the conversation.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: missing replay protection</div>
+          <p>
+            A valid old message can still be dangerous if freshness is not checked.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: key reuse across purposes</div>
+          <p>
+            A key for one role should not casually become a key for another role.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: permissive state machines</div>
+          <p>
+            Protocol messages should only be accepted in the correct phase and context.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is protocol composition?
+            <details class="solution"><summary>Show solution</summary><p>Combining cryptographic primitives and message steps into a larger protocol.</p></details>
+          </li>
+          <li>
+            Why can secure primitives still produce an insecure protocol?
+            <details class="solution"><summary>Show solution</summary><p>Because the protocol may fail to bind identities, freshness, state, algorithm choices, or context correctly.</p></details>
+          </li>
+          <li>
+            What is a replay attack?
+            <details class="solution"><summary>Show solution</summary><p>An attack where an old valid message is recorded and accepted again later.</p></details>
+          </li>
+          <li>
+            What is a downgrade attack?
+            <details class="solution"><summary>Show solution</summary><p>An attack that tricks parties into using weaker protocol versions or algorithms.</p></details>
+          </li>
+          <li>
+            Why should negotiation choices be authenticated?
+            <details class="solution"><summary>Show solution</summary><p>So attackers cannot tamper with supported versions, chosen ciphers, groups, or extensions without detection.</p></details>
+          </li>
+          <li>
+            What is key separation?
+            <details class="solution"><summary>Show solution</summary><p>Using different keys for different purposes, often derived with labeled KDF outputs.</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Protocol composition is where cryptography becomes systems design. A cipher, MAC, KDF, signature, or hash may be strong, but the protocol must decide what gets protected, when, under whose identity, in what session, with which keys, and in what state. Most real cryptographic failures are not “someone solved the math”; they are “the system used the math incorrectly.”</p>
+        <ul>
+          <li>Secure primitives do not automatically create secure protocols.</li>
+          <li>Binding links identities, transcripts, algorithms, roles, and context.</li>
+          <li>Freshness prevents replay.</li>
+          <li>Authenticated negotiation prevents downgrade attacks.</li>
+          <li>Strict state machines prevent phase confusion.</li>
+          <li>Key separation prevents cross-purpose interactions.</li>
+          <li>Verify before parsing or acting on untrusted data.</li>
+          <li>Generic failures reduce oracle behavior.</li>
+          <li>Protocol design requires both mathematical and engineering discipline.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A primitive is a cryptographic building block.</li>
+            <li>A protocol is a structured conversation using primitives.</li>
+            <li>Secure primitives can compose into insecure systems.</li>
+            <li>Binding ties identities, keys, transcript, algorithms, roles, and context together.</li>
+            <li>A transcript is the ordered record of protocol messages.</li>
+            <li>Replay attacks reuse old valid messages.</li>
+            <li>Freshness requires nonces, counters, timestamps, session IDs, or replay caches.</li>
+            <li>Downgrade attacks force weaker choices.</li>
+            <li>Negotiation choices should be authenticated.</li>
+            <li>State machines should reject messages in the wrong phase.</li>
+            <li>Use key separation for different jobs.</li>
+            <li>Use context labels/domain separation in KDFs.</li>
+            <li>Verify before parsing or acting on data.</li>
+            <li>Fail closed on invalid or uncertain state.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              session\_key = KDF(shared\_secret, transcript, identities, context)
+            \]
+            \[
+              K_{enc}=KDF(master,\ \text{``encryption''}\parallel transcript)
+            \]
+            \[
+              K_{mac}=KDF(master,\ \text{``authentication''}\parallel transcript)
+            \]
+            \[
+              unsafe:\ K=KDF(g^{ab})
+            \]
+            \[
+              safer:\ K=KDF(g^{ab}, transcript, identities, algorithms, context)
+            \]
+          </div>
+          <pre><code>Protocol discipline:
+Authenticate enough.
+Bind identities and transcript.
+Prove freshness.
+Separate keys by purpose.
+Reject invalid state.
+Verify before parsing or acting.</code></pre>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 72: Protocol Composition: Secure Primitives, Insecure Systems</strong>. After that, the next tutorial can move into <strong>Real-World Protocol Case Studies: TLS, Signal, SSH, and WireGuard</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_71_fault_attacks_glitching_and_defensive_verification_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_73_real_world_protocol_case_studies_tls_signal_ssh_wireguard_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

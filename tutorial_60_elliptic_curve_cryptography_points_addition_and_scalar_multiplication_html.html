@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 60</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication</h1>
+      <p class="subtitle">
+        A first climb onto elliptic curves: curve equations, points, the point at infinity, point addition, point doubling, scalar multiplication, public keys, and the elliptic-curve discrete logarithm problem.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Tutorials 56 through 59 introduced public-key cryptography through Diffie-Hellman and RSA. This tutorial begins elliptic-curve cryptography. Elliptic curves give us public-key systems with smaller keys, elegant group structure, and a hard reverse problem based on point multiplication.</p>
+        </div>
+
+        <p class="lead">
+          Elliptic-curve cryptography looks strange at first because the “numbers” are points, and “multiplication” means repeated geometric addition. It is arithmetic wearing a mapmaker’s coat: points, slopes, reflections, and a hidden trail that is easy to walk forward but hard to retrace.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know modular arithmetic, public/private key pairs, Diffie-Hellman’s “private exponent creates public value” shape, and the idea of a hard reverse problem. Elliptic curves reuse the same public-key theme, but replace modular exponentiation with scalar multiplication of points.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead><tr><th>Symbol</th><th>Friendly meaning</th><th>Technical meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(E\)</td><td>The curve.</td><td>An elliptic curve with a defined equation and field.</td></tr>
+            <tr><td>\(P,Q,R\)</td><td>Points on the curve.</td><td>Elements of the elliptic-curve group.</td></tr>
+            <tr><td>\(\mathcal O\)</td><td>The special zero point.</td><td>The point at infinity, the identity element.</td></tr>
+            <tr><td>\(+\)</td><td>Point addition.</td><td>The group operation on curve points.</td></tr>
+            <tr><td>\(-P\)</td><td>Opposite point.</td><td>The inverse of point \(P\).</td></tr>
+            <tr><td>\(2P\)</td><td>Point doubled.</td><td>\(P+P\).</td></tr>
+            <tr><td>\(kP\)</td><td>Repeated point addition.</td><td>Scalar multiplication: add \(P\) to itself \(k\) times.</td></tr>
+            <tr><td>\(G\)</td><td>Base point.</td><td>Standard generator point.</td></tr>
+            <tr><td>\(d\)</td><td>Private scalar.</td><td>Private key integer.</td></tr>
+            <tr><td>\(Q=dG\)</td><td>Public point.</td><td>Public key point derived from private scalar.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="curve-equation">
+        <h2>The elliptic curve equation</h2>
+        <p>
+          A common simplified elliptic-curve shape over ordinary real numbers is:</p>
+
+        <div class="math-display">
+          \[
+            y^2=x^3+ax+b
+          \]
+        </div>
+
+        <p>
+          For cryptography, the curve is usually defined over a finite field, so the coordinates are modular values rather than continuous real-number coordinates. But the visual picture over the real numbers gives the first intuition.</p>
+
+        <svg class="curve-sketch" viewBox="0 0 700 360" role="img" aria-label="Stylized elliptic curve sketch">
+          <line class="axis" x1="40" y1="180" x2="660" y2="180"></line>
+          <line class="axis" x1="350" y1="30" x2="350" y2="330"></line>
+          <path class="curve" d="M100,178 C135,55 235,40 300,125 C350,190 400,280 505,250 C585,228 626,105 640,62"></path>
+          <path class="curve" d="M100,182 C135,305 235,320 300,235 C350,170 400,80 505,110 C585,132 626,255 640,298"></path>
+          <circle class="point" cx="235" cy="83" r="5"></circle>
+          <text class="point-label" x="245" y="78">P</text>
+          <circle class="point" cx="505" cy="250" r="5"></circle>
+          <text class="point-label" x="515" y="265">Q</text>
+        </svg>
+
+        <div class="box technical-box">
+          <div class="box-title">Non-singular curve condition</div>
+          <p>
+            For curves of the form \(y^2=x^3+ax+b\), we need the curve to avoid cusps or self-intersections. A common condition is:</p>
+          <div class="math-display">
+            \[
+              4a^3+27b^2\ne0
+            \]
+          </div>
+          <p>This keeps the curve smooth enough for the group law to work properly.</p>
+        </div>
+      </section>
+
+      <section id="points-as-group-elements">
+        <h2>Points as group elements</h2>
+        <p>
+          In elliptic-curve cryptography, the objects we operate on are not ordinary numbers. They are points on a curve. The curve points form a group, meaning we can define a consistent addition operation.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Group idea</th><th>Elliptic-curve version</th><th>Friendly meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Elements</td><td>Points on the curve</td><td>The things we operate on.</td></tr>
+            <tr><td>Operation</td><td>Point addition \(P+Q\)</td><td>Combine two points to get another point.</td></tr>
+            <tr><td>Identity</td><td>\(\mathcal O\)</td><td>Special zero-like point.</td></tr>
+            <tr><td>Inverse</td><td>\(-P\)</td><td>The point that cancels \(P\).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Important shift</div>
+          <p>
+            In RSA, the action was exponentiating numbers. In ECC, the action is adding points again and again.</p>
+        </div>
+      </section>
+
+      <section id="point-at-infinity">
+        <h2>The point at infinity</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: point at infinity</div>
+          <p>
+            The point at infinity, written \(\mathcal O\), is the identity element for elliptic-curve point addition. It acts like zero does for ordinary addition.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            P+\mathcal O=P
+          \]
+          \[
+            P+(-P)=\mathcal O
+          \]
+        </div>
+
+        <p>
+          You do not need to picture \(\mathcal O\) as a normal point sitting somewhere on the graph. It is a formal point added to make the group operation complete.</p>
+      </section>
+
+      <section id="point-negation">
+        <h2>Point negation</h2>
+        <p>
+          Over the real-number picture, if \(P=(x,y)\), then the opposite point is:</p>
+
+        <div class="math-display">
+          \[
+            -P=(x,-y)
+          \]
+        </div>
+
+        <p>
+          The point and its negative have the same \(x\)-coordinate but opposite \(y\)-coordinates. On the graph, this is reflection across the \(x\)-axis.</p>
+
+        <div class="box technical-box">
+          <div class="box-title">Finite-field version</div>
+          <p>
+            In modular arithmetic, \(-y\) means the additive inverse modulo the field prime. If the field modulus is \(p\), then \(-y\equiv p-y\pmod p\) when \(y\ne0\).</p>
+        </div>
+      </section>
+
+      <section id="point-addition-geometry">
+        <h2>Point addition geometry</h2>
+        <p>
+          To add two distinct points \(P\) and \(Q\), draw a line through them. That line intersects the curve at a third point. Reflect that third point across the \(x\)-axis. The reflected point is \(P+Q\).</p>
+
+        <svg class="curve-sketch" viewBox="0 0 700 360" role="img" aria-label="Point addition sketch">
+          <line class="axis" x1="40" y1="180" x2="660" y2="180"></line>
+          <line class="axis" x1="350" y1="30" x2="350" y2="330"></line>
+          <path class="curve" d="M100,178 C135,55 235,40 300,125 C350,190 400,280 505,250 C585,228 626,105 640,62"></path>
+          <path class="curve" d="M100,182 C135,305 235,320 300,235 C350,170 400,80 505,110 C585,132 626,255 640,298"></path>
+          <line class="line" x1="225" y1="82" x2="585" y2="255"></line>
+          <circle class="point" cx="235" cy="83" r="5"></circle>
+          <text class="point-label" x="245" y="78">P</text>
+          <circle class="point" cx="505" cy="250" r="5"></circle>
+          <text class="point-label" x="515" y="265">Q</text>
+          <circle class="point" cx="585" cy="255" r="5"></circle>
+          <text class="point-label" x="594" y="270">-R</text>
+          <circle class="point" cx="585" cy="105" r="5"></circle>
+          <text class="point-label" x="594" y="100">R=P+Q</text>
+        </svg>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Draw a line through \(P\) and \(Q\).</td></tr>
+            <tr><td>2</td><td>Find the third intersection point with the curve.</td></tr>
+            <tr><td>3</td><td>Reflect that third point across the \(x\)-axis.</td></tr>
+            <tr><td>4</td><td>The reflected point is \(P+Q\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="point-doubling">
+        <h2>Point doubling</h2>
+        <p>
+          To compute \(2P=P+P\), we cannot draw a line through two different points. Instead, we draw the tangent line at \(P\). That tangent intersects the curve at another point. Reflect that point to get \(2P\).</p>
+
+        <div class="math-display">
+          \[
+            2P=P+P
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Step</th><th>Geometric action</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>Draw the tangent line at \(P\).</td></tr>
+            <tr><td>2</td><td>Find where the tangent line intersects the curve again.</td></tr>
+            <tr><td>3</td><td>Reflect that point across the \(x\)-axis.</td></tr>
+            <tr><td>4</td><td>The reflected point is \(2P\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="finite-field-curves">
+        <h2>Curves over finite fields</h2>
+        <p>
+          The smooth curve drawing helps intuition, but real elliptic-curve cryptography usually works over finite fields. That means coordinates are reduced modulo a prime:</p>
+
+        <div class="math-display">
+          \[
+            y^2\equiv x^3+ax+b\pmod p
+          \]
+        </div>
+
+        <p>
+          Instead of a continuous curve, we get a scattered set of valid points. The addition rules still work, but all arithmetic happens modulo \(p\).</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Real-number picture</th><th>Finite-field cryptographic version</th></tr></thead>
+          <tbody>
+            <tr><td>Smooth continuous curve</td><td>Discrete set of modular points</td></tr>
+            <tr><td>Coordinates can be fractions/decimals</td><td>Coordinates are values modulo \(p\)</td></tr>
+            <tr><td>Good for geometry intuition</td><td>Used for actual cryptographic operations</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scalar-multiplication">
+        <h2>Scalar multiplication</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: scalar multiplication</div>
+          <p>
+            Scalar multiplication means adding a point to itself repeatedly.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            kP=\underbrace{P+P+\cdots+P}_{k\text{ times}}
+          \]
+        </div>
+
+        <p>
+          For example:</p>
+
+        <table class="example-table">
+          <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>\(1P\)</td><td>\(P\)</td></tr>
+            <tr><td>\(2P\)</td><td>\(P+P\)</td></tr>
+            <tr><td>\(3P\)</td><td>\(2P+P\)</td></tr>
+            <tr><td>\(7P\)</td><td>\(P+P+P+P+P+P+P\)</td></tr>
+          </tbody>
+        </table>
+
+        <p>
+          In real systems, scalar multiplication is computed efficiently with double-and-add or more advanced methods, not by literally adding one at a time.</p>
+      </section>
+
+      <section id="double-and-add">
+        <h2>Double-and-add intuition</h2>
+        <p>
+          Just as modular exponentiation can be sped up with repeated squaring, elliptic-curve scalar multiplication can be sped up with doubling and adding.</p>
+
+        <p>
+          To compute \(13P\), use binary:</p>
+
+        <div class="math-display">
+          \[
+            13=8+4+1
+          \]
+          \[
+            13P=8P+4P+P
+          \]
+        </div>
+
+        <table class="step-table">
+          <thead><tr><th>Multiple</th><th>How obtained</th></tr></thead>
+          <tbody>
+            <tr><td>\(2P\)</td><td>Double \(P\).</td></tr>
+            <tr><td>\(4P\)</td><td>Double \(2P\).</td></tr>
+            <tr><td>\(8P\)</td><td>Double \(4P\).</td></tr>
+            <tr><td>\(13P\)</td><td>Add \(8P+4P+P\).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ecc-key-pairs">
+        <h2>ECC key pairs</h2>
+        <p>
+          Elliptic-curve public keys are built by multiplying a standard base point \(G\) by a private scalar \(d\):</p>
+
+        <div class="math-display">
+          \[
+            Q=dG
+          \]
+        </div>
+
+        <table class="ecc-table">
+          <thead><tr><th>Value</th><th>Public or private?</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>Curve parameters</td><td>Public</td><td>Define the curve and finite field.</td></tr>
+            <tr><td>\(G\)</td><td>Public</td><td>Standard base point.</td></tr>
+            <tr><td>\(d\)</td><td>Private</td><td>Private scalar.</td></tr>
+            <tr><td>\(Q=dG\)</td><td>Public</td><td>Public key point.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="ECC public key derivation">
+          <div class="diagram-title">ECC public key derivation</div>
+          <div class="flow-row">
+            <div class="flow-node curve-node">public curve<br>and base point \(G\)</div>
+            <div class="flow-arrow">+</div>
+            <div class="flow-node private-node">private scalar<br>\(d\)</div>
+            <div class="flow-arrow">→</div>
+            <div class="machine-node">scalar multiplication</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">public key<br>\(Q=dG\)</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="hard-problem">
+        <h2>The elliptic-curve discrete logarithm problem</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: Elliptic-Curve Discrete Logarithm Problem</div>
+          <p>
+            Given \(G\) and \(Q=dG\), the elliptic-curve discrete logarithm problem is to recover \(d\).</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            Q=dG \quad \text{easy if you know } d
+          \]
+          \[
+            d \quad \text{is hard to recover from } G \text{ and } Q
+          \]
+        </div>
+
+        <p>
+          This is the ECC version of the public-key trap: easy to go forward by scalar multiplication, hard to reverse by finding the scalar.</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Scalar multiplication is like taking many turns through a city of modular intersections. The public point tells where you ended up. The hard problem asks how many steps you took to get there.</p>
+        </div>
+      </section>
+
+      <section id="ecc-diffie-hellman-preview">
+        <h2>Elliptic-curve Diffie-Hellman preview</h2>
+        <p>
+          Elliptic-curve Diffie-Hellman follows the same shape as classical Diffie-Hellman, but uses point scalar multiplication.</p>
+
+        <table class="ecc-table">
+          <thead><tr><th>Party</th><th>Private scalar</th><th>Public point</th><th>Shared point</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td>\(A=aG\)</td><td>\(aB=a(bG)=abG\)</td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td>\(B=bG\)</td><td>\(bA=b(aG)=abG\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            a(bG)=b(aG)=abG
+          \]
+        </div>
+
+        <p>
+          As with classical Diffie-Hellman, the raw shared result should feed a KDF, and authentication is needed against man-in-the-middle attacks.</p>
+      </section>
+
+      <section id="why-ecc-is-popular">
+        <h2>Why ECC is popular</h2>
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>ECC advantage</th></tr></thead>
+          <tbody>
+            <tr><td>Key size</td><td>Strong security with smaller keys than traditional RSA at comparable security levels.</td></tr>
+            <tr><td>Performance</td><td>Efficient for many signatures and key exchanges.</td></tr>
+            <tr><td>Protocols</td><td>Used in modern TLS, secure messaging, cryptocurrencies, and authentication systems.</td></tr>
+            <tr><td>Mathematical structure</td><td>Hard reverse problem based on scalar multiplication of points.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking ECC points are ordinary coordinates only</div>
+          <p>
+            In cryptography, points are group elements with a special addition operation.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking scalar multiplication is normal multiplication</div>
+          <p>
+            \(kP\) means repeated point addition, not multiplying the coordinates by \(k\).</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: ignoring the point at infinity</div>
+          <p>
+            \(\mathcal O\) is the identity element that makes the point group complete.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: forgetting authentication</div>
+          <p>
+            Elliptic-curve Diffie-Hellman still needs authentication to resist active attackers.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is the common simplified elliptic-curve equation?
+            <details class="solution"><summary>Show solution</summary><p>\(y^2=x^3+ax+b\).</p></details>
+          </li>
+          <li>
+            What is the point at infinity?
+            <details class="solution"><summary>Show solution</summary><p>\(\mathcal O\), the identity element for point addition.</p></details>
+          </li>
+          <li>
+            What does \(2P\) mean?
+            <details class="solution"><summary>Show solution</summary><p>\(2P=P+P\), point doubling.</p></details>
+          </li>
+          <li>
+            What does \(kP\) mean?
+            <details class="solution"><summary>Show solution</summary><p>Scalar multiplication: add \(P\) to itself \(k\) times.</p></details>
+          </li>
+          <li>
+            In ECC, how is a public key point usually derived from a private scalar?
+            <details class="solution"><summary>Show solution</summary><p>\(Q=dG\), where \(d\) is the private scalar and \(G\) is the public base point.</p></details>
+          </li>
+          <li>
+            What is the elliptic-curve discrete logarithm problem?
+            <details class="solution"><summary>Show solution</summary><p>Given \(G\) and \(Q=dG\), recover \(d\).</p></details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Elliptic-curve cryptography is another way to build public-key systems from a hard reverse problem. RSA hides the factorization of \(n\). Diffie-Hellman hides exponents. ECC hides the scalar used to produce a public point. The result is compact, efficient public-key cryptography that appears throughout modern secure systems.</p>
+        <ul>
+          <li>ECC operates on points on a curve.</li>
+          <li>Point addition combines two points to get another point.</li>
+          <li>The point at infinity \(\mathcal O\) is the identity element.</li>
+          <li>Point doubling means \(2P=P+P\).</li>
+          <li>Scalar multiplication means repeated point addition.</li>
+          <li>ECC public keys often have the form \(Q=dG\).</li>
+          <li>The private key is the scalar \(d\).</li>
+          <li>The public key is the point \(Q\).</li>
+          <li>The hard problem is recovering \(d\) from \(G\) and \(Q\).</li>
+          <li>ECDH mirrors Diffie-Hellman: \(a(bG)=b(aG)=abG\).</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>A common elliptic curve equation is \(y^2=x^3+ax+b\).</li>
+            <li>Cryptographic curves usually work over finite fields.</li>
+            <li>ECC operates on points, not ordinary integers.</li>
+            <li>Point addition is the group operation.</li>
+            <li>\(\mathcal O\) is the point at infinity and acts like zero.</li>
+            <li>\(-P\) is the inverse of \(P\).</li>
+            <li>\(P+(-P)=\mathcal O\).</li>
+            <li>\(2P=P+P\) is point doubling.</li>
+            <li>\(kP\) means add \(P\) to itself \(k\) times.</li>
+            <li>ECC public key shape: \(Q=dG\).</li>
+            <li>\(d\) is the private scalar.</li>
+            <li>\(G\) is a public base point.</li>
+            <li>\(Q\) is the public key point.</li>
+            <li>The hard problem is recovering \(d\) from \(G\) and \(Q=dG\).</li>
+            <li>ECDH shared point shape: \(a(bG)=b(aG)=abG\).</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas</div>
+          <div class="math-display">
+            \[
+              y^2=x^3+ax+b
+            \]
+            \[
+              P+\mathcal O=P
+            \]
+            \[
+              P+(-P)=\mathcal O
+            \]
+            \[
+              2P=P+P
+            \]
+            \[
+              kP=\underbrace{P+P+\cdots+P}_{k\text{ times}}
+            \]
+            \[
+              Q=dG
+            \]
+            \[
+              a(bG)=b(aG)=abG
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 60: Elliptic Curve Cryptography: Points, Addition, and Scalar Multiplication</strong>. After that, the next tutorial can move into <strong>Elliptic Curve Diffie-Hellman and Digital Signatures</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_60_elliptic_curve_cryptography_points_addition_and_scalar_multiplication_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_59_rsa_worked_examples_encryption_decryption_and_signature_intuition_html.html" class="nav-item">⬅️ Previous Tutorial</a>
+          <a href="tutorial_61_elliptic_curve_diffie_hellman_and_digital_signatures_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

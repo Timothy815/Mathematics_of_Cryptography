@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 66: Authenticated Encryption: AEAD, GCM, ChaCha20-Poly1305, and Misuse Resistance | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 66</div>
+      <div class="volume-label">Volume 4: Protocols & Real-World Engineering</div>
+      
+      <h1>Authenticated Encryption: AEAD, GCM, ChaCha20-Poly1305, and Misuse Resistance</h1>
+      <p class="subtitle">
+        Printable practice for authenticated encryption, associated data, authentication tags, AES-GCM, ChaCha20-Poly1305, nonce requirements, fail-closed decryption, and misuse-resistant design thinking.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Focus on the full AEAD contract: encrypt the plaintext, authenticate the ciphertext, authenticate public metadata, and reject completely if the tag does not verify.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">AEAD interface</div>
+            <div class="math-display">
+              \[
+                (C,tag)=AEAD\_Encrypt(K,N,AAD,P)
+              \]
+              \[
+                P=AEAD\_Decrypt(K,N,AAD,C,tag)
+              \]
+            </div>
+          </div>
+
+          <div class="box aead-box">
+            <div class="box-title">Mode shapes</div>
+            <div class="math-display">
+              \[
+                C=P\oplus KS
+              \]
+              \[
+                tag=GHASH_H(AAD,C)\oplus mask
+              \]
+              \[
+                C=P\oplus ChaCha20(K,N)
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AE stand for?</td><td></td></tr>
+            <tr><td>A2. What does AEAD stand for?</td><td></td></tr>
+            <tr><td>A3. What does \(K\) represent?</td><td></td></tr>
+            <tr><td>A4. What does \(N\) represent?</td><td></td></tr>
+            <tr><td>A5. What does \(P\) represent?</td><td></td></tr>
+            <tr><td>A6. What does \(C\) represent?</td><td></td></tr>
+            <tr><td>A7. What is AAD?</td><td></td></tr>
+            <tr><td>A8. What is an authentication tag?</td><td></td></tr>
+            <tr><td>A9. What does GCM stand for?</td><td></td></tr>
+            <tr><td>A10. What is GHASH?</td><td></td></tr>
+            <tr><td>A11. What is ChaCha20?</td><td></td></tr>
+            <tr><td>A12. What is Poly1305?</td><td></td></tr>
+            <tr><td>A13. What is misuse resistance?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="encryption-alone">
+        <h2>Part B: Why encryption alone is not enough</h2>
+        <table class="compare-table">
+          <thead><tr><th>Goal</th><th>Encryption alone</th><th>Authenticated encryption</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td></td><td></td></tr>
+            <tr><td>Integrity</td><td></td><td></td></tr>
+            <tr><td>Authenticity</td><td></td><td></td></tr>
+            <tr><td>Tamper detection</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why is encryption without authentication dangerous when attackers can modify ciphertext?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="aead-interface">
+        <h2>Part C: AEAD interface</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            (C,tag)=AEAD\_Encrypt(K,N,AAD,P)
+          \]
+          \[
+            P=AEAD\_Decrypt(K,N,AAD,C,tag)
+          \]
+        </div>
+
+        <table class="aead-table">
+          <thead><tr><th>Input/output</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(K\)</td><td></td></tr>
+            <tr><td>\(N\)</td><td></td></tr>
+            <tr><td>AAD</td><td></td></tr>
+            <tr><td>\(P\)</td><td></td></tr>
+            <tr><td>\(C\)</td><td></td></tr>
+            <tr><td>tag</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. What should AEAD decryption do if tag verification fails?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="aead-flow">
+        <h2>Part D: Encrypted versus authenticated</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Input/output</th><th>Encrypted?</th><th>Authenticated?</th></tr></thead>
+          <tbody>
+            <tr><td>Plaintext \(P\)</td><td></td><td></td></tr>
+            <tr><td>Ciphertext \(C\)</td><td></td><td></td></tr>
+            <tr><td>AAD</td><td></td><td></td></tr>
+            <tr><td>Nonce \(N\)</td><td></td><td></td></tr>
+            <tr><td>Tag</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="associated-data">
+        <h2>Part E: Associated Data</h2>
+        <table class="example-table">
+          <thead><tr><th>Scenario</th><th>Plaintext</th><th>AAD</th></tr></thead>
+          <tbody>
+            <tr><td>TLS record</td><td></td><td></td></tr>
+            <tr><td>Encrypted database field</td><td></td><td></td></tr>
+            <tr><td>Secure message</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is AAD useful if it is not encrypted?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="tag-verification">
+        <h2>Part F: Tag verification</h2>
+        <table class="danger-table">
+          <thead><tr><th>Bad event</th><th>Expected AEAD behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext bit changed</td><td></td></tr>
+            <tr><td>AAD changed</td><td></td></tr>
+            <tr><td>Wrong key used</td><td></td></tr>
+            <tr><td>Wrong nonce used</td><td></td></tr>
+            <tr><td>Tag changed</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">F1. Explain “reject means reject” in AEAD decryption.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="gcm">
+        <h2>Part G: AES-GCM</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Part of GCM</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Counter-mode encryption</td><td></td></tr>
+            <tr><td>GHASH</td><td></td></tr>
+            <tr><td>Authentication tag</td><td></td></tr>
+            <tr><td>Nonce</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why is GCM nonce reuse dangerous?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="gcm-math-shape">
+        <h2>Part H: GCM math shape</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            C=P\oplus KS
+          \]
+          \[
+            tag=GHASH_H(AAD,C)\oplus mask
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. Which part provides confidentiality, and which part provides authentication?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="chacha-poly">
+        <h2>Part I: ChaCha20-Poly1305</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            C=P\oplus ChaCha20(K,N)
+          \]
+          \[
+            tag=Poly1305(one\text{-}time\ key,AAD,C)
+          \]
+        </div>
+
+        <table class="lesson-table">
+          <thead><tr><th>Part</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>ChaCha20</td><td></td></tr>
+            <tr><td>Poly1305</td><td></td></tr>
+            <tr><td>Nonce</td><td></td></tr>
+            <tr><td>Tag</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="comparison">
+        <h2>Part J: AES-GCM versus ChaCha20-Poly1305</h2>
+        <table class="compare-table">
+          <thead><tr><th>Feature</th><th>AES-GCM</th><th>ChaCha20-Poly1305</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption core</td><td></td><td></td></tr>
+            <tr><td>Authentication core</td><td></td><td></td></tr>
+            <tr><td>Common strength</td><td></td><td></td></tr>
+            <tr><td>Nonce rule</td><td></td><td></td></tr>
+            <tr><td>Protocol use</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="nonce-requirements">
+        <h2>Part K: AEAD nonce requirements</h2>
+        <table class="danger-table">
+          <thead><tr><th>Nonce behavior</th><th>Security result</th></tr></thead>
+          <tbody>
+            <tr><td>Unique per key</td><td></td></tr>
+            <tr><td>Repeated with same key</td><td></td></tr>
+            <tr><td>Public but unique</td><td></td></tr>
+            <tr><td>Secret but repeated</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Why does secrecy not repair nonce reuse?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="misuse-resistance">
+        <h2>Part L: Misuse resistance</h2>
+        <table class="compare-table">
+          <thead><tr><th>Mode type</th><th>If nonce is reused</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce-sensitive AEAD</td><td></td><td></td></tr>
+            <tr><td>Misuse-resistant AEAD</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">L1. What does misuse resistance mean, and what does it not mean?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="safe-patterns">
+        <h2>Part M: Safe implementation patterns</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Pattern</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Use vetted AEAD libraries</td><td></td></tr>
+            <tr><td>Generate or manage nonces according to library guidance</td><td></td></tr>
+            <tr><td>Authenticate headers as AAD</td><td></td></tr>
+            <tr><td>Reject before releasing plaintext</td><td></td></tr>
+            <tr><td>Separate keys by purpose</td><td></td></tr>
+            <tr><td>Consider misuse-resistant modes where nonce mistakes are likely</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part N: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system encrypts data but does not authenticate the ciphertext.</td><td></td></tr>
+            <tr><td>A TLS-like record authenticates the record header as AAD.</td><td></td></tr>
+            <tr><td>AEAD tag verification fails, but the application logs and uses the plaintext anyway.</td><td></td></tr>
+            <tr><td>AES-GCM reuses the same nonce with the same key.</td><td></td></tr>
+            <tr><td>ChaCha20-Poly1305 uses a unique nonce per key.</td><td></td></tr>
+            <tr><td>A developer assumes a misuse-resistant mode means no rules matter anymore.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part O: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD provides encryption and authentication together.</td><td></td><td></td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td></td><td></td></tr>
+            <tr><td>The tag detects tampering with ciphertext or AAD.</td><td></td><td></td></tr>
+            <tr><td>Plaintext should be released before tag verification to improve performance.</td><td></td><td></td></tr>
+            <tr><td>AES-GCM uses GHASH for authentication.</td><td></td><td></td></tr>
+            <tr><td>ChaCha20-Poly1305 uses Poly1305 for authentication.</td><td></td><td></td></tr>
+            <tr><td>Common AEAD nonces may be public but must be unique per key.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part P: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">P1. Explain AEAD in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P2. Explain AAD and tag verification in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P3. Compare AES-GCM and ChaCha20-Poly1305 in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">P4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption alone always proves that ciphertext was not modified.</td><td></td></tr>
+            <tr><td>AEAD authenticates ciphertext and associated data.</td><td></td></tr>
+            <tr><td>AAD is public but tamper-protected.</td><td></td></tr>
+            <tr><td>Failed AEAD tag verification should cause rejection.</td><td></td></tr>
+            <tr><td>AES-GCM and ChaCha20-Poly1305 both require careful nonce handling.</td><td></td></tr>
+            <tr><td>Making a repeated nonce secret fixes nonce reuse.</td><td></td></tr>
+            <tr><td>Misuse resistance reduces damage from some mistakes but does not make rules optional.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central AEAD idea is simple but strict: do not trust ciphertext, metadata, or plaintext unless the authentication tag verifies under the correct key, nonce, and associated data.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What does AE stand for?</td><td>Authenticated Encryption.</td></tr>
+            <tr><td>A2. What does AEAD stand for?</td><td>Authenticated Encryption with Associated Data.</td></tr>
+            <tr><td>A3. What does \(K\) represent?</td><td>The secret symmetric key.</td></tr>
+            <tr><td>A4. What does \(N\) represent?</td><td>The nonce.</td></tr>
+            <tr><td>A5. What does \(P\) represent?</td><td>Plaintext.</td></tr>
+            <tr><td>A6. What does \(C\) represent?</td><td>Ciphertext.</td></tr>
+            <tr><td>A7. What is AAD?</td><td>Additional Authenticated Data: public data authenticated but not encrypted.</td></tr>
+            <tr><td>A8. What is an authentication tag?</td><td>A tamper-detection/authentication value produced by AEAD.</td></tr>
+            <tr><td>A9. What does GCM stand for?</td><td>Galois/Counter Mode.</td></tr>
+            <tr><td>A10. What is GHASH?</td><td>The finite-field polynomial authentication core used by GCM.</td></tr>
+            <tr><td>A11. What is ChaCha20?</td><td>A stream cipher.</td></tr>
+            <tr><td>A12. What is Poly1305?</td><td>A one-time polynomial authenticator/MAC.</td></tr>
+            <tr><td>A13. What is misuse resistance?</td><td>A design property that reduces damage from some implementation mistakes, such as accidental nonce reuse.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Why encryption alone is not enough</h3>
+        <table class="answer-table">
+          <thead><tr><th>Goal</th><th>Encryption alone</th><th>Authenticated encryption</th></tr></thead>
+          <tbody>
+            <tr><td>Confidentiality</td><td>Yes, if used correctly.</td><td>Yes, if used correctly.</td></tr>
+            <tr><td>Integrity</td><td>Not necessarily.</td><td>Yes.</td></tr>
+            <tr><td>Authenticity</td><td>Not necessarily.</td><td>Yes, under the shared key.</td></tr>
+            <tr><td>Tamper detection</td><td>Not guaranteed.</td><td>Yes, via tag verification.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Some encryption modes are malleable, meaning attackers may modify ciphertext and affect the decrypted plaintext. Authentication detects tampering before plaintext is trusted.</p></div>
+
+        <h3>Part C: AEAD interface</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input/output</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>\(K\)</td><td>Secret symmetric key.</td></tr>
+            <tr><td>\(N\)</td><td>Nonce, usually public but unique per key for common AEADs.</td></tr>
+            <tr><td>AAD</td><td>Public metadata that is authenticated but not encrypted.</td></tr>
+            <tr><td>\(P\)</td><td>Plaintext input to encryption.</td></tr>
+            <tr><td>\(C\)</td><td>Ciphertext output from encryption.</td></tr>
+            <tr><td>tag</td><td>Authentication value checked during decryption.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 answer.</strong> It should reject the message and not release or trust plaintext.</p></div>
+
+        <h3>Part D: Encrypted versus authenticated</h3>
+        <table class="answer-table">
+          <thead><tr><th>Input/output</th><th>Encrypted?</th><th>Authenticated?</th></tr></thead>
+          <tbody>
+            <tr><td>Plaintext \(P\)</td><td>Yes, becomes ciphertext.</td><td>Yes.</td></tr>
+            <tr><td>Ciphertext \(C\)</td><td>Already encrypted.</td><td>Yes.</td></tr>
+            <tr><td>AAD</td><td>No.</td><td>Yes.</td></tr>
+            <tr><td>Nonce \(N\)</td><td>No.</td><td>Usually bound into tag calculation.</td></tr>
+            <tr><td>Tag</td><td>No.</td><td>It is the authentication result.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Associated Data</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Plaintext</th><th>AAD</th></tr></thead>
+          <tbody>
+            <tr><td>TLS record</td><td>Application data</td><td>Record header or protocol metadata.</td></tr>
+            <tr><td>Encrypted database field</td><td>Stored sensitive value</td><td>Row ID, table name, version.</td></tr>
+            <tr><td>Secure message</td><td>Message body</td><td>Sender, recipient, timestamp, protocol version.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> Some metadata must remain readable but still must not be altered. AAD lets the system authenticate that public metadata without encrypting it.</p></div>
+
+        <h3>Part F: Tag verification</h3>
+        <table class="answer-table">
+          <thead><tr><th>Bad event</th><th>Expected AEAD behavior</th></tr></thead>
+          <tbody>
+            <tr><td>Ciphertext bit changed</td><td>Tag verification fails.</td></tr>
+            <tr><td>AAD changed</td><td>Tag verification fails.</td></tr>
+            <tr><td>Wrong key used</td><td>Tag verification fails.</td></tr>
+            <tr><td>Wrong nonce used</td><td>Tag verification fails or decrypts incorrectly and fails tag check.</td></tr>
+            <tr><td>Tag changed</td><td>Tag verification fails.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>F1 sample answer.</strong> If verification fails, the system should treat the entire message as invalid and should not release or trust plaintext. Fail closed.</p></div>
+
+        <h3>Part G: AES-GCM</h3>
+        <table class="answer-table">
+          <thead><tr><th>Part of GCM</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>Counter-mode encryption</td><td>Turns AES into a stream of blocks that encrypt plaintext by XOR.</td></tr>
+            <tr><td>GHASH</td><td>Authenticates ciphertext and associated data using finite-field arithmetic.</td></tr>
+            <tr><td>Authentication tag</td><td>Detects tampering with ciphertext or AAD.</td></tr>
+            <tr><td>Nonce</td><td>Must be unique under the same key.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> GCM nonce reuse can reuse keystream and can also damage the authentication guarantees, potentially compromising both confidentiality and integrity.</p></div>
+
+        <h3>Part H: GCM math shape</h3>
+        <div class="answer-step"><p><strong>H1 answer.</strong> \(C=P\oplus KS\) represents counter-mode confidentiality. \(tag=GHASH_H(AAD,C)\oplus mask\) represents authentication over AAD and ciphertext.</p></div>
+
+        <h3>Part I: ChaCha20-Poly1305</h3>
+        <table class="answer-table">
+          <thead><tr><th>Part</th><th>Job</th></tr></thead>
+          <tbody>
+            <tr><td>ChaCha20</td><td>Generates a keystream to encrypt plaintext.</td></tr>
+            <tr><td>Poly1305</td><td>Authenticates ciphertext and associated data.</td></tr>
+            <tr><td>Nonce</td><td>Must be unique under the same key.</td></tr>
+            <tr><td>Tag</td><td>Detects tampering.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: AES-GCM versus ChaCha20-Poly1305</h3>
+        <table class="answer-table">
+          <thead><tr><th>Feature</th><th>AES-GCM</th><th>ChaCha20-Poly1305</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption core</td><td>AES in counter mode.</td><td>ChaCha20 stream cipher.</td></tr>
+            <tr><td>Authentication core</td><td>GHASH over finite fields.</td><td>Poly1305 polynomial MAC.</td></tr>
+            <tr><td>Common strength</td><td>Very fast with AES hardware support.</td><td>Very fast in software and mobile contexts.</td></tr>
+            <tr><td>Nonce rule</td><td>Unique nonce per key.</td><td>Unique nonce per key.</td></tr>
+            <tr><td>Protocol use</td><td>TLS, VPNs, storage, many systems.</td><td>TLS, SSH, WireGuard-like systems, mobile/software-heavy systems.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: AEAD nonce requirements</h3>
+        <table class="answer-table">
+          <thead><tr><th>Nonce behavior</th><th>Security result</th></tr></thead>
+          <tbody>
+            <tr><td>Unique per key</td><td>Expected safe use.</td></tr>
+            <tr><td>Repeated with same key</td><td>Dangerous; may break confidentiality and/or authenticity.</td></tr>
+            <tr><td>Public but unique</td><td>Usually acceptable.</td></tr>
+            <tr><td>Secret but repeated</td><td>Still dangerous. Secrecy does not repair reuse.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>K1 sample answer.</strong> AEAD nonce rules depend on uniqueness under the key. Hiding a repeated nonce does not prevent the cryptographic relationship created by reuse.</p></div>
+
+        <h3>Part L: Misuse resistance</h3>
+        <table class="answer-table">
+          <thead><tr><th>Mode type</th><th>If nonce is reused</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>Nonce-sensitive AEAD</td><td>May suffer severe security failure.</td><td>Nonce management must be correct.</td></tr>
+            <tr><td>Misuse-resistant AEAD</td><td>Damage may be reduced for some mistakes.</td><td>Safer design, but still follow rules.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>L1 sample answer.</strong> Misuse resistance means a mode reduces damage from some implementation mistakes, such as accidental nonce reuse. It does not mean the mode is invincible or that correct nonce/key rules no longer matter.</p></div>
+
+        <h3>Part M: Safe implementation patterns</h3>
+        <table class="answer-table">
+          <thead><tr><th>Pattern</th><th>Why it helps</th></tr></thead>
+          <tbody>
+            <tr><td>Use vetted AEAD libraries</td><td>Avoids hand-rolled encrypt-and-MAC mistakes.</td></tr>
+            <tr><td>Generate or manage nonces according to library guidance</td><td>Prevents dangerous reuse.</td></tr>
+            <tr><td>Authenticate headers as AAD</td><td>Prevents public metadata tampering.</td></tr>
+            <tr><td>Reject before releasing plaintext</td><td>Prevents use of unauthenticated plaintext.</td></tr>
+            <tr><td>Separate keys by purpose</td><td>Limits cross-protocol/key-confusion risk.</td></tr>
+            <tr><td>Consider misuse-resistant modes where nonce mistakes are likely</td><td>Reduces blast radius of human error.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A system encrypts data but does not authenticate the ciphertext.</td><td>Dangerous. Tampering may go undetected.</td></tr>
+            <tr><td>A TLS-like record authenticates the record header as AAD.</td><td>Good. Public metadata is tamper-protected.</td></tr>
+            <tr><td>AEAD tag verification fails, but the application logs and uses the plaintext anyway.</td><td>Bad fail-open behavior. Reject completely.</td></tr>
+            <tr><td>AES-GCM reuses the same nonce with the same key.</td><td>Severe security risk.</td></tr>
+            <tr><td>ChaCha20-Poly1305 uses a unique nonce per key.</td><td>Correct expected use.</td></tr>
+            <tr><td>A developer assumes a misuse-resistant mode means no rules matter anymore.</td><td>Mistaken. Misuse resistance reduces some damage; it does not erase rules.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part O: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD provides encryption and authentication together.</td><td>Valid</td><td>That is the AEAD goal.</td></tr>
+            <tr><td>AAD is encrypted but not authenticated.</td><td>Mistaken</td><td>AAD is authenticated but not encrypted.</td></tr>
+            <tr><td>The tag detects tampering with ciphertext or AAD.</td><td>Valid</td><td>Tag verification checks integrity/authenticity.</td></tr>
+            <tr><td>Plaintext should be released before tag verification to improve performance.</td><td>Mistaken</td><td>Unverified plaintext should not be released or trusted.</td></tr>
+            <tr><td>AES-GCM uses GHASH for authentication.</td><td>Valid</td><td>GHASH authenticates AAD and ciphertext.</td></tr>
+            <tr><td>ChaCha20-Poly1305 uses Poly1305 for authentication.</td><td>Valid</td><td>Poly1305 is the authenticator.</td></tr>
+            <tr><td>Common AEAD nonces may be public but must be unique per key.</td><td>Valid</td><td>Public is usually acceptable; reuse is dangerous.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part P: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>P1 sample answer.</strong> AEAD is authenticated encryption with associated data. It encrypts plaintext, authenticates ciphertext, and authenticates public associated data. It outputs ciphertext and a tag, and decryption should only release plaintext if the tag verifies.</p>
+          <p><strong>P2 sample answer.</strong> AAD is public metadata that is not encrypted but is included in authentication. Tag verification checks whether the ciphertext, AAD, nonce, and key match the expected values. If verification fails, the message should be rejected.</p>
+          <p><strong>P3 sample answer.</strong> AES-GCM uses AES in counter mode for encryption and GHASH for authentication. ChaCha20-Poly1305 uses the ChaCha20 stream cipher for encryption and Poly1305 for authentication. Both are widely used AEAD constructions and require unique nonces under the same key.</p>
+          <p><strong>P4 sample answer.</strong> This tutorial explained why encryption alone is not enough and how AEAD combines confidentiality, integrity, and authenticity. It covered associated data, tags, AES-GCM, ChaCha20-Poly1305, nonce requirements, misuse resistance, and safe implementation patterns.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>Encryption alone always proves that ciphertext was not modified.</td><td>False</td><td>Encryption alone may not provide integrity.</td></tr>
+            <tr><td>AEAD authenticates ciphertext and associated data.</td><td>True</td><td>That is the AEAD contract.</td></tr>
+            <tr><td>AAD is public but tamper-protected.</td><td>True</td><td>AAD is authenticated, not encrypted.</td></tr>
+            <tr><td>Failed AEAD tag verification should cause rejection.</td><td>True</td><td>Fail closed.</td></tr>
+            <tr><td>AES-GCM and ChaCha20-Poly1305 both require careful nonce handling.</td><td>True</td><td>Both require unique nonces under the same key.</td></tr>
+            <tr><td>Making a repeated nonce secret fixes nonce reuse.</td><td>False</td><td>Secrecy does not repair reuse.</td></tr>
+            <tr><td>Misuse resistance reduces damage from some mistakes but does not make rules optional.</td><td>True</td><td>It is safer, not magic.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 66: Authenticated Encryption: AEAD, GCM, ChaCha20-Poly1305, and Misuse Resistance.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_66_authenticated_encryption_aead_gcm_chacha_20_poly_1305_and_misuse_resistance_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_65_randomness_nonces_salts_and_initialization_vectors_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_67_formal_security_goals_ind_cpa_ind_cca_int_ctxt_and_ae_security_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 65: Randomness, Nonces, Salts, and Initialization Vectors | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 65</div>
+      <div class="volume-label">Volume 4: Protocols & Real-World Engineering</div>
+      
+      <h1>Randomness, Nonces, Salts, and Initialization Vectors</h1>
+      <p class="subtitle">
+        Printable practice for cryptographic freshness values: randomness, entropy, CSPRNGs, nonces, salts, initialization vectors, uniqueness, unpredictability, secrecy, and reuse failures.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Sort each value by what it actually needs: secrecy, uniqueness, unpredictability, or public context. Many cryptographic failures come from getting just one of these requirements wrong.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Three properties</div>
+            <table class="compare-table">
+              <thead><tr><th>Property</th><th>Meaning</th></tr></thead>
+              <tbody>
+                <tr><td>Secret</td><td>Attackers must not know it.</td></tr>
+                <tr><td>Unique</td><td>It must not repeat in its context.</td></tr>
+                <tr><td>Unpredictable</td><td>Attackers must not guess it ahead of time.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="box random-box">
+            <div class="box-title">Nonce reuse algebra</div>
+            <div class="math-display">
+              \[
+                C_1=P_1\oplus KS
+              \]
+              \[
+                C_2=P_2\oplus KS
+              \]
+              \[
+                C_1\oplus C_2=P_1\oplus P_2
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is randomness in cryptography?</td><td></td></tr>
+            <tr><td>A2. What is entropy?</td><td></td></tr>
+            <tr><td>A3. What does CSPRNG stand for?</td><td></td></tr>
+            <tr><td>A4. What is a nonce?</td><td></td></tr>
+            <tr><td>A5. What is a salt?</td><td></td></tr>
+            <tr><td>A6. What does IV stand for?</td><td></td></tr>
+            <tr><td>A7. What does unique mean?</td><td></td></tr>
+            <tr><td>A8. What does unpredictable mean?</td><td></td></tr>
+            <tr><td>A9. What does secret mean?</td><td></td></tr>
+            <tr><td>A10. What does public mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="big-separation">
+        <h2>Part B: Secret, unique, unpredictable</h2>
+        <table class="compare-table">
+          <thead><tr><th>Property</th><th>Question</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Secret</td><td></td><td></td></tr>
+            <tr><td>Unique</td><td></td><td></td></tr>
+            <tr><td>Unpredictable</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Explain the difference between secret, unique, and unpredictable in your own words.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="entropy">
+        <h2>Part C: Randomness and entropy</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Value</th><th>Needs high entropy?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric encryption key</td><td></td><td></td></tr>
+            <tr><td>RSA private key primes</td><td></td><td></td></tr>
+            <tr><td>ECDSA signing nonce</td><td></td><td></td></tr>
+            <tr><td>Password salt</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Why is “random-looking” not enough for cryptography?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="csprng">
+        <h2>Part D: CSPRNG versus ordinary PRNG</h2>
+        <table class="compare-table">
+          <thead><tr><th>Generator type</th><th>Use for cryptography?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Ordinary PRNG</td><td></td><td></td></tr>
+            <tr><td>CSPRNG</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">D1. Why should ordinary programming random functions not be used for cryptographic keys or nonces?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="nonces">
+        <h2>Part E: Nonces</h2>
+        <table class="random-table">
+          <thead><tr><th>Use case</th><th>Nonce requirement</th><th>Failure mode</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD encryption</td><td></td><td></td></tr>
+            <tr><td>Challenge-response</td><td></td><td></td></tr>
+            <tr><td>ECDSA signatures</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does “nonce” not always mean exactly the same security requirement?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="nonce-reuse">
+        <h2>Part F: Nonce reuse algebra</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            C_1=P_1\oplus KS
+          \]
+          \[
+            C_2=P_2\oplus KS
+          \]
+          \[
+            C_1\oplus C_2=P_1\oplus P_2
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F1. Why does the keystream cancel out when two ciphertexts use the same keystream?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Does \(C_1\oplus C_2=P_1\oplus P_2\) instantly reveal both plaintexts? Explain carefully.</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="salts">
+        <h2>Part G: Salts</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            stored\ value=PasswordHash(password,salt)
+          \]
+        </div>
+
+        <table class="compare-table">
+          <thead><tr><th>Without salt</th><th>With salt</th></tr></thead>
+          <tbody>
+            <tr><td>Same password gives same hash.</td><td></td></tr>
+            <tr><td>Precomputed attacks are easier to reuse.</td><td></td></tr>
+            <tr><td>Duplicate passwords are easier to spot.</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">G1. Why does a salt not need to be secret?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="ivs">
+        <h2>Part H: Initialization Vectors</h2>
+        <table class="random-table">
+          <thead><tr><th>Value</th><th>Usually secret?</th><th>Typical requirement</th></tr></thead>
+          <tbody>
+            <tr><td>CBC IV</td><td></td><td></td></tr>
+            <tr><td>CTR nonce/counter</td><td></td><td></td></tr>
+            <tr><td>GCM nonce</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Why is the variable name “IV” or “nonce” less important than the mode requirement?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="decision-table">
+        <h2>Part I: Decision table</h2>
+        <table class="random-table">
+          <thead><tr><th>Value</th><th>Secret?</th><th>Unique?</th><th>Unpredictable?</th><th>May be public?</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric key</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Private key</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>Password salt</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>AEAD nonce</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>CBC IV</td><td></td><td></td><td></td><td></td></tr>
+            <tr><td>ECDSA signing nonce</td><td></td><td></td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part J: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A password salt is stored beside the password hash in the database.</td><td></td></tr>
+            <tr><td>A developer reuses the same GCM nonce with the same key.</td><td></td></tr>
+            <tr><td>A signing system reuses an ECDSA nonce for two different messages.</td><td></td></tr>
+            <tr><td>A program uses a general-purpose random function to generate private keys.</td><td></td></tr>
+            <tr><td>A CBC IV is public but unpredictable when chosen.</td><td></td></tr>
+            <tr><td>A salt is unique but not hidden from attackers.</td><td></td></tr>
+            <tr><td>A challenge-response system reuses the same challenge repeatedly.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part K: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Public freshness values can still be security-critical.</td><td></td><td></td></tr>
+            <tr><td>A nonce usually means a value used once in a specific context.</td><td></td><td></td></tr>
+            <tr><td>A salt must be kept secret like a password.</td><td></td><td></td></tr>
+            <tr><td>AEAD nonces usually must be unique per key.</td><td></td><td></td></tr>
+            <tr><td>ECDSA signing nonces can be reused safely.</td><td></td><td></td></tr>
+            <tr><td>IV requirements depend on the encryption mode.</td><td></td><td></td></tr>
+            <tr><td>CSPRNGs are designed for cryptographic randomness.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part L: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">L1. Explain the difference between randomness, uniqueness, and secrecy in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">L2. Explain why nonce reuse can be disastrous in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">L3. Explain salts and IVs in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">L4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A salt usually needs to be secret.</td><td></td></tr>
+            <tr><td>A symmetric key needs high entropy and secrecy.</td><td></td></tr>
+            <tr><td>A nonce should be reusable under the same key.</td><td></td></tr>
+            <tr><td>CSPRNG stands for Cryptographically Secure Pseudorandom Number Generator.</td><td></td></tr>
+            <tr><td>Public values can still have strict cryptographic requirements.</td><td></td></tr>
+            <tr><td>IV requirements are the same for every encryption mode.</td><td></td></tr>
+            <tr><td>ECDSA signing nonce reuse can expose the private key.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that secrecy, uniqueness, and unpredictability are different properties. Cryptographic values are safe only when they meet the right requirement for their specific role.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is randomness in cryptography?</td><td>Unpredictable bits or values used to generate keys, nonces, salts, and other security-critical values.</td></tr>
+            <tr><td>A2. What is entropy?</td><td>Attacker uncertainty; high entropy means the value is hard to guess.</td></tr>
+            <tr><td>A3. What does CSPRNG stand for?</td><td>Cryptographically Secure Pseudorandom Number Generator.</td></tr>
+            <tr><td>A4. What is a nonce?</td><td>A value intended to be used once in a specific key/protocol context.</td></tr>
+            <tr><td>A5. What is a salt?</td><td>A non-secret value used to diversify hashing or key derivation.</td></tr>
+            <tr><td>A6. What does IV stand for?</td><td>Initialization Vector.</td></tr>
+            <tr><td>A7. What does unique mean?</td><td>It must not repeat in its relevant context.</td></tr>
+            <tr><td>A8. What does unpredictable mean?</td><td>An attacker cannot guess it ahead of time.</td></tr>
+            <tr><td>A9. What does secret mean?</td><td>Attackers must not know it.</td></tr>
+            <tr><td>A10. What does public mean?</td><td>It may be visible without security relying on hiding it.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Secret, unique, unpredictable</h3>
+        <table class="answer-table">
+          <thead><tr><th>Property</th><th>Question</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Secret</td><td>Must attackers not know it?</td><td>Encryption key, private key, signing key.</td></tr>
+            <tr><td>Unique</td><td>Must it never repeat in this context?</td><td>AEAD nonce under the same key.</td></tr>
+            <tr><td>Unpredictable</td><td>Must attackers not guess it ahead of time?</td><td>Cryptographic key, some IVs, signing nonce.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> Secret means the attacker must not know the value. Unique means it must not repeat in the relevant context. Unpredictable means the attacker cannot guess it before it is generated.</p></div>
+
+        <h3>Part C: Randomness and entropy</h3>
+        <table class="answer-table">
+          <thead><tr><th>Value</th><th>Needs high entropy?</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric encryption key</td><td>Yes</td><td>Attackers must not guess it.</td></tr>
+            <tr><td>RSA private key primes</td><td>Yes</td><td>Predictable primes break the private key.</td></tr>
+            <tr><td>ECDSA signing nonce</td><td>Yes</td><td>Predictable or reused nonce can reveal the private key.</td></tr>
+            <tr><td>Password salt</td><td>Usually should be random/unique, but not secret</td><td>Prevents shared precomputed attacks across users.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> A value can appear random but still be generated by a predictable process. Cryptographic security requires unpredictability to attackers, not just visual messiness.</p></div>
+
+        <h3>Part D: CSPRNG versus ordinary PRNG</h3>
+        <table class="answer-table">
+          <thead><tr><th>Generator type</th><th>Use for cryptography?</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>Ordinary PRNG</td><td>No</td><td>May be predictable from seed or outputs.</td></tr>
+            <tr><td>CSPRNG</td><td>Yes</td><td>Designed to resist prediction by attackers.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>D1 sample answer.</strong> General-purpose random functions are usually designed for simulation or convenience, not attacker resistance. Cryptographic values require a CSPRNG.</p></div>
+
+        <h3>Part E: Nonces</h3>
+        <table class="answer-table">
+          <thead><tr><th>Use case</th><th>Nonce requirement</th><th>Failure mode</th></tr></thead>
+          <tbody>
+            <tr><td>AEAD encryption</td><td>Usually must be unique per key.</td><td>Nonce reuse can expose relationships or break authenticity.</td></tr>
+            <tr><td>Challenge-response</td><td>Should be fresh and often unpredictable.</td><td>Replay attacks.</td></tr>
+            <tr><td>ECDSA signatures</td><td>Must be unique and secret/unpredictable.</td><td>Private key recovery risk.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> Different protocols use nonces for different security goals. In one mode the main rule may be uniqueness, while in another setting the nonce must also be secret or unpredictable.</p></div>
+
+        <h3>Part F: Nonce reuse algebra</h3>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> XORing the ciphertexts gives \((P_1\oplus KS)\oplus(P_2\oplus KS)\). Since \(KS\oplus KS=0\), the keystream cancels, leaving \(P_1\oplus P_2\).</p>
+          <p><strong>F2 sample answer.</strong> It does not always instantly reveal both plaintexts, but it reveals a relationship between them. With guesses, known structure, or one known plaintext, the attacker can recover more information.</p>
+        </div>
+
+        <h3>Part G: Salts</h3>
+        <table class="answer-table">
+          <thead><tr><th>Without salt</th><th>With salt</th></tr></thead>
+          <tbody>
+            <tr><td>Same password gives same hash.</td><td>Same password with different salts gives different hashes.</td></tr>
+            <tr><td>Precomputed attacks are easier to reuse.</td><td>Attackers must attack each salt context separately.</td></tr>
+            <tr><td>Duplicate passwords are easier to spot.</td><td>Duplicate passwords are hidden by different salts.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>G1 sample answer.</strong> A salt’s job is diversification, not secrecy. It prevents identical inputs from producing identical results and makes precomputed attacks less reusable.</p></div>
+
+        <h3>Part H: Initialization Vectors</h3>
+        <table class="answer-table">
+          <thead><tr><th>Value</th><th>Usually secret?</th><th>Typical requirement</th></tr></thead>
+          <tbody>
+            <tr><td>CBC IV</td><td>No</td><td>Unpredictable for classic security requirements.</td></tr>
+            <tr><td>CTR nonce/counter</td><td>No</td><td>Unique under the same key.</td></tr>
+            <tr><td>GCM nonce</td><td>No</td><td>Unique under the same key.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> Different modes require different properties. A variable named IV or nonce might need uniqueness, unpredictability, or both depending on the encryption mode.</p></div>
+
+        <h3>Part I: Decision table</h3>
+        <table class="answer-table">
+          <thead><tr><th>Value</th><th>Secret?</th><th>Unique?</th><th>Unpredictable?</th><th>May be public?</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric key</td><td>Yes</td><td>Should not be reused carelessly</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Private key</td><td>Yes</td><td>Generated per identity/use</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Password salt</td><td>No</td><td>Yes, per password record</td><td>Random is best, but secrecy not required</td><td>Yes</td></tr>
+            <tr><td>AEAD nonce</td><td>No</td><td>Yes, per key</td><td>Depends on mode/system</td><td>Yes</td></tr>
+            <tr><td>CBC IV</td><td>No</td><td>Effectively fresh per encryption</td><td>Should be unpredictable</td><td>Yes</td></tr>
+            <tr><td>ECDSA signing nonce</td><td>Yes during signing</td><td>Yes</td><td>Yes or deterministically secure</td><td>No</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part J: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A password salt is stored beside the password hash in the database.</td><td>Acceptable. Salts are usually public.</td></tr>
+            <tr><td>A developer reuses the same GCM nonce with the same key.</td><td>Dangerous. GCM nonces must be unique per key.</td></tr>
+            <tr><td>A signing system reuses an ECDSA nonce for two different messages.</td><td>Severe private-key recovery risk.</td></tr>
+            <tr><td>A program uses a general-purpose random function to generate private keys.</td><td>Bad. Use a CSPRNG.</td></tr>
+            <tr><td>A CBC IV is public but unpredictable when chosen.</td><td>Good classic CBC IV pattern.</td></tr>
+            <tr><td>A salt is unique but not hidden from attackers.</td><td>Normal and acceptable.</td></tr>
+            <tr><td>A challenge-response system reuses the same challenge repeatedly.</td><td>Replay risk.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part K: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>Public freshness values can still be security-critical.</td><td>Valid</td><td>Public values can still require uniqueness or unpredictability.</td></tr>
+            <tr><td>A nonce usually means a value used once in a specific context.</td><td>Valid</td><td>That is the general nonce idea.</td></tr>
+            <tr><td>A salt must be kept secret like a password.</td><td>Mistaken</td><td>Salts are normally public.</td></tr>
+            <tr><td>AEAD nonces usually must be unique per key.</td><td>Valid</td><td>Nonce reuse can break security.</td></tr>
+            <tr><td>ECDSA signing nonces can be reused safely.</td><td>Mistaken</td><td>Reuse can expose the private key.</td></tr>
+            <tr><td>IV requirements depend on the encryption mode.</td><td>Valid</td><td>Some need uniqueness; some need unpredictability.</td></tr>
+            <tr><td>CSPRNGs are designed for cryptographic randomness.</td><td>Valid</td><td>They are designed to resist prediction.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part L: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>L1 sample answer.</strong> Randomness is about producing values attackers cannot predict. Uniqueness means a value does not repeat in its required context. Secrecy means attackers must not know the value. A value can be public but still need uniqueness, such as an AEAD nonce.</p>
+          <p><strong>L2 sample answer.</strong> Nonce reuse can be disastrous because many modes derive keystream or authentication behavior from the key and nonce. Reusing the same nonce with the same key can reveal relationships between plaintexts and sometimes break authenticity.</p>
+          <p><strong>L3 sample answer.</strong> A salt is a usually public value that diversifies password hashing or key derivation, making identical inputs produce different outputs. An IV is a starting value for an encryption mode, and its requirements depend on the mode, such as uniqueness or unpredictability.</p>
+          <p><strong>L4 sample answer.</strong> This tutorial separated secret, unique, unpredictable, and public properties. It explained entropy, CSPRNGs, nonces, salts, IVs, nonce reuse, and the importance of reading each cryptographic mode’s exact freshness requirements.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A salt usually needs to be secret.</td><td>False</td><td>Salts are usually public.</td></tr>
+            <tr><td>A symmetric key needs high entropy and secrecy.</td><td>True</td><td>Attackers must not know or guess it.</td></tr>
+            <tr><td>A nonce should be reusable under the same key.</td><td>False</td><td>Many modes require nonce uniqueness per key.</td></tr>
+            <tr><td>CSPRNG stands for Cryptographically Secure Pseudorandom Number Generator.</td><td>True</td><td>That is the full term.</td></tr>
+            <tr><td>Public values can still have strict cryptographic requirements.</td><td>True</td><td>Public nonces and salts still need correct properties.</td></tr>
+            <tr><td>IV requirements are the same for every encryption mode.</td><td>False</td><td>Requirements depend on the mode.</td></tr>
+            <tr><td>ECDSA signing nonce reuse can expose the private key.</td><td>True</td><td>Reuse can reveal algebraic information about the private key.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 65: Randomness, Nonces, Salts, and Initialization Vectors.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_65_randomness_nonces_salts_and_initialization_vectors_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_64_hash_based_authentication_hmac_hkdf_and_transcript_binding_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_66_authenticated_encryption_aead_gcm_chacha_20_poly_1305_and_misuse_resistance_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workbook 68: Attack Models, Reductions, and Proof Sketches | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Workbook 68</div>
+      <div class="volume-label">Volume 5: Foundations of Security Analysis</div>
+      
+      <h1>Attack Models, Reductions, and Proof Sketches</h1>
+      <p class="subtitle">
+        Printable practice for attack models, threat models, reductions, conditional proofs, simulations, embeddings, extraction, tightness, hybrid arguments, and proof-sketch limits.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this workbook</div>
+          <p>
+            Think like a proof architect. Each exercise asks you to identify the attacker’s powers, the assumption being used, how the attacker is simulated, and how attacker success becomes a solution to a hard problem.</p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Reduction shape</div>
+            <div class="math-display">
+              \[
+                A\ breaks\ scheme \Longrightarrow R^A\ solves\ hard\ problem
+              \]
+            </div>
+            <p>Read: the reduction \(R\) uses adversary \(A\) as a subroutine.</p>
+          </div>
+
+          <div class="box proof-box">
+            <div class="box-title">Tightness shape</div>
+            <div class="math-display">
+              \[
+                Adv_R \geq \frac{Adv_A}{q}
+              \]
+            </div>
+            <p>A larger \(q\) means more reduction loss.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+        <table class="work-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is an attack model?</td><td></td></tr>
+            <tr><td>A2. What is a threat model?</td><td></td></tr>
+            <tr><td>A3. What is an adversary \(A\)?</td><td></td></tr>
+            <tr><td>A4. What is a challenger?</td><td></td></tr>
+            <tr><td>A5. What is an oracle?</td><td></td></tr>
+            <tr><td>A6. What is a reduction \(R\)?</td><td></td></tr>
+            <tr><td>A7. What is an assumption?</td><td></td></tr>
+            <tr><td>A8. What is advantage?</td><td></td></tr>
+            <tr><td>A9. What is tightness?</td><td></td></tr>
+            <tr><td>A10. What is a proof sketch?</td><td></td></tr>
+            <tr><td>A11. What is a hybrid argument?</td><td></td></tr>
+            <tr><td>A12. What does negligible mean?</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="attack-models">
+        <h2>Part B: Attack models</h2>
+        <table class="compare-table">
+          <thead><tr><th>Model</th><th>Attacker can...</th><th>Example formal goal</th></tr></thead>
+          <tbody>
+            <tr><td>Passive attacker</td><td></td><td></td></tr>
+            <tr><td>Chosen-plaintext attacker</td><td></td><td></td></tr>
+            <tr><td>Chosen-ciphertext attacker</td><td></td><td></td></tr>
+            <tr><td>Forgery attacker</td><td></td><td></td></tr>
+            <tr><td>Side-channel attacker</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">B1. Why does the attack model matter when judging a security claim?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="threat-vs-attack-model">
+        <h2>Part C: Threat model versus attack model</h2>
+        <table class="compare-table">
+          <thead><tr><th>Concept</th><th>Question it answers</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Threat model</td><td></td><td></td></tr>
+            <tr><td>Attack model</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">C1. Explain how a threat model is broader than an attack model.</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="reduction-big-picture">
+        <h2>Part D: Reduction big picture</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            A\ breaks\ scheme \Longrightarrow R^A\ solves\ hard\ problem
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D1. In ordinary language, what does a reduction try to show?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. What does \(R^A\) mean?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="contrapositive">
+        <h2>Part E: Contrapositive proof shape</h2>
+        <pre><code>If an efficient attacker A can break the scheme,
+then an efficient reduction R can solve hard problem H.
+But we assume H is hard for efficient algorithms.
+Therefore, no efficient attacker A should be able to break the scheme.</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why is this called conditional security?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="reduction-ingredients">
+        <h2>Part F: Ingredients of a reduction</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Ingredient</th><th>Question</th></tr></thead>
+          <tbody>
+            <tr><td>Adversary</td><td></td></tr>
+            <tr><td>Hard problem instance</td><td></td></tr>
+            <tr><td>Simulation</td><td></td></tr>
+            <tr><td>Embedding</td><td></td></tr>
+            <tr><td>Extraction</td><td></td></tr>
+            <tr><td>Loss analysis</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="toy-reduction">
+        <h2>Part G: Toy reduction pattern</h2>
+        <pre><code>Assume attacker A can distinguish encryptions of m0 and m1.
+Build reduction R that receives an instance of hard problem H.
+R embeds that hard instance into the public key or challenge ciphertext.
+R runs A and answers A's allowed oracle queries.
+When A guesses the hidden bit correctly, R uses that guess to solve H.
+Therefore, if A has useful advantage, R has useful advantage against H.</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">G1. What is being assumed about attacker \(A\) at the beginning of the proof?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. What does the reduction do with the hard problem instance?</div>
+          <div class="work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. What does the reduction extract from the attacker’s success?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="advantage-tightness">
+        <h2>Part H: Advantage and tightness</h2>
+        <p>Use:</p>
+        <div class="math-display">
+          \[
+            Adv_R \geq \frac{Adv_A}{q}
+          \]
+        </div>
+
+        <table class="math-table">
+          <thead><tr><th>\(Adv_A\)</th><th>\(q\)</th><th>Lower bound for \(Adv_R\)</th></tr></thead>
+          <tbody>
+            <tr><td>\(0.20\)</td><td>\(2\)</td><td></td></tr>
+            <tr><td>\(0.20\)</td><td>\(10\)</td><td></td></tr>
+            <tr><td>\(0.05\)</td><td>\(5\)</td><td></td></tr>
+            <tr><td>\(0.01\)</td><td>\(100\)</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H1. Which is usually better, a tight reduction or a loose reduction? Why?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="hybrid-arguments">
+        <h2>Part I: Hybrid arguments</h2>
+        <pre><code>Game 0: Real scheme.
+Game 1: Replace one value with a pseudorandom value.
+Game 2: Replace another value with random.
+Game 3: Ideal world.</code></pre>
+
+        <div class="problem">
+          <div class="problem-title">I1. What is the purpose of changing one part of the game at a time?</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">I2. If no efficient attacker can distinguish adjacent games, what conclusion are we trying to reach?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="proof-sketches">
+        <h2>Part J: Proof sketches</h2>
+        <table class="proof-table">
+          <thead><tr><th>Proof-sketch piece</th><th>Question to answer</th></tr></thead>
+          <tbody>
+            <tr><td>Claim</td><td></td></tr>
+            <tr><td>Assumption</td><td></td></tr>
+            <tr><td>Adversary</td><td></td></tr>
+            <tr><td>Construction of reduction</td><td></td></tr>
+            <tr><td>Simulation</td><td></td></tr>
+            <tr><td>Conclusion</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">J1. Why is a proof sketch not the same thing as a full proof?</div>
+          <div class="work-space"></div>
+        </div>
+      </section>
+
+      <section id="proof-limits">
+        <h2>Part K: What proofs do not prove</h2>
+        <table class="danger-table">
+          <thead><tr><th>A proof may not cover...</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Bad implementation</td><td></td></tr>
+            <tr><td>Bad randomness</td><td></td></tr>
+            <tr><td>Wrong model</td><td></td></tr>
+            <tr><td>Weak parameters</td><td></td></tr>
+            <tr><td>Composition mistakes</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">K1. Explain why “formally proven” does not automatically mean “safe in every real implementation.”</div>
+          <div class="work-space large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="scenario-judgment">
+        <h2>Part L: Scenario judgment</h2>
+        <table class="scenario-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A scheme is proven secure against chosen-plaintext attacks, but the deployed system leaks timing information.</td><td></td></tr>
+            <tr><td>A proof says that if attacker \(A\) breaks the scheme, reduction \(R\) solves discrete logarithm.</td><td></td></tr>
+            <tr><td>A reduction loses a factor of \(2^{40}\) in advantage.</td><td></td></tr>
+            <tr><td>A proof sketch clearly states the claim, assumption, attacker, simulation, and conclusion.</td><td></td></tr>
+            <tr><td>A developer says the proof means nonce reuse no longer matters.</td><td></td></tr>
+            <tr><td>A hybrid proof changes from the real game to the ideal game through small indistinguishable steps.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="valid-mistaken">
+        <h2>Part M: Valid or mistaken?</h2>
+        <table class="valid-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>An attack model describes the attacker’s allowed powers.</td><td></td><td></td></tr>
+            <tr><td>A threat model is usually broader than a formal attack model.</td><td></td><td></td></tr>
+            <tr><td>A reduction proves the hard problem is impossible.</td><td></td><td></td></tr>
+            <tr><td>A tight reduction loses little advantage.</td><td></td><td></td></tr>
+            <tr><td>A hybrid argument changes everything at once.</td><td></td><td></td></tr>
+            <tr><td>A proof may not cover implementation bugs or side channels.</td><td></td><td></td></tr>
+            <tr><td>A proof sketch can be useful even if it omits full technical detail.</td><td></td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="concept-checks">
+        <h2>Part N: Concept checks</h2>
+        <div class="problem">
+          <div class="problem-title">N1. Explain attack models and threat models in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">N2. Explain reductions in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">N3. Explain tightness and hybrid arguments in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+        <div class="problem">
+          <div class="problem-title">N4. Summarize this tutorial in one paragraph.</div>
+          <div class="work-space extra-large-work-space"></div>
+        </div>
+      </section>
+
+      <section id="self-check">
+        <h2>Self-check</h2>
+        <table class="work-table">
+          <thead><tr><th>Statement</th><th>True or False?</th></tr></thead>
+          <tbody>
+            <tr><td>A reduction uses an attacker against a scheme to solve a hard problem.</td><td></td></tr>
+            <tr><td>Most cryptographic proofs are conditional on assumptions and models.</td><td></td></tr>
+            <tr><td>Simulation means the reduction makes the adversary’s view look like the real game.</td><td></td></tr>
+            <tr><td>Embedding means hiding the hard problem inside the adversary’s view.</td><td></td></tr>
+            <tr><td>A loose reduction usually preserves attacker advantage better than a tight one.</td><td></td></tr>
+            <tr><td>A proof sketch must handle every edge case in full detail.</td><td></td></tr>
+            <tr><td>Formal proof does not automatically eliminate implementation risk.</td><td></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            The central idea is that a reduction is a conditional bridge: if an attacker exists, then a solver for a hard problem exists. If the hard problem is truly hard, the attacker should not exist in that model.</p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <table class="answer-table">
+          <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1. What is an attack model?</td><td>A formal description of what the attacker can query, observe, modify, or control.</td></tr>
+            <tr><td>A2. What is a threat model?</td><td>A broader real-world description of attackers, assets, risks, environment, and goals.</td></tr>
+            <tr><td>A3. What is an adversary \(A\)?</td><td>The attacker algorithm trying to win a security game.</td></tr>
+            <tr><td>A4. What is a challenger?</td><td>The referee that runs the security game and answers allowed queries.</td></tr>
+            <tr><td>A5. What is an oracle?</td><td>A controlled black-box service, such as encryption, decryption, signing, or verification.</td></tr>
+            <tr><td>A6. What is a reduction \(R\)?</td><td>An algorithm that uses adversary \(A\) to solve a supposedly hard problem.</td></tr>
+            <tr><td>A7. What is an assumption?</td><td>A computational problem or primitive security property believed to be hard or secure.</td></tr>
+            <tr><td>A8. What is advantage?</td><td>How much better than baseline or chance an adversary performs.</td></tr>
+            <tr><td>A9. What is tightness?</td><td>How much advantage or efficiency is preserved in the reduction.</td></tr>
+            <tr><td>A10. What is a proof sketch?</td><td>A high-level outline of a proof’s structure.</td></tr>
+            <tr><td>A11. What is a hybrid argument?</td><td>A proof technique using a sequence of slightly different games.</td></tr>
+            <tr><td>A12. What does negligible mean?</td><td>Too small to matter at cryptographic security scale, formally shrinking very quickly with the security parameter.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part B: Attack models</h3>
+        <table class="answer-table">
+          <thead><tr><th>Model</th><th>Attacker can...</th><th>Example formal goal</th></tr></thead>
+          <tbody>
+            <tr><td>Passive attacker</td><td>Observe traffic.</td><td>Basic confidentiality.</td></tr>
+            <tr><td>Chosen-plaintext attacker</td><td>Ask for encryptions of chosen messages.</td><td>IND-CPA.</td></tr>
+            <tr><td>Chosen-ciphertext attacker</td><td>Ask for decryptions of chosen ciphertexts under rules.</td><td>IND-CCA.</td></tr>
+            <tr><td>Forgery attacker</td><td>Try to create a valid new ciphertext, tag, or signature.</td><td>INT-CTXT or EUF-CMA.</td></tr>
+            <tr><td>Side-channel attacker</td><td>Observe timing, power, cache behavior, or errors.</td><td>Implementation security.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>B1 sample answer.</strong> A claim is only meaningful relative to attacker powers. A scheme secure against passive observation may fail against chosen-ciphertext attacks or side channels.</p></div>
+
+        <h3>Part C: Threat model versus attack model</h3>
+        <table class="answer-table">
+          <thead><tr><th>Concept</th><th>Question it answers</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Threat model</td><td>What real-world risks are we designing against?</td><td>Network attacker, stolen database, malicious insider, compromised client.</td></tr>
+            <tr><td>Attack model</td><td>What powers are allowed in the formal game?</td><td>Chosen-plaintext queries, chosen-ciphertext queries, signing queries.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>C1 sample answer.</strong> A threat model includes real-world assets, attackers, deployment assumptions, and environmental risks. An attack model narrows this into formal powers used in a security game.</p></div>
+
+        <h3>Part D: Reduction big picture</h3>
+        <div class="answer-step">
+          <p><strong>D1 sample answer.</strong> A reduction tries to show that if someone can break the scheme, then that attacker can be used to solve a hard problem. Since the hard problem is assumed hard, the attacker should not exist.</p>
+          <p><strong>D2 answer.</strong> \(R^A\) means reduction \(R\) uses adversary \(A\) as a subroutine or oracle.</p>
+        </div>
+
+        <h3>Part E: Contrapositive proof shape</h3>
+        <div class="answer-step"><p><strong>E1 sample answer.</strong> It is conditional because the conclusion depends on the assumption that the hard problem really is hard and that the formal model matches the situation being claimed.</p></div>
+
+        <h3>Part F: Ingredients of a reduction</h3>
+        <table class="answer-table">
+          <thead><tr><th>Ingredient</th><th>Question</th></tr></thead>
+          <tbody>
+            <tr><td>Adversary</td><td>What break are we assuming exists?</td></tr>
+            <tr><td>Hard problem instance</td><td>What challenge is the reduction trying to solve?</td></tr>
+            <tr><td>Simulation</td><td>How does the reduction pretend to be the real security game?</td></tr>
+            <tr><td>Embedding</td><td>Where is the hard problem hidden inside the adversary’s view?</td></tr>
+            <tr><td>Extraction</td><td>How does the reduction turn the adversary’s success into a hard-problem solution?</td></tr>
+            <tr><td>Loss analysis</td><td>How much advantage or running time is lost?</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: Toy reduction pattern</h3>
+        <div class="answer-step">
+          <p><strong>G1 answer.</strong> We assume \(A\) can distinguish challenge encryptions with useful advantage.</p>
+          <p><strong>G2 answer.</strong> \(R\) embeds the hard problem instance into the public key, challenge ciphertext, or another part of the simulated game.</p>
+          <p><strong>G3 answer.</strong> \(R\) uses the attacker’s successful guess or forgery to recover information that solves the hard problem.</p>
+        </div>
+
+        <h3>Part H: Advantage and tightness</h3>
+        <table class="answer-table">
+          <thead><tr><th>\(Adv_A\)</th><th>\(q\)</th><th>Lower bound for \(Adv_R\)</th></tr></thead>
+          <tbody>
+            <tr><td>\(0.20\)</td><td>\(2\)</td><td>\(0.10\)</td></tr>
+            <tr><td>\(0.20\)</td><td>\(10\)</td><td>\(0.02\)</td></tr>
+            <tr><td>\(0.05\)</td><td>\(5\)</td><td>\(0.01\)</td></tr>
+            <tr><td>\(0.01\)</td><td>\(100\)</td><td>\(0.0001\)</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>H1 sample answer.</strong> A tight reduction is usually better because it loses less attacker advantage, making the security estimate transfer more cleanly to the hard problem.</p></div>
+
+        <h3>Part I: Hybrid arguments</h3>
+        <div class="answer-step">
+          <p><strong>I1 sample answer.</strong> Changing one part at a time makes it easier to justify that each neighboring game is indistinguishable.</p>
+          <p><strong>I2 sample answer.</strong> We conclude that the real game and ideal game are also hard to distinguish, except for the accumulated small differences.</p>
+        </div>
+
+        <h3>Part J: Proof sketches</h3>
+        <table class="answer-table">
+          <thead><tr><th>Proof-sketch piece</th><th>Question to answer</th></tr></thead>
+          <tbody>
+            <tr><td>Claim</td><td>What security goal is being proven?</td></tr>
+            <tr><td>Assumption</td><td>What hard problem or primitive security is assumed?</td></tr>
+            <tr><td>Adversary</td><td>What kind of attacker is assumed to exist?</td></tr>
+            <tr><td>Construction of reduction</td><td>How is the attacker used?</td></tr>
+            <tr><td>Simulation</td><td>Why does the attacker’s view look real?</td></tr>
+            <tr><td>Conclusion</td><td>Why would attacker success contradict the assumption?</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>J1 sample answer.</strong> A proof sketch gives the proof’s structure but may omit technical details, edge cases, probability bounds, and formal justifications needed for a full proof.</p></div>
+
+        <h3>Part K: What proofs do not prove</h3>
+        <table class="answer-table">
+          <thead><tr><th>A proof may not cover...</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Bad implementation</td><td>Timing leaks, memory bugs, wrong nonce handling.</td></tr>
+            <tr><td>Bad randomness</td><td>Predictable keys or reused signing nonces.</td></tr>
+            <tr><td>Wrong model</td><td>Proof assumes CPA, real attacker has CCA or side-channel access.</td></tr>
+            <tr><td>Weak parameters</td><td>Small keys, obsolete curves, short tags.</td></tr>
+            <tr><td>Composition mistakes</td><td>Secure primitive used in an unsafe protocol.</td></tr>
+          </tbody>
+        </table>
+        <div class="answer-step"><p><strong>K1 sample answer.</strong> A proof applies under specific assumptions and models. Real implementations can fail because of bad randomness, bugs, side channels, wrong parameters, or unsafe protocol composition.</p></div>
+
+        <h3>Part L: Scenario judgment</h3>
+        <table class="answer-table">
+          <thead><tr><th>Scenario</th><th>Lesson</th></tr></thead>
+          <tbody>
+            <tr><td>A scheme is proven secure against chosen-plaintext attacks, but the deployed system leaks timing information.</td><td>The proof may not cover side channels.</td></tr>
+            <tr><td>A proof says that if attacker \(A\) breaks the scheme, reduction \(R\) solves discrete logarithm.</td><td>This is a reduction-based security claim.</td></tr>
+            <tr><td>A reduction loses a factor of \(2^{40}\) in advantage.</td><td>Very loose reduction; practical security estimate may weaken.</td></tr>
+            <tr><td>A proof sketch clearly states the claim, assumption, attacker, simulation, and conclusion.</td><td>Good proof-sketch structure.</td></tr>
+            <tr><td>A developer says the proof means nonce reuse no longer matters.</td><td>Mistaken. Proofs depend on correct assumptions and usage.</td></tr>
+            <tr><td>A hybrid proof changes from the real game to the ideal game through small indistinguishable steps.</td><td>Correct hybrid-argument pattern.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part M: Valid or mistaken?</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Valid or mistaken?</th><th>Brief explanation</th></tr></thead>
+          <tbody>
+            <tr><td>An attack model describes the attacker’s allowed powers.</td><td>Valid</td><td>That is the purpose of an attack model.</td></tr>
+            <tr><td>A threat model is usually broader than a formal attack model.</td><td>Valid</td><td>Threat models include real-world context and assets.</td></tr>
+            <tr><td>A reduction proves the hard problem is impossible.</td><td>Mistaken</td><td>It shows a conditional connection to a hardness assumption.</td></tr>
+            <tr><td>A tight reduction loses little advantage.</td><td>Valid</td><td>That is what tightness means.</td></tr>
+            <tr><td>A hybrid argument changes everything at once.</td><td>Mistaken</td><td>It changes one or a few small pieces at a time.</td></tr>
+            <tr><td>A proof may not cover implementation bugs or side channels.</td><td>Valid</td><td>Formal models may omit implementation realities.</td></tr>
+            <tr><td>A proof sketch can be useful even if it omits full technical detail.</td><td>Valid</td><td>It helps show the structure of the argument.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part N: Concept checks</h3>
+        <div class="answer-step">
+          <p><strong>N1 sample answer.</strong> An attack model formally describes the attacker’s powers in a security game, such as chosen-plaintext or chosen-ciphertext access. A threat model is broader and describes the real-world attackers, assets, risks, and environment.</p>
+          <p><strong>N2 sample answer.</strong> A reduction shows that if an attacker can break a scheme, then that attacker can be used as a tool to solve a hard problem. Since the hard problem is assumed hard, the attacker should not exist in that model.</p>
+          <p><strong>N3 sample answer.</strong> Tightness describes how much advantage or efficiency is lost when converting attacker success into a hard-problem solution. Hybrid arguments prove security by moving from a real game to an ideal game through small indistinguishable steps.</p>
+          <p><strong>N4 sample answer.</strong> This tutorial explained how cryptographers reason about attack models, reductions, proof sketches, tightness, hybrid arguments, and proof limitations. It emphasized that proofs are conditional on assumptions, models, and correct implementation.</p>
+        </div>
+
+        <h3>Self-check</h3>
+        <table class="answer-table">
+          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>A reduction uses an attacker against a scheme to solve a hard problem.</td><td>True</td><td>That is the central reduction pattern.</td></tr>
+            <tr><td>Most cryptographic proofs are conditional on assumptions and models.</td><td>True</td><td>They depend on assumptions and attack models.</td></tr>
+            <tr><td>Simulation means the reduction makes the adversary’s view look like the real game.</td><td>True</td><td>That is the simulation goal.</td></tr>
+            <tr><td>Embedding means hiding the hard problem inside the adversary’s view.</td><td>True</td><td>The hard instance is placed into the simulated game.</td></tr>
+            <tr><td>A loose reduction usually preserves attacker advantage better than a tight one.</td><td>False</td><td>Tight reductions preserve advantage better.</td></tr>
+            <tr><td>A proof sketch must handle every edge case in full detail.</td><td>False</td><td>That is the job of a full proof.</td></tr>
+            <tr><td>Formal proof does not automatically eliminate implementation risk.</td><td>True</td><td>Implementation bugs and side channels can still break systems.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography workbook page. Volume 3: Public-Key Cryptography and Key Exchange. Paired with Tutorial 68: Attack Models, Reductions, and Proof Sketches.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_68_attack_models_reductions_and_proof_sketches_html.html" class="nav-item nav-secondary">🔄 Switch to Tutorial Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_67_formal_security_goals_ind_cpa_ind_cca_int_ctxt_and_ae_security_workbook_html.html" class="nav-item">⬅️ Previous Workbook</a>
+          <a href="tutorial_69_complexity_security_parameters_and_bits_of_security_workbook_html.html" class="nav-item nav-primary">Next Workbook ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>

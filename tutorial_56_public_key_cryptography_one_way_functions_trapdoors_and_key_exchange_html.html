@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Public-Key Cryptography: One-Way Functions, Trapdoors, and Key Exchange | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="page">
+    <header class="tutorial-header">
+      <div class="course-label">Mathematics of Cryptography · Tutorial 56</div>
+      <div class="volume-label">Volume 3: Public-Key Cryptography & PKI</div>
+      
+      <h1>Public-Key Cryptography: One-Way Functions, Trapdoors, and Key Exchange</h1>
+      <p class="subtitle">
+        The doorway into asymmetric cryptography: how public/private key pairs, one-way functions, trapdoors, and key exchange allow strangers to create shared secrets over open channels.
+      </p>
+
+      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="why-this-tutorial-exists">
+        <h2>Why this tutorial exists</h2>
+        <div class="box purpose-box">
+          <div class="box-title">Purpose</div>
+          <p>
+            Volume 2 focused on hashes, MACs, authenticated encryption, key derivation, passwords, and randomness. Volume 3 begins the asymmetric world. Public-key cryptography lets people publish one key, keep another key secret, and still build secure systems over hostile networks.</p>
+        </div>
+
+        <p class="lead">
+          Symmetric cryptography says, “First we must share a secret.” Public-key cryptography asks the stranger question: “Can we create trust or secrecy before we already share one?” This is the bridge over the moat.</p>
+      </section>
+
+      <section id="what-you-should-know-first">
+        <h2>What you should know first</h2>
+        <p>
+          You should know the difference between encryption, authentication, and key derivation. You should also remember that random keys must be unpredictable and that protocols must bind context carefully. Public-key cryptography does not replace these ideas; it helps establish the secrets and identities that later symmetric cryptography uses.</p>
+      </section>
+
+      <section id="symbols-used">
+        <h2>Symbols used in this tutorial</h2>
+        <table class="symbol-table">
+          <thead>
+            <tr><th>Symbol or term</th><th>Friendly meaning</th><th>Technical meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>public key</td><td>Key you can share openly.</td><td>A key intended to be distributed to others.</td></tr>
+            <tr><td>private key</td><td>Key you must protect.</td><td>A secret key mathematically related to a public key.</td></tr>
+            <tr><td>key pair</td><td>Matched public/private keys.</td><td>Asymmetric key material generated together.</td></tr>
+            <tr><td>one-way function</td><td>Easy forward, hard backward.</td><td>A function easy to compute but hard to invert.</td></tr>
+            <tr><td>trapdoor</td><td>Secret shortcut.</td><td>Extra secret information that makes inversion easy.</td></tr>
+            <tr><td>key exchange</td><td>Make a shared secret.</td><td>A protocol for deriving shared key material over a public channel.</td></tr>
+            <tr><td>shared secret</td><td>Secret both parties compute.</td><td>A value used as input to later key derivation.</td></tr>
+            <tr><td>authentication</td><td>Prove who or what is involved.</td><td>Protection against impersonation or active tampering.</td></tr>
+            <tr><td>MITM</td><td>Person in the middle.</td><td>Man-in-the-middle attack.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="symmetric-vs-public-key">
+        <h2>Symmetric versus public-key cryptography</h2>
+        <p>
+          Symmetric cryptography uses the same secret key, or closely related keys, for both sides. Public-key cryptography uses a pair: one key can be public, while the other must remain private.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Type</th><th>Keys</th><th>Main challenge</th></tr></thead>
+          <tbody>
+            <tr><td>Symmetric</td><td>Shared secret key</td><td>How do both parties get the secret safely?</td></tr>
+            <tr><td>Public-key</td><td>Public key plus private key</td><td>How do we trust that a public key belongs to the right party?</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box intuition-box">
+          <div class="box-title">Memory hook</div>
+          <p>
+            Symmetric cryptography is a shared house key. Public-key cryptography is more like a mailbox slot and a private mailbox key: anyone can drop something in, but only the private-key holder can open it.</p>
+        </div>
+      </section>
+
+      <section id="public-private-pair">
+        <h2>The public/private key pair</h2>
+        <p>
+          A public/private key pair is generated together. The public key is meant to be distributed. The private key must be protected. The security comes from a mathematical relationship that is easy to use in one direction but hard to reverse without the private information.</p>
+
+        <table class="property-table">
+          <thead><tr><th>Key</th><th>Who may know it?</th><th>Typical use</th></tr></thead>
+          <tbody>
+            <tr><td>Public key</td><td>Everyone</td><td>Encrypt to owner, verify owner’s signature, or participate in key exchange.</td></tr>
+            <tr><td>Private key</td><td>Only owner</td><td>Decrypt, sign, or complete private side of key exchange.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="diagram" role="img" aria-label="Public and private key pair">
+          <div class="diagram-title">A key pair has two different roles</div>
+          <div class="flow-row">
+            <div class="machine-node">Key generation</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">Public key<br>share widely</div>
+            <div class="flow-node private-node">Private key<br>protect carefully</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="one-way-functions">
+        <h2>One-way functions</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: one-way function</div>
+          <p>
+            A one-way function is easy to compute in the forward direction but hard to reverse without extra information.</p>
+        </div>
+
+        <div class="math-display">
+          \[
+            y=f(x) \quad \text{is easy to compute}
+          \]
+          \[
+            x=f^{-1}(y) \quad \text{is hard to find}
+          \]
+        </div>
+
+        <p>
+          In cryptography, “hard” does not mean emotionally unpleasant; it means computationally infeasible for realistic attackers.</p>
+
+        <table class="math-table">
+          <thead><tr><th>Candidate hard problem</th><th>Forward direction</th><th>Hard reverse direction</th></tr></thead>
+          <tbody>
+            <tr><td>Integer factoring</td><td>Multiply large primes.</td><td>Recover primes from product.</td></tr>
+            <tr><td>Discrete logarithm</td><td>Compute repeated multiplication or exponentiation in a group.</td><td>Recover exponent.</td></tr>
+            <tr><td>Elliptic-curve discrete logarithm</td><td>Repeatedly add a point on a curve.</td><td>Recover scalar from resulting point.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="trapdoors">
+        <h2>Trapdoor functions</h2>
+        <div class="box definition-box">
+          <div class="box-title">Definition: trapdoor function</div>
+          <p>
+            A trapdoor function is a one-way function that becomes easy to reverse if you possess special secret information called the trapdoor.</p>
+        </div>
+
+        <p>
+          The trapdoor is not a weakness. It is the intended secret shortcut. Public information lets others use the function one way. Private information lets the owner perform the special reverse or secret operation.</p>
+
+        <table class="crypto-table">
+          <thead><tr><th>Idea</th><th>Public side</th><th>Private/trapdoor side</th></tr></thead>
+          <tbody>
+            <tr><td>RSA-style intuition</td><td>Public modulus and exponent allow public operation.</td><td>Private exponent allows secret reverse operation.</td></tr>
+            <tr><td>Signature intuition</td><td>Anyone can verify with public key.</td><td>Only private key holder can produce valid signature.</td></tr>
+            <tr><td>Encryption intuition</td><td>Anyone can encrypt to public key.</td><td>Only private key holder can decrypt.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="three-public-key-jobs">
+        <h2>Three major public-key jobs</h2>
+        <table class="lesson-table">
+          <thead><tr><th>Job</th><th>What public key does</th><th>What private key does</th></tr></thead>
+          <tbody>
+            <tr><td>Public-key encryption</td><td>Lets others encrypt to you.</td><td>Lets you decrypt.</td></tr>
+            <tr><td>Digital signatures</td><td>Lets others verify your signature.</td><td>Lets you sign.</td></tr>
+            <tr><td>Key exchange</td><td>Lets parties combine public values.</td><td>Lets each party compute shared secret.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box technical-box">
+          <div class="box-title">Do not blur the jobs</div>
+          <p>
+            Encryption keys, signing keys, and key-exchange keys should not be casually treated as interchangeable. Different job, different rules, different risks.</p>
+        </div>
+      </section>
+
+      <section id="key-exchange-big-idea">
+        <h2>Key exchange: the big idea</h2>
+        <p>
+          Key exchange lets two parties create a shared secret over a public channel. An eavesdropper may see the public messages, but should not be able to compute the final shared secret.</p>
+
+        <div class="diagram" role="img" aria-label="Key exchange flow">
+          <div class="diagram-title">Key exchange creates a shared secret</div>
+          <div class="flow-row">
+            <div class="flow-node private-node">Alice private value</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node public-node">Alice public value</div>
+            <div class="flow-arrow">↔</div>
+            <div class="flow-node public-node">Bob public value</div>
+            <div class="flow-arrow">←</div>
+            <div class="flow-node private-node">Bob private value</div>
+          </div>
+          <div class="flow-row">
+            <div class="machine-node">Both compute</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node shared-node">same shared secret</div>
+          </div>
+        </div>
+
+        <p>
+          The shared secret is usually not used directly as the final encryption key. It is fed into a KDF to derive traffic keys.</p>
+
+        <div class="math-display">
+          \[
+            traffic\ keys=KDF(shared\ secret, context)
+          \]
+        </div>
+      </section>
+
+      <section id="diffie-hellman-preview">
+        <h2>Diffie-Hellman preview</h2>
+        <p>
+          Diffie-Hellman is the classic key exchange idea. The full math comes next, but the shape is this:</p>
+
+        <table class="step-table">
+          <thead><tr><th>Party</th><th>Private value</th><th>Public value</th><th>Shared result</th></tr></thead>
+          <tbody>
+            <tr><td>Alice</td><td>\(a\)</td><td>\(g^a\)</td><td>\((g^b)^a=g^{ab}\)</td></tr>
+            <tr><td>Bob</td><td>\(b\)</td><td>\(g^b\)</td><td>\((g^a)^b=g^{ab}\)</td></tr>
+          </tbody>
+        </table>
+
+        <div class="math-display">
+          \[
+            (g^b)^a=(g^a)^b=g^{ab}
+          \]
+        </div>
+
+        <p>
+          Alice and Bob arrive at the same shared value. An eavesdropper sees \(g^a\) and \(g^b\), but should not be able to recover \(g^{ab}\) without solving the hard problem.</p>
+      </section>
+
+      <section id="authentication-problem">
+        <h2>The authentication problem</h2>
+        <p>
+          Key exchange alone does not automatically prove who is on the other side. If an attacker can sit between Alice and Bob, they may perform separate key exchanges with each side.</p>
+
+        <table class="danger-table">
+          <thead><tr><th>Attack</th><th>What happens?</th><th>Needed defense</th></tr></thead>
+          <tbody>
+            <tr><td>Passive eavesdropping</td><td>Attacker only listens.</td><td>Hard key-exchange problem may protect shared secret.</td></tr>
+            <tr><td>Man-in-the-middle</td><td>Attacker substitutes public values.</td><td>Authentication of public keys or transcript.</td></tr>
+            <tr><td>Fake public key</td><td>Attacker gives you their key instead of the real party’s key.</td><td>Certificates, fingerprints, signatures, or trusted key directories.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Core warning</div>
+          <p>
+            Public-key math can create a shared secret. Authentication tells you whom you shared it with.</p>
+        </div>
+      </section>
+
+      <section id="hybrid-cryptography">
+        <h2>Hybrid cryptography</h2>
+        <p>
+          Real systems often use public-key cryptography to establish or protect a symmetric key, then use symmetric cryptography for bulk data.</p>
+
+        <table class="compare-table">
+          <thead><tr><th>Layer</th><th>Used for</th><th>Why?</th></tr></thead>
+          <tbody>
+            <tr><td>Public-key cryptography</td><td>Key exchange, authentication, signatures.</td><td>Solves the initial trust/secret-establishment problem.</td></tr>
+            <tr><td>Symmetric cryptography</td><td>Bulk encryption and authentication.</td><td>Fast and efficient for large data.</td></tr>
+            <tr><td>KDF</td><td>Derive traffic keys from shared secret.</td><td>Separates purposes and binds context.</td></tr>
+          </tbody>
+        </table>
+
+        <pre><code>public-key key exchange
+  ↓
+shared secret
+  ↓ KDF with transcript/context
+symmetric traffic keys
+  ↓
+AEAD-protected application data</code></pre>
+      </section>
+
+      <section id="common-mistakes">
+        <h2>Common mistakes</h2>
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 1: thinking public means unsafe</div>
+          <p>
+            Public keys are meant to be public. The private key is the secret.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 2: thinking key exchange automatically authenticates identity</div>
+          <p>
+            Key exchange creates a shared secret. Authentication is a separate requirement.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 3: using shared secret directly as traffic key</div>
+          <p>
+            Feed shared secrets into a KDF with context to derive separate keys.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 4: using one key pair for every job</div>
+          <p>
+            Encryption, signing, and key exchange have different meanings and risks.</p>
+        </div>
+      </section>
+
+      <section id="practice">
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            What is the difference between a public key and a private key?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A public key is meant to be shared; a private key must be kept secret and protected.</p>
+            </details>
+          </li>
+          <li>
+            What is a one-way function?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>A function that is easy to compute forward but hard to reverse.</p>
+            </details>
+          </li>
+          <li>
+            What is a trapdoor?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Secret information that makes a one-way function easy to invert or use in a special private way.</p>
+            </details>
+          </li>
+          <li>
+            What does key exchange accomplish?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It lets parties derive a shared secret over a public channel.</p>
+            </details>
+          </li>
+          <li>
+            Why is authentication still needed with key exchange?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Because otherwise an attacker may perform a man-in-the-middle attack and establish separate secrets with both sides.</p>
+            </details>
+          </li>
+          <li>
+            Why do real systems often use hybrid cryptography?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Public-key cryptography helps establish secrets and authenticate parties; symmetric cryptography is faster for protecting bulk data.</p>
+            </details>
+          </li>
+        </ol>
+      </section>
+
+      <section id="cryptography-connection">
+        <h2>Why this matters for cryptography</h2>
+        <p>
+          Public-key cryptography changes the logistics of secrecy. It lets people publish keys, verify signatures, and create shared secrets over public networks. But it also introduces new questions: whose public key is this, what job is this key meant for, and how is the resulting shared secret bound to context?</p>
+        <ul>
+          <li>Public-key cryptography uses public/private key pairs.</li>
+          <li>One-way functions are easy forward and hard backward.</li>
+          <li>Trapdoors are secret shortcuts.</li>
+          <li>Public-key encryption, signatures, and key exchange are different jobs.</li>
+          <li>Key exchange creates shared secrets over public channels.</li>
+          <li>Authentication is needed to prevent man-in-the-middle attacks.</li>
+          <li>Hybrid cryptography combines public-key setup with symmetric data protection.</li>
+          <li>Shared secrets should usually feed a KDF before becoming traffic keys.</li>
+        </ul>
+      </section>
+
+      <section id="one-page-recap" class="page-break">
+        <h2>One-page recap</h2>
+        <div class="box recap-box">
+          <div class="box-title">What to remember</div>
+          <ul>
+            <li>Public-key cryptography is asymmetric.</li>
+            <li>A key pair contains a public key and a private key.</li>
+            <li>The public key may be shared openly.</li>
+            <li>The private key must be protected.</li>
+            <li>A one-way function is easy to compute forward but hard to reverse.</li>
+            <li>A trapdoor is secret information that makes the hard operation easy for the key holder.</li>
+            <li>Public-key encryption lets others encrypt to your public key.</li>
+            <li>Digital signatures let others verify messages using your public key.</li>
+            <li>Key exchange lets parties derive a shared secret over a public channel.</li>
+            <li>Diffie-Hellman shape: \((g^b)^a=(g^a)^b=g^{ab}\).</li>
+            <li>Key exchange without authentication can suffer man-in-the-middle attacks.</li>
+            <li>Hybrid cryptography uses public-key methods for setup and symmetric methods for bulk protection.</li>
+          </ul>
+        </div>
+
+        <div class="box technical-box">
+          <div class="box-title">Core formulas and patterns</div>
+          <div class="math-display">
+            \[
+              y=f(x) \quad \text{easy}
+            \]
+            \[
+              x=f^{-1}(y) \quad \text{hard without trapdoor}
+            \]
+            \[
+              (g^b)^a=(g^a)^b=g^{ab}
+            \]
+            \[
+              traffic\ keys=KDF(shared\ secret, context)
+            \]
+          </div>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2>What comes next</h2>
+        <p>
+          The next paired step should be <strong>Workbook 56: Public-Key Cryptography: One-Way Functions, Trapdoors, and Key Exchange</strong>. After that, the next tutorial can move into <strong>Diffie-Hellman Mathematics: Modular Exponentiation and Shared Secrets</strong>.</p>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography tutorial page. Volume 3: Public-Key Cryptography and Key Exchange. Designed for self-study, later classroom use, and clean PDF printing.
+      </p>
+    
+      <nav class="bottom-nav no-print">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_56_public_key_cryptography_one_way_functions_trapdoors_and_key_exchange_workbook_html.html" class="nav-item nav-secondary">🔄 Switch to Workbook Mode</a>
+        </div>
+        <div class="nav-bundle">
+          <span class="nav-item nav-disabled">⬅️ Previous</span>
+          <a href="tutorial_57_diffie_hellman_mathematics_modular_exponentiation_and_shared_secrets_html.html" class="nav-item nav-primary">Next Tutorial ➡️</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+</body>
+</html>
