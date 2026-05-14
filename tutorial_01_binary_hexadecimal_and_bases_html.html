@@ -144,6 +144,28 @@
     .hn-badge { display: inline-block; background: #eef3ff; color: #1f3763; border: 1px solid #c7d2ea; border-radius: 999px; padding: 3px 14px; font-weight: 900; font-family: "Cascadia Code","Consolas",monospace; font-size: 0.95rem; margin-top: 6px; }
     .hex-plus { font-size: 1.4rem; color: var(--muted); align-self: center; }
     .hex-exp-hint { font-size: 0.85rem; color: var(--muted); font-style: italic; margin-top: 8px; }
+    /* Hex challenge widget */
+    .mode-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .mode-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--paper); cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--muted); transition: all 0.15s; white-space: nowrap; }
+    .mode-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+    .mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .mode-btn.mix-btn { background: var(--gold-soft); border-color: #e0c97a; color: #5a4200; }
+    .mode-btn.mix-btn.active { background: #e0b800; border-color: #c9a600; color: #fff; }
+    .ch-card { background: #f7f9ff; border: 1px solid #d0d9ee; border-radius: 14px; padding: 26px 28px; text-align: center; }
+    .ch-mode-tag { display: inline-block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-soft); padding: 2px 10px; border-radius: 999px; margin-bottom: 10px; }
+    .ch-q-label { font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+    .ch-prompt { font-family: "Cascadia Code","Consolas",monospace; font-size: 2.4rem; font-weight: 900; color: #16243d; letter-spacing: 0.12em; margin: 6px 0 18px; min-height: 3rem; }
+    .ch-row { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .ch-input { font-family: "Cascadia Code","Consolas",monospace; font-size: 1.4rem; font-weight: 700; text-align: center; text-transform: uppercase; padding: 10px 14px; border: 2px solid var(--border); border-radius: 10px; background: var(--paper); color: #16243d; transition: border-color 0.15s, background 0.15s; }
+    .ch-input:focus { outline: none; border-color: var(--accent); }
+    .ch-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .ch-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+    .ch-feedback { min-height: 1.5em; margin-top: 12px; font-size: 0.95rem; font-weight: 700; }
+    .ch-feedback.ok  { color: #2e7d32; }
+    .ch-feedback.err { color: #c62828; }
+    .ch-explain { font-family: "Cascadia Code","Consolas",monospace; font-size: 0.83rem; color: var(--muted); margin-top: 8px; min-height: 1.2em; }
+    .ch-score { font-size: 0.82rem; color: var(--muted); margin-top: 12px; }
+    .ch-score span { font-weight: 700; color: var(--accent); }
 
     @media (max-width: 700px) {
       body { font-size: 16px; }
@@ -581,68 +603,182 @@
         </p>
       </section>
 
-      <section id="hex-explorer" class="no-print">
+      <section id="hex-challenge" class="no-print">
         <div class="interactive">
           <span class="interactive-label">Interactive</span>
-          <h2>Hex byte explorer</h2>
-          <p>Type any two hex digits (00 – FF) and see the byte split into its two nibbles with their binary expansions.</p>
+          <h2>Hex conversion challenge</h2>
+          <p>Pick a direction to practice, or hit <strong>Mix All</strong> for randomised challenges across every conversion type. Type your answer and press <kbd>Enter</kbd> or <strong>Check</strong>.</p>
 
-          <div>
-            <div class="hex-exp-lbl">Enter a hex byte:</div>
-            <input class="hex-exp-input" id="hx-input" type="text" maxlength="2" placeholder="2D" spellcheck="false" autocomplete="off" />
-            <div class="hex-exp-hint" id="hx-hint">Type two hex digits, e.g. <strong>2D</strong> or <strong>A7</strong>.</div>
+          <div class="mode-bar">
+            <button class="mode-btn active" data-mode="dec-hex">Decimal → Hex</button>
+            <button class="mode-btn" data-mode="hex-dec">Hex → Decimal</button>
+            <button class="mode-btn" data-mode="nib-hex">Nibble → Hex digit</button>
+            <button class="mode-btn" data-mode="hex-nib">Hex digit → Nibble</button>
+            <button class="mode-btn" data-mode="bin-hex">Binary byte → Hex</button>
+            <button class="mode-btn" data-mode="hex-bin">Hex → Binary byte</button>
+            <button class="mode-btn mix-btn" data-mode="mix">🎲 Mix All</button>
           </div>
 
-          <div class="hex-nibble-row" id="hx-nibbles" style="display:none">
-            <div class="hex-nibble-box">
-              <div class="hn-bits" id="hx-hi-bits">????</div>
-              <div class="hn-label">High nibble (bits 7–4)</div>
-              <div class="hn-badge" id="hx-hi-hex">?</div>
+          <div class="ch-card">
+            <div class="ch-mode-tag" id="ch-mode-tag">Decimal → Hex</div>
+            <div class="ch-q-label" id="ch-q-label">Convert to hexadecimal:</div>
+            <div class="ch-prompt" id="ch-prompt">…</div>
+            <div class="ch-row">
+              <input class="ch-input" id="ch-input" type="text" autocomplete="off" spellcheck="false" />
+              <button class="drill-btn drill-btn-check" id="ch-check" type="button">Check</button>
+              <button class="drill-btn drill-btn-next"  id="ch-next"  type="button">Next →</button>
             </div>
-            <div class="hex-plus">+</div>
-            <div class="hex-nibble-box">
-              <div class="hn-bits" id="hx-lo-bits">????</div>
-              <div class="hn-label">Low nibble (bits 3–0)</div>
-              <div class="hn-badge" id="hx-lo-hex">?</div>
-            </div>
-            <div class="hex-plus">=</div>
-            <div class="hex-nibble-box">
-              <div class="hn-bits" id="hx-full-bin">????????</div>
-              <div class="hn-label">Full byte (binary)</div>
-              <div class="hn-badge" id="hx-full-dec">?</div>
-            </div>
+            <div class="ch-feedback" id="ch-feedback"></div>
+            <div class="ch-explain"  id="ch-explain"></div>
+            <div class="ch-score">Score: <span id="ch-score">0</span> correct of <span id="ch-total">0</span> attempts</div>
           </div>
         </div>
       </section>
 
       <script>
       (function () {
-        var HEX4 = ['0000','0001','0010','0011','0100','0101','0110','0111','1000','1001','1010','1011','1100','1101','1110','1111'];
-        var input = document.getElementById('hx-input');
-        var nibRow = document.getElementById('hx-nibbles');
-        var hint = document.getElementById('hx-hint');
+        var N4 = ['0000','0001','0010','0011','0100','0101','0110','0111','1000','1001','1010','1011','1100','1101','1110','1111'];
+        var HD = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+        function r16()  { return Math.floor(Math.random() * 16); }
+        function r256() { return Math.floor(Math.random() * 256); }
+        function hi(v)  { return (v >> 4) & 0xF; }
+        function lo(v)  { return v & 0xF; }
+        function pad2(s){ return s.toUpperCase().padStart(2,'0'); }
+        function bin8(v){ return N4[hi(v)] + N4[lo(v)]; }
 
-        function update() {
-          var raw = input.value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
-          input.value = raw;
-          if (raw.length < 2) { nibRow.style.display = 'none'; return; }
-          var hi = parseInt(raw[0], 16);
-          var lo = parseInt(raw[1], 16);
-          var dec = hi * 16 + lo;
-          document.getElementById('hx-hi-bits').textContent = HEX4[hi];
-          document.getElementById('hx-lo-bits').textContent = HEX4[lo];
-          document.getElementById('hx-hi-hex').textContent = raw[0];
-          document.getElementById('hx-lo-hex').textContent = raw[1];
-          document.getElementById('hx-full-bin').textContent = HEX4[hi] + HEX4[lo];
-          document.getElementById('hx-full-dec').textContent = dec + ' decimal';
-          nibRow.style.display = 'flex';
-          hint.style.display = 'none';
+        var MODES = {
+          'dec-hex': {
+            tag: 'Decimal → Hex',
+            label: 'Convert this decimal value to hexadecimal:',
+            width: '90px', maxlen: 2,
+            gen: function() { return r256(); },
+            show: function(q) { return String(q); },
+            ok:   function(q,a) { return a === pad2(q.toString(16)); },
+            ans:  function(q)   { return '0x' + pad2(q.toString(16)); },
+            why:  function(q)   { return q + ' = ' + hi(q) + '×16 + ' + lo(q) + '  →  ' + HD[hi(q)] + HD[lo(q)]; }
+          },
+          'hex-dec': {
+            tag: 'Hex → Decimal',
+            label: 'Convert this hex byte to decimal:',
+            width: '90px', maxlen: 3,
+            gen: function() { return r256(); },
+            show: function(q) { return '0x' + pad2(q.toString(16)); },
+            ok:   function(q,a) { return a === String(q); },
+            ans:  function(q)   { return String(q); },
+            why:  function(q)   { return HD[hi(q)] + '×16 + ' + HD[lo(q)] + ' = ' + hi(q)*16 + ' + ' + lo(q) + ' = ' + q; }
+          },
+          'nib-hex': {
+            tag: 'Nibble → Hex digit',
+            label: 'What hex digit represents this 4-bit nibble?',
+            width: '70px', maxlen: 1,
+            gen: function() { return r16(); },
+            show: function(q) { return N4[q]; },
+            ok:   function(q,a) { return a === HD[q]; },
+            ans:  function(q)   { return HD[q]; },
+            why:  function(q)   { return N4[q] + '  =  ' + q + '  =  ' + HD[q]; }
+          },
+          'hex-nib': {
+            tag: 'Hex digit → Nibble',
+            label: 'Write the 4-bit binary nibble for this hex digit:',
+            width: '110px', maxlen: 4,
+            gen: function() { return r16(); },
+            show: function(q) { return HD[q]; },
+            ok:   function(q,a) { return a === N4[q]; },
+            ans:  function(q)   { return N4[q]; },
+            why:  function(q)   { return HD[q] + '  =  ' + q + '  =  ' + N4[q]; }
+          },
+          'bin-hex': {
+            tag: 'Binary byte → Hex',
+            label: 'Convert this 8-bit binary byte to hex:',
+            width: '90px', maxlen: 2,
+            gen: function() { return r256(); },
+            show: function(q) { return bin8(q); },
+            ok:   function(q,a) { return a === pad2(q.toString(16)); },
+            ans:  function(q)   { return '0x' + pad2(q.toString(16)); },
+            why:  function(q)   { return N4[hi(q)] + ' ' + N4[lo(q)] + '  →  ' + HD[hi(q)] + ' ' + HD[lo(q)] + '  =  0x' + pad2(q.toString(16)); }
+          },
+          'hex-bin': {
+            tag: 'Hex → Binary byte',
+            label: 'Write the full 8-bit binary representation of this hex byte:',
+            width: '160px', maxlen: 8,
+            gen: function() { return r256(); },
+            show: function(q) { return '0x' + pad2(q.toString(16)); },
+            ok:   function(q,a) { return a === bin8(q); },
+            ans:  function(q)   { return bin8(q); },
+            why:  function(q)   { return HD[hi(q)] + '→' + N4[hi(q)] + '  ' + HD[lo(q)] + '→' + N4[lo(q)] + '  =  ' + bin8(q); }
+          }
+        };
+
+        var KEYS = Object.keys(MODES).filter(function(k){ return k !== 'mix'; });
+        var currentMode = 'dec-hex';
+        var currentQ = null;
+        var score = 0, total = 0;
+        var checked = false;
+
+        function modeFor(key) { return key === 'mix' ? MODES[KEYS[Math.floor(Math.random()*KEYS.length)]] : MODES[key]; }
+
+        function next() {
+          var m = modeFor(currentMode);
+          currentQ = { m: m, q: m.gen() };
+          checked = false;
+          document.getElementById('ch-mode-tag').textContent = m.tag;
+          document.getElementById('ch-q-label').textContent  = m.label;
+          document.getElementById('ch-prompt').textContent   = m.show(currentQ.q);
+          var inp = document.getElementById('ch-input');
+          inp.value = '';
+          inp.className = 'ch-input';
+          inp.style.width = m.width;
+          inp.maxLength = m.maxlen;
+          document.getElementById('ch-feedback').textContent = '';
+          document.getElementById('ch-feedback').className   = 'ch-feedback';
+          document.getElementById('ch-explain').textContent  = '';
+          inp.focus();
         }
 
-        input.addEventListener('input', update);
-        input.addEventListener('keydown', function (e) {
-          if (!/[0-9a-fA-F]|Backspace|Delete|Tab|ArrowLeft|ArrowRight/.test(e.key)) e.preventDefault();
+        function check() {
+          if (checked) { next(); return; }
+          var inp = document.getElementById('ch-input');
+          var ans = inp.value.trim().toUpperCase();
+          var m = currentQ.m, q = currentQ.q;
+          var ok = m.ok(q, ans);
+          checked = true;
+          total++;
+          if (ok) {
+            score++;
+            inp.className = 'ch-input correct';
+            document.getElementById('ch-feedback').textContent = '✓ Correct!';
+            document.getElementById('ch-feedback').className   = 'ch-feedback ok';
+          } else {
+            inp.className = 'ch-input wrong';
+            document.getElementById('ch-feedback').textContent = '✗  Answer: ' + m.ans(q);
+            document.getElementById('ch-feedback').className   = 'ch-feedback err';
+          }
+          document.getElementById('ch-explain').textContent = m.why(q);
+          document.getElementById('ch-score').textContent = score;
+          document.getElementById('ch-total').textContent = total;
+        }
+
+        document.getElementById('ch-check').addEventListener('click', function() {
+          if (checked) next(); else check();
         });
+        document.getElementById('ch-next').addEventListener('click', next);
+        document.getElementById('ch-input').addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { if (checked) next(); else check(); }
+        });
+
+        document.querySelectorAll('.mode-btn').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.mode-btn').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+            score = 0; total = 0;
+            document.getElementById('ch-score').textContent = '0';
+            document.getElementById('ch-total').textContent = '0';
+            next();
+          });
+        });
+
+        next();
       })();
       </script>
 
