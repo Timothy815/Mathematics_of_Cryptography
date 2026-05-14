@@ -192,17 +192,27 @@
       .q.graded-ok  { border-color: #2e7d32; }
       .q.graded-err { border-color: #c62828; }
       .score-panel.show { display: block; border: 1px solid #ccc; }
-      /* Gray input background disappears; typed text remains */
-      .ans-input, .written-area { border: 1px solid #999; background: transparent !important; }
+      /* Inputs print as clean underlines — gray vanishes, typed text stays */
+      .ans-input {
+        border: none !important; border-bottom: 1.5px solid #444 !important;
+        border-radius: 0 !important; background: transparent !important;
+        min-width: 60px;
+      }
+      .written-area { border: 1px solid #999; background: transparent; min-height: 80px; }
+      /* T/F buttons print as circles the student can tick */
       .tf-btn { border: 1px solid #999; background: #fff; color: #000; }
       .tf-btn.selected,
       .tf-btn.ok  { border: 2px solid #2e7d32; background: #edf7ed; color: #1b5e20; }
       .tf-btn.err { border: 2px solid #c62828; background: #fdeaea; color: #7f0000; }
       .q-result.show { display: block; }
       h2 { font-size: 14pt; break-after: avoid; }
-      /* Correct answers appear below each question when printing */
-      .print-answer {
-        display: block;
+
+      /* ── Blank print (default): answers hidden ── */
+      .print-answer { display: none !important; }
+
+      /* ── Answer-key print: body.show-answers reveals correct answers ── */
+      body.show-answers .print-answer {
+        display: block !important;
         font-size: 0.82rem;
         color: #444;
         margin-top: 6px;
@@ -210,7 +220,7 @@
         border-top: 1px dotted #bbb;
         font-style: italic;
       }
-      .print-answer strong {
+      body.show-answers .print-answer strong {
         font-family: "Courier New", monospace;
         font-style: normal;
         color: #000;
@@ -242,9 +252,10 @@
   </header>
 
   <div class="version-bar no-print" id="version-bar">
-    <p>Questions 7–19 use randomly generated values. Click <strong>New Version</strong> to get a fresh set — great for repeated practice or printing a new worksheet.</p>
+    <p>Questions 7–19 use randomly generated values. <strong>New Version</strong> gives a fresh set — infinite practice.</p>
     <button class="version-btn" id="new-version-btn" type="button">&#8635; New Version</button>
-    <button class="version-btn" onclick="window.print()" type="button">&#128438; Print Worksheet</button>
+    <button class="version-btn" onclick="window.print()" type="button">&#128438; Print Blank</button>
+    <button class="version-btn" id="print-key-btn" type="button">&#128438; Print with Answers</button>
   </div>
 
   <main>
@@ -553,7 +564,7 @@
         <div>Written: <span>see sample answer below</span></div>
       </div>
       <div style="margin-top:20px">
-        <button class="grade-btn secondary no-print" onclick="window.print()" type="button">&#128438; Print Graded Sheet</button>
+        <button class="grade-btn secondary no-print" id="print-graded-btn" type="button">&#128438; Print Graded Sheet</button>
         <button class="grade-btn secondary no-print" id="retry-btn" type="button">&#8635; Reset &amp; Retry</button>
       </div>
     </div>
@@ -905,6 +916,16 @@
     updateProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
+
+  /* ── Print with answer key ─────────────────────────────────── */
+  function printWithAnswers() {
+    document.body.classList.add('show-answers');
+    window.print();
+    document.body.classList.remove('show-answers');
+  }
+
+  document.getElementById('print-key-btn').addEventListener('click', printWithAnswers);
+  document.getElementById('print-graded-btn').addEventListener('click', printWithAnswers);
 
   /* ── Init ──────────────────────────────────────────────────── */
   buildFixedKey();
