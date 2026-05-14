@@ -53,6 +53,20 @@
     .progress-bar-track { height: 8px; background: #e0e0e0; border-radius: 999px; overflow: hidden; }
     .progress-bar-fill  { height: 100%; background: var(--ws); border-radius: 999px; transition: width 0.3s; width: 0%; }
 
+    /* ── Version bar ──────────────────────────────────────────── */
+    .version-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: var(--ws-soft); border: 1px solid var(--ws-border);
+      border-radius: 10px; padding: 12px 18px; margin-bottom: 24px;
+    }
+    .version-bar p { margin: 0; font-size: 0.88rem; color: var(--muted); flex: 1; }
+    .version-btn {
+      padding: 9px 22px; border-radius: 8px; border: 2px solid var(--ws);
+      background: var(--paper); color: var(--ws); font-size: 0.9rem; font-weight: 800;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .version-btn:hover { background: var(--ws); color: #fff; }
+
     /* ── Section headers ──────────────────────────────────────── */
     .ws-section { margin-bottom: 36px; }
     .ws-section-head {
@@ -81,24 +95,29 @@
       font-family: "Cascadia Code","Consolas",monospace;
       font-size: 1.1rem; font-weight: 700; text-transform: uppercase;
       padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px;
-      background: var(--paper); color: #16243d; transition: border-color 0.15s;
+      background: #f0f0f0; color: #16243d; transition: border-color 0.15s;
     }
-    .ans-input:focus { outline: none; border-color: var(--ws); }
+    .ans-input:focus { outline: none; border-color: var(--ws); background: #fff; }
     .ans-input.ok  { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
     .ans-input.err { border-color: #c62828; background: #fdeaea; color: #7f0000; }
     .ans-input.text-ans { text-transform: none; font-family: system-ui, sans-serif; font-size: 0.95rem; width: 100%; max-width: 520px; }
 
-    /* ── True/False & Multiple choice ────────────────────────── */
-    .tf-row, .mc-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
-    .tf-btn, .mc-btn {
+    /* ── Print answer (hidden on screen, visible when printing) ─ */
+    .print-answer {
+      display: none;
+    }
+
+    /* ── True/False ───────────────────────────────────────────── */
+    .tf-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+    .tf-btn {
       padding: 9px 22px; border-radius: 8px; border: 2px solid var(--border);
       background: var(--paper); cursor: pointer; font-size: 0.9rem; font-weight: 700;
       color: var(--muted); transition: all 0.15s;
     }
-    .tf-btn:hover, .mc-btn:hover { border-color: var(--ws); color: var(--ws); background: var(--ws-soft); }
-    .tf-btn.selected, .mc-btn.selected { border-color: var(--ws); background: var(--ws); color: #fff; }
-    .tf-btn.ok,  .mc-btn.ok  { border-color: #2e7d32; background: #2e7d32; color: #fff; }
-    .tf-btn.err, .mc-btn.err { border-color: #c62828; background: #c62828; color: #fff; }
+    .tf-btn:hover { border-color: var(--ws); color: var(--ws); background: var(--ws-soft); }
+    .tf-btn.selected { border-color: var(--ws); background: var(--ws); color: #fff; }
+    .tf-btn.ok  { border-color: #2e7d32; background: #2e7d32; color: #fff; }
+    .tf-btn.err { border-color: #c62828; background: #c62828; color: #fff; }
     .tf-btn.reveal { border-color: #2e7d32; background: var(--green-soft); color: #2e7d32; }
 
     /* ── Inline answer hint (shown after grading) ─────────────── */
@@ -115,8 +134,9 @@
       border: 2px solid var(--border); border-radius: 8px;
       font-family: system-ui, sans-serif; font-size: 0.95rem;
       line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f0f0;
     }
-    .written-area:focus { outline: none; border-color: var(--ws); }
+    .written-area:focus { outline: none; border-color: var(--ws); background: #fff; }
 
     /* ── Multi-part table layout ─────────────────────────────── */
     .mp-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -162,23 +182,39 @@
     /* ── Print ───────────────────────────────────────────────── */
     @media print {
       @page { margin: 0.65in; }
-      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.5; }
       .page { max-width: none; padding: 0; }
       header.worksheet-header { box-shadow: none; border: 1px solid #ccc; border-radius: 0; background: #fff; }
-      .no-print, .grade-bar, nav { display: none !important; }
+      .no-print, .grade-bar, .version-bar, nav { display: none !important; }
       .progress-wrap { display: none; }
       .ws-section-head { background: #f0f0f0; border: 1px solid #ccc; }
       .q { border: 1px solid #ccc; break-inside: avoid; border-radius: 0; }
       .q.graded-ok  { border-color: #2e7d32; }
       .q.graded-err { border-color: #c62828; }
       .score-panel.show { display: block; border: 1px solid #ccc; }
-      .ans-input, .written-area { border: 1px solid #999; background: #fff; }
-      .tf-btn, .mc-btn { border: 1px solid #999; background: #fff; color: #000; }
-      .tf-btn.selected, .mc-btn.selected,
-      .tf-btn.ok, .mc-btn.ok { border: 2px solid #2e7d32; background: #edf7ed; color: #1b5e20; }
-      .tf-btn.err, .mc-btn.err { border: 2px solid #c62828; background: #fdeaea; color: #7f0000; }
+      /* Gray input background disappears; typed text remains */
+      .ans-input, .written-area { border: 1px solid #999; background: transparent !important; }
+      .tf-btn { border: 1px solid #999; background: #fff; color: #000; }
+      .tf-btn.selected,
+      .tf-btn.ok  { border: 2px solid #2e7d32; background: #edf7ed; color: #1b5e20; }
+      .tf-btn.err { border: 2px solid #c62828; background: #fdeaea; color: #7f0000; }
       .q-result.show { display: block; }
       h2 { font-size: 14pt; break-after: avoid; }
+      /* Correct answers appear below each question when printing */
+      .print-answer {
+        display: block;
+        font-size: 0.82rem;
+        color: #444;
+        margin-top: 6px;
+        padding-top: 5px;
+        border-top: 1px dotted #bbb;
+        font-style: italic;
+      }
+      .print-answer strong {
+        font-family: "Courier New", monospace;
+        font-style: normal;
+        color: #000;
+      }
     }
   </style>
 </head>
@@ -190,26 +226,31 @@
     <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
     <h1>Binary, Hexadecimal, and Bases</h1>
     <p class="subtitle">
-      Interactive graded worksheet — answer every question, then hit <strong>Grade Worksheet</strong> for instant feedback.
+      Fill in each answer box, then hit <strong>Grade Worksheet</strong> for instant feedback. Hit <strong>New Version</strong> for a freshly randomised set of numbers — infinite practice.
     </p>
 
     <nav class="tutorial-nav no-print" aria-label="Page navigation">
-      <a class="nav-link" href="index.html">🏠 Dashboard</a>
+      <a class="nav-link" href="index.html">&#127968; Dashboard</a>
       <a class="nav-link" href="tutorial_01_binary_hexadecimal_and_bases_html.html">Tutorial 1</a>
       <a class="nav-link" href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html">Workbook 1</a>
-      <button class="print-button" onclick="window.print()">🖨️ Print</button>
     </nav>
 
     <div class="progress-wrap no-print">
-      <div class="progress-label" id="prog-label">0 of 22 questions answered</div>
+      <div class="progress-label" id="prog-label">0 of 25 questions answered</div>
       <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-fill"></div></div>
     </div>
   </header>
 
+  <div class="version-bar no-print" id="version-bar">
+    <p>Questions 7–19 use randomly generated values. Click <strong>New Version</strong> to get a fresh set — great for repeated practice or printing a new worksheet.</p>
+    <button class="version-btn" id="new-version-btn" type="button">&#8635; New Version</button>
+    <button class="version-btn" onclick="window.print()" type="button">&#128438; Print Worksheet</button>
+  </div>
+
   <main>
 
     <!-- ══════════════════════════════════════════════════════════
-         PART 1 — Core concepts
+         PART 1 — Core concepts (fixed)
     ═══════════════════════════════════════════════════════════ -->
     <section class="ws-section">
       <div class="ws-section-head">
@@ -221,126 +262,140 @@
       <div class="q" id="q1">
         <div class="q-num">Question 1</div>
         <div class="q-text">How many distinct values can a single bit represent?</div>
-        <input class="ans-input" id="a1" type="text" maxlength="3" style="width:80px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a1" type="text" maxlength="3" style="width:80px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>2</strong> &nbsp;(0 and 1)</span>
         <div class="q-result" id="r1"></div>
       </div>
 
       <div class="q" id="q2">
         <div class="q-num">Question 2</div>
         <div class="q-text">How many bits make up one nibble?</div>
-        <input class="ans-input" id="a2" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a2" type="text" maxlength="2" style="width:80px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>4</strong></span>
         <div class="q-result" id="r2"></div>
       </div>
 
       <div class="q" id="q3">
         <div class="q-num">Question 3</div>
         <div class="q-text">How many bits make up one byte?</div>
-        <input class="ans-input" id="a3" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a3" type="text" maxlength="2" style="width:80px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>8</strong></span>
         <div class="q-result" id="r3"></div>
       </div>
 
       <div class="q" id="q4">
         <div class="q-num">Question 4</div>
         <div class="q-text">How many hexadecimal digits are needed to fully represent one byte?</div>
-        <input class="ans-input" id="a4" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a4" type="text" maxlength="2" style="width:80px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>2</strong></span>
         <div class="q-result" id="r4"></div>
       </div>
 
       <div class="q" id="q5">
         <div class="q-num">Question 5</div>
         <div class="q-text">In an 8-bit byte, what is the place value of position 7 — the leftmost bit?</div>
-        <input class="ans-input" id="a5" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a5" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>128</strong> &nbsp;(2<sup>7</sup>)</span>
         <div class="q-result" id="r5"></div>
       </div>
 
       <div class="q" id="q6">
         <div class="q-num">Question 6</div>
         <div class="q-text">What is \(2^0\)? (The place value of the rightmost bit.)</div>
-        <input class="ans-input" id="a6" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <input class="ans-input" id="a6" type="text" maxlength="2" style="width:80px" autocomplete="off" />
+        <span class="print-answer">Correct: <strong>1</strong></span>
         <div class="q-result" id="r6"></div>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════
-         PART 2 — Binary to decimal
+         PART 2 — Binary to decimal  (randomised)
     ═══════════════════════════════════════════════════════════ -->
     <section class="ws-section">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 2</span>
-        <span class="ws-section-title">Binary → decimal</span>
+        <span class="ws-section-title">Binary &#8594; decimal</span>
       </div>
       <p class="ws-section-note">Identify which bits are 1, note their place values, and add them. Write the decimal result.</p>
 
       <div class="q" id="q7">
         <div class="q-num">Question 7</div>
-        <div class="q-text">Convert <code>00001111</code> to decimal.</div>
-        <input class="ans-input" id="a7" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv7">00001111</code> to decimal.</div>
+        <input class="ans-input" id="a7" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa7">Correct: <strong>15</strong></span>
         <div class="q-result" id="r7"></div>
       </div>
 
       <div class="q" id="q8">
         <div class="q-num">Question 8</div>
-        <div class="q-text">Convert <code>10000001</code> to decimal.</div>
-        <input class="ans-input" id="a8" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv8">10000001</code> to decimal.</div>
+        <input class="ans-input" id="a8" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa8">Correct: <strong>129</strong></span>
         <div class="q-result" id="r8"></div>
       </div>
 
       <div class="q" id="q9">
         <div class="q-num">Question 9</div>
-        <div class="q-text">Convert <code>01110111</code> to decimal.</div>
-        <input class="ans-input" id="a9" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv9">01110111</code> to decimal.</div>
+        <input class="ans-input" id="a9" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa9">Correct: <strong>119</strong></span>
         <div class="q-result" id="r9"></div>
       </div>
 
       <div class="q" id="q10">
         <div class="q-num">Question 10</div>
-        <div class="q-text">Convert <code>11001100</code> to decimal.</div>
-        <input class="ans-input" id="a10" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv10">11001100</code> to decimal.</div>
+        <input class="ans-input" id="a10" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa10">Correct: <strong>204</strong></span>
         <div class="q-result" id="r10"></div>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════
-         PART 3 — Decimal to binary
+         PART 3 — Decimal to binary  (randomised)
     ═══════════════════════════════════════════════════════════ -->
     <section class="ws-section">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 3</span>
-        <span class="ws-section-title">Decimal → 8-bit binary</span>
+        <span class="ws-section-title">Decimal &#8594; 8-bit binary</span>
       </div>
       <p class="ws-section-note">Write the full 8-bit binary string, including any leading zeros.</p>
 
       <div class="q" id="q11">
         <div class="q-num">Question 11</div>
-        <div class="q-text">Convert <code>17</code> to an 8-bit binary string.</div>
-        <input class="ans-input" id="a11" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv11">17</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a11" type="text" maxlength="8" style="width:160px" autocomplete="off" />
+        <span class="print-answer" id="pa11">Correct: <strong>00010001</strong></span>
         <div class="q-result" id="r11"></div>
       </div>
 
       <div class="q" id="q12">
         <div class="q-num">Question 12</div>
-        <div class="q-text">Convert <code>64</code> to an 8-bit binary string.</div>
-        <input class="ans-input" id="a12" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv12">64</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a12" type="text" maxlength="8" style="width:160px" autocomplete="off" />
+        <span class="print-answer" id="pa12">Correct: <strong>01000000</strong></span>
         <div class="q-result" id="r12"></div>
       </div>
 
       <div class="q" id="q13">
         <div class="q-num">Question 13</div>
-        <div class="q-text">Convert <code>200</code> to an 8-bit binary string.</div>
-        <input class="ans-input" id="a13" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv13">200</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a13" type="text" maxlength="8" style="width:160px" autocomplete="off" />
+        <span class="print-answer" id="pa13">Correct: <strong>11001000</strong></span>
         <div class="q-result" id="r13"></div>
       </div>
 
       <div class="q" id="q14">
         <div class="q-num">Question 14</div>
-        <div class="q-text">Convert <code>171</code> to an 8-bit binary string.</div>
-        <input class="ans-input" id="a14" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-text">Convert <code id="qv14">171</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a14" type="text" maxlength="8" style="width:160px" autocomplete="off" />
+        <span class="print-answer" id="pa14">Correct: <strong>10101011</strong></span>
         <div class="q-result" id="r14"></div>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════
-         PART 4 — Hex conversions
+         PART 4 — Hex conversions  (randomised)
     ═══════════════════════════════════════════════════════════ -->
     <section class="ws-section">
       <div class="ws-section-head">
@@ -351,42 +406,47 @@
 
       <div class="q" id="q15">
         <div class="q-num">Question 15</div>
-        <div class="q-text">Convert <code>0x3C</code> to decimal.</div>
-        <input class="ans-input" id="a15" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code>0x<span id="qv15">3C</span></code> to decimal.</div>
+        <input class="ans-input" id="a15" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa15">Correct: <strong>60</strong></span>
         <div class="q-result" id="r15"></div>
       </div>
 
       <div class="q" id="q16">
         <div class="q-num">Question 16</div>
-        <div class="q-text">Convert <code>0xA5</code> to decimal.</div>
-        <input class="ans-input" id="a16" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-text">Convert <code>0x<span id="qv16">A5</span></code> to decimal.</div>
+        <input class="ans-input" id="a16" type="text" maxlength="3" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa16">Correct: <strong>165</strong></span>
         <div class="q-result" id="r16"></div>
       </div>
 
       <div class="q" id="q17">
         <div class="q-num">Question 17</div>
-        <div class="q-text">Convert <code>0xF0</code> to 8-bit binary.</div>
-        <input class="ans-input" id="a17" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-text">Convert <code>0x<span id="qv17">F0</span></code> to 8-bit binary.</div>
+        <input class="ans-input" id="a17" type="text" maxlength="8" style="width:160px" autocomplete="off" />
+        <span class="print-answer" id="pa17">Correct: <strong>11110000</strong></span>
         <div class="q-result" id="r17"></div>
       </div>
 
       <div class="q" id="q18">
         <div class="q-num">Question 18</div>
-        <div class="q-text">Convert binary <code>01001111</code> to hex. Write two digits, no prefix.</div>
-        <input class="ans-input" id="a18" type="text" maxlength="2" style="width:90px" placeholder="??" autocomplete="off" />
+        <div class="q-text">Convert binary <code id="qv18">01001111</code> to hex. Write two digits, no prefix.</div>
+        <input class="ans-input" id="a18" type="text" maxlength="2" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa18">Correct: <strong>4F</strong></span>
         <div class="q-result" id="r18"></div>
       </div>
 
       <div class="q" id="q19">
         <div class="q-num">Question 19</div>
-        <div class="q-text">Convert decimal <code>87</code> to hex. Write two digits, no prefix.</div>
-        <input class="ans-input" id="a19" type="text" maxlength="2" style="width:90px" placeholder="??" autocomplete="off" />
+        <div class="q-text">Convert decimal <code id="qv19">87</code> to hex. Write two digits, no prefix.</div>
+        <input class="ans-input" id="a19" type="text" maxlength="2" style="width:90px" autocomplete="off" />
+        <span class="print-answer" id="pa19">Correct: <strong>57</strong></span>
         <div class="q-result" id="r19"></div>
       </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════
-         PART 5 — True or false
+         PART 5 — True or false (fixed concept questions)
     ═══════════════════════════════════════════════════════════ -->
     <section class="ws-section">
       <div class="ws-section-head">
@@ -402,6 +462,7 @@
           <button class="tf-btn" data-q="20" data-val="T" type="button">True</button>
           <button class="tf-btn" data-q="20" data-val="F" type="button">False</button>
         </div>
+        <span class="print-answer">Correct: <strong>True</strong></span>
         <div class="q-result" id="r20"></div>
       </div>
 
@@ -412,6 +473,7 @@
           <button class="tf-btn" data-q="21" data-val="T" type="button">True</button>
           <button class="tf-btn" data-q="21" data-val="F" type="button">False</button>
         </div>
+        <span class="print-answer">Correct: <strong>False</strong> &nbsp;(leading zeros encode position; fixed-width matters in cryptography)</span>
         <div class="q-result" id="r21"></div>
       </div>
 
@@ -422,6 +484,7 @@
           <button class="tf-btn" data-q="22" data-val="T" type="button">True</button>
           <button class="tf-btn" data-q="22" data-val="F" type="button">False</button>
         </div>
+        <span class="print-answer">Correct: <strong>False</strong> &nbsp;(the carry bit is lost; the result wraps to <code>00000000</code>)</span>
         <div class="q-result" id="r22"></div>
       </div>
 
@@ -432,6 +495,7 @@
           <button class="tf-btn" data-q="23" data-val="T" type="button">True</button>
           <button class="tf-btn" data-q="23" data-val="F" type="button">False</button>
         </div>
+        <span class="print-answer">Correct: <strong>True</strong> &nbsp;(both equal 255)</span>
         <div class="q-result" id="r23"></div>
       </div>
 
@@ -442,6 +506,7 @@
           <button class="tf-btn" data-q="24" data-val="T" type="button">True</button>
           <button class="tf-btn" data-q="24" data-val="F" type="button">False</button>
         </div>
+        <span class="print-answer">Correct: <strong>True</strong></span>
         <div class="q-result" id="r24"></div>
       </div>
     </section>
@@ -463,7 +528,7 @@
           Using what you learned in this module, explain <em>why</em> hexadecimal is the natural choice
           for representing bytes — and what would be awkward about using decimal instead.
         </div>
-        <textarea class="written-area" id="a25" rows="5" placeholder="Write your answer here…"></textarea>
+        <textarea class="written-area" id="a25" rows="5"></textarea>
         <div class="q-result" id="r25"></div>
       </div>
     </section>
@@ -474,6 +539,7 @@
     <div class="grade-bar no-print" id="grade-bar">
       <p>Answer all questions above, then grade your worksheet. You can grade at any time — unanswered questions will be marked incorrect.</p>
       <button class="grade-btn" id="grade-btn" type="button">Grade Worksheet</button>
+      <button class="grade-btn secondary" id="new-version-btn2" type="button">&#8635; New Version</button>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════
@@ -487,8 +553,8 @@
         <div>Written: <span>see sample answer below</span></div>
       </div>
       <div style="margin-top:20px">
-        <button class="grade-btn secondary no-print" onclick="window.print()" type="button">🖨️ Print Graded Sheet</button>
-        <button class="grade-btn secondary no-print" id="retry-btn" type="button">↺ Reset &amp; Retry</button>
+        <button class="grade-btn secondary no-print" onclick="window.print()" type="button">&#128438; Print Graded Sheet</button>
+        <button class="grade-btn secondary no-print" id="retry-btn" type="button">&#8635; Reset &amp; Retry</button>
       </div>
     </div>
 
@@ -496,13 +562,13 @@
 
   <nav class="bottom-nav no-print" aria-label="Bottom navigation">
     <div class="nav-bundle">
-      <a href="index.html" class="nav-item">🏠 Dashboard</a>
+      <a href="index.html" class="nav-item">&#127968; Dashboard</a>
       <a href="tutorial_01_binary_hexadecimal_and_bases_html.html" class="nav-item nav-secondary">Tutorial 1</a>
       <a href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html" class="nav-item nav-secondary">Workbook 1</a>
     </div>
     <div class="nav-bundle">
-      <span class="nav-item nav-disabled">← Previous</span>
-      <a href="worksheet_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-primary">Next Worksheet →</a>
+      <span class="nav-item nav-disabled">&#8592; Previous</span>
+      <a href="worksheet_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-primary">Next Worksheet &#8594;</a>
     </div>
   </nav>
 
@@ -510,35 +576,127 @@
 
 <script>
 (function () {
+  'use strict';
 
-  /* ── Answer key ────────────────────────────────────────────── */
-  var KEY = {
-    a1:  { ans: ['2'],          why: '0 and 1 — a bit has exactly two states.' },
-    a2:  { ans: ['4'],          why: 'A nibble is always 4 bits.' },
-    a3:  { ans: ['8'],          why: 'A byte is always 8 bits.' },
-    a4:  { ans: ['2'],          why: 'Each hex digit covers one 4-bit nibble; two nibbles = one byte = two hex digits.' },
-    a5:  { ans: ['128'],        why: '2⁷ = 128. Position 7 is the most significant bit in an 8-bit byte.' },
-    a6:  { ans: ['1'],          why: '2⁰ = 1. Any base raised to the power 0 equals 1.' },
-    a7:  { ans: ['15'],         why: '00001111: bits at positions 3,2,1,0 are on → 8+4+2+1 = 15.' },
-    a8:  { ans: ['129'],        why: '10000001: bits at positions 7 and 0 → 128+1 = 129.' },
-    a9:  { ans: ['119'],        why: '01110111: positions 6,5,4,2,1,0 → 64+32+16+4+2+1 = 119.' },
-    a10: { ans: ['204'],        why: '11001100: positions 7,6,3,2 → 128+64+8+4 = 204.' },
-    a11: { ans: ['00010001'],   why: '17 = 16+1 = 2⁴+2⁰ → 00010001.' },
-    a12: { ans: ['01000000'],   why: '64 = 2⁶ → 01000000.' },
-    a13: { ans: ['11001000'],   why: '200 = 128+64+8 = 2⁷+2⁶+2³ → 11001000.' },
-    a14: { ans: ['10101011'],   why: '171 = 128+32+8+2+1 = 2⁷+2⁵+2³+2¹+2⁰ → 10101011.' },
-    a15: { ans: ['60'],         why: '0x3C: 3×16 + 12 = 48+12 = 60.' },
-    a16: { ans: ['165'],        why: '0xA5: 10×16 + 5 = 160+5 = 165.' },
-    a17: { ans: ['11110000'],   why: '0xF0: F=1111, 0=0000 → 11110000.' },
-    a18: { ans: ['4F'],         why: '01001111: high nibble 0100=4, low nibble 1111=F → 4F.' },
-    a19: { ans: ['57'],         why: '87 = 5×16+7 → 0x57.' },
-    a20: { ans: ['T'],          why: '0x0A = 0×16+10 = 10. True.' },
-    a21: { ans: ['F'],          why: 'In cryptography the full fixed width matters. 00110011 ≠ 110011 as byte values — the leading zeros encode position.' },
-    a22: { ans: ['F'],          why: 'An 8-bit system can only hold 8 bits. The carry bit is lost; the result wraps to 00000000, not 100000000.' },
-    a23: { ans: ['T'],          why: '0xFF = 15×16+15 = 255; 11111111 = 128+64+32+16+8+4+2+1 = 255. Same value.' },
-    a24: { ans: ['T'],          why: 'Hex digits run 0–9 then A–F, covering 0 through 15 — exactly 16 values.' }
+  /* ── Helpers ───────────────────────────────────────────────── */
+  function pad8(n)  { return n.toString(2).padStart(8, '0'); }
+  function pad2h(n) { return n.toString(16).toUpperCase().padStart(2, '0'); }
+  function r256()   { return Math.floor(Math.random() * 256); }
+  function unique(count, gen) {
+    var seen = {}, vals = [];
+    while (vals.length < count) { var v = gen(); if (!seen[v]) { seen[v] = true; vals.push(v); } }
+    return vals;
+  }
+
+  /* ── Mutable question values (Parts 2–4) ──────────────────── */
+  var V = {
+    b2d: [0x0F, 0x81, 0x77, 0xCC],  // Q7-10: shown as binary, answer = decimal
+    d2b: [17, 64, 200, 171],          // Q11-14: shown as decimal, answer = binary
+    h2d: [0x3C, 0xA5],               // Q15-16: shown as hex, answer = decimal
+    h2b: 0xF0,                        // Q17:   shown as hex, answer = binary
+    b2h: 0x4F,                        // Q18:   shown as binary, answer = hex
+    d2h: 87                           // Q19:   shown as decimal, answer = hex
   };
 
+  /* ── Answer key (rebuilt on each new version) ─────────────── */
+  var KEY = {};
+
+  function buildFixedKey() {
+    KEY.a1  = { ans: ['2'],        why: '0 and 1 — a bit has exactly two states.' };
+    KEY.a2  = { ans: ['4'],        why: 'A nibble is always 4 bits.' };
+    KEY.a3  = { ans: ['8'],        why: 'A byte is always 8 bits.' };
+    KEY.a4  = { ans: ['2'],        why: 'Each hex digit covers one 4-bit nibble; two nibbles = one byte = two hex digits.' };
+    KEY.a5  = { ans: ['128'],      why: '2\u2077 = 128. Position 7 is the most significant bit in an 8-bit byte.' };
+    KEY.a6  = { ans: ['1'],        why: '2\u2070 = 1. Any base raised to the power 0 equals 1.' };
+    KEY.a20 = { ans: ['T'],        why: '0x0A = 0\u00d716+10 = 10. True.' };
+    KEY.a21 = { ans: ['F'],        why: 'In cryptography the full fixed width matters. 00110011 \u2260 110011 as byte values \u2014 leading zeros encode position.' };
+    KEY.a22 = { ans: ['F'],        why: 'An 8-bit system can only hold 8 bits. The carry bit is lost; the result wraps to 00000000, not 100000000.' };
+    KEY.a23 = { ans: ['T'],        why: '0xFF = 15\u00d716+15 = 255; 11111111 = 128+64+32+16+8+4+2+1 = 255. Same value.' };
+    KEY.a24 = { ans: ['T'],        why: 'Hex digits run 0\u20139 then A\u2013F, covering 0 through 15 \u2014 exactly 16 values.' };
+  }
+
+  function buildDynamicKey() {
+    /* Q7-10: binary shown, decimal expected */
+    [7,8,9,10].forEach(function (q, i) {
+      var dec = V.b2d[i];
+      KEY['a'+q] = {
+        ans: [String(dec)],
+        why: pad8(dec) + ' \u2192 ' + dec + '.'
+      };
+    });
+    /* Q11-14: decimal shown, binary expected */
+    [11,12,13,14].forEach(function (q, i) {
+      var dec = V.d2b[i];
+      KEY['a'+q] = {
+        ans: [pad8(dec)],
+        why: dec + ' = ' + pad8(dec) + '.'
+      };
+    });
+    /* Q15-16: hex shown, decimal expected */
+    [15,16].forEach(function (q, i) {
+      var dec = V.h2d[i];
+      KEY['a'+q] = {
+        ans: [String(dec)],
+        why: '0x' + pad2h(dec) + ' = ' + dec + '.'
+      };
+    });
+    /* Q17: hex shown, binary expected */
+    KEY.a17 = {
+      ans: [pad8(V.h2b)],
+      why: '0x' + pad2h(V.h2b) + ' \u2192 ' + pad8(V.h2b) + '.'
+    };
+    /* Q18: binary shown, hex expected */
+    KEY.a18 = {
+      ans: [pad2h(V.b2h)],
+      why: pad8(V.b2h) + ' \u2192 ' + pad2h(V.b2h) + '.'
+    };
+    /* Q19: decimal shown, hex expected */
+    KEY.a19 = {
+      ans: [pad2h(V.d2h)],
+      why: V.d2h + ' \u2192 ' + pad2h(V.d2h) + '.'
+    };
+  }
+
+  /* ── Update DOM question text & print-answer spans ─────────── */
+  function applyVersion() {
+    /* Part 2: binary → decimal */
+    [7,8,9,10].forEach(function (q, i) {
+      var dec = V.b2d[i];
+      document.getElementById('qv'+q).textContent = pad8(dec);
+      document.getElementById('pa'+q).innerHTML = 'Correct: <strong>' + dec + '</strong>';
+    });
+    /* Part 3: decimal → binary */
+    [11,12,13,14].forEach(function (q, i) {
+      var dec = V.d2b[i];
+      document.getElementById('qv'+q).textContent = String(dec);
+      document.getElementById('pa'+q).innerHTML = 'Correct: <strong>' + pad8(dec) + '</strong>';
+    });
+    /* Part 4 */
+    document.getElementById('qv15').textContent = pad2h(V.h2d[0]);
+    document.getElementById('pa15').innerHTML = 'Correct: <strong>' + V.h2d[0] + '</strong>';
+    document.getElementById('qv16').textContent = pad2h(V.h2d[1]);
+    document.getElementById('pa16').innerHTML = 'Correct: <strong>' + V.h2d[1] + '</strong>';
+    document.getElementById('qv17').textContent = pad2h(V.h2b);
+    document.getElementById('pa17').innerHTML = 'Correct: <strong>' + pad8(V.h2b) + '</strong>';
+    document.getElementById('qv18').textContent = pad8(V.b2h);
+    document.getElementById('pa18').innerHTML = 'Correct: <strong>' + pad2h(V.b2h) + '</strong>';
+    document.getElementById('qv19').textContent = String(V.d2h);
+    document.getElementById('pa19').innerHTML = 'Correct: <strong>' + pad2h(V.d2h) + '</strong>';
+  }
+
+  /* ── Generate a new random version ────────────────────────── */
+  function generateVersion() {
+    V.b2d = unique(4, r256);
+    V.d2b = unique(4, r256);
+    V.h2d = unique(2, r256);
+    V.h2b = r256();
+    V.b2h = r256();
+    V.d2h = r256();
+    buildDynamicKey();
+    applyVersion();
+  }
+
+  /* ── Sample answer for Q25 ─────────────────────────────────── */
   var SAMPLE_25 = 'One hex digit maps exactly to one 4-bit nibble, and two hex digits map exactly to one byte. ' +
     'This is a clean, lossless correspondence — no information is lost or ambiguous. ' +
     'Decimal does not share this property: the decimal value 255 takes three digits and does not split neatly ' +
@@ -565,6 +723,9 @@
     el.addEventListener('input', function () {
       if (el.value.trim() !== '') answered[id] = true; else delete answered[id];
       updateProgress();
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); document.getElementById('grade-btn').click(); }
     });
   });
 
@@ -594,10 +755,12 @@
   /* ── Grading ───────────────────────────────────────────────── */
   var graded = false;
 
-  document.getElementById('grade-btn').addEventListener('click', function () {
+  function doGrade() {
     if (graded) return;
     graded = true;
     document.getElementById('grade-btn').disabled = true;
+    document.getElementById('new-version-btn').disabled = true;
+    document.getElementById('new-version-btn2').disabled = true;
 
     var ok = 0, wrong = 0;
 
@@ -617,13 +780,13 @@
         el.classList.add('ok');
         qEl.classList.add('graded-ok');
         rEl.className = 'q-result show ok-msg';
-        rEl.innerHTML = '✓ Correct. <em>' + entry.why + '</em>';
+        rEl.innerHTML = '\u2713 Correct. <em>' + entry.why + '</em>';
       } else {
         wrong++;
         el.classList.add('err');
         qEl.classList.add('graded-err');
         rEl.className = 'q-result show err-msg';
-        rEl.innerHTML = '✗ Your answer: <strong>' + (el.value.trim() || '(blank)') + '</strong>. ' +
+        rEl.innerHTML = '\u2717 Your answer: <strong>' + (el.value.trim() || '(blank)') + '</strong>. ' +
           'Correct: <span class="correct-ans">' + entry.ans[0] + '</span>. <em>' + entry.why + '</em>';
       }
     });
@@ -649,17 +812,17 @@
         ok++;
         qEl.classList.add('graded-ok');
         rEl.className = 'q-result show ok-msg';
-        rEl.innerHTML = '✓ Correct. <em>' + entry.why + '</em>';
+        rEl.innerHTML = '\u2713 Correct. <em>' + entry.why + '</em>';
       } else {
         wrong++;
         qEl.classList.add('graded-err');
         rEl.className = 'q-result show err-msg';
-        rEl.innerHTML = '✗ ' + (val ? 'You chose <strong>' + val + '</strong>. ' : 'Not answered. ') +
+        rEl.innerHTML = '\u2717 ' + (val ? 'You chose <strong>' + val + '</strong>. ' : 'Not answered. ') +
           'Correct: <strong>' + entry.ans[0] + '</strong>. <em>' + entry.why + '</em>';
       }
     });
 
-    /* Written question — reveal sample answer */
+    /* Written question */
     var r25 = document.getElementById('r25');
     document.getElementById('a25').disabled = true;
     r25.className = 'q-result show';
@@ -674,42 +837,80 @@
     document.getElementById('err-count').textContent = wrong;
     document.getElementById('score-panel').classList.add('show');
     document.getElementById('score-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  });
+  }
 
-  /* ── Reset ─────────────────────────────────────────────────── */
-  document.getElementById('retry-btn').addEventListener('click', function () {
-    if (!confirm('Reset the worksheet and clear all answers?')) return;
-    /* Text inputs */
+  document.getElementById('grade-btn').addEventListener('click', doGrade);
+
+  /* ── New Version ───────────────────────────────────────────── */
+  function doNewVersion() {
+    if (graded) {
+      if (!confirm('This will reset the worksheet with new random values. Continue?')) return;
+    }
+    /* Reset state */
+    graded = false;
+    tfSelections = {};
+    answered = {};
+    /* Clear inputs */
     textIds.forEach(function (id) {
       var el = document.getElementById(id);
-      el.value = ''; el.disabled = false;
-      el.className = 'ans-input';
+      el.value = ''; el.disabled = false; el.className = 'ans-input';
     });
-    /* Written */
-    var wa = document.getElementById('a25');
-    wa.value = ''; wa.disabled = false;
-    /* T/F */
+    w25.value = ''; w25.disabled = false;
     document.querySelectorAll('.tf-btn').forEach(function (btn) {
-      btn.disabled = false;
-      btn.className = 'tf-btn';
+      btn.disabled = false; btn.className = 'tf-btn';
     });
-    /* Result labels */
     for (var i = 1; i <= 25; i++) {
       var r = document.getElementById('r' + i);
       if (r) { r.className = 'q-result'; r.innerHTML = ''; }
       var q = document.getElementById('q' + i);
       if (q) { q.className = 'q'; }
     }
+    document.getElementById('grade-btn').disabled = false;
+    document.getElementById('new-version-btn').disabled = false;
+    document.getElementById('new-version-btn2').disabled = false;
+    document.getElementById('score-panel').classList.remove('show');
+    /* Randomise */
+    generateVersion();
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('new-version-btn').addEventListener('click', doNewVersion);
+  document.getElementById('new-version-btn2').addEventListener('click', doNewVersion);
+
+  /* ── Reset & Retry (keeps same version) ───────────────────── */
+  document.getElementById('retry-btn').addEventListener('click', function () {
+    if (!confirm('Reset the worksheet and clear all answers?')) return;
+    graded = false;
     tfSelections = {};
     answered = {};
-    graded = false;
+    textIds.forEach(function (id) {
+      var el = document.getElementById(id);
+      el.value = ''; el.disabled = false; el.className = 'ans-input';
+    });
+    w25.value = ''; w25.disabled = false;
+    document.querySelectorAll('.tf-btn').forEach(function (btn) {
+      btn.disabled = false; btn.className = 'tf-btn';
+    });
+    for (var i = 1; i <= 25; i++) {
+      var r = document.getElementById('r' + i);
+      if (r) { r.className = 'q-result'; r.innerHTML = ''; }
+      var q = document.getElementById('q' + i);
+      if (q) { q.className = 'q'; }
+    }
     document.getElementById('grade-btn').disabled = false;
+    document.getElementById('new-version-btn').disabled = false;
+    document.getElementById('new-version-btn2').disabled = false;
     document.getElementById('score-panel').classList.remove('show');
     updateProgress();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
+  /* ── Init ──────────────────────────────────────────────────── */
+  buildFixedKey();
+  buildDynamicKey();   /* uses current V values (original defaults) */
   updateProgress();
+
 })();
 </script>
 </body>
