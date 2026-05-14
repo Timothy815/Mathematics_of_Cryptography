@@ -208,6 +208,28 @@
 
       a { color: #000000; text-decoration: none; }
     }
+    /* ── Interactive drills ─────────────────────────── */
+    .drill-section { background: var(--paper); border: 2px solid var(--accent); border-radius: var(--radius); padding: 28px; margin: 28px 0; }
+    .drill-section h2 { color: var(--accent); margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid var(--accent-soft); }
+    .drill-label { display: inline-block; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 10px; border-radius: 999px; margin-bottom: 14px; }
+    .drill-card { background: #f7f9ff; border: 1px solid #d0d9ee; border-radius: 14px; padding: 24px 28px; margin: 16px 0; text-align: center; }
+    .drill-prompt { font-family: "Cascadia Code","Consolas",monospace; font-size: 2.2rem; font-weight: 900; color: #16243d; letter-spacing: 0.1em; margin: 8px 0 16px; min-height: 2.8rem; }
+    .drill-prompt-label { font-size: 0.78rem; text-transform: uppercase; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
+    .drill-input-row { display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+    .drill-input { font-family: "Cascadia Code","Consolas",monospace; font-size: 1.4rem; font-weight: 700; text-align: center; text-transform: uppercase; padding: 10px 14px; border: 2px solid var(--border); border-radius: 10px; background: var(--paper); color: #16243d; width: 160px; }
+    .drill-input:focus { outline: none; border-color: var(--accent); }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+    .drill-btn { padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 800; transition: all 0.15s; }
+    .drill-btn-check { background: var(--accent); color: #fff; }
+    .drill-btn-check:hover { opacity: 0.88; }
+    .drill-btn-next  { background: var(--green-soft); color: #1b5e20; border: 1px solid #b8dfc5; }
+    .drill-btn-next:hover  { background: #d4edda; }
+    .drill-feedback { min-height: 1.6em; margin-top: 12px; font-size: 0.95rem; font-weight: 700; }
+    .drill-feedback.ok  { color: #2e7d32; }
+    .drill-feedback.err { color: #c62828; }
+    .drill-score { font-size: 0.82rem; color: var(--muted); margin-top: 10px; }
+    .drill-score span { font-weight: 700; color: var(--accent); }
   </style>
 </head>
 <body>
@@ -548,6 +570,164 @@
           <div class="work-space large-work-space"></div>
         </div>
       </section>
+
+      <section id="interactive-drills" class="no-print">
+        <div class="drill-section">
+          <span class="drill-label">Interactive Drills</span>
+          <h2>Part G: Flashcard drills</h2>
+          <p>These drills build automatic recall — the kind that makes later modules effortless. Work each drill until it feels instant, not calculated.</p>
+
+          <!-- Drill 1: Nibble → Hex -->
+          <h3>Drill 1: Binary nibble → hex digit</h3>
+          <p>A random 4-bit nibble appears. Type the single hex digit it equals.</p>
+          <div class="drill-card" id="d1-card">
+            <div class="drill-prompt-label">What hex digit is this nibble?</div>
+            <div class="drill-prompt" id="d1-prompt">????</div>
+            <div class="drill-input-row">
+              <input class="drill-input" id="d1-input" type="text" maxlength="1" placeholder="?" autocomplete="off" spellcheck="false" />
+              <button class="drill-btn drill-btn-check" id="d1-check" type="button">Check</button>
+              <button class="drill-btn drill-btn-next"  id="d1-next"  type="button">Next</button>
+            </div>
+            <div class="drill-feedback" id="d1-fb"></div>
+            <div class="drill-score">Score: <span id="d1-score">0</span> correct of <span id="d1-total">0</span> attempts</div>
+          </div>
+
+          <!-- Drill 2: Hex → Nibble -->
+          <h3>Drill 2: Hex digit → binary nibble</h3>
+          <p>A random hex digit appears. Type the 4-bit binary nibble it represents.</p>
+          <div class="drill-card" id="d2-card">
+            <div class="drill-prompt-label">What is the binary nibble for this hex digit?</div>
+            <div class="drill-prompt" id="d2-prompt">?</div>
+            <div class="drill-input-row">
+              <input class="drill-input" id="d2-input" type="text" maxlength="4" placeholder="????" autocomplete="off" spellcheck="false" />
+              <button class="drill-btn drill-btn-check" id="d2-check" type="button">Check</button>
+              <button class="drill-btn drill-btn-next"  id="d2-next"  type="button">Next</button>
+            </div>
+            <div class="drill-feedback" id="d2-fb"></div>
+            <div class="drill-score">Score: <span id="d2-score">0</span> correct of <span id="d2-total">0</span> attempts</div>
+          </div>
+
+          <!-- Drill 3: Decimal → Binary -->
+          <h3>Drill 3: Decimal → 8-bit binary</h3>
+          <p>A random decimal value (0–255) appears. Type the full 8-bit binary string.</p>
+          <div class="drill-card" id="d3-card">
+            <div class="drill-prompt-label">Write this value as an 8-bit binary string:</div>
+            <div class="drill-prompt" id="d3-prompt">???</div>
+            <div class="drill-input-row">
+              <input class="drill-input" id="d3-input" type="text" maxlength="8" placeholder="00000000" autocomplete="off" spellcheck="false" style="width:200px" />
+              <button class="drill-btn drill-btn-check" id="d3-check" type="button">Check</button>
+              <button class="drill-btn drill-btn-next"  id="d3-next"  type="button">Next</button>
+            </div>
+            <div class="drill-feedback" id="d3-fb"></div>
+            <div class="drill-score">Score: <span id="d3-score">0</span> correct of <span id="d3-total">0</span> attempts</div>
+          </div>
+
+          <!-- Drill 4: Hex digit → Decimal -->
+          <h3>Drill 4: Hex digit → decimal value</h3>
+          <p>A random hex digit (0–F) appears. Type its decimal value.</p>
+          <div class="drill-card" id="d4-card">
+            <div class="drill-prompt-label">What decimal value is this hex digit?</div>
+            <div class="drill-prompt" id="d4-prompt">?</div>
+            <div class="drill-input-row">
+              <input class="drill-input" id="d4-input" type="text" maxlength="2" placeholder="?" autocomplete="off" spellcheck="false" style="width:100px" />
+              <button class="drill-btn drill-btn-check" id="d4-check" type="button">Check</button>
+              <button class="drill-btn drill-btn-next"  id="d4-next"  type="button">Next</button>
+            </div>
+            <div class="drill-feedback" id="d4-fb"></div>
+            <div class="drill-score">Score: <span id="d4-score">0</span> correct of <span id="d4-total">0</span> attempts</div>
+          </div>
+        </div>
+      </section>
+
+      <script>
+      (function () {
+        var NIBBLES = ['0000','0001','0010','0011','0100','0101','0110','0111','1000','1001','1010','1011','1100','1101','1110','1111'];
+        var HEX     = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'];
+
+        function rand(n) { return Math.floor(Math.random() * n); }
+
+        function makeDrill(cfg) {
+          var score = 0, total = 0, answer = '';
+
+          function next() {
+            answer = cfg.generate();
+            document.getElementById(cfg.prompt).textContent = cfg.display(answer);
+            var inp = document.getElementById(cfg.input);
+            inp.value = '';
+            inp.className = 'drill-input';
+            document.getElementById(cfg.fb).textContent = '';
+            document.getElementById(cfg.fb).className = 'drill-feedback';
+            inp.focus();
+          }
+
+          function check() {
+            var inp = document.getElementById(cfg.input);
+            var val = inp.value.trim().toUpperCase();
+            var correct = cfg.correct(answer, val);
+            total++;
+            if (correct) {
+              score++;
+              inp.className = 'drill-input correct';
+              document.getElementById(cfg.fb).textContent = '✓ Correct!';
+              document.getElementById(cfg.fb).className = 'drill-feedback ok';
+            } else {
+              inp.className = 'drill-input wrong';
+              document.getElementById(cfg.fb).textContent = '✗ Answer: ' + cfg.reveal(answer);
+              document.getElementById(cfg.fb).className = 'drill-feedback err';
+            }
+            document.getElementById(cfg.scoreEl).textContent = score;
+            document.getElementById(cfg.totalEl).textContent = total;
+          }
+
+          document.getElementById(cfg.checkBtn).addEventListener('click', check);
+          document.getElementById(cfg.nextBtn).addEventListener('click', next);
+          document.getElementById(cfg.input).addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') check();
+          });
+          next();
+        }
+
+        // Drill 1: nibble → hex
+        makeDrill({
+          prompt: 'd1-prompt', input: 'd1-input', checkBtn: 'd1-check', nextBtn: 'd1-next',
+          fb: 'd1-fb', scoreEl: 'd1-score', totalEl: 'd1-total',
+          generate: function () { return rand(16); },
+          display:  function (v) { return NIBBLES[v]; },
+          correct:  function (v, s) { return s === HEX[v]; },
+          reveal:   function (v) { return HEX[v]; }
+        });
+
+        // Drill 2: hex → nibble
+        makeDrill({
+          prompt: 'd2-prompt', input: 'd2-input', checkBtn: 'd2-check', nextBtn: 'd2-next',
+          fb: 'd2-fb', scoreEl: 'd2-score', totalEl: 'd2-total',
+          generate: function () { return rand(16); },
+          display:  function (v) { return HEX[v]; },
+          correct:  function (v, s) { return s === NIBBLES[v]; },
+          reveal:   function (v) { return NIBBLES[v]; }
+        });
+
+        // Drill 3: decimal → 8-bit binary
+        makeDrill({
+          prompt: 'd3-prompt', input: 'd3-input', checkBtn: 'd3-check', nextBtn: 'd3-next',
+          fb: 'd3-fb', scoreEl: 'd3-score', totalEl: 'd3-total',
+          generate: function () { return rand(256); },
+          display:  function (v) { return String(v); },
+          correct:  function (v, s) { return s === v.toString(2).padStart(8, '0'); },
+          reveal:   function (v) { return v.toString(2).padStart(8, '0'); }
+        });
+
+        // Drill 4: hex digit → decimal
+        makeDrill({
+          prompt: 'd4-prompt', input: 'd4-input', checkBtn: 'd4-check', nextBtn: 'd4-next',
+          fb: 'd4-fb', scoreEl: 'd4-score', totalEl: 'd4-total',
+          generate: function () { return rand(16); },
+          display:  function (v) { return HEX[v]; },
+          correct:  function (v, s) { return s === String(v); },
+          reveal:   function (v) { return String(v); }
+        });
+      })();
+      </script>
 
       <section id="self-check">
         <h2>Self-check</h2>

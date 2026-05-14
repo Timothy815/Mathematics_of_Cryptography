@@ -106,6 +106,45 @@
       font-family: "Cascadia Code", "Consolas", monospace;
     }
 
+    /* ── Interactive sections ───────────────────── */
+    .interactive { background: var(--paper); border: 2px solid var(--accent); border-radius: var(--radius); padding: 28px; margin: 28px 0; }
+    .interactive > h2 { color: var(--accent); margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid var(--accent-soft); }
+    .interactive-label { display: inline-block; background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 10px; border-radius: 999px; margin-bottom: 14px; }
+    /* bit grid */
+    .bit-grid { display: grid; grid-template-columns: repeat(8, minmax(68px, 1fr)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 16px 0; }
+    .bit-cell { border-right: 1px solid var(--border); text-align: center; transition: background 0.12s; }
+    .bit-cell:last-child { border-right: none; }
+    .bit-cell.on { background: var(--accent-soft); }
+    .bit-cell:nth-child(even) { background: #f0f4fb; }
+    .bit-cell.on:nth-child(even), .bit-cell.on:nth-child(odd) { background: var(--accent-soft); }
+    .bc-pos { display: block; background: #eef3ff; color: #1f3763; font-weight: 800; padding: 6px 2px; border-bottom: 1px solid var(--border); font-size: 0.72rem; }
+    .bc-val { display: block; padding: 4px 2px; border-bottom: 1px solid var(--border); font-family: monospace; font-size: 0.76rem; color: var(--muted); }
+    .bc-btn { display: block; width: 100%; padding: 12px 2px; border: none; background: none; cursor: pointer; font-family: "Cascadia Code","Consolas",monospace; font-size: 1.45rem; font-weight: 900; color: #cccccc; transition: color 0.1s; }
+    .bc-btn.on { color: var(--accent); }
+    .bc-btn:hover { background: rgba(51,78,125,0.08); }
+    /* output bar */
+    .be-output { display: flex; gap: 28px; flex-wrap: wrap; background: #f7f9ff; border: 1px solid #d0d9ee; border-radius: 12px; padding: 14px 20px; margin: 14px 0; }
+    .be-item { display: flex; flex-direction: column; gap: 3px; }
+    .be-lbl { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--muted); letter-spacing: 0.08em; }
+    .be-val { font-family: "Cascadia Code","Consolas",monospace; font-size: 1.25rem; font-weight: 700; color: #16243d; }
+    .be-breakdown { font-family: "Cascadia Code","Consolas",monospace; font-size: 0.88rem; color: var(--muted); padding: 2px 0 0; min-height: 1.4em; }
+    .be-breakdown.live { color: var(--accent); font-weight: 600; }
+    /* buttons */
+    .btn-row { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+    .ctrl-btn { padding: 9px 20px; border-radius: 8px; border: 1px solid var(--border); background: var(--paper); cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--ink); transition: all 0.15s; }
+    .ctrl-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+    /* hex explorer */
+    .hex-exp-lbl { font-weight: 700; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+    .hex-exp-input { font-family: "Cascadia Code","Consolas",monospace; font-size: 1.6rem; font-weight: 900; width: 90px; text-align: center; text-transform: uppercase; padding: 10px 6px; border: 2px solid var(--border); border-radius: 10px; color: #16243d; background: var(--paper); }
+    .hex-exp-input:focus { outline: none; border-color: var(--accent); }
+    .hex-nibble-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 16px; align-items: center; }
+    .hex-nibble-box { border: 1px solid var(--border); border-radius: 12px; background: var(--paper); padding: 14px 20px; text-align: center; min-width: 120px; }
+    .hn-bits { font-family: "Cascadia Code","Consolas",monospace; font-size: 1.35rem; font-weight: 900; letter-spacing: 0.12em; color: #16243d; }
+    .hn-label { font-size: 0.78rem; color: var(--muted); margin: 4px 0; }
+    .hn-badge { display: inline-block; background: #eef3ff; color: #1f3763; border: 1px solid #c7d2ea; border-radius: 999px; padding: 3px 14px; font-weight: 900; font-family: "Cascadia Code","Consolas",monospace; font-size: 0.95rem; margin-top: 6px; }
+    .hex-plus { font-size: 1.4rem; color: var(--muted); align-self: center; }
+    .hex-exp-hint { font-size: 0.85rem; color: var(--muted); font-style: italic; margin-top: 8px; }
+
     @media (max-width: 700px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -375,6 +414,91 @@
         </div>
       </section>
 
+      <section id="bit-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Bit-flip explorer</h2>
+          <p>Click any bit to toggle it on or off. The decimal value, hex value, and place-value breakdown all update live.</p>
+
+          <div class="bit-grid" id="be-grid">
+            <div class="bit-cell" data-i="0"><span class="bc-pos">Pos 7 · 128</span><span class="bc-val">2⁷</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="1"><span class="bc-pos">Pos 6 · 64</span><span class="bc-val">2⁶</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="2"><span class="bc-pos">Pos 5 · 32</span><span class="bc-val">2⁵</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="3"><span class="bc-pos">Pos 4 · 16</span><span class="bc-val">2⁴</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="4"><span class="bc-pos">Pos 3 · 8</span><span class="bc-val">2³</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="5"><span class="bc-pos">Pos 2 · 4</span><span class="bc-val">2²</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="6"><span class="bc-pos">Pos 1 · 2</span><span class="bc-val">2¹</span><button class="bc-btn" type="button">0</button></div>
+            <div class="bit-cell" data-i="7"><span class="bc-pos">Pos 0 · 1</span><span class="bc-val">2⁰</span><button class="bc-btn" type="button">0</button></div>
+          </div>
+
+          <div class="be-output">
+            <div class="be-item"><span class="be-lbl">Binary</span><span class="be-val" id="be-bin">00000000</span></div>
+            <div class="be-item"><span class="be-lbl">Decimal</span><span class="be-val" id="be-dec">0</span></div>
+            <div class="be-item"><span class="be-lbl">Hexadecimal</span><span class="be-val" id="be-hex">0x00</span></div>
+          </div>
+          <div class="be-breakdown" id="be-break">No bits set — value is 0.</div>
+
+          <div class="btn-row">
+            <button class="ctrl-btn" id="be-rand" type="button">Random byte</button>
+            <button class="ctrl-btn" id="be-reset" type="button">Reset to zero</button>
+            <button class="ctrl-btn" id="be-ff" type="button">Set to 0xFF (255)</button>
+          </div>
+        </div>
+      </section>
+
+      <script>
+      (function () {
+        var weights = [128, 64, 32, 16, 8, 4, 2, 1];
+        var bits = [0, 0, 0, 0, 0, 0, 0, 0];
+        var cells = document.querySelectorAll('#be-grid .bit-cell');
+
+        function render() {
+          var dec = 0;
+          var parts = [];
+          bits.forEach(function (b, i) { if (b) { dec += weights[i]; parts.push(weights[i]); } });
+          document.getElementById('be-bin').textContent = bits.join('');
+          document.getElementById('be-dec').textContent = dec;
+          document.getElementById('be-hex').textContent = '0x' + dec.toString(16).toUpperCase().padStart(2, '0');
+          var bd = document.getElementById('be-break');
+          if (parts.length === 0) {
+            bd.textContent = 'No bits set — value is 0.';
+            bd.className = 'be-breakdown';
+          } else {
+            bd.textContent = parts.join(' + ') + ' = ' + dec;
+            bd.className = 'be-breakdown live';
+          }
+          cells.forEach(function (cell, i) {
+            var btn = cell.querySelector('.bc-btn');
+            btn.textContent = bits[i];
+            if (bits[i]) { cell.classList.add('on'); btn.classList.add('on'); }
+            else { cell.classList.remove('on'); btn.classList.remove('on'); }
+          });
+        }
+
+        cells.forEach(function (cell, i) {
+          cell.querySelector('.bc-btn').addEventListener('click', function () {
+            bits[i] = bits[i] ? 0 : 1;
+            render();
+          });
+        });
+
+        document.getElementById('be-rand').addEventListener('click', function () {
+          bits = bits.map(function () { return Math.random() < 0.5 ? 1 : 0; });
+          render();
+        });
+        document.getElementById('be-reset').addEventListener('click', function () {
+          bits = [0, 0, 0, 0, 0, 0, 0, 0];
+          render();
+        });
+        document.getElementById('be-ff').addEventListener('click', function () {
+          bits = [1, 1, 1, 1, 1, 1, 1, 1];
+          render();
+        });
+
+        render();
+      })();
+      </script>
+
       <section id="hexadecimal">
         <h2>Hexadecimal: base 16</h2>
         <p>
@@ -456,6 +580,71 @@
           easier to read as <code>0x2D</code>.
         </p>
       </section>
+
+      <section id="hex-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Hex byte explorer</h2>
+          <p>Type any two hex digits (00 – FF) and see the byte split into its two nibbles with their binary expansions.</p>
+
+          <div>
+            <div class="hex-exp-lbl">Enter a hex byte:</div>
+            <input class="hex-exp-input" id="hx-input" type="text" maxlength="2" placeholder="2D" spellcheck="false" autocomplete="off" />
+            <div class="hex-exp-hint" id="hx-hint">Type two hex digits, e.g. <strong>2D</strong> or <strong>A7</strong>.</div>
+          </div>
+
+          <div class="hex-nibble-row" id="hx-nibbles" style="display:none">
+            <div class="hex-nibble-box">
+              <div class="hn-bits" id="hx-hi-bits">????</div>
+              <div class="hn-label">High nibble (bits 7–4)</div>
+              <div class="hn-badge" id="hx-hi-hex">?</div>
+            </div>
+            <div class="hex-plus">+</div>
+            <div class="hex-nibble-box">
+              <div class="hn-bits" id="hx-lo-bits">????</div>
+              <div class="hn-label">Low nibble (bits 3–0)</div>
+              <div class="hn-badge" id="hx-lo-hex">?</div>
+            </div>
+            <div class="hex-plus">=</div>
+            <div class="hex-nibble-box">
+              <div class="hn-bits" id="hx-full-bin">????????</div>
+              <div class="hn-label">Full byte (binary)</div>
+              <div class="hn-badge" id="hx-full-dec">?</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <script>
+      (function () {
+        var HEX4 = ['0000','0001','0010','0011','0100','0101','0110','0111','1000','1001','1010','1011','1100','1101','1110','1111'];
+        var input = document.getElementById('hx-input');
+        var nibRow = document.getElementById('hx-nibbles');
+        var hint = document.getElementById('hx-hint');
+
+        function update() {
+          var raw = input.value.replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+          input.value = raw;
+          if (raw.length < 2) { nibRow.style.display = 'none'; return; }
+          var hi = parseInt(raw[0], 16);
+          var lo = parseInt(raw[1], 16);
+          var dec = hi * 16 + lo;
+          document.getElementById('hx-hi-bits').textContent = HEX4[hi];
+          document.getElementById('hx-lo-bits').textContent = HEX4[lo];
+          document.getElementById('hx-hi-hex').textContent = raw[0];
+          document.getElementById('hx-lo-hex').textContent = raw[1];
+          document.getElementById('hx-full-bin').textContent = HEX4[hi] + HEX4[lo];
+          document.getElementById('hx-full-dec').textContent = dec + ' decimal';
+          nibRow.style.display = 'flex';
+          hint.style.display = 'none';
+        }
+
+        input.addEventListener('input', update);
+        input.addEventListener('keydown', function (e) {
+          if (!/[0-9a-fA-F]|Backspace|Delete|Tab|ArrowLeft|ArrowRight/.test(e.key)) e.preventDefault();
+        });
+      })();
+      </script>
 
       <section id="worked-example-1">
         <h2>Worked example 1: binary to decimal</h2>
