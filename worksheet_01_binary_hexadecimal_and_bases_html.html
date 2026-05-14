@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 1: Binary, Hexadecimal, and Bases | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+
+  <style>
+    /* ── Worksheet accent (green — distinct from tutorial blue) ── */
+    :root {
+      --ws: #2a6049;
+      --ws-soft: #e8f4ef;
+      --ws-border: #b2d4c4;
+    }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #e8f4ef);
+      border: 1px solid var(--ws-border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    header.worksheet-header .course-label { color: var(--ws); }
+    header.worksheet-header .volume-label {
+      display: inline-block;
+      background: var(--ws-soft);
+      border: 1px solid var(--ws-border);
+      color: var(--ws);
+      font-weight: 800;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    header.worksheet-header h1 { color: #16243d; margin: 10px 0 6px; }
+    header.worksheet-header .subtitle { color: var(--muted); margin: 0 0 18px; }
+
+    /* ── Progress bar ─────────────────────────────────────────── */
+    .progress-wrap { margin-top: 18px; }
+    .progress-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 5px; }
+    .progress-bar-track { height: 8px; background: #e0e0e0; border-radius: 999px; overflow: hidden; }
+    .progress-bar-fill  { height: 100%; background: var(--ws); border-radius: 999px; transition: width 0.3s; width: 0%; }
+
+    /* ── Section headers ──────────────────────────────────────── */
+    .ws-section { margin-bottom: 36px; }
+    .ws-section-head {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--ws-soft); border: 1px solid var(--ws-border);
+      border-radius: 10px; padding: 12px 18px; margin-bottom: 18px;
+    }
+    .ws-section-num {
+      background: var(--ws); color: #fff; font-weight: 900;
+      font-size: 0.85rem; padding: 4px 11px; border-radius: 999px;
+      white-space: nowrap;
+    }
+    .ws-section-title { font-weight: 800; font-size: 1.05rem; color: var(--ws); }
+    .ws-section-note  { font-size: 0.82rem; color: var(--muted); margin: -8px 0 14px 0; }
+
+    /* ── Question card ────────────────────────────────────────── */
+    .q { background: var(--paper); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; margin-bottom: 14px; transition: border-color 0.2s; }
+    .q.graded-ok  { border-color: #2e7d32; background: #f1faf2; }
+    .q.graded-err { border-color: #c62828; background: #fff5f5; }
+    .q-num  { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 5px; }
+    .q-text { font-size: 1rem; font-weight: 600; color: #16243d; margin-bottom: 12px; line-height: 1.5; }
+    .q-text code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 0.95em; }
+
+    /* ── Answer inputs ────────────────────────────────────────── */
+    .ans-input {
+      font-family: "Cascadia Code","Consolas",monospace;
+      font-size: 1.1rem; font-weight: 700; text-transform: uppercase;
+      padding: 8px 12px; border: 2px solid var(--border); border-radius: 8px;
+      background: var(--paper); color: #16243d; transition: border-color 0.15s;
+    }
+    .ans-input:focus { outline: none; border-color: var(--ws); }
+    .ans-input.ok  { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .ans-input.err { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+    .ans-input.text-ans { text-transform: none; font-family: system-ui, sans-serif; font-size: 0.95rem; width: 100%; max-width: 520px; }
+
+    /* ── True/False & Multiple choice ────────────────────────── */
+    .tf-row, .mc-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+    .tf-btn, .mc-btn {
+      padding: 9px 22px; border-radius: 8px; border: 2px solid var(--border);
+      background: var(--paper); cursor: pointer; font-size: 0.9rem; font-weight: 700;
+      color: var(--muted); transition: all 0.15s;
+    }
+    .tf-btn:hover, .mc-btn:hover { border-color: var(--ws); color: var(--ws); background: var(--ws-soft); }
+    .tf-btn.selected, .mc-btn.selected { border-color: var(--ws); background: var(--ws); color: #fff; }
+    .tf-btn.ok,  .mc-btn.ok  { border-color: #2e7d32; background: #2e7d32; color: #fff; }
+    .tf-btn.err, .mc-btn.err { border-color: #c62828; background: #c62828; color: #fff; }
+    .tf-btn.reveal { border-color: #2e7d32; background: var(--green-soft); color: #2e7d32; }
+
+    /* ── Inline answer hint (shown after grading) ─────────────── */
+    .q-result { margin-top: 10px; font-size: 0.88rem; display: none; }
+    .q-result.show { display: block; }
+    .q-result.ok-msg  { color: #2e7d32; font-weight: 700; }
+    .q-result.err-msg { color: #c62828; font-weight: 700; }
+    .q-result .correct-ans { font-family: "Cascadia Code","Consolas",monospace; background: var(--green-soft); border: 1px solid #b2d8bb; padding: 2px 8px; border-radius: 5px; }
+    .q-result .sample-ans  { background: var(--accent-soft); border: 1px solid #c7d2ea; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 0.88rem; line-height: 1.6; color: #16243d; }
+
+    /* ── Written response ────────────────────────────────────── */
+    .written-area {
+      width: 100%; min-height: 100px; padding: 10px 14px;
+      border: 2px solid var(--border); border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+    }
+    .written-area:focus { outline: none; border-color: var(--ws); }
+
+    /* ── Multi-part table layout ─────────────────────────────── */
+    .mp-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .mp-table th { background: var(--ws-soft); color: var(--ws); font-weight: 800; padding: 8px 12px; border: 1px solid var(--ws-border); font-size: 0.85rem; text-align: left; }
+    .mp-table td { padding: 8px 12px; border: 1px solid var(--border); vertical-align: middle; }
+    .mp-table tbody tr:nth-child(even) td { background: #f9fafb; }
+    .mp-table .given { font-family: "Cascadia Code","Consolas",monospace; font-weight: 700; color: #16243d; }
+    .mp-table .ans-input { width: 100%; min-width: 90px; }
+
+    /* ── Grade & print controls ──────────────────────────────── */
+    .grade-bar {
+      background: var(--ws-soft); border: 2px solid var(--ws-border);
+      border-radius: var(--radius); padding: 28px; margin: 32px 0;
+      text-align: center;
+    }
+    .grade-bar p { color: var(--muted); margin: 0 0 18px; font-size: 0.92rem; }
+    .grade-btn {
+      padding: 14px 40px; border-radius: 10px; border: none;
+      background: var(--ws); color: #fff; font-size: 1rem; font-weight: 800;
+      cursor: pointer; transition: opacity 0.15s; margin: 0 8px 8px;
+    }
+    .grade-btn:hover { opacity: 0.88; }
+    .grade-btn.secondary {
+      background: var(--paper); color: var(--ws);
+      border: 2px solid var(--ws-border);
+    }
+    .grade-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* ── Score panel ─────────────────────────────────────────── */
+    .score-panel {
+      display: none; background: var(--paper);
+      border: 2px solid var(--ws-border); border-radius: var(--radius);
+      padding: 28px; margin: 24px 0; text-align: center;
+    }
+    .score-panel.show { display: block; }
+    .score-big { font-size: 3rem; font-weight: 900; color: var(--ws); line-height: 1; }
+    .score-label { font-size: 1rem; color: var(--muted); margin-bottom: 16px; }
+    .score-breakdown { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-top: 16px; font-size: 0.88rem; color: var(--muted); }
+    .score-breakdown span { font-weight: 700; }
+    .score-breakdown .ok-count  { color: #2e7d32; }
+    .score-breakdown .err-count { color: #c62828; }
+
+    /* ── Print ───────────────────────────────────────────────── */
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header { box-shadow: none; border: 1px solid #ccc; border-radius: 0; background: #fff; }
+      .no-print, .grade-bar, nav { display: none !important; }
+      .progress-wrap { display: none; }
+      .ws-section-head { background: #f0f0f0; border: 1px solid #ccc; }
+      .q { border: 1px solid #ccc; break-inside: avoid; border-radius: 0; }
+      .q.graded-ok  { border-color: #2e7d32; }
+      .q.graded-err { border-color: #c62828; }
+      .score-panel.show { display: block; border: 1px solid #ccc; }
+      .ans-input, .written-area { border: 1px solid #999; background: #fff; }
+      .tf-btn, .mc-btn { border: 1px solid #999; background: #fff; color: #000; }
+      .tf-btn.selected, .mc-btn.selected,
+      .tf-btn.ok, .mc-btn.ok { border: 2px solid #2e7d32; background: #edf7ed; color: #1b5e20; }
+      .tf-btn.err, .mc-btn.err { border: 2px solid #c62828; background: #fdeaea; color: #7f0000; }
+      .q-result.show { display: block; }
+      h2 { font-size: 14pt; break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header class="worksheet-header">
+    <div class="course-label">Mathematics of Cryptography · Worksheet 1</div>
+    <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+    <h1>Binary, Hexadecimal, and Bases</h1>
+    <p class="subtitle">
+      Interactive graded worksheet — answer every question, then hit <strong>Grade Worksheet</strong> for instant feedback.
+    </p>
+
+    <nav class="tutorial-nav no-print" aria-label="Page navigation">
+      <a class="nav-link" href="index.html">🏠 Dashboard</a>
+      <a class="nav-link" href="tutorial_01_binary_hexadecimal_and_bases_html.html">Tutorial 1</a>
+      <a class="nav-link" href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html">Workbook 1</a>
+      <button class="print-button" onclick="window.print()">🖨️ Print</button>
+    </nav>
+
+    <div class="progress-wrap no-print">
+      <div class="progress-label" id="prog-label">0 of 22 questions answered</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-fill"></div></div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 1 — Core concepts
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 1</span>
+        <span class="ws-section-title">Core concepts</span>
+      </div>
+      <p class="ws-section-note">These questions check the foundational facts the rest of the module builds on. Give the exact number or term.</p>
+
+      <div class="q" id="q1">
+        <div class="q-num">Question 1</div>
+        <div class="q-text">How many distinct values can a single bit represent?</div>
+        <input class="ans-input" id="a1" type="text" maxlength="3" style="width:80px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r1"></div>
+      </div>
+
+      <div class="q" id="q2">
+        <div class="q-num">Question 2</div>
+        <div class="q-text">How many bits make up one nibble?</div>
+        <input class="ans-input" id="a2" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r2"></div>
+      </div>
+
+      <div class="q" id="q3">
+        <div class="q-num">Question 3</div>
+        <div class="q-text">How many bits make up one byte?</div>
+        <input class="ans-input" id="a3" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r3"></div>
+      </div>
+
+      <div class="q" id="q4">
+        <div class="q-num">Question 4</div>
+        <div class="q-text">How many hexadecimal digits are needed to fully represent one byte?</div>
+        <input class="ans-input" id="a4" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r4"></div>
+      </div>
+
+      <div class="q" id="q5">
+        <div class="q-num">Question 5</div>
+        <div class="q-text">In an 8-bit byte, what is the place value of position 7 — the leftmost bit?</div>
+        <input class="ans-input" id="a5" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r5"></div>
+      </div>
+
+      <div class="q" id="q6">
+        <div class="q-num">Question 6</div>
+        <div class="q-text">What is \(2^0\)? (The place value of the rightmost bit.)</div>
+        <input class="ans-input" id="a6" type="text" maxlength="2" style="width:80px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r6"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 2 — Binary to decimal
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 2</span>
+        <span class="ws-section-title">Binary → decimal</span>
+      </div>
+      <p class="ws-section-note">Identify which bits are 1, note their place values, and add them. Write the decimal result.</p>
+
+      <div class="q" id="q7">
+        <div class="q-num">Question 7</div>
+        <div class="q-text">Convert <code>00001111</code> to decimal.</div>
+        <input class="ans-input" id="a7" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r7"></div>
+      </div>
+
+      <div class="q" id="q8">
+        <div class="q-num">Question 8</div>
+        <div class="q-text">Convert <code>10000001</code> to decimal.</div>
+        <input class="ans-input" id="a8" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r8"></div>
+      </div>
+
+      <div class="q" id="q9">
+        <div class="q-num">Question 9</div>
+        <div class="q-text">Convert <code>01110111</code> to decimal.</div>
+        <input class="ans-input" id="a9" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r9"></div>
+      </div>
+
+      <div class="q" id="q10">
+        <div class="q-num">Question 10</div>
+        <div class="q-text">Convert <code>11001100</code> to decimal.</div>
+        <input class="ans-input" id="a10" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r10"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 3 — Decimal to binary
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 3</span>
+        <span class="ws-section-title">Decimal → 8-bit binary</span>
+      </div>
+      <p class="ws-section-note">Write the full 8-bit binary string, including any leading zeros.</p>
+
+      <div class="q" id="q11">
+        <div class="q-num">Question 11</div>
+        <div class="q-text">Convert <code>17</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a11" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-result" id="r11"></div>
+      </div>
+
+      <div class="q" id="q12">
+        <div class="q-num">Question 12</div>
+        <div class="q-text">Convert <code>64</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a12" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-result" id="r12"></div>
+      </div>
+
+      <div class="q" id="q13">
+        <div class="q-num">Question 13</div>
+        <div class="q-text">Convert <code>200</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a13" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-result" id="r13"></div>
+      </div>
+
+      <div class="q" id="q14">
+        <div class="q-num">Question 14</div>
+        <div class="q-text">Convert <code>171</code> to an 8-bit binary string.</div>
+        <input class="ans-input" id="a14" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-result" id="r14"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 4 — Hex conversions
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 4</span>
+        <span class="ws-section-title">Hexadecimal conversions</span>
+      </div>
+      <p class="ws-section-note">Convert in each direction. For hex answers, write two digits without the 0x prefix (e.g. <code>2D</code>). For binary, write all 8 bits.</p>
+
+      <div class="q" id="q15">
+        <div class="q-num">Question 15</div>
+        <div class="q-text">Convert <code>0x3C</code> to decimal.</div>
+        <input class="ans-input" id="a15" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r15"></div>
+      </div>
+
+      <div class="q" id="q16">
+        <div class="q-num">Question 16</div>
+        <div class="q-text">Convert <code>0xA5</code> to decimal.</div>
+        <input class="ans-input" id="a16" type="text" maxlength="3" style="width:90px" placeholder="?" autocomplete="off" />
+        <div class="q-result" id="r16"></div>
+      </div>
+
+      <div class="q" id="q17">
+        <div class="q-num">Question 17</div>
+        <div class="q-text">Convert <code>0xF0</code> to 8-bit binary.</div>
+        <input class="ans-input" id="a17" type="text" maxlength="8" style="width:160px" placeholder="????????" autocomplete="off" />
+        <div class="q-result" id="r17"></div>
+      </div>
+
+      <div class="q" id="q18">
+        <div class="q-num">Question 18</div>
+        <div class="q-text">Convert binary <code>01001111</code> to hex. Write two digits, no prefix.</div>
+        <input class="ans-input" id="a18" type="text" maxlength="2" style="width:90px" placeholder="??" autocomplete="off" />
+        <div class="q-result" id="r18"></div>
+      </div>
+
+      <div class="q" id="q19">
+        <div class="q-num">Question 19</div>
+        <div class="q-text">Convert decimal <code>87</code> to hex. Write two digits, no prefix.</div>
+        <input class="ans-input" id="a19" type="text" maxlength="2" style="width:90px" placeholder="??" autocomplete="off" />
+        <div class="q-result" id="r19"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 5 — True or false
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 5</span>
+        <span class="ws-section-title">True or false</span>
+      </div>
+      <p class="ws-section-note">Select True or False for each statement. Think carefully — some of these target the common mistakes section.</p>
+
+      <div class="q" id="q20">
+        <div class="q-num">Question 20</div>
+        <div class="q-text"><code>0x0A</code> equals 10 in decimal.</div>
+        <div class="tf-row">
+          <button class="tf-btn" data-q="20" data-val="T" type="button">True</button>
+          <button class="tf-btn" data-q="20" data-val="F" type="button">False</button>
+        </div>
+        <div class="q-result" id="r20"></div>
+      </div>
+
+      <div class="q" id="q21">
+        <div class="q-num">Question 21</div>
+        <div class="q-text">The bytes <code>00110011</code> and <code>110011</code> represent the same value in a cryptographic context.</div>
+        <div class="tf-row">
+          <button class="tf-btn" data-q="21" data-val="T" type="button">True</button>
+          <button class="tf-btn" data-q="21" data-val="F" type="button">False</button>
+        </div>
+        <div class="q-result" id="r21"></div>
+      </div>
+
+      <div class="q" id="q22">
+        <div class="q-num">Question 22</div>
+        <div class="q-text">In an 8-bit system, the result of adding 1 to <code>11111111</code> is <code>100000000</code>.</div>
+        <div class="tf-row">
+          <button class="tf-btn" data-q="22" data-val="T" type="button">True</button>
+          <button class="tf-btn" data-q="22" data-val="F" type="button">False</button>
+        </div>
+        <div class="q-result" id="r22"></div>
+      </div>
+
+      <div class="q" id="q23">
+        <div class="q-num">Question 23</div>
+        <div class="q-text"><code>0xFF</code> and <code>11111111</code><sub>2</sub> represent the same value.</div>
+        <div class="tf-row">
+          <button class="tf-btn" data-q="23" data-val="T" type="button">True</button>
+          <button class="tf-btn" data-q="23" data-val="F" type="button">False</button>
+        </div>
+        <div class="q-result" id="r23"></div>
+      </div>
+
+      <div class="q" id="q24">
+        <div class="q-num">Question 24</div>
+        <div class="q-text">A single hex digit can represent exactly 16 distinct values (0 through 15).</div>
+        <div class="tf-row">
+          <button class="tf-btn" data-q="24" data-val="T" type="button">True</button>
+          <button class="tf-btn" data-q="24" data-val="F" type="button">False</button>
+        </div>
+        <div class="q-result" id="r24"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PART 6 — Written reflection
+    ═══════════════════════════════════════════════════════════ -->
+    <section class="ws-section">
+      <div class="ws-section-head">
+        <span class="ws-section-num">Part 6</span>
+        <span class="ws-section-title">Written reflection</span>
+      </div>
+      <p class="ws-section-note">Write in complete sentences. Your answer will not be auto-graded — a sample answer will appear after you submit so you can compare your thinking.</p>
+
+      <div class="q" id="q25">
+        <div class="q-num">Question 25</div>
+        <div class="q-text">
+          Cryptography specifications almost always express byte values in hexadecimal rather than decimal.
+          Using what you learned in this module, explain <em>why</em> hexadecimal is the natural choice
+          for representing bytes — and what would be awkward about using decimal instead.
+        </div>
+        <textarea class="written-area" id="a25" rows="5" placeholder="Write your answer here…"></textarea>
+        <div class="q-result" id="r25"></div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════
+         GRADE BAR
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="grade-bar no-print" id="grade-bar">
+      <p>Answer all questions above, then grade your worksheet. You can grade at any time — unanswered questions will be marked incorrect.</p>
+      <button class="grade-btn" id="grade-btn" type="button">Grade Worksheet</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SCORE PANEL (hidden until graded)
+    ═══════════════════════════════════════════════════════════ -->
+    <div class="score-panel no-print" id="score-panel">
+      <div class="score-big" id="score-pct">—</div>
+      <div class="score-label" id="score-lbl">Grade</div>
+      <div class="score-breakdown">
+        <div>Auto-graded: <span class="ok-count" id="ok-count">0</span> correct, <span class="err-count" id="err-count">0</span> wrong</div>
+        <div>Written: <span>see sample answer below</span></div>
+      </div>
+      <div style="margin-top:20px">
+        <button class="grade-btn secondary no-print" onclick="window.print()" type="button">🖨️ Print Graded Sheet</button>
+        <button class="grade-btn secondary no-print" id="retry-btn" type="button">↺ Reset &amp; Retry</button>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+    <div class="nav-bundle">
+      <a href="index.html" class="nav-item">🏠 Dashboard</a>
+      <a href="tutorial_01_binary_hexadecimal_and_bases_html.html" class="nav-item nav-secondary">Tutorial 1</a>
+      <a href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html" class="nav-item nav-secondary">Workbook 1</a>
+    </div>
+    <div class="nav-bundle">
+      <span class="nav-item nav-disabled">← Previous</span>
+      <a href="worksheet_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-primary">Next Worksheet →</a>
+    </div>
+  </nav>
+
+</div><!-- /.page -->
+
+<script>
+(function () {
+
+  /* ── Answer key ────────────────────────────────────────────── */
+  var KEY = {
+    a1:  { ans: ['2'],          why: '0 and 1 — a bit has exactly two states.' },
+    a2:  { ans: ['4'],          why: 'A nibble is always 4 bits.' },
+    a3:  { ans: ['8'],          why: 'A byte is always 8 bits.' },
+    a4:  { ans: ['2'],          why: 'Each hex digit covers one 4-bit nibble; two nibbles = one byte = two hex digits.' },
+    a5:  { ans: ['128'],        why: '2⁷ = 128. Position 7 is the most significant bit in an 8-bit byte.' },
+    a6:  { ans: ['1'],          why: '2⁰ = 1. Any base raised to the power 0 equals 1.' },
+    a7:  { ans: ['15'],         why: '00001111: bits at positions 3,2,1,0 are on → 8+4+2+1 = 15.' },
+    a8:  { ans: ['129'],        why: '10000001: bits at positions 7 and 0 → 128+1 = 129.' },
+    a9:  { ans: ['119'],        why: '01110111: positions 6,5,4,2,1,0 → 64+32+16+4+2+1 = 119.' },
+    a10: { ans: ['204'],        why: '11001100: positions 7,6,3,2 → 128+64+8+4 = 204.' },
+    a11: { ans: ['00010001'],   why: '17 = 16+1 = 2⁴+2⁰ → 00010001.' },
+    a12: { ans: ['01000000'],   why: '64 = 2⁶ → 01000000.' },
+    a13: { ans: ['11001000'],   why: '200 = 128+64+8 = 2⁷+2⁶+2³ → 11001000.' },
+    a14: { ans: ['10101011'],   why: '171 = 128+32+8+2+1 = 2⁷+2⁵+2³+2¹+2⁰ → 10101011.' },
+    a15: { ans: ['60'],         why: '0x3C: 3×16 + 12 = 48+12 = 60.' },
+    a16: { ans: ['165'],        why: '0xA5: 10×16 + 5 = 160+5 = 165.' },
+    a17: { ans: ['11110000'],   why: '0xF0: F=1111, 0=0000 → 11110000.' },
+    a18: { ans: ['4F'],         why: '01001111: high nibble 0100=4, low nibble 1111=F → 4F.' },
+    a19: { ans: ['57'],         why: '87 = 5×16+7 → 0x57.' },
+    a20: { ans: ['T'],          why: '0x0A = 0×16+10 = 10. True.' },
+    a21: { ans: ['F'],          why: 'In cryptography the full fixed width matters. 00110011 ≠ 110011 as byte values — the leading zeros encode position.' },
+    a22: { ans: ['F'],          why: 'An 8-bit system can only hold 8 bits. The carry bit is lost; the result wraps to 00000000, not 100000000.' },
+    a23: { ans: ['T'],          why: '0xFF = 15×16+15 = 255; 11111111 = 128+64+32+16+8+4+2+1 = 255. Same value.' },
+    a24: { ans: ['T'],          why: 'Hex digits run 0–9 then A–F, covering 0 through 15 — exactly 16 values.' }
+  };
+
+  var SAMPLE_25 = 'One hex digit maps exactly to one 4-bit nibble, and two hex digits map exactly to one byte. ' +
+    'This is a clean, lossless correspondence — no information is lost or ambiguous. ' +
+    'Decimal does not share this property: the decimal value 255 takes three digits and does not split neatly ' +
+    'along nibble boundaries. When a cryptographer writes 0x2D, the high nibble 2 and low nibble D are immediately ' +
+    'visible. Writing 45 in decimal gives no such visual clue about bit structure. ' +
+    'Hexadecimal is compact, unambiguous, and directly aligned with how bytes are physically organised.';
+
+  /* ── Progress tracking ─────────────────────────────────────── */
+  var TOTAL_Q = 25;
+  var answered = {};
+
+  function updateProgress() {
+    var n = Object.keys(answered).length;
+    var pct = Math.round(n / TOTAL_Q * 100);
+    document.getElementById('prog-label').textContent = n + ' of ' + TOTAL_Q + ' questions answered';
+    document.getElementById('prog-fill').style.width = pct + '%';
+  }
+
+  /* ── Text inputs ───────────────────────────────────────────── */
+  var textIds = ['a1','a2','a3','a4','a5','a6','a7','a8','a9','a10','a11','a12','a13','a14','a15','a16','a17','a18','a19'];
+  textIds.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', function () {
+      if (el.value.trim() !== '') answered[id] = true; else delete answered[id];
+      updateProgress();
+    });
+  });
+
+  /* Written response */
+  var w25 = document.getElementById('a25');
+  if (w25) {
+    w25.addEventListener('input', function () {
+      if (w25.value.trim() !== '') answered['a25'] = true; else delete answered['a25'];
+      updateProgress();
+    });
+  }
+
+  /* ── True/False buttons ────────────────────────────────────── */
+  var tfSelections = {};
+  document.querySelectorAll('.tf-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var q = btn.dataset.q;
+      var v = btn.dataset.val;
+      document.querySelectorAll('[data-q="' + q + '"]').forEach(function (b) { b.classList.remove('selected'); });
+      btn.classList.add('selected');
+      tfSelections['a' + q] = v;
+      answered['a' + q] = true;
+      updateProgress();
+    });
+  });
+
+  /* ── Grading ───────────────────────────────────────────────── */
+  var graded = false;
+
+  document.getElementById('grade-btn').addEventListener('click', function () {
+    if (graded) return;
+    graded = true;
+    document.getElementById('grade-btn').disabled = true;
+
+    var ok = 0, wrong = 0;
+
+    /* Auto-grade text */
+    textIds.forEach(function (id) {
+      var qNum = id.replace('a', '');
+      var entry = KEY[id];
+      if (!entry) return;
+      var el = document.getElementById(id);
+      var val = el.value.trim().toUpperCase().replace(/^0X/, '');
+      var correct = entry.ans.some(function (a) { return a.toUpperCase() === val; });
+      var qEl = document.getElementById('q' + qNum);
+      var rEl = document.getElementById('r' + qNum);
+      el.disabled = true;
+      if (correct) {
+        ok++;
+        el.classList.add('ok');
+        qEl.classList.add('graded-ok');
+        rEl.className = 'q-result show ok-msg';
+        rEl.innerHTML = '✓ Correct. <em>' + entry.why + '</em>';
+      } else {
+        wrong++;
+        el.classList.add('err');
+        qEl.classList.add('graded-err');
+        rEl.className = 'q-result show err-msg';
+        rEl.innerHTML = '✗ Your answer: <strong>' + (el.value.trim() || '(blank)') + '</strong>. ' +
+          'Correct: <span class="correct-ans">' + entry.ans[0] + '</span>. <em>' + entry.why + '</em>';
+      }
+    });
+
+    /* Auto-grade T/F */
+    ['a20','a21','a22','a23','a24'].forEach(function (id) {
+      var qNum = id.replace('a', '');
+      var entry = KEY[id];
+      var val = tfSelections[id] || '';
+      var correct = val === entry.ans[0];
+      var qEl = document.getElementById('q' + qNum);
+      var rEl = document.getElementById('r' + qNum);
+      document.querySelectorAll('[data-q="' + qNum + '"]').forEach(function (btn) {
+        btn.disabled = true;
+        if (btn.dataset.val === entry.ans[0]) btn.classList.add('reveal');
+        btn.classList.remove('selected');
+      });
+      if (val) {
+        var selBtn = document.querySelector('[data-q="' + qNum + '"][data-val="' + val + '"]');
+        if (selBtn) selBtn.classList.add(correct ? 'ok' : 'err');
+      }
+      if (correct) {
+        ok++;
+        qEl.classList.add('graded-ok');
+        rEl.className = 'q-result show ok-msg';
+        rEl.innerHTML = '✓ Correct. <em>' + entry.why + '</em>';
+      } else {
+        wrong++;
+        qEl.classList.add('graded-err');
+        rEl.className = 'q-result show err-msg';
+        rEl.innerHTML = '✗ ' + (val ? 'You chose <strong>' + val + '</strong>. ' : 'Not answered. ') +
+          'Correct: <strong>' + entry.ans[0] + '</strong>. <em>' + entry.why + '</em>';
+      }
+    });
+
+    /* Written question — reveal sample answer */
+    var r25 = document.getElementById('r25');
+    document.getElementById('a25').disabled = true;
+    r25.className = 'q-result show';
+    r25.innerHTML = '<strong>Sample answer:</strong><div class="sample-ans">' + SAMPLE_25 + '</div>';
+
+    /* Score panel */
+    var autoTotal = 24;
+    var pct = Math.round(ok / autoTotal * 100);
+    document.getElementById('score-pct').textContent = pct + '%';
+    document.getElementById('score-lbl').textContent = ok + ' of ' + autoTotal + ' auto-graded questions correct';
+    document.getElementById('ok-count').textContent  = ok;
+    document.getElementById('err-count').textContent = wrong;
+    document.getElementById('score-panel').classList.add('show');
+    document.getElementById('score-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  /* ── Reset ─────────────────────────────────────────────────── */
+  document.getElementById('retry-btn').addEventListener('click', function () {
+    if (!confirm('Reset the worksheet and clear all answers?')) return;
+    /* Text inputs */
+    textIds.forEach(function (id) {
+      var el = document.getElementById(id);
+      el.value = ''; el.disabled = false;
+      el.className = 'ans-input';
+    });
+    /* Written */
+    var wa = document.getElementById('a25');
+    wa.value = ''; wa.disabled = false;
+    /* T/F */
+    document.querySelectorAll('.tf-btn').forEach(function (btn) {
+      btn.disabled = false;
+      btn.className = 'tf-btn';
+    });
+    /* Result labels */
+    for (var i = 1; i <= 25; i++) {
+      var r = document.getElementById('r' + i);
+      if (r) { r.className = 'q-result'; r.innerHTML = ''; }
+      var q = document.getElementById('q' + i);
+      if (q) { q.className = 'q'; }
+    }
+    tfSelections = {};
+    answered = {};
+    graded = false;
+    document.getElementById('grade-btn').disabled = false;
+    document.getElementById('score-panel').classList.remove('show');
+    updateProgress();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>
