@@ -167,6 +167,47 @@
     .ch-score { font-size: 0.82rem; color: var(--muted); margin-top: 12px; }
     .ch-score span { font-weight: 700; color: var(--accent); }
 
+    /* ── Nibble color-coding ─────────────────────────────────── */
+    .nibble-card.left-nibble  { border-color: #334e7d; background: #eef3ff; }
+    .nibble-card.left-nibble  .nibble-bits { color: #1a3260; }
+    .nibble-card.left-nibble  .hex-badge   { background: #334e7d; color: #fff; border-color: #334e7d; }
+    .nibble-card.right-nibble { border-color: #9a6d00; background: #fff8e6; }
+    .nibble-card.right-nibble .nibble-bits { color: #7d5500; }
+    .nibble-card.right-nibble .hex-badge   { background: #f0b429; color: #3d2800; border-color: #d4960a; }
+
+    /* ── Overflow counter ────────────────────────────────────── */
+    .ov-wrap { margin: 16px 0; overflow-x: auto; }
+    .ov-row  { display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; min-width: 560px; }
+    .ov-carry {
+      min-width: 80px; background: #f5f5f5; border-right: 2px dashed #bbb;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 8px 4px; gap: 3px; text-align: center;
+    }
+    .ov-carry-label { font-size: 0.6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #aaa; }
+    .ov-carry-pos   { font-size: 0.68rem; font-weight: 700; color: #bbb; font-family: monospace; }
+    .ov-carry-bit   {
+      font-family: "Cascadia Code","Consolas",monospace; font-size: 1.55rem;
+      font-weight: 900; color: #ccc; line-height: 1;
+    }
+    @keyframes ov-flash {
+      0%   { color: #c62828; transform: scale(1.3); }
+      55%  { color: #c62828; transform: scale(1.1); }
+      100% { color: #ccc;    transform: scale(1);   }
+    }
+    .ov-carry-bit.flash { animation: ov-flash 1.0s ease-out forwards; }
+    .ov-carry-dropped { font-size: 0.62rem; font-weight: 800; color: #c62828; letter-spacing: 0.04em; text-transform: uppercase; transition: opacity 0.25s; }
+    .ov-bits { display: flex; flex: 1; }
+    .ov-bit-cell { flex: 1; border-right: 1px solid var(--border); text-align: center; }
+    .ov-bit-cell:last-child { border-right: none; }
+    .ov-pos   { display: block; background: #eef3ff; color: #1f3763; font-weight: 800; padding: 6px 2px; border-bottom: 1px solid var(--border); font-size: 0.66rem; }
+    .ov-pv    { display: block; padding: 3px 2px; border-bottom: 1px solid var(--border); font-family: monospace; font-size: 0.68rem; color: var(--muted); }
+    .ov-digit { display: block; padding: 11px 2px; font-family: "Cascadia Code","Consolas",monospace; font-size: 1.4rem; font-weight: 900; color: #ccc; transition: color 0.1s; }
+    .ov-digit.on { color: var(--accent); }
+    .ov-msg { min-height: 2.4em; margin-top: 10px; font-size: 0.9rem; font-weight: 600; padding: 10px 14px; border-radius: 8px; }
+    .ov-msg.normal   { color: var(--muted); }
+    .ov-msg.overflow,
+    .ov-msg.underflow { color: #b71c1c; background: #fff3f3; border: 1px solid #ffcdd2; }
+
     @media (max-width: 700px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -576,14 +617,14 @@
         <div class="diagram">
           <div class="diagram-title">Converting <code>00101101</code> into hex</div>
           <div class="nibble-row">
-            <div class="nibble-card">
+            <div class="nibble-card left-nibble">
               <div class="nibble-bits">0010</div>
-              <div>left nibble</div>
+              <div>left nibble → high hex digit</div>
               <div class="hex-badge">2</div>
             </div>
-            <div class="nibble-card">
+            <div class="nibble-card right-nibble">
               <div class="nibble-bits">1101</div>
-              <div>right nibble</div>
+              <div>right nibble → low hex digit</div>
               <div class="hex-badge">D</div>
             </div>
           </div>
@@ -732,7 +773,7 @@
           document.getElementById('ch-feedback').textContent = '';
           document.getElementById('ch-feedback').className   = 'ch-feedback';
           document.getElementById('ch-explain').textContent  = '';
-          inp.focus();
+          inp.focus({ preventScroll: true });
         }
 
         function check() {
@@ -968,6 +1009,124 @@
           </p>
         </div>
       </section>
+
+      <section id="overflow-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Byte counter: watching overflow happen</h2>
+          <p>
+            Click <strong>+1</strong> to count upward. When the byte reaches 255 (<code>11111111</code>),
+            adding one more generates a carry into position 8 — but a fixed-width byte has no position 8.
+            Watch the carry bit appear and drop.
+          </p>
+
+          <div class="ov-wrap">
+            <div class="ov-row">
+              <div class="ov-carry">
+                <span class="ov-carry-label">Carry</span>
+                <span class="ov-carry-pos">2&#8312; = 256</span>
+                <span class="ov-carry-bit" id="ov-carry-bit">&middot;</span>
+                <span class="ov-carry-dropped" id="ov-carry-dropped" style="opacity:0">dropped!</span>
+              </div>
+              <div class="ov-bits" id="ov-bits"></div>
+            </div>
+          </div>
+
+          <div class="be-output">
+            <div class="be-item"><span class="be-lbl">Binary</span><span class="be-val" id="ov-bin">00000000</span></div>
+            <div class="be-item"><span class="be-lbl">Decimal</span><span class="be-val" id="ov-dec">0</span></div>
+            <div class="be-item"><span class="be-lbl">Hexadecimal</span><span class="be-val" id="ov-hex">0x00</span></div>
+          </div>
+
+          <div class="ov-msg normal" id="ov-msg">Counter is at 0 — count up to 255 and press +1 one more time.</div>
+
+          <div class="btn-row">
+            <button class="ctrl-btn" id="ov-minus"  type="button">&#8722;1</button>
+            <button class="ctrl-btn" id="ov-plus"   type="button">+1</button>
+            <button class="ctrl-btn" id="ov-set255" type="button">Set to 255</button>
+            <button class="ctrl-btn" id="ov-reset"  type="button">Reset to 0</button>
+          </div>
+        </div>
+      </section>
+
+      <script>
+      (function () {
+        var val = 0;
+        var weights = [128, 64, 32, 16, 8, 4, 2, 1];
+
+        /* Build the 8 bit-cells */
+        var bitsEl = document.getElementById('ov-bits');
+        weights.forEach(function (w, i) {
+          var pos = 7 - i;
+          var cell = document.createElement('div');
+          cell.className = 'ov-bit-cell';
+          cell.innerHTML =
+            '<span class="ov-pos">Pos ' + pos + '</span>' +
+            '<span class="ov-pv">2<sup>' + pos + '</sup>=' + w + '</span>' +
+            '<span class="ov-digit" id="ovd-' + i + '">0</span>';
+          bitsEl.appendChild(cell);
+        });
+
+        function render(overflow, underflow) {
+          document.getElementById('ov-bin').textContent = val.toString(2).padStart(8, '0');
+          document.getElementById('ov-dec').textContent = val;
+          document.getElementById('ov-hex').textContent = '0x' + val.toString(16).toUpperCase().padStart(2, '0');
+          weights.forEach(function (w, i) {
+            var b = (val >> (7 - i)) & 1;
+            var el = document.getElementById('ovd-' + i);
+            el.textContent = b;
+            el.className = 'ov-digit' + (b ? ' on' : '');
+          });
+
+          var carryBit  = document.getElementById('ov-carry-bit');
+          var carryDrop = document.getElementById('ov-carry-dropped');
+          var msg       = document.getElementById('ov-msg');
+
+          if (overflow) {
+            carryBit.textContent = '1';
+            carryBit.className   = 'ov-carry-bit flash';
+            carryDrop.style.opacity = '1';
+            setTimeout(function () { carryDrop.style.opacity = '0'; }, 900);
+            setTimeout(function () { carryBit.textContent = '\u00b7'; carryBit.className = 'ov-carry-bit'; }, 1000);
+            msg.className = 'ov-msg overflow';
+            msg.innerHTML = '&#9888; <strong>Overflow!</strong> Adding 1 to <code>11111111</code> (255) generates a carry into position 8. A fixed-width byte has no position 8 &mdash; the carry is dropped and the value wraps to <strong>0</strong>.';
+          } else if (underflow) {
+            carryBit.textContent = '\u00b7'; carryBit.className = 'ov-carry-bit';
+            msg.className = 'ov-msg underflow';
+            msg.innerHTML = '&#9888; <strong>Underflow!</strong> Subtracting 1 from 0 borrows past all 8 positions. The value wraps to <strong>255</strong> (<code>11111111</code> = <code>0xFF</code>).';
+          } else {
+            carryBit.textContent = '\u00b7'; carryBit.className = 'ov-carry-bit';
+            msg.className = 'ov-msg normal';
+            if (val === 255) {
+              msg.innerHTML = 'Value is at maximum: <code>11111111</code> = 255 = <code>0xFF</code>. Press <strong>+1</strong> one more time to trigger overflow.';
+            } else if (val === 0) {
+              msg.textContent = 'Counter is at 0 \u2014 count up to 255 and press +1 one more time.';
+            } else {
+              msg.textContent = 'Counting normally \u2014 ' + val + ' of 255.';
+            }
+          }
+        }
+
+        document.getElementById('ov-plus').addEventListener('click', function () {
+          var ov = val === 255;
+          val = (val + 1) & 0xFF;
+          render(ov, false);
+        });
+        document.getElementById('ov-minus').addEventListener('click', function () {
+          var un = val === 0;
+          val = (val + 255) & 0xFF;
+          render(false, un);
+        });
+        document.getElementById('ov-set255').addEventListener('click', function () {
+          val = 255; render(false, false);
+        });
+        document.getElementById('ov-reset').addEventListener('click', function () {
+          val = 0; render(false, false);
+        });
+
+        render(false, false);
+      })();
+      </script>
 
       <section id="common-mistakes">
         <h2>Common mistakes</h2>
