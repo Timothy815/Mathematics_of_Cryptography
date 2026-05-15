@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 2: Bitwise Operations as Algebra | Mathematics of Cryptography</title>
+  <title>Practice 2: Bitwise Operations as Algebra | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 36px;
@@ -28,622 +28,484 @@
       margin-bottom: 28px;
     }
 
-    .workbook-nav {
+    .truth-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.93rem;
+    }
+    .truth-table th, .truth-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .truth-table th { background: #eef3ff; color: #1f3763; }
+
+    /* ── Quick reference collapsible ─────────────── */
+    #quick-reference details { margin: 0; }
+    #quick-reference .qr-summary {
+      cursor: pointer;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1f3763;
+      list-style: none;
       display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 22px 0 0;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      user-select: none;
     }
-
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
-
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 20px 0;
+    #quick-reference .qr-summary::-webkit-details-marker { display: none; }
+    #quick-reference .qr-summary::before {
+      content: "▸";
+      font-size: 0.9rem;
+      transition: transform 0.2s;
+      display: inline-block;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
+    #quick-reference details[open] .qr-summary::before { transform: rotate(90deg); }
+    .qr-body {
+      padding-top: 14px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 16px;
     }
 
-    .data-table,
-    .work-table,
-    .answer-table,
-    .truth-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .truth-table th, .truth-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .truth-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .truth-table th,
-    .truth-table td { text-align: center; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
+    /* ── Drill widget ────────────────────────────── */
+    .drill-box {
+      background: #fff;
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 16px;
+      padding: 20px 22px;
       margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
     }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .bit-work {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 10px 0 18px;
+    .drill-prompt {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1f3763;
+      margin-bottom: 14px;
       font-family: "Cascadia Code", "Consolas", monospace;
     }
-
-    .bit-work th,
-    .bit-work td {
+    .drill-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .drill-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1.05rem;
+      padding: 8px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      width: 80px;
+      background: #f0f0f0;
+      text-transform: uppercase;
+    }
+    .drill-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .drill-op-label {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1.1rem;
+      font-weight: 900;
+      color: #334e7d;
+    }
+    .drill-check-btn {
+      padding: 8px 18px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .drill-check-btn:hover { opacity: 0.88; }
+    .drill-feedback {
+      min-height: 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+    .drill-feedback.correct { color: #1a7a42; }
+    .drill-feedback.incorrect { color: #b5451b; }
+    .drill-next-btn {
+      margin-top: 10px;
+      padding: 7px 16px;
+      background: #f0f0f0;
       border: 1px solid var(--border);
-      text-align: center;
-      padding: 7px;
-      min-width: 32px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: none;
     }
-
-    .bit-work th:first-child,
-    .bit-work td:first-child {
-      text-align: left;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-weight: 800;
-      color: #1f3763;
-      background: #eef3ff;
-      min-width: 95px;
-    }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    .drill-next-btn:hover { background: #e4e4e4; }
+    .drill-score {
+      font-size: 0.82rem;
+      color: #666;
+      margin-top: 8px;
     }
 
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      @page { margin: 0.65in; }
+      body { background: #fff; color: #000; font-size: 11pt; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
       .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .truth-table th,
-      .bit-work th:first-child,
-      .bit-work td:first-child {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999; break-after: avoid; }
+      .truth-table th { background: #eee !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 2</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 2</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Bitwise Operations as Algebra</h1>
       <p class="subtitle">
-        Printable practice for XOR, AND, OR, NOT, masks, shifts, rotations, and reversibility.
+        Quick reference and interactive drills for XOR, AND, OR, NOT, masks, shifts, and rotations.
       </p>
-
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+      <nav class="tutorial-nav no-print" aria-label="Navigation">
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <a class="nav-link" href="tutorial_02_bitwise_operations_as_algebra_html.html">Tutorial 2</a>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Work column by column. Bitwise operations are small local rules, so slow accuracy matters more than speed.
-            The answer key begins after the practice section and includes worked steps where the process matters.
-          </p>
-        </div>
-      </section>
-
+      <!-- ── Quick Reference ─────────────────────── -->
       <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Truth tables</div>
-            <table class="truth-table">
-              <thead>
-                <tr><th>\(a\)</th><th>\(b\)</th><th>\(a\oplus b\)</th><th>\(a\land b\)</th><th>\(a\lor b\)</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-                <tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
-                <tr><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
-                <tr><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="box" style="background:var(--gold-soft); border-color:#ead399;">
+          <details>
+            <summary class="qr-summary">Quick Reference</summary>
+            <div class="qr-body">
 
-          <div class="box quick-reference-box">
-            <div class="box-title">Key identities</div>
-            <div class="math-display">
-              \[
-                A \oplus 0 = A
-              \]
-              \[
-                A \oplus A = 0
-              \]
-              \[
-                (A \oplus K) \oplus K = A
-              \]
-              \[
-                \lnot(\lnot A) = A
-              \]
+              <div>
+                <strong>Truth tables</strong>
+                <table class="truth-table" style="margin-top:8px;">
+                  <thead>
+                    <tr><th>\(a\)</th><th>\(b\)</th><th>\(a\oplus b\)</th><th>\(a\land b\)</th><th>\(a\lor b\)</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+                    <tr><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+                    <tr><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+                    <tr><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <strong>Key identities</strong>
+                <div class="math-display" style="margin-top:8px;">
+                  \[ A \oplus 0 = A \]
+                  \[ A \oplus A = 0 \]
+                  \[ (A \oplus K) \oplus K = A \]
+                  \[ \lnot(\lnot A) = A \]
+                </div>
+              </div>
+
+              <div>
+                <strong>Operations at a glance</strong>
+                <ul style="margin-top:8px; padding-left:18px; font-size:0.9rem; line-height:1.8;">
+                  <li><strong>XOR</strong> — 1 when bits differ</li>
+                  <li><strong>AND</strong> — 1 only if both bits are 1</li>
+                  <li><strong>OR</strong> — 1 if at least one bit is 1</li>
+                  <li><strong>NOT</strong> — flip every bit (width-dependent)</li>
+                  <li><strong>Shift</strong> — move bits, fill with 0, edge bits lost</li>
+                  <li><strong>Rotate</strong> — move bits, wrap edge bits around</li>
+                </ul>
+              </div>
+
+              <div>
+                <strong>Reversibility</strong>
+                <ul style="margin-top:8px; padding-left:18px; font-size:0.9rem; line-height:1.8;">
+                  <li>XOR with known key — ✓ reversible</li>
+                  <li>NOT — ✓ reversible</li>
+                  <li>Rotation — ✓ reversible</li>
+                  <li>Logical shift — ✗ bits may be lost</li>
+                  <li>AND mask — ✗ cleared bits gone</li>
+                  <li>OR mask — ✗ forced bits hide originals</li>
+                </ul>
+              </div>
+
             </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- ── Interactive Practice ───────────────────── -->
+      <section id="interactive-practice" class="no-print">
+        <h2>Interactive Practice</h2>
+
+        <!-- Drill 1: XOR single bits -->
+        <div class="drill-box" id="drill-xor-bits">
+          <div class="drill-prompt" id="d1-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <span id="d1-a-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span class="drill-op-label">XOR</span>
+            <span id="d1-b-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span style="font-size:1.1rem; font-weight:900; color:#334e7d;">=</span>
+            <input type="text" class="drill-input" id="d1-answer" maxlength="8" placeholder="binary" spellcheck="false" autocomplete="off" style="width:120px;">
+            <button class="drill-check-btn" id="d1-check">Check</button>
           </div>
-        </div>
-      </section>
-
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. Define XOR in friendly language.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
+          <div class="drill-feedback" id="d1-feedback"></div>
+          <button class="drill-next-btn" id="d1-next">Next →</button>
+          <div class="drill-score" id="d1-score"></div>
         </div>
 
-        <div class="problem">
-          <div class="problem-title">A2. Define AND in friendly language.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. Define a bit mask.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Explain the difference between a shift and a rotation.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="truth-table-practice">
-        <h2>Part B: Truth table practice</h2>
-        <p>Fill in the missing outputs.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>\(a\)</th>
-              <th>\(b\)</th>
-              <th>Operation</th>
-              <th>Output</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>0</td><td>1</td><td>\(a\oplus b\)</td><td></td></tr>
-            <tr><td>B2</td><td>1</td><td>1</td><td>\(a\oplus b\)</td><td></td></tr>
-            <tr><td>B3</td><td>1</td><td>0</td><td>\(a\land b\)</td><td></td></tr>
-            <tr><td>B4</td><td>1</td><td>1</td><td>\(a\land b\)</td><td></td></tr>
-            <tr><td>B5</td><td>0</td><td>1</td><td>\(a\lor b\)</td><td></td></tr>
-            <tr><td>B6</td><td>0</td><td>0</td><td>\(a\lor b\)</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="xor-practice">
-        <h2>Part C: XOR practice</h2>
-        <p>Compute each XOR column by column.</p>
-
-        <div class="problem">
-          <div class="problem-title">C1. Compute <code>1010 XOR 1100</code>.</div>
-          <table class="bit-work">
-            <tbody>
-              <tr><td>A</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
-              <tr><td>B</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
-              <tr><td>A XOR B</td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Compute <code>01010111 XOR 10000011</code>.</div>
-          <table class="bit-work">
-            <tbody>
-              <tr><td>A</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
-              <tr><td>B</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
-              <tr><td>A XOR B</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <p>Hex answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. If \(C = P \oplus K\), find \(C\).</div>
-          <p>Let \(P =\) <code>0x2D</code> and \(K =\) <code>0x0F</code>.</p>
-          <p>Convert to binary, XOR, then give the hex answer.</p>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="and-or-not-practice">
-        <h2>Part D: AND, OR, and NOT practice</h2>
-
-        <div class="problem">
-          <div class="problem-title">D1. Compute <code>10101100 AND 00001111</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D2. Compute <code>10101100 OR 00001111</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D3. Compute the 8-bit NOT of <code>01010111</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D4. Use an AND mask to keep only the low nibble of <code>0xAE</code>.</div>
-          <p>Mask to use:</p>
-          <span class="blank-line"></span>
-          <p>Work:</p>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D5. Use an OR mask to force the low nibble of <code>0xA0</code> to all 1s.</div>
-          <p>Mask to use:</p>
-          <span class="blank-line"></span>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="shifts-rotations">
-        <h2>Part E: Shifts and rotations</h2>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Start value</th>
-              <th>Operation</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>E1</td><td><code>00101101</code></td><td>left shift by 1</td><td></td></tr>
-            <tr><td>E2</td><td><code>00101101</code></td><td>right shift by 1</td><td></td></tr>
-            <tr><td>E3</td><td><code>10110001</code></td><td>rotate left by 1</td><td></td></tr>
-            <tr><td>E4</td><td><code>10110001</code></td><td>rotate right by 1</td><td></td></tr>
-            <tr><td>E5</td><td><code>11110000</code></td><td>left shift by 2</td><td></td></tr>
-          </tbody>
-        </table>
-
-        <div class="problem">
-          <div class="problem-title">E6. Which operations above may lose information? Explain why.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="reversibility">
-        <h2>Part F: Reversibility</h2>
-        <p>Mark each operation as usually reversible or usually not reversible. Then give a short reason.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Operation</th>
-              <th>Reversible?</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>XOR with known key</td><td></td><td></td></tr>
-            <tr><td>NOT</td><td></td><td></td></tr>
-            <tr><td>Rotate left by 3</td><td></td><td></td></tr>
-            <tr><td>Logical left shift by 3</td><td></td><td></td></tr>
-            <tr><td>AND with <code>0x0F</code></td><td></td><td></td></tr>
-            <tr><td>OR with <code>0xF0</code></td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="mixed-practice">
-        <h2>Part G: Mixed cryptography-flavored practice</h2>
-
-        <div class="problem">
-          <div class="problem-title">G1. Encrypt one byte with XOR.</div>
-          <p>Let \(P =\) <code>0x57</code> and \(K =\) <code>0x83</code>. Compute \(C = P \oplus K\).</p>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Decrypt the byte from G1.</div>
-          <p>Use \(P = C \oplus K\). Show that XOR with the same key recovers the original plaintext.</p>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G3. Explain why XOR is useful in encryption, but AND masking is dangerous if used as a direct encryption step.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Statement</th>
-              <th>True or False?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>XOR outputs 1 when the two input bits are different.</td><td></td></tr>
-            <tr><td>AND with 0 always preserves the original bit.</td><td></td></tr>
-            <tr><td>OR with 1 always forces the result bit to 1.</td><td></td></tr>
-            <tr><td>A logical shift and a rotation always do the same thing.</td><td></td></tr>
-            <tr><td>Applying the same XOR key twice restores the original value.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            For bitwise problems, read each result from left to right after applying the operation column by column.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> XOR outputs 1 when two bits are different and 0 when they are the same.</p>
-          <p><strong>A2.</strong> AND outputs 1 only when both input bits are 1.</p>
-          <p><strong>A3.</strong> A bit mask is a bit pattern used to select, clear, force, or test certain bit positions.</p>
-          <p><strong>A4.</strong> A shift moves bits and fills empty positions with 0, often losing edge bits. A rotation moves bits but wraps edge bits around to the other side.</p>
-        </div>
-
-        <h3>Part B: Truth table practice</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>1</td><td>0 and 1 are different.</td></tr>
-            <tr><td>B2</td><td>0</td><td>1 and 1 are the same.</td></tr>
-            <tr><td>B3</td><td>0</td><td>AND requires both bits to be 1.</td></tr>
-            <tr><td>B4</td><td>1</td><td>Both bits are 1.</td></tr>
-            <tr><td>B5</td><td>1</td><td>OR requires at least one 1.</td></tr>
-            <tr><td>B6</td><td>0</td><td>Neither bit is 1.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: XOR practice</h3>
-        <div class="answer-step">
-          <p><strong>C1.</strong> <code>1010 XOR 1100 = 0110</code>.</p>
-          <p><strong>C2.</strong> <code>01010111 XOR 10000011 = 11010100</code>. Hex answer: <code>0xD4</code>.</p>
-          <p><strong>C3.</strong> <code>0x2D = 00101101</code> and <code>0x0F = 00001111</code>.</p>
-          <div class="math-display">
-            \[
-              00101101_2 \oplus 00001111_2 = 00100010_2
-            \]
-            \[
-              C = \texttt{0x22}
-            \]
+        <!-- Drill 2: AND mask -->
+        <div class="drill-box" id="drill-and">
+          <div class="drill-prompt" id="d2-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <span id="d2-a-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span class="drill-op-label">AND</span>
+            <span id="d2-b-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span style="font-size:1.1rem; font-weight:900; color:#334e7d;">=</span>
+            <input type="text" class="drill-input" id="d2-answer" maxlength="8" placeholder="binary" spellcheck="false" autocomplete="off" style="width:120px;">
+            <button class="drill-check-btn" id="d2-check">Check</button>
           </div>
+          <div class="drill-feedback" id="d2-feedback"></div>
+          <button class="drill-next-btn" id="d2-next">Next →</button>
+          <div class="drill-score" id="d2-score"></div>
         </div>
 
-        <h3>Part D: AND, OR, and NOT practice</h3>
-        <div class="answer-step">
-          <p><strong>D1.</strong> <code>10101100 AND 00001111 = 00001100</code>.</p>
-          <p><strong>D2.</strong> <code>10101100 OR 00001111 = 10101111</code>.</p>
-          <p><strong>D3.</strong> 8-bit NOT of <code>01010111</code> is <code>10101000</code>.</p>
-          <p><strong>D4.</strong> Use mask <code>0x0F</code>. <code>0xAE AND 0x0F = 0x0E</code>.</p>
-          <div class="math-display">
-            \[
-              10101110_2 \land 00001111_2 = 00001110_2
-            \]
+        <!-- Drill 3: XOR hex bytes → hex result -->
+        <div class="drill-box" id="drill-xor-hex">
+          <div class="drill-prompt" id="d3-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <span id="d3-a-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span class="drill-op-label">⊕</span>
+            <span id="d3-b-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span style="font-size:1.1rem; font-weight:900; color:#334e7d;">=</span>
+            <input type="text" class="drill-input" id="d3-answer" maxlength="4" placeholder="0x??" spellcheck="false" autocomplete="off">
+            <button class="drill-check-btn" id="d3-check">Check</button>
           </div>
-          <p><strong>D5.</strong> Use mask <code>0x0F</code>. <code>0xA0 OR 0x0F = 0xAF</code>.</p>
+          <div class="drill-feedback" id="d3-feedback"></div>
+          <button class="drill-next-btn" id="d3-next">Next →</button>
+          <div class="drill-score" id="d3-score"></div>
         </div>
 
-        <h3>Part E: Shifts and rotations</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>E1</td><td><code>00101101 << 1 = 01011010</code></td></tr>
-            <tr><td>E2</td><td><code>00101101 >> 1 = 00010110</code></td></tr>
-            <tr><td>E3</td><td>rotate left: <code>10110001 → 01100011</code></td></tr>
-            <tr><td>E4</td><td>rotate right: <code>10110001 → 11011000</code></td></tr>
-            <tr><td>E5</td><td><code>11110000 << 2 = 11000000</code></td></tr>
-          </tbody>
-        </table>
-        <div class="answer-step">
-          <p><strong>E6 sample answer.</strong> Logical shifts may lose information because bits pushed off the edge are discarded. Rotations preserve all bits by wrapping edge bits around.</p>
-        </div>
-
-        <h3>Part F: Reversibility</h3>
-        <table class="answer-table">
-          <thead><tr><th>Operation</th><th>Reversible?</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>XOR with known key</td><td>Yes</td><td>XOR with the same key again restores the original.</td></tr>
-            <tr><td>NOT</td><td>Yes</td><td>Flipping all bits twice restores the original.</td></tr>
-            <tr><td>Rotate left by 3</td><td>Yes</td><td>Rotate right by 3 to undo it.</td></tr>
-            <tr><td>Logical left shift by 3</td><td>No, generally</td><td>Bits can fall off the edge and be lost.</td></tr>
-            <tr><td>AND with <code>0x0F</code></td><td>No, generally</td><td>The high nibble is cleared and cannot be recovered from the result alone.</td></tr>
-            <tr><td>OR with <code>0xF0</code></td><td>No, generally</td><td>The high nibble is forced on, hiding the original high bits.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part G: Mixed cryptography-flavored practice</h3>
-        <div class="answer-step">
-          <p><strong>G1.</strong> <code>0x57 XOR 0x83 = 0xD4</code>.</p>
-          <div class="math-display">
-            \[
-              01010111_2 \oplus 10000011_2 = 11010100_2
-            \]
+        <!-- Drill 4: Shift/rotate -->
+        <div class="drill-box" id="drill-shift">
+          <div class="drill-prompt" id="d4-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <input type="text" class="drill-input" id="d4-answer" maxlength="8" placeholder="binary" spellcheck="false" autocomplete="off" style="width:130px;">
+            <button class="drill-check-btn" id="d4-check">Check</button>
           </div>
-          <p><strong>G2.</strong> <code>0xD4 XOR 0x83 = 0x57</code>.</p>
-          <div class="math-display">
-            \[
-              11010100_2 \oplus 10000011_2 = 01010111_2
-            \]
-          </div>
-          <p><strong>G3 sample answer.</strong> XOR is useful because it is reversible when the key is known. AND masking can clear bits, destroying information. If information is destroyed in a direct encryption path, decryption cannot recover the original value from the result alone.</p>
+          <div class="drill-feedback" id="d4-feedback"></div>
+          <button class="drill-next-btn" id="d4-next">Next →</button>
+          <div class="drill-score" id="d4-score"></div>
         </div>
 
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>XOR outputs 1 when the two input bits are different.</td><td>True</td><td>That is the XOR rule.</td></tr>
-            <tr><td>AND with 0 always preserves the original bit.</td><td>False</td><td>AND with 0 always produces 0.</td></tr>
-            <tr><td>OR with 1 always forces the result bit to 1.</td><td>True</td><td>OR requires at least one 1.</td></tr>
-            <tr><td>A logical shift and a rotation always do the same thing.</td><td>False</td><td>Rotations wrap bits; shifts fill with 0 and may drop bits.</td></tr>
-            <tr><td>Applying the same XOR key twice restores the original value.</td><td>True</td><td>\((A\oplus K)\oplus K=A\).</td></tr>
-          </tbody>
-        </table>
+        <!-- Drill 5: Decrypt with XOR -->
+        <div class="drill-box" id="drill-decrypt">
+          <p style="margin:0 0 10px; font-weight:700; color:#1f3763;">Decrypt with XOR</p>
+          <div class="drill-prompt" id="d5-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <input type="text" class="drill-input" id="d5-answer" maxlength="4" placeholder="0x??" spellcheck="false" autocomplete="off">
+            <button class="drill-check-btn" id="d5-check">Check</button>
+          </div>
+          <div class="drill-feedback" id="d5-feedback"></div>
+          <button class="drill-next-btn" id="d5-next">Next →</button>
+          <div class="drill-score" id="d5-score"></div>
+        </div>
       </section>
 
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 2: Bitwise Operations as Algebra.
-      </p>
+      <script>
+      (function () {
+
+        /* ── Utilities ──────────────────────────── */
+        function randByte() { return Math.floor(Math.random() * 256); }
+        function randBit()  { return Math.floor(Math.random() * 2); }
+        function toBin8(n)  { return n.toString(2).padStart(8, '0'); }
+        function toHex2(n)  { return '0x' + n.toString(16).toUpperCase().padStart(2, '0'); }
+        function norm(s)    { return s.trim().toLowerCase().replace(/^0x/, ''); }
+
+        /* ── Generic drill engine ───────────────── */
+        function makeDrill(cfg) {
+          var correct = 0, total = 0, q = {};
+
+          function next() {
+            q = cfg.generate();
+            cfg.promptEl.textContent = q.prompt;
+            if (cfg.aEl)  cfg.aEl.textContent  = q.aDisplay || '';
+            if (cfg.bEl)  cfg.bEl.textContent  = q.bDisplay || '';
+            cfg.inputEl.value = '';
+            cfg.feedbackEl.textContent = '';
+            cfg.feedbackEl.className = 'drill-feedback';
+            cfg.nextBtn.style.display = 'none';
+            cfg.inputEl.focus({ preventScroll: true });
+          }
+
+          function check() {
+            var raw = cfg.inputEl.value.trim();
+            if (!raw) return;
+            var ok = cfg.check(raw, q);
+            total++;
+            if (ok) {
+              correct++;
+              cfg.feedbackEl.textContent = '✓ Correct! ' + (q.explain || '');
+              cfg.feedbackEl.className = 'drill-feedback correct';
+            } else {
+              cfg.feedbackEl.textContent = '✗ ' + q.explanation;
+              cfg.feedbackEl.className = 'drill-feedback incorrect';
+            }
+            cfg.nextBtn.style.display = 'inline-block';
+            cfg.scoreEl.textContent = correct + ' / ' + total + ' correct';
+          }
+
+          cfg.checkBtn.addEventListener('click', check);
+          cfg.inputEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') check(); });
+          cfg.nextBtn.addEventListener('click', next);
+          next();
+        }
+
+        /* ── Drill 1: XOR two 8-bit values ──────── */
+        makeDrill({
+          promptEl: document.getElementById('d1-prompt'),
+          aEl:      document.getElementById('d1-a-display'),
+          bEl:      document.getElementById('d1-b-display'),
+          inputEl:  document.getElementById('d1-answer'),
+          checkBtn: document.getElementById('d1-check'),
+          nextBtn:  document.getElementById('d1-next'),
+          feedbackEl: document.getElementById('d1-feedback'),
+          scoreEl:  document.getElementById('d1-score'),
+          generate: function () {
+            var a = randByte(), b = randByte(), r = a ^ b;
+            return {
+              prompt: 'Compute the XOR column by column. Give your answer as 8 binary digits.',
+              aDisplay: toBin8(a), bDisplay: toBin8(b),
+              answer: toBin8(r),
+              explanation: 'Answer: ' + toBin8(r) + ' (' + toHex2(r) + ')',
+              explain: '= ' + toBin8(r) + ' (' + toHex2(r) + ')'
+            };
+          },
+          check: function (raw, q) { return raw.replace(/\s/g,'') === q.answer; }
+        });
+
+        /* ── Drill 2: AND mask ───────────────────── */
+        makeDrill({
+          promptEl: document.getElementById('d2-prompt'),
+          aEl:      document.getElementById('d2-a-display'),
+          bEl:      document.getElementById('d2-b-display'),
+          inputEl:  document.getElementById('d2-answer'),
+          checkBtn: document.getElementById('d2-check'),
+          nextBtn:  document.getElementById('d2-next'),
+          feedbackEl: document.getElementById('d2-feedback'),
+          scoreEl:  document.getElementById('d2-score'),
+          generate: function () {
+            var masks = [0x0F, 0xF0, 0xFF, 0x55, 0xAA, 0x3C, 0xC3];
+            var a = randByte();
+            var m = masks[Math.floor(Math.random() * masks.length)];
+            var r = a & m;
+            return {
+              prompt: 'AND mask — keep only the bits where the mask is 1.',
+              aDisplay: toBin8(a), bDisplay: toBin8(m),
+              answer: toBin8(r),
+              explanation: 'Answer: ' + toBin8(r) + ' (' + toHex2(r) + ')',
+              explain: '= ' + toBin8(r) + ' (' + toHex2(r) + ')'
+            };
+          },
+          check: function (raw, q) { return raw.replace(/\s/g,'') === q.answer; }
+        });
+
+        /* ── Drill 3: XOR two hex bytes → hex result */
+        makeDrill({
+          promptEl: document.getElementById('d3-prompt'),
+          aEl:      document.getElementById('d3-a-display'),
+          bEl:      document.getElementById('d3-b-display'),
+          inputEl:  document.getElementById('d3-answer'),
+          checkBtn: document.getElementById('d3-check'),
+          nextBtn:  document.getElementById('d3-next'),
+          feedbackEl: document.getElementById('d3-feedback'),
+          scoreEl:  document.getElementById('d3-score'),
+          generate: function () {
+            var a = randByte(), b = randByte(), r = a ^ b;
+            return {
+              prompt: 'Compute ' + toHex2(a) + ' XOR ' + toHex2(b) + '. Give your answer in hex (e.g. 0xD4).',
+              aDisplay: toHex2(a), bDisplay: toHex2(b),
+              answer: r.toString(16).toUpperCase().padStart(2, '0'),
+              hexFull: toHex2(r),
+              explanation: 'Answer: ' + toHex2(r)
+            };
+          },
+          check: function (raw, q) {
+            var s = norm(raw).padStart(2, '0');
+            return s === q.answer.toLowerCase();
+          }
+        });
+
+        /* ── Drill 4: Shift / Rotate ─────────────── */
+        makeDrill({
+          promptEl: document.getElementById('d4-prompt'),
+          aEl:      null,
+          bEl:      null,
+          inputEl:  document.getElementById('d4-answer'),
+          checkBtn: document.getElementById('d4-check'),
+          nextBtn:  document.getElementById('d4-next'),
+          feedbackEl: document.getElementById('d4-feedback'),
+          scoreEl:  document.getElementById('d4-score'),
+          generate: function () {
+            var ops = ['shl', 'shr', 'rotl', 'rotr'];
+            var op  = ops[Math.floor(Math.random() * ops.length)];
+            var a   = randByte();
+            var amt = Math.floor(Math.random() * 3) + 1;
+            var r;
+            var opName;
+            switch (op) {
+              case 'shl':  r = (a << amt) & 0xFF; opName = 'left-shift by ' + amt; break;
+              case 'shr':  r = (a >>> amt) & 0xFF; opName = 'right-shift by ' + amt; break;
+              case 'rotl': r = ((a << amt) | (a >>> (8 - amt))) & 0xFF; opName = 'rotate left by ' + amt; break;
+              case 'rotr': r = ((a >>> amt) | (a << (8 - amt))) & 0xFF; opName = 'rotate right by ' + amt; break;
+            }
+            return {
+              prompt: toBin8(a) + '  →  ' + opName + '  =  ?  (8 binary digits)',
+              answer: toBin8(r),
+              explanation: 'Answer: ' + toBin8(r) + ' (' + toHex2(r) + ')'
+            };
+          },
+          check: function (raw, q) { return raw.replace(/\s/g,'') === q.answer; }
+        });
+
+        /* ── Drill 5: XOR Decrypt ────────────────── */
+        makeDrill({
+          promptEl: document.getElementById('d5-prompt'),
+          aEl:      null,
+          bEl:      null,
+          inputEl:  document.getElementById('d5-answer'),
+          checkBtn: document.getElementById('d5-check'),
+          nextBtn:  document.getElementById('d5-next'),
+          feedbackEl: document.getElementById('d5-feedback'),
+          scoreEl:  document.getElementById('d5-score'),
+          generate: function () {
+            var p = randByte(), k = randByte(), c = p ^ k;
+            return {
+              prompt: 'C = ' + toHex2(c) + ',  K = ' + toHex2(k) + '.  Recover P = C ⊕ K.',
+              answer: p.toString(16).toUpperCase().padStart(2, '0'),
+              explanation: 'P = ' + toHex2(c) + ' XOR ' + toHex2(k) + ' = ' + toHex2(p)
+            };
+          },
+          check: function (raw, q) {
+            return norm(raw).padStart(2, '0') === q.answer.toLowerCase();
+          }
+        });
+
+      }());
+      </script>
+
+    </main>
 
     <nav class="bottom-nav no-print" aria-label="Bottom navigation">
-        <div class="nav-bundle">
-            <a href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
-        </div>
-        <div class="nav-bundle">
-            <a href="tutorial_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
-        </div>
+      <div class="nav-bundle">
+        <a href="tutorial_01_binary_hexadecimal_and_bases_workbook_html.html" class="nav-item">← Practice 1</a>
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item">Practice 3 →</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+      </div>
     </nav>
-    </main>
   </div>
 </body>
 </html>
