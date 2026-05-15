@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 2: Bitwise Operations as Algebra | Mathematics of Cryptography</title>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root { --ws: #2a6049; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #eaf4ee);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    header.worksheet-header h1 { color: var(--ws); }
+
+    .version-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 18px 0 0;
+      padding: 13px 16px;
+      background: #f0f5f2;
+      border: 1px solid #b8dfc5;
+      border-radius: 12px;
+    }
+    .version-bar-label { font-weight: 700; color: var(--ws); font-size: 0.88rem; }
+    .ws-btn {
+      padding: 7px 15px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+    .ws-btn-new  { background: var(--ws); color: #fff; }
+    .ws-btn-new:hover { opacity: 0.88; }
+    .ws-btn-print { background: #f0f0f0; color: #333; border: 1px solid #ccc; }
+    .ws-btn-print:hover { background: #e4e4e4; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 22px 0 28px;
+    }
+    .field-line  { border-bottom: 1.5px solid #333; min-height: 32px; padding-top: 6px; }
+    .field-label { font-weight: 750; color: #333; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin: 13px 0;
+      background: #fff;
+      break-inside: avoid;
+    }
+    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #333;
+      min-height: 28px;
+      margin: 6px 0 12px;
+    }
+
+    .work-space {
+      border: 1px dashed #aaa;
+      border-radius: 10px;
+      min-height: 70px;
+      padding: 8px;
+      margin: 8px 0 12px;
+      background: #fafafa;
+    }
+
+    .ans-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 0.97rem;
+      padding: 6px 10px;
+      border: none;
+      border-bottom: 1.5px solid #555;
+      background: #f0f0f0;
+      width: 150px;
+      margin: 4px 0;
+    }
+    .ans-input:focus { outline: none; background: #e8f0fe; border-bottom-color: var(--accent); }
+    .ans-input-wide  { width: 240px; }
+    .ans-input-short { width: 60px; }
+
+    .ans-row {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 6px 0;
+      font-size: 0.93rem;
+    }
+
+    .data-table, .truth-table, .tf-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 0.93rem;
+    }
+    .data-table th, .data-table td,
+    .truth-table th, .truth-table td,
+    .tf-table th, .tf-table td {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+    }
+    .data-table th, .truth-table th, .tf-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+    .truth-table th, .truth-table td { text-align: center; }
+    .tf-table td:last-child { width: 90px; text-align: center; }
+    .ans-cell { background: #f8f8f8; }
+
+    .print-answer { display: none; }
+
+    /* ─── Print: blank ─── */
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.4; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header, main {
+        box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff;
+      }
+      .no-print { display: none !important; }
+      h1 { font-size: 22pt; -webkit-print-color-adjust: exact; }
+      h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
+      h3 { font-size: 11pt; break-after: avoid; }
+      .problem, table { break-inside: avoid; }
+      .problem, .work-space { background: #fff !important; border-color: #bbb; }
+      .ans-cell { background: #fff !important; }
+      .ans-input {
+        border: none !important;
+        border-bottom: 1.5px solid #444 !important;
+        background: transparent !important;
+      }
+      .print-answer { display: none !important; }
+    }
+
+    /* ─── Print: with answers ─── */
+    body.show-answers .print-answer {
+      display: block !important;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #1a7a42;
+      border-top: 1px dotted #bbb;
+      margin-top: 4px;
+      padding-top: 3px;
+    }
+    @media print {
+      body.show-answers .print-answer {
+        display: block !important;
+        font-size: 9pt;
+        color: #2a6049 !important;
+        font-weight: 700;
+      }
+      body.show-answers .ans-cell .print-answer { display: inline-block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 2</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Bitwise Operations as Algebra</h1>
+      <p class="subtitle">
+        Graded practice for XOR, AND, OR, NOT, masks, shifts, rotations, and reversibility.
+      </p>
+
+      <div class="version-bar no-print">
+        <span class="version-bar-label">Version:</span>
+        <span id="version-label" style="font-family:monospace; font-size:0.88rem; color:#555;"></span>
+        <button class="ws-btn ws-btn-new"   onclick="newVersion()">New Version</button>
+        <button class="ws-btn ws-btn-print" onclick="window.print()">Print Blank</button>
+        <button class="ws-btn ws-btn-print" onclick="printWithAnswers()">Print with Answers</button>
+      </div>
+
+      <nav class="tutorial-nav no-print" aria-label="Navigation">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_02_bitwise_operations_as_algebra_html.html">Tutorial 2</a>
+        <a class="nav-link" href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html">Practice 2</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="student-info">
+        <div><span class="field-label">Name:</span><div class="field-line"></div></div>
+        <div><span class="field-label">Date:</span><div class="field-line"></div></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────
+           PART 1 — Definitions
+      ───────────────────────────────────────────── -->
+      <h2>Part 1: Core Definitions</h2>
+
+      <div class="problem">
+        <div class="problem-title">Q1. Define XOR in your own words. What does it output and when?</div>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="print-answer">XOR outputs 1 when two input bits are different, and 0 when they are the same.</span>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q2. Define AND. What does it output and when?</div>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="print-answer">AND outputs 1 only when both input bits are 1. All other input combinations produce 0.</span>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q3. What is a bit mask? Give one example of how AND masking is used.</div>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="print-answer">A bit mask is a binary pattern used with AND, OR, or XOR to select, clear, or force specific bit positions. Example: AND with 0x0F (00001111) keeps only the low nibble of a byte.</span>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q4. Explain the difference between a logical shift and a rotation.</div>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="print-answer">A logical shift moves bits and fills empty positions with 0; bits that fall off the edge are permanently lost. A rotation moves bits and wraps edge bits around to the opposite side, so no bits are lost.</span>
+      </div>
+
+      <!-- ─────────────────────────────────────────
+           PART 2 — Truth Table Fill-In
+      ───────────────────────────────────────────── -->
+      <h2>Part 2: Truth Table Fill-In</h2>
+      <p>Complete the Output column for each row.</p>
+
+      <table class="truth-table">
+        <thead>
+          <tr><th>#</th><th>a</th><th>b</th><th>Operation</th><th>Output</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q5</td><td>0</td><td>1</td><td>a XOR b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">1</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q6</td><td>1</td><td>1</td><td>a XOR b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">0</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q7</td><td>1</td><td>0</td><td>a AND b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">0</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q8</td><td>1</td><td>1</td><td>a AND b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">1</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q9</td><td>0</td><td>1</td><td>a OR b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">1</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q10</td><td>0</td><td>0</td><td>a OR b</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="?">
+              <span class="print-answer">0</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ─────────────────────────────────────────
+           PART 3 — XOR Byte Computations
+      ───────────────────────────────────────────── -->
+      <h2>Part 3: XOR Byte Computations</h2>
+      <p>Compute each XOR column by column. Give the result in binary (8 digits) and in hex.</p>
+
+      <div class="problem">
+        <div class="problem-title">Q11. <span id="q11-text"></span></div>
+        <div class="work-space"></div>
+        <div class="ans-row">Binary result: <input type="text" class="ans-input ans-input-wide" id="q11-bin" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q11-bin-ans"></span></div>
+        <div class="ans-row">Hex result: <input type="text" class="ans-input" id="q11-hex" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q11-hex-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q12. <span id="q12-text"></span></div>
+        <div class="work-space"></div>
+        <div class="ans-row">Binary result: <input type="text" class="ans-input ans-input-wide" id="q12-bin" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q12-bin-ans"></span></div>
+        <div class="ans-row">Hex result: <input type="text" class="ans-input" id="q12-hex" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q12-hex-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q13. <span id="q13-text"></span></div>
+        <div class="work-space"></div>
+        <div class="ans-row">Binary result: <input type="text" class="ans-input ans-input-wide" id="q13-bin" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q13-bin-ans"></span></div>
+        <div class="ans-row">Hex result: <input type="text" class="ans-input" id="q13-hex" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q13-hex-ans"></span></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────
+           PART 4 — AND, OR, NOT
+      ───────────────────────────────────────────── -->
+      <h2>Part 4: AND, OR, and NOT</h2>
+
+      <div class="problem">
+        <div class="problem-title">Q14. AND mask. <span id="q14-text"></span></div>
+        <div class="work-space"></div>
+        <div class="ans-row">Result (binary): <input type="text" class="ans-input ans-input-wide" id="q14-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q14-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q15. OR mask. <span id="q15-text"></span></div>
+        <div class="work-space"></div>
+        <div class="ans-row">Result (binary): <input type="text" class="ans-input ans-input-wide" id="q15-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q15-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q16. NOT. <span id="q16-text"></span></div>
+        <div class="ans-row" style="margin-top:8px;">Result (binary): <input type="text" class="ans-input ans-input-wide" id="q16-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q16-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q17. AND to extract a nibble. <span id="q17-text"></span></div>
+        <p style="font-size:0.9rem; margin:4px 0 8px;">Hint: use mask <code>0x0F</code> (00001111).</p>
+        <div class="work-space"></div>
+        <div class="ans-row">Result (binary): <input type="text" class="ans-input ans-input-wide" id="q17-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q17-print-ans"></span></div>
+        <div class="ans-row">Result (hex): <input type="text" class="ans-input" id="q17-hex" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q17-hex-ans"></span></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────
+           PART 5 — Shifts and Rotations
+      ───────────────────────────────────────────── -->
+      <h2>Part 5: Shifts and Rotations</h2>
+      <p>Give each answer as 8 binary digits.</p>
+
+      <div class="problem">
+        <div class="problem-title">Q18. Left shift. <span id="q18-text"></span></div>
+        <div class="ans-row" style="margin-top:8px;">Result: <input type="text" class="ans-input ans-input-wide" id="q18-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q18-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q19. Right shift. <span id="q19-text"></span></div>
+        <div class="ans-row" style="margin-top:8px;">Result: <input type="text" class="ans-input ans-input-wide" id="q19-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q19-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q20. Rotate left. <span id="q20-text"></span></div>
+        <div class="ans-row" style="margin-top:8px;">Result: <input type="text" class="ans-input ans-input-wide" id="q20-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q20-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q21. Rotate right. <span id="q21-text"></span></div>
+        <div class="ans-row" style="margin-top:8px;">Result: <input type="text" class="ans-input ans-input-wide" id="q21-ans" maxlength="8" placeholder="00000000">
+          <span class="print-answer" id="q21-print-ans"></span></div>
+      </div>
+
+      <!-- ─────────────────────────────────────────
+           PART 6 — Reversibility True/False
+      ───────────────────────────────────────────── -->
+      <h2>Part 6: Reversibility — True or False</h2>
+
+      <table class="tf-table">
+        <thead>
+          <tr><th>#</th><th>Statement</th><th>T / F</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q22</td>
+            <td>XOR with a known key is reversible — applying the same key again recovers the original.</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="T/F">
+              <span class="print-answer">T</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q23</td>
+            <td>A logical left shift always preserves all bits.</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="T/F">
+              <span class="print-answer">F</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q24</td>
+            <td>NOT is its own inverse: applying NOT twice restores the original value.</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="T/F">
+              <span class="print-answer">T</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q25</td>
+            <td>AND with 0 preserves the original bit at that position.</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="T/F">
+              <span class="print-answer">F</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Q26</td>
+            <td>A rotation can always be reversed by rotating the same amount in the opposite direction.</td>
+            <td class="ans-cell">
+              <input type="text" class="ans-input ans-input-short" maxlength="1" placeholder="T/F">
+              <span class="print-answer">T</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ─────────────────────────────────────────
+           PART 7 — Cryptographic Application
+      ───────────────────────────────────────────── -->
+      <h2>Part 7: Cryptographic Application</h2>
+
+      <div class="problem">
+        <div class="problem-title">Q27. Encrypt with XOR.</div>
+        <p id="q27-text" style="font-size:0.95rem; margin:6px 0 10px;"></p>
+        <p style="font-size:0.88rem; color:#555; margin:0 0 8px;">Show the full binary XOR operation, then give C in hex.</p>
+        <div class="work-space"></div>
+        <div class="ans-row">C (hex): <input type="text" class="ans-input" id="q27-ans" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q27-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q28. Decrypt with XOR.</div>
+        <p id="q28-text" style="font-size:0.95rem; margin:6px 0 10px;"></p>
+        <p style="font-size:0.88rem; color:#555; margin:0 0 8px;">Apply P = C ⊕ K. Show the binary operation and give P in hex.</p>
+        <div class="work-space"></div>
+        <div class="ans-row">P (hex): <input type="text" class="ans-input" id="q28-ans" maxlength="6" placeholder="0x??">
+          <span class="print-answer" id="q28-print-ans"></span></div>
+      </div>
+
+      <div class="problem">
+        <div class="problem-title">Q29. Reflection.</div>
+        <p>Why is AND masking dangerous if used as a direct encryption step? Use the idea of reversibility in your answer.</p>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="blank-line"></span>
+        <span class="print-answer">AND masking clears bits to 0, permanently destroying information. If bits are lost during encryption, decryption cannot recover the original value from the result alone. A cipher step must be reversible so the recipient can decrypt — AND masking violates that requirement.</span>
+      </div>
+
+      <p class="footer-note no-print">
+        Mathematics of Cryptography worksheet. Paired with Tutorial 2 and Practice 2.
+      </p>
+    </main>
+
+    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <div class="nav-bundle">
+        <a href="worksheet_01_binary_hexadecimal_and_bases_html.html" class="nav-item">← Worksheet 1</a>
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-secondary">Tutorial 2</a>
+        <a href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html" class="nav-item nav-secondary">Practice 2</a>
+      </div>
+    </nav>
+
+    <script>
+    (function () {
+      var V = {};
+
+      function randByte() { return Math.floor(Math.random() * 256); }
+      function toBin8(n)  { return n.toString(2).padStart(8, '0'); }
+      function toHex2(n)  { return '0x' + n.toString(16).toUpperCase().padStart(2, '0'); }
+
+      function unique(n, gen) {
+        var seen = [], out = [];
+        while (out.length < n) {
+          var v = gen();
+          var key = JSON.stringify(v);
+          if (seen.indexOf(key) === -1) { seen.push(key); out.push(v); }
+        }
+        return out;
+      }
+
+      function generateVersion() {
+        // Three XOR byte pairs (distinct)
+        V.xor = unique(3, function () {
+          var a = randByte(), b = randByte();
+          return { a: a, b: b, r: a ^ b };
+        });
+
+        // AND mask
+        var masks = [0x0F, 0xF0, 0x55, 0xAA, 0x3C, 0xC3];
+        V.and_a = randByte();
+        V.and_m = masks[Math.floor(Math.random() * masks.length)];
+        V.and_r = V.and_a & V.and_m;
+
+        // OR mask
+        V.or_a = randByte();
+        V.or_m = masks[Math.floor(Math.random() * masks.length)];
+        V.or_r = V.or_a | V.or_m;
+
+        // NOT
+        V.not_a = randByte();
+        V.not_r = (~V.not_a) & 0xFF;
+
+        // AND nibble extraction
+        V.nib_a = randByte();
+        V.nib_r = V.nib_a & 0x0F;
+
+        // Shifts and rotations (randomise value and amount each version)
+        var shiftAmt = function () { return Math.floor(Math.random() * 2) + 1; };
+        var rotAmt   = function () { return Math.floor(Math.random() * 3) + 1; };
+
+        V.shl_a = randByte(); V.shl_n = shiftAmt();
+        V.shl_r = (V.shl_a << V.shl_n) & 0xFF;
+
+        V.shr_a = randByte(); V.shr_n = shiftAmt();
+        V.shr_r = (V.shr_a >>> V.shr_n) & 0xFF;
+
+        V.rotl_a = randByte(); V.rotl_n = rotAmt();
+        V.rotl_r = ((V.rotl_a << V.rotl_n) | (V.rotl_a >>> (8 - V.rotl_n))) & 0xFF;
+
+        V.rotr_a = randByte(); V.rotr_n = rotAmt();
+        V.rotr_r = ((V.rotr_a >>> V.rotr_n) | (V.rotr_a << (8 - V.rotr_n))) & 0xFF;
+
+        // Crypto
+        V.enc_p = randByte(); V.enc_k = randByte();
+        V.enc_c = V.enc_p ^ V.enc_k;
+
+        V.dec_c = randByte(); V.dec_k = randByte();
+        V.dec_p = V.dec_c ^ V.dec_k;
+
+        V.label = 'v' + Date.now().toString(36).slice(-5).toUpperCase();
+      }
+
+      function set(id, txt) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      }
+      function setHTML(id, html) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+      }
+      function plural(n, word) { return n + ' ' + word + (n !== 1 ? 's' : ''); }
+
+      function applyVersion() {
+        set('version-label', V.label);
+
+        // Q11 — XOR binary × binary
+        set('q11-text',
+          'Compute ' + toBin8(V.xor[0].a) + '  XOR  ' + toBin8(V.xor[0].b) + '.');
+        set('q11-bin-ans', 'Binary: ' + toBin8(V.xor[0].r));
+        set('q11-hex-ans', 'Hex: '    + toHex2(V.xor[0].r));
+
+        // Q12 — XOR binary × binary
+        set('q12-text',
+          'Compute ' + toBin8(V.xor[1].a) + '  XOR  ' + toBin8(V.xor[1].b) + '.');
+        set('q12-bin-ans', 'Binary: ' + toBin8(V.xor[1].r));
+        set('q12-hex-ans', 'Hex: '    + toHex2(V.xor[1].r));
+
+        // Q13 — XOR hex × hex (convert first)
+        set('q13-text',
+          'Compute ' + toHex2(V.xor[2].a) + '  XOR  ' + toHex2(V.xor[2].b) +
+          '. Convert both to binary first, then XOR, then give binary and hex results.');
+        set('q13-bin-ans', 'Binary: ' + toBin8(V.xor[2].r));
+        set('q13-hex-ans', 'Hex: '    + toHex2(V.xor[2].r));
+
+        // Q14 — AND mask
+        set('q14-text',
+          'Apply AND mask ' + toHex2(V.and_m) + ' to ' + toBin8(V.and_a) + '.');
+        set('q14-print-ans',
+          'Answer: ' + toBin8(V.and_r) + ' (' + toHex2(V.and_r) + ')');
+
+        // Q15 — OR mask
+        set('q15-text',
+          'Apply OR mask ' + toHex2(V.or_m) + ' to ' + toBin8(V.or_a) + '.');
+        set('q15-print-ans',
+          'Answer: ' + toBin8(V.or_r) + ' (' + toHex2(V.or_r) + ')');
+
+        // Q16 — NOT
+        set('q16-text', 'Compute the 8-bit NOT of ' + toBin8(V.not_a) + '.');
+        set('q16-print-ans',
+          'Answer: ' + toBin8(V.not_r) + ' (' + toHex2(V.not_r) + ')');
+
+        // Q17 — AND nibble
+        set('q17-text',
+          'Keep only the low nibble of ' + toHex2(V.nib_a) +
+          ' (' + toBin8(V.nib_a) + ') using AND.');
+        set('q17-print-ans',
+          'Mask: 00001111  →  Binary: ' + toBin8(V.nib_r));
+        set('q17-hex-ans', 'Hex: ' + toHex2(V.nib_r));
+
+        // Q18 — left shift
+        set('q18-text',
+          'Left-shift ' + toBin8(V.shl_a) + ' by ' + plural(V.shl_n, 'position') +
+          '. New zeros fill the right; overflow is dropped.');
+        set('q18-print-ans', 'Answer: ' + toBin8(V.shl_r));
+
+        // Q19 — right shift
+        set('q19-text',
+          'Right-shift ' + toBin8(V.shr_a) + ' by ' + plural(V.shr_n, 'position') +
+          '. New zeros fill the left; low bits are dropped.');
+        set('q19-print-ans', 'Answer: ' + toBin8(V.shr_r));
+
+        // Q20 — rotate left
+        set('q20-text',
+          'Rotate left ' + toBin8(V.rotl_a) + ' by ' + plural(V.rotl_n, 'position') +
+          '. Bits wrap around — none are lost.');
+        set('q20-print-ans', 'Answer: ' + toBin8(V.rotl_r));
+
+        // Q21 — rotate right
+        set('q21-text',
+          'Rotate right ' + toBin8(V.rotr_a) + ' by ' + plural(V.rotr_n, 'position') +
+          '. Bits wrap around — none are lost.');
+        set('q21-print-ans', 'Answer: ' + toBin8(V.rotr_r));
+
+        // Q27 — encrypt
+        setHTML('q27-text',
+          'P = <code>' + toHex2(V.enc_p) + '</code>, &nbsp;K = <code>' + toHex2(V.enc_k) +
+          '</code>. &nbsp;Find C = P \u2295 K.');
+        set('q27-print-ans',
+          toHex2(V.enc_p) + ' XOR ' + toHex2(V.enc_k) + ' = ' + toHex2(V.enc_c));
+
+        // Q28 — decrypt
+        setHTML('q28-text',
+          'C = <code>' + toHex2(V.dec_c) + '</code>, &nbsp;K = <code>' + toHex2(V.dec_k) +
+          '</code>. &nbsp;Find P = C \u2295 K.');
+        set('q28-print-ans',
+          toHex2(V.dec_c) + ' XOR ' + toHex2(V.dec_k) + ' = ' + toHex2(V.dec_p));
+      }
+
+      function clearInputs() {
+        document.querySelectorAll('.ans-input').forEach(function (inp) { inp.value = ''; });
+      }
+
+      window.newVersion = function () {
+        generateVersion();
+        clearInputs();
+        applyVersion();
+      };
+
+      window.printWithAnswers = function () {
+        document.body.classList.add('show-answers');
+        window.print();
+        document.body.classList.remove('show-answers');
+      };
+
+      generateVersion();
+      applyVersion();
+    }());
+    </script>
+  </div>
+</body>
+</html>
