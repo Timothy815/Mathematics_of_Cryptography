@@ -154,6 +154,137 @@
       h2 { font-size: 15pt; border-bottom: 1px solid #999; break-after: avoid; }
       .truth-table th { background: #eee !important; }
     }
+
+    /* ── Bit Flipper ─────────────────────────────── */
+    .bit-flipper {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px 20px;
+      margin: 18px 0;
+    }
+    .flipper-ops {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .flipper-op-btn {
+      padding: 7px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #333;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
+    }
+    .flipper-op-btn:hover  { background: #eef3ff; border-color: var(--accent); }
+    .flipper-op-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .flipper-grid { overflow-x: auto; }
+    .bit-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      min-width: 540px;
+    }
+    .bit-row-label {
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: #1f3763;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-width: 90px;
+    }
+    .bit-cells { display: flex; gap: 5px; }
+    .bit-cell {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 2px solid #d0d0d0;
+      background: #f5f5f5;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #999;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
+      user-select: none;
+    }
+    .bit-cell:hover:not(.result-cell) { transform: scale(1.1); }
+    .a-cell.on  { background: #334e7d; border-color: #1f3763; color: #fff; }
+    .a-cell.off { background: #eef3ff; border-color: #c7d2ea; color: #334e7d; }
+    .b-cell.on  { background: #c8920a; border-color: #9a6d00; color: #fff; }
+    .b-cell.off { background: #fff8e6; border-color: #ead399; color: #7d6323; }
+    .result-cell { cursor: default; pointer-events: none; }
+    .result-cell.on      { background: #1a7a42; border-color: #145c32; color: #fff; }
+    .result-cell.off     { background: #eaf7ef; border-color: #b8dfc5; color: #1a7a42; }
+    .result-cell.new-zero { background: #eeeeee; border-color: #bbb; color: #888; }
+    .result-cell.wrapped  { background: #fff4d8; border-color: #ead399; color: #7d6323; }
+    @keyframes bit-pop {
+      0%   { transform: scale(1.22); }
+      100% { transform: scale(1); }
+    }
+    .bit-cell.pop { animation: bit-pop 0.16s ease-out; }
+    .bit-hex {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: #334e7d;
+      min-width: 58px;
+    }
+    .flipper-divider {
+      border: none;
+      border-top: 2px solid #ddd;
+      margin: 6px 0 6px 100px;
+    }
+    .amt-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 8px 0;
+      min-width: 540px;
+    }
+    .amt-row-label {
+      font-weight: 800;
+      font-size: 0.85rem;
+      color: #1f3763;
+      font-family: system-ui, -apple-system, sans-serif;
+      min-width: 90px;
+    }
+    .amt-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: #f0f0f0;
+      font-size: 1.2rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .amt-btn:hover { background: #e0e0e0; }
+    .amt-display {
+      font-family: "Cascadia Code", monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #334e7d;
+      min-width: 28px;
+      text-align: center;
+    }
+    .flipper-hint {
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 12px;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +363,211 @@
             </div>
           </details>
         </div>
+      </section>
+
+      <!-- ── Bit Flipper ──────────────────────────────── -->
+      <section id="bit-flipper-section" class="no-print">
+        <h2>Visual Bit Table</h2>
+        <p>Click any bit in row A or B to flip it. Watch the result update instantly.</p>
+
+        <div class="bit-flipper">
+          <div class="flipper-ops" id="flipper-ops">
+            <button class="flipper-op-btn active" data-op="xor">XOR</button>
+            <button class="flipper-op-btn" data-op="and">AND</button>
+            <button class="flipper-op-btn" data-op="or">OR</button>
+            <button class="flipper-op-btn" data-op="not">NOT</button>
+            <button class="flipper-op-btn" data-op="shl">Left Shift</button>
+            <button class="flipper-op-btn" data-op="shr">Right Shift</button>
+            <button class="flipper-op-btn" data-op="rotl">Rotate Left</button>
+            <button class="flipper-op-btn" data-op="rotr">Rotate Right</button>
+          </div>
+
+          <div class="flipper-grid">
+            <!-- Row A -->
+            <div class="bit-row" id="row-a">
+              <span class="bit-row-label">A</span>
+              <div class="bit-cells" id="cells-a"></div>
+              <span class="bit-hex" id="hex-a"></span>
+            </div>
+
+            <!-- Row B / Amount -->
+            <div class="bit-row" id="row-b">
+              <span class="bit-row-label">B</span>
+              <div class="bit-cells" id="cells-b"></div>
+              <span class="bit-hex" id="hex-b"></span>
+            </div>
+            <div class="amt-row" id="row-amt" style="display:none;">
+              <span class="amt-row-label">Amount</span>
+              <button class="amt-btn" id="amt-dec">−</button>
+              <span class="amt-display" id="amt-val">1</span>
+              <button class="amt-btn" id="amt-inc">+</button>
+            </div>
+
+            <hr class="flipper-divider">
+
+            <!-- Result row -->
+            <div class="bit-row" id="row-result">
+              <span class="bit-row-label" id="result-label">A XOR B</span>
+              <div class="bit-cells" id="cells-result"></div>
+              <span class="bit-hex" id="hex-result"></span>
+            </div>
+          </div>
+
+          <p class="flipper-hint">
+            Blue = 1 in A &nbsp;·&nbsp; Gold = 1 in B &nbsp;·&nbsp; Green = 1 in result &nbsp;·&nbsp;
+            Gray = new zero from shift &nbsp;·&nbsp; Amber = wrapped bit from rotation
+          </p>
+        </div>
+
+        <script>
+        (function () {
+          var op  = 'xor';
+          var A   = [0,1,0,1,0,1,1,1]; // 0x57
+          var B   = [1,0,0,0,0,0,1,1]; // 0x83
+          var amt = 1;
+
+          var opLabels = {
+            xor: 'A XOR B', and: 'A AND B', or: 'A OR B', not: 'NOT A',
+            shl: 'A << ', shr: 'A >> ', rotl: 'rotl(A, ', rotr: 'rotr(A, '
+          };
+
+          function needsB()   { return op === 'xor' || op === 'and' || op === 'or'; }
+          function needsAmt() { return op === 'shl' || op === 'shr' || op === 'rotl' || op === 'rotr'; }
+
+          function bitsToNum(bits) {
+            return bits.reduce(function (acc, b, i) { return acc | (b << (7 - i)); }, 0) & 0xFF;
+          }
+
+          function numToBits(n) {
+            var b = [];
+            for (var i = 7; i >= 0; i--) b.push((n >> i) & 1);
+            return b;
+          }
+
+          function toHex(n) {
+            return '0x' + (n & 0xFF).toString(16).toUpperCase().padStart(2, '0');
+          }
+
+          function compute() {
+            var a = bitsToNum(A), b = bitsToNum(B), n = amt % 8;
+            switch (op) {
+              case 'xor':  return (a ^ b) & 0xFF;
+              case 'and':  return (a & b) & 0xFF;
+              case 'or':   return (a | b) & 0xFF;
+              case 'not':  return (~a)    & 0xFF;
+              case 'shl':  return (a << amt) & 0xFF;
+              case 'shr':  return (a >>> amt) & 0xFF;
+              case 'rotl': return ((a << n) | (a >>> (8 - n))) & 0xFF;
+              case 'rotr': return ((a >>> n) | (a << (8 - n))) & 0xFF;
+            }
+          }
+
+          function resultCellClass(i, rBits) {
+            var val = rBits[i];
+            if (op === 'shl'  && i >= 8 - amt) return 'new-zero';
+            if (op === 'shr'  && i <  amt)     return 'new-zero';
+            if (op === 'rotl' && i >= 8 - amt) return 'wrapped';
+            if (op === 'rotr' && i <  amt)     return 'wrapped';
+            return val ? 'on' : 'off';
+          }
+
+          function buildCells(containerId, type, clickable) {
+            var container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for (var i = 0; i < 8; i++) {
+              var cell = document.createElement('div');
+              cell.className = 'bit-cell ' + type + '-cell';
+              cell.id = 'cell-' + type + '-' + i;
+              if (clickable) {
+                (function (idx) {
+                  cell.addEventListener('click', function () {
+                    if (type === 'a') A[idx] ^= 1;
+                    else              B[idx] ^= 1;
+                    render(idx, type);
+                  });
+                }(i));
+              }
+              container.appendChild(cell);
+            }
+          }
+
+          function render(flashIdx, flashType) {
+            var result = compute();
+            var rBits  = numToBits(result);
+
+            A.forEach(function (b, i) {
+              var cell = document.getElementById('cell-a-' + i);
+              cell.textContent = b;
+              cell.className   = 'bit-cell a-cell ' + (b ? 'on' : 'off');
+              if (flashType === 'a' && i === flashIdx) pop(cell);
+            });
+
+            B.forEach(function (b, i) {
+              var cell = document.getElementById('cell-b-' + i);
+              if (!cell) return;
+              cell.textContent = b;
+              cell.className   = 'bit-cell b-cell ' + (b ? 'on' : 'off');
+              if (flashType === 'b' && i === flashIdx) pop(cell);
+            });
+
+            rBits.forEach(function (b, i) {
+              var cell = document.getElementById('cell-result-' + i);
+              if (!cell) return;
+              var cls = resultCellClass(i, rBits);
+              cell.textContent = b;
+              cell.className   = 'bit-cell result-cell ' + cls;
+            });
+
+            document.getElementById('hex-a').textContent = toHex(bitsToNum(A));
+            var hb = document.getElementById('hex-b');
+            if (hb) hb.textContent = toHex(bitsToNum(B));
+            document.getElementById('hex-result').textContent = toHex(result);
+            document.getElementById('amt-val').textContent    = amt;
+
+            var lbl = opLabels[op];
+            if (op === 'shl' || op === 'shr') lbl += amt;
+            else if (op === 'rotl' || op === 'rotr') lbl += amt + ')';
+            document.getElementById('result-label').textContent = lbl;
+          }
+
+          function pop(cell) {
+            cell.classList.remove('pop');
+            void cell.offsetWidth; // reflow to restart animation
+            cell.classList.add('pop');
+          }
+
+          function setOp(newOp) {
+            op = newOp;
+            document.querySelectorAll('.flipper-op-btn').forEach(function (b) {
+              b.classList.toggle('active', b.dataset.op === op);
+            });
+            document.getElementById('row-b').style.display   = needsB()   ? '' : 'none';
+            document.getElementById('row-amt').style.display = needsAmt() ? '' : 'none';
+            render();
+          }
+
+          // Build cell grids
+          buildCells('cells-a', 'a', true);
+          buildCells('cells-b', 'b', true);
+          buildCells('cells-result', 'result', false);
+
+          // Operation buttons
+          document.querySelectorAll('.flipper-op-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { setOp(btn.dataset.op); });
+          });
+
+          // Amount stepper
+          document.getElementById('amt-dec').addEventListener('click', function () {
+            if (amt > 1) { amt--; render(); }
+          });
+          document.getElementById('amt-inc').addEventListener('click', function () {
+            if (amt < 7) { amt++; render(); }
+          });
+
+          // Initial render
+          setOp('xor');
+        }());
+        </script>
       </section>
 
       <!-- ── Interactive Practice ───────────────────── -->
