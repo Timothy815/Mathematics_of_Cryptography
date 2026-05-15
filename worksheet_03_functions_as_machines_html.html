@@ -695,13 +695,13 @@
       pa('q29-pa', hex(V.q29c));
       pa('q30-pa', hex(V.q30p));
 
-      // MathJax keeps an internal registry of already-processed items.
-      // typesetClear() wipes that registry so the new \(...\) strings
-      // in els are treated as fresh content. typesetPromise() then
-      // re-renders the whole page (fast — only ~30 math nodes here).
-      if (window.MathJax) {
-        if (MathJax.typesetClear) MathJax.typesetClear();
-        if (MathJax.typesetPromise) MathJax.typesetPromise();
+      // Each element in els had its innerHTML replaced with a fresh
+      // \(...\) string — the old SVG is gone and MathJax has never
+      // seen the new text node, so typesetPromise processes it directly.
+      // We do NOT call typesetClear: that restores the old source text,
+      // which would undo the innerHTML updates we just made.
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise(els);
       }
     }
 

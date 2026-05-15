@@ -404,7 +404,13 @@
           '<div class="drill-feedback" id="'+cfg.id+'-fb"></div>' +
           '<div class="drill-score" id="'+cfg.id+'-sc">Score: <span>'+correct+' / '+total+'</span></div>';
 
-        document.getElementById(cfg.id+'-q').innerHTML = state.q;
+        var qEl = document.getElementById(cfg.id+'-q');
+        qEl.innerHTML = state.q;
+        // qEl is a freshly-created element MathJax has never seen,
+        // so typesetPromise processes it without needing typesetClear.
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([qEl]);
+        }
         var inp = document.getElementById(cfg.id+'-inp');
         inp.focus({ preventScroll: true });
 
@@ -425,9 +431,12 @@
         fb.style.display = 'block';
         fb.className = 'drill-feedback ' + (ok ? 'correct' : 'wrong');
         fb.innerHTML = ok
-          ? '✓ Correct! ' + (state.hint || '')
-          : '✗ Not quite. ' + (state.hint || 'Answer: ' + state.a);
+          ? '&#10003; Correct! ' + (state.hint || '')
+          : '&#10007; Not quite. ' + (state.hint || 'Answer: ' + state.a);
         sc.innerHTML = 'Score: <span>' + correct + ' / ' + total + '</span>';
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([fb]);
+        }
       }
 
       render();
