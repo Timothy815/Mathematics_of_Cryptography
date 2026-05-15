@@ -652,6 +652,37 @@
           <button class="drill-next-btn" id="d5-next">Next →</button>
           <div class="drill-score" id="d5-score"></div>
         </div>
+
+        <!-- Drill 6: OR -->
+        <div class="drill-box" id="drill-or">
+          <div class="drill-prompt" id="d6-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <span id="d6-a-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span class="drill-op-label">OR</span>
+            <span id="d6-b-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span style="font-size:1.1rem; font-weight:900; color:#334e7d;">=</span>
+            <input type="text" class="drill-input" id="d6-answer" maxlength="8" placeholder="binary" spellcheck="false" autocomplete="off" style="width:120px;">
+            <button class="drill-check-btn" id="d6-check">Check</button>
+          </div>
+          <div class="drill-feedback" id="d6-feedback"></div>
+          <button class="drill-next-btn" id="d6-next">Next →</button>
+          <div class="drill-score" id="d6-score"></div>
+        </div>
+
+        <!-- Drill 7: NOT -->
+        <div class="drill-box" id="drill-not">
+          <div class="drill-prompt" id="d7-prompt">Loading…</div>
+          <div class="drill-inputs">
+            <span class="drill-op-label" style="font-size:1rem;">NOT</span>
+            <span id="d7-a-display" style="font-family:monospace; font-size:1.1rem; font-weight:700;"></span>
+            <span style="font-size:1.1rem; font-weight:900; color:#334e7d;">=</span>
+            <input type="text" class="drill-input" id="d7-answer" maxlength="8" placeholder="binary" spellcheck="false" autocomplete="off" style="width:120px;">
+            <button class="drill-check-btn" id="d7-check">Check</button>
+          </div>
+          <div class="drill-feedback" id="d7-feedback"></div>
+          <button class="drill-next-btn" id="d7-next">Next →</button>
+          <div class="drill-score" id="d7-score"></div>
+        </div>
       </section>
 
       <script>
@@ -831,6 +862,52 @@
           check: function (raw, q) {
             return norm(raw).padStart(2, '0') === q.answer.toLowerCase();
           }
+        });
+
+        /* ── Drill 6: OR ─────────────────────────── */
+        makeDrill({
+          promptEl: document.getElementById('d6-prompt'),
+          aEl:      document.getElementById('d6-a-display'),
+          bEl:      document.getElementById('d6-b-display'),
+          inputEl:  document.getElementById('d6-answer'),
+          checkBtn: document.getElementById('d6-check'),
+          nextBtn:  document.getElementById('d6-next'),
+          feedbackEl: document.getElementById('d6-feedback'),
+          scoreEl:  document.getElementById('d6-score'),
+          generate: function () {
+            var a = randByte(), b = randByte(), r = a | b;
+            return {
+              prompt: 'Compute the OR column by column. Output 1 if at least one input bit is 1.',
+              aDisplay: toBin8(a), bDisplay: toBin8(b),
+              answer: toBin8(r),
+              explanation: 'Answer: ' + toBin8(r) + ' (' + toHex2(r) + ')',
+              explain: '= ' + toBin8(r) + ' (' + toHex2(r) + ')'
+            };
+          },
+          check: function (raw, q) { return raw.replace(/\s/g, '') === q.answer; }
+        });
+
+        /* ── Drill 7: NOT ────────────────────────── */
+        makeDrill({
+          promptEl: document.getElementById('d7-prompt'),
+          aEl:      document.getElementById('d7-a-display'),
+          bEl:      null,
+          inputEl:  document.getElementById('d7-answer'),
+          checkBtn: document.getElementById('d7-check'),
+          nextBtn:  document.getElementById('d7-next'),
+          feedbackEl: document.getElementById('d7-feedback'),
+          scoreEl:  document.getElementById('d7-score'),
+          generate: function () {
+            var a = randByte(), r = (~a) & 0xFF;
+            return {
+              prompt: 'Compute the 8-bit NOT — flip every bit.',
+              aDisplay: toBin8(a),
+              answer: toBin8(r),
+              explanation: 'Answer: ' + toBin8(r) + ' (' + toHex2(r) + ')',
+              explain: '= ' + toBin8(r) + ' (' + toHex2(r) + ')'
+            };
+          },
+          check: function (raw, q) { return raw.replace(/\s/g, '') === q.answer; }
         });
 
       }());

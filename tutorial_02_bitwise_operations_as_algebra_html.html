@@ -944,89 +944,92 @@
       </section>
 
       <section id="practice">
-        <h2>Practice problems</h2>
-        <ol class="practice-list">
-          <li>
-            Compute <code>1010 XOR 1100</code>.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  1010_2 \oplus 1100_2 = 0110_2
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Compute <code>10101100 AND 00001111</code>.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  10101100_2 \land 00001111_2 = 00001100_2
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Compute <code>10101100 OR 00001111</code>.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  10101100_2 \lor 00001111_2 = 10101111_2
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Compute the 8-bit NOT of <code>01010111</code>.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  \lnot 01010111_2 = 10101000_2
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Shift <code>00101101</code> left by 1.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  00101101_2 \ll 1 = 01011010_2
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Rotate <code>10110001</code> left by 1.
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  \operatorname{rotl}(10110001_2,1) = 01100011_2
-                \]
-              </div>
-            </details>
-          </li>
-        </ol>
+        <h2>Check your understanding</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Before moving on</div>
+          <p>
+            You should be able to compute XOR, AND, OR, NOT, a left shift, and a rotate for any pair
+            of 8-bit values without looking at the truth tables. If any of those still feel uncertain,
+            use the interactive explorer above to build intuition — then head to the Practice page for
+            scored drills.
+          </p>
+          <p style="margin-top:12px; font-weight:700;">Two quick self-checks using values from this tutorial:</p>
+          <ul style="margin-top:6px;">
+            <li><code>01010111 XOR 10000011</code> = <code>11010100</code> &nbsp;(= 0xD4)</li>
+            <li>8-bit NOT of <code>01010111</code> = <code>10101000</code> &nbsp;(= 0xA8)</li>
+          </ul>
+        </div>
       </section>
 
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Bitwise operations are the gears and levers of modern symmetric cryptography. They are small, fast, and mathematically understandable.
+          Bitwise operations are not just low-level tools — they are the mathematical fabric of modern
+          symmetric cryptography. Understanding <em>why</em> each operation is or is not used in
+          encryption is as important as being able to compute it.
+        </p>
+
+        <h3>XOR is the workhorse of symmetric encryption</h3>
+        <p>
+          XOR appears in almost every symmetric cipher because it is the only common bitwise operation
+          that is both perfectly reversible <em>and</em> statistically ideal for key mixing. When you XOR
+          plaintext with a truly random key, an attacker who does not know the key sees a result that is
+          statistically uniform — every output bit is equally likely to be 0 or 1 regardless of the
+          input. This property makes XOR the foundation of:
         </p>
         <ul>
-          <li>XOR is used for key mixing, one-time pads, stream ciphers, and Feistel networks.</li>
-          <li>AND, OR, and NOT help build Boolean functions and bit masks.</li>
-          <li>Shifts and rotations move information across positions.</li>
-          <li>Reversibility helps determine whether an operation can safely appear inside an encryption path.</li>
-          <li>Information-losing operations can still be useful in key schedules, hash functions, and round functions, but they must be used carefully.</li>
+          <li><strong>One-time pads</strong> — theoretically unbreakable when the key is truly random and never reused</li>
+          <li><strong>Stream ciphers</strong> (RC4, ChaCha20) — a pseudorandom keystream XORed byte-by-byte with plaintext</li>
+          <li><strong>Feistel networks</strong> (DES, Blowfish) — XOR combines the round function output with half the block</li>
+          <li><strong>AddRoundKey in AES</strong> — every AES round ends with XOR between the state matrix and the round key</li>
         </ul>
+
+        <h3>AND, OR, and NOT build non-linear layers</h3>
+        <p>
+          Hash functions and mixing layers combine AND, OR, NOT, and XOR to build functions that are
+          difficult to invert. SHA-256 uses two such functions in every compression round:
+        </p>
+        <div class="math-display">
+          \[
+            \mathrm{Ch}(e,f,g) = (e \land f) \oplus (\lnot e \land g)
+          \]
+          \[
+            \mathrm{Maj}(a,b,c) = (a \land b) \oplus (a \land c) \oplus (b \land c)
+          \]
+        </div>
+        <p>
+          Ch selects bits from \(f\) where \(e = 1\) and from \(g\) where \(e = 0\).
+          Maj outputs the majority vote among three bits. Neither function is reversible from its output
+          alone — that information loss is intentional. Hash functions are designed to be one-way.
+        </p>
+
+        <h3>Shifts and rotations provide diffusion</h3>
+        <p>
+          A cipher built only from XOR would map each output bit to exactly one input bit. Change one
+          input bit and exactly one output bit changes. That is weak — an attacker can isolate individual
+          bits. Shifts and rotations spread a single bit's influence across multiple positions. This
+          property is called <strong>diffusion</strong>.
+        </p>
+        <p>
+          SHA-256 uses rotations and right-shifts extensively in its message schedule. AES uses
+          ShiftRows (a byte-level rotation across the state) and MixColumns (which involves polynomial
+          multiplication, itself built from shifts). Together they ensure that a single changed input bit
+          eventually affects every bit of the output.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">The three-ingredient pattern</div>
+          <p>Every modern symmetric cipher repeats three ingredients:</p>
+          <ol style="margin: 10px 0 0 18px; line-height: 1.9;">
+            <li><strong>Substitution</strong> — replace values via a lookup table (adds non-linearity)</li>
+            <li><strong>Permutation</strong> — rearrange bit positions via shifts and rotations (spreads information)</li>
+            <li><strong>Key mixing</strong> — XOR with a round key (binds the secret into the data)</li>
+          </ol>
+          <p style="margin-top:12px;">
+            All three of those steps live in the operations you learned in this tutorial. You now have
+            the vocabulary to read and understand how actual cipher algorithms work at the bit level.
+          </p>
+        </div>
       </section>
 
       <section id="one-page-recap" class="page-break">
