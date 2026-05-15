@@ -113,6 +113,94 @@
       text-align: center;
     }
 
+    /* — Function Machine Explorer — */
+    .fm-wrap {
+      background: #f0f4ff;
+      border: 1.5px solid #b9c6dd;
+      border-radius: 16px;
+      padding: 22px 26px;
+      margin: 20px 0;
+    }
+    .fm-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+    .fm-field { display: flex; flex-direction: column; gap: 5px; }
+    .fm-field label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #1f3763;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .fm-sel, .fm-inp {
+      padding: 8px 11px;
+      border: 1.5px solid #b9c6dd;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      background: #fff;
+      color: #1a2740;
+    }
+    .fm-btn {
+      padding: 9px 22px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+    .fm-btn:hover { opacity: 0.82; }
+    .fm-compose-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 6px 0 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #334e7d;
+      cursor: pointer;
+    }
+    .fm-compose-row input { width: 16px; height: 16px; cursor: pointer; }
+    .fm-pipeline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 14px 0 10px;
+      min-height: 50px;
+    }
+    .fm-node {
+      border: 1.5px solid #b9c6dd;
+      border-radius: 12px;
+      padding: 9px 16px;
+      font-weight: 800;
+      min-width: 80px;
+      text-align: center;
+      font-size: 0.92rem;
+    }
+    .fm-node.fn-in  { border-color: var(--accent); color: var(--accent); background: #eef3ff; }
+    .fm-node.fn-box { border-color: #7a4f1a; background: #fff8e6; color: #7a4f1a; }
+    .fm-node.fn-mid { border-color: #1f3763; background: #fff; color: #1f3763; }
+    .fm-node.fn-out { border-color: #1a7a42; color: #1a7a42; background: #eafff2; }
+    .fm-arr { font-size: 1.3rem; color: #aaa; line-height: 1; }
+    .fm-steps {
+      background: #fff;
+      border: 1px solid #dde4f0;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-size: 0.94rem;
+      line-height: 1.8;
+      margin-top: 6px;
+      min-height: 32px;
+    }
+    .fm-compose-extra { margin-top: 6px; }
+
     @media (max-width: 700px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -740,6 +828,152 @@
         </p>
       </section>
 
+      <section id="function-explorer" class="no-print">
+        <h2>Interactive: Function Machine Explorer</h2>
+        <p>
+          Choose a function, enter an input, and watch the machine evaluate it step by step.
+          Enable <em>composition</em> to chain two functions together.
+        </p>
+
+        <div class="fm-wrap">
+          <div class="fm-controls">
+            <div class="fm-field">
+              <label for="fm-fn1">Function f</label>
+              <select id="fm-fn1" class="fm-sel" onchange="fmUpdate()">
+                <option value="a">f(x) = 2x + 1</option>
+                <option value="b">f(x) = x + 3</option>
+                <option value="c">f(x) = x²</option>
+                <option value="d">f(x) = x − 5</option>
+                <option value="e">f(x) = 3x</option>
+                <option value="xor">E_K(P) = P ⊕ 0x83  (enter hex)</option>
+              </select>
+            </div>
+            <div class="fm-field">
+              <label for="fm-inp">Input x</label>
+              <input id="fm-inp" class="fm-inp" style="width:88px" value="4" oninput="fmUpdate()" />
+            </div>
+            <button class="fm-btn" onclick="fmUpdate()">Evaluate</button>
+          </div>
+
+          <label class="fm-compose-row">
+            <input type="checkbox" id="fm-compose" onchange="fmToggle()" />
+            Chain a second function g (composition: apply f first, then g)
+          </label>
+
+          <div id="fm-compose-extra" class="fm-compose-extra" style="display:none">
+            <div class="fm-controls">
+              <div class="fm-field">
+                <label for="fm-fn2">Function g (applied after f)</label>
+                <select id="fm-fn2" class="fm-sel" onchange="fmUpdate()">
+                  <option value="a">g(x) = 2x + 1</option>
+                  <option value="b" selected>g(x) = x + 3</option>
+                  <option value="c">g(x) = x²</option>
+                  <option value="d">g(x) = x − 5</option>
+                  <option value="e">g(x) = 3x</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="fm-pipeline" class="fm-pipeline"></div>
+          <div id="fm-steps" class="fm-steps">Enter an input above to see step-by-step evaluation.</div>
+        </div>
+
+        <script>
+        (function () {
+          var FNS = {
+            a:   { lbl: '2x + 1',    fn: function(x){ return 2*x+1; },       steps: function(x){ return ['Multiply: 2 × '+x+' = '+(2*x), 'Add 1: '+(2*x)+' + 1 = '+(2*x+1), 'Result: f('+x+') = '+(2*x+1)]; } },
+            b:   { lbl: 'x + 3',     fn: function(x){ return x+3; },         steps: function(x){ return ['Add 3: '+x+' + 3 = '+(x+3), 'Result: f('+x+') = '+(x+3)]; } },
+            c:   { lbl: 'x²',        fn: function(x){ return x*x; },         steps: function(x){ return ['Square: '+x+' × '+x+' = '+(x*x), 'Result: f('+x+') = '+(x*x)]; } },
+            d:   { lbl: 'x − 5',     fn: function(x){ return x-5; },         steps: function(x){ return ['Subtract 5: '+x+' − 5 = '+(x-5), 'Result: f('+x+') = '+(x-5)]; } },
+            e:   { lbl: '3x',        fn: function(x){ return 3*x; },         steps: function(x){ return ['Multiply: 3 × '+x+' = '+(3*x), 'Result: f('+x+') = '+(3*x)]; } },
+            xor: { lbl: 'P ⊕ 0x83', fn: function(x){ return (x^0x83)&0xFF; }, steps: function(x) {
+              var K=0x83, r=(x^K)&0xFF;
+              function h(n){ return '0x'+((n&0xFF).toString(16).toUpperCase()).padStart(2,'0'); }
+              function b(n){ return ((n&0xFF)>>>0).toString(2).padStart(8,'0'); }
+              return ['P = '+h(x)+' = '+b(x)+'₂', 'K = 0x83 = '+b(K)+'₂', 'XOR → '+b(r)+'₂', 'Result: E_K('+h(x)+') = '+h(r)];
+            }},
+          };
+
+          function parseIn() {
+            var raw = document.getElementById('fm-inp').value.trim();
+            var isXor = document.getElementById('fm-fn1').value === 'xor';
+            var v = isXor ? parseInt(raw.replace(/^0x/i,''), 16) : parseFloat(raw);
+            return isNaN(v) ? null : (isXor ? v & 0xFF : v);
+          }
+
+          function lbl(id, x) {
+            return id === 'xor' ? '0x'+((x&0xFF).toString(16).toUpperCase()).padStart(2,'0') : String(x);
+          }
+
+          function buildPipe(nodes) {
+            document.getElementById('fm-pipeline').innerHTML = nodes.map(function(n){
+              return n.arr ? '<div class="fm-arr">→</div>' :
+                '<div class="fm-node '+n.cls+'">'+n.txt+'</div>';
+            }).join('');
+          }
+
+          window.fmUpdate = function () {
+            var f1id = document.getElementById('fm-fn1').value;
+            var f1   = FNS[f1id];
+            var x    = parseIn();
+            var doC  = document.getElementById('fm-compose').checked;
+            var f2id = document.getElementById('fm-fn2').value;
+            var f2   = FNS[f2id];
+            var stEl = document.getElementById('fm-steps');
+
+            if (x === null) { stEl.innerHTML = '<em>Enter a valid number.</em>'; return; }
+
+            var fx   = f1.fn(x);
+            var xT   = lbl(f1id, x);
+            var fxT  = lbl(f1id, fx);
+
+            if (!doC) {
+              buildPipe([
+                { cls:'fn-in',  txt:'x = '+xT },
+                { arr:true },
+                { cls:'fn-box', txt:'f : '+f1.lbl },
+                { arr:true },
+                { cls:'fn-out', txt:'f(x) = '+fxT },
+              ]);
+              stEl.innerHTML = f1.steps(x).map(function(s){ return '<div>'+s+'</div>'; }).join('');
+            } else {
+              var gfx  = f2.fn(fx);
+              var gfxT = lbl(f2id, gfx);
+              buildPipe([
+                { cls:'fn-in',  txt:'x = '+xT },
+                { arr:true },
+                { cls:'fn-box', txt:'f : '+f1.lbl },
+                { arr:true },
+                { cls:'fn-mid', txt:'f(x) = '+fxT },
+                { arr:true },
+                { cls:'fn-box', txt:'g : '+f2.lbl },
+                { arr:true },
+                { cls:'fn-out', txt:'(g∘f)(x) = '+gfxT },
+              ]);
+              var h = '<strong>Step 1 — apply f first:</strong><br>';
+              h += f1.steps(x).map(function(s){ return '&nbsp;&nbsp;'+s; }).join('<br>');
+              h += '<br><br><strong>Step 2 — feed f(x) = '+fxT+' into g:</strong><br>';
+              h += f2.steps(fx).map(function(s){ return '&nbsp;&nbsp;'+s; }).join('<br>');
+              h += '<br><br><strong>(g∘f)('+xT+') = '+gfxT+'</strong>';
+              stEl.innerHTML = h;
+            }
+          };
+
+          window.fmToggle = function () {
+            document.getElementById('fm-compose-extra').style.display =
+              document.getElementById('fm-compose').checked ? '' : 'none';
+            fmUpdate();
+          };
+
+          document.getElementById('fm-inp').addEventListener('keydown', function(e){
+            if (e.key === 'Enter') fmUpdate();
+          });
+          setTimeout(fmUpdate, 80);
+        }());
+        </script>
+      </section>
+
       <section id="common-mistakes">
         <h2>Common mistakes</h2>
         <div class="box mistake-box">
@@ -765,85 +999,87 @@
       </section>
 
       <section id="practice">
-        <h2>Practice problems</h2>
-        <ol class="practice-list">
-          <li>
-            Let \(f(x)=3x+2\). Find \(f(4)\).
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  f(4)=3(4)+2=12+2=14
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Let \(f(x)=x+5\). What is \(f^{-1}(x)\)?
-            <details class="solution">
-              <summary>Show solution</summary>
-              <p>To undo adding 5, subtract 5.</p>
-              <div class="math-display">
-                \[
-                  f^{-1}(x)=x-5
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Let \(f(x)=x+2\) and \(g(x)=x^2\). Find \((g\circ f)(3)\).
-            <details class="solution">
-              <summary>Show solution</summary>
-              <p>Do \(f\) first:</p>
-              <div class="math-display">
-                \[
-                  f(3)=3+2=5
-                \]
-                \[
-                  g(f(3))=g(5)=5^2=25
-                \]
-              </div>
-            </details>
-          </li>
-          <li>
-            Is this table one-to-one?
-            <table class="mapping-table">
-              <tbody>
-                <tr><th>Input</th><td>0</td><td>1</td><td>2</td><td>3</td></tr>
-                <tr><th>Output</th><td>2</td><td>2</td><td>1</td><td>0</td></tr>
-              </tbody>
-            </table>
-            <details class="solution">
-              <summary>Show solution</summary>
-              <p>No. Inputs 0 and 1 both produce output 2, so two inputs collide.</p>
-            </details>
-          </li>
-          <li>
-            Let \(E_K(P)=P\oplus K\). If \(P=\texttt{0x2D}\) and \(K=\texttt{0x0F}\), find \(C\).
-            <details class="solution">
-              <summary>Show solution</summary>
-              <div class="math-display">
-                \[
-                  \texttt{0x2D}\oplus\texttt{0x0F}=\texttt{0x22}
-                \]
-              </div>
-            </details>
-          </li>
-        </ol>
+        <h2>Check your understanding</h2>
+        <div class="box intuition-box">
+          <div class="box-title">Before moving on</div>
+          <p>You should be able to do all of the following without help:</p>
+          <ul>
+            <li>Given \(f(x)=3x+2\), compute \(f(5)\). <em>(Answer: 17)</em></li>
+            <li>Given \(f(x)=x+5\), find \(f^{-1}(x)\). <em>(Answer: \(f^{-1}(x)=x-5\))</em></li>
+            <li>Given \(f(x)=x+2\) and \(g(x)=x^2\), compute \((g\circ f)(3)\). <em>(Answer: 25)</em></li>
+            <li>Identify whether a mapping table has output collisions and cannot be inverted.</li>
+            <li>Compute \(E_K(\texttt{0x2D})\) with key \(K=\texttt{0x0F}\) using XOR. <em>(Answer: <code>0x22</code>)</em></li>
+          </ul>
+          <p>If any of those are uncertain, re-read the relevant section or use the Function Machine Explorer above.</p>
+        </div>
       </section>
 
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Functions give us the language for describing cryptographic machines precisely.
+          Functions are the mathematical backbone of every cryptographic algorithm. Once you see encryption as a function, the requirements for security become precise and testable.
         </p>
-        <ul>
-          <li>A cipher can be viewed as a keyed function from plaintexts to ciphertexts.</li>
-          <li>Decryption is possible only when encryption can be undone for the intended key.</li>
-          <li>Permutation functions are central to reversible block cipher design.</li>
-          <li>Composition explains rounds: each round is a function, and the full cipher is a chain of functions.</li>
-          <li>S-boxes, permutations, key schedules, and mixing layers can all be studied as functions.</li>
-        </ul>
+
+        <h3>Ciphers as keyed functions</h3>
+        <p>
+          An encryption algorithm defines a <em>family</em> of functions — one for every possible key. Choosing a key means selecting which member of that family to apply:
+        </p>
+        <div class="math-display">
+          \[
+            E_K : \mathcal{P} \to \mathcal{C}
+          \]
+        </div>
+        <p>
+          Without knowing \(K\), an attacker cannot compute the same function. Security rests on keeping \(K\) secret, not on keeping the function design secret.
+        </p>
+
+        <h3>Permutations and invertibility</h3>
+        <p>
+          Block ciphers operate on fixed-size blocks. The encryption function for any given key must be a <em>permutation</em> — one-to-one and onto — so that every ciphertext block uniquely decrypts to exactly one plaintext block. If even one key produced a non-permutation, some plaintexts would be permanently unrecoverable.
+        </p>
+
+        <h3>Rounds as composition</h3>
+        <p>
+          Each cipher round is a function, and the full cipher is the composition of all rounds:
+        </p>
+        <div class="math-display">
+          \[
+            E_K(P) = R_{10}\bigl(R_9\bigl(\cdots R_1(P)\bigr)\bigr)
+          \]
+        </div>
+        <p>
+          In AES-128, each round function is itself a composition of four sub-operations:
+        </p>
+        <div class="composition-row" style="margin:14px 0">
+          <div class="small-node">SubBytes</div>
+          <div class="flow-arrow">→</div>
+          <div class="small-node">ShiftRows</div>
+          <div class="flow-arrow">→</div>
+          <div class="small-node">MixColumns</div>
+          <div class="flow-arrow">→</div>
+          <div class="small-node">AddRoundKey</div>
+        </div>
+        <p>
+          SubBytes is a lookup-table function (substitution). ShiftRows is a byte-permutation function. MixColumns is a linear-mixing function. AddRoundKey is an XOR function with the round key. Ten compositions of these four functions produce AES encryption.
+        </p>
+
+        <h3>S-boxes as lookup functions</h3>
+        <p>
+          The SubBytes step applies the AES S-box: a fixed function mapping each byte value in \(\{0,\ldots,255\}\) to another byte value. It is a carefully designed permutation — invertible for decryption — and has no simple polynomial description, which makes algebraic attacks difficult.
+        </p>
+
+        <h3>Decryption as inverse function composition</h3>
+        <p>
+          Because every AES round function is a permutation, it has an inverse. Decryption applies those inverses in reverse order:
+        </p>
+        <div class="math-display">
+          \[
+            D_K(C) = R_1^{-1}\bigl(R_2^{-1}\bigl(\cdots R_{10}^{-1}(C)\bigr)\bigr)
+          \]
+        </div>
+        <p>
+          This works only because the designers chose every component to be invertible. Invertibility is not a side-effect — it is a deliberate design requirement enforced by the function properties studied in this tutorial.
+        </p>
       </section>
 
       <section id="one-page-recap" class="page-break">
@@ -933,7 +1169,7 @@
             <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item" id="nextLink">Next →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item nav-secondary">Switch to Workbook</a>
+            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item nav-secondary">Switch to Practice</a>
         </div>
     </nav>
     </main>

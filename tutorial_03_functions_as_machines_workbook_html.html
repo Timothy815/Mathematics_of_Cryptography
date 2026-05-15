@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 3: Functions as Machines | Mathematics of Cryptography</title>
+  <title>Practice 3: Functions as Machines | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,7 +20,7 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 36px;
@@ -35,603 +35,542 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
-
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin: 20px 0;
+    .module-figure {
+      text-align: center;
+      margin: 0 0 28px;
     }
 
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
+    .module-figure img {
+      max-width: 100%;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.10);
+    }
 
-    .field-label { font-weight: 750; color: #333333; }
+    .module-figure figcaption {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 8px;
+    }
 
-    .reference-grid {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1.5px solid #ead399;
+      border-radius: 14px;
+      margin-bottom: 28px;
+      background: #fff8e6;
+      overflow: hidden;
+    }
+
+    details.quick-ref summary {
+      padding: 14px 20px;
+      font-weight: 800;
+      color: #7d6323;
+      cursor: pointer;
+      font-size: 1.01rem;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    details.quick-ref summary::before {
+      content: '▶';
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+
+    .qr-inner {
+      padding: 0 20px 20px;
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
     }
 
-    .data-table,
-    .work-table,
-    .answer-table,
-    .mapping-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
+    .qr-card {
+      background: #fff;
+      border: 1px solid #ead399;
+      border-radius: 10px;
+      padding: 14px 16px;
     }
 
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .mapping-table th, .mapping-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #7d6323;
+    }
+
+    .qr-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    .qr-card table td, .qr-card table th {
+      border: 1px solid #ead399;
+      padding: 6px 8px;
       vertical-align: top;
     }
 
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .mapping-table th {
-      background: #eef3ff;
+    .qr-card table th { background: #fff8e6; font-weight: 700; color: #7d6323; }
+
+    .qr-card .math-mini { font-size: 0.88rem; line-height: 2; color: #1a2740; }
+
+    .qr-card ul { margin: 0; padding-left: 18px; font-size: 0.9rem; line-height: 1.8; color: #1a2740; }
+
+    /* Drill widgets */
+    .drill-section {
+      margin-bottom: 36px;
+    }
+
+    .drill-section h2 {
+      font-size: 1.12rem;
       color: #1f3763;
-      text-align: left;
+      margin-bottom: 4px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #ead399;
     }
 
-    .mapping-table th,
-    .mapping-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
-      border: 1px solid var(--border);
+    .drill-wrap {
+      background: #fff;
+      border: 1.5px solid var(--border);
       border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
+      padding: 22px 24px;
+      margin-top: 14px;
     }
 
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
+    .drill-question {
+      font-size: 1.02rem;
+      font-weight: 600;
+      color: #1a2740;
+      margin-bottom: 16px;
+      line-height: 1.6;
     }
 
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
+    .drill-table {
+      width: auto;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      font-size: 0.95rem;
     }
 
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    .drill-table th, .drill-table td {
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      text-align: center;
+    }
+
+    .drill-table th { background: #eef3ff; color: #1f3763; }
+
+    .drill-input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .drill-inp {
+      padding: 9px 14px;
+      border: 1.5px solid #b9c6dd;
+      border-radius: 9px;
+      font-size: 1.02rem;
+      width: 140px;
+      color: #1a2740;
+    }
+
+    .drill-inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px #c7d2ea; }
+
+    .drill-check-btn, .drill-next-btn {
+      padding: 9px 20px;
+      border: none;
+      border-radius: 9px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .drill-check-btn { background: var(--accent); color: #fff; }
+    .drill-check-btn:hover { opacity: 0.82; }
+
+    .drill-next-btn { background: #e8f0e0; color: #2a6049; }
+    .drill-next-btn:hover { background: #d4e8cc; }
+
+    .drill-feedback {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 9px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      display: none;
+    }
+
+    .drill-feedback.correct { background: #eafff2; color: #1a7a42; border: 1px solid #a3d9b5; }
+    .drill-feedback.wrong   { background: #fff0f0; color: #a03030; border: 1px solid #f5b8b8; }
+
+    .drill-score {
+      margin-top: 14px;
+      font-size: 0.88rem;
+      color: #555;
+    }
+
+    .drill-score span { font-weight: 800; color: #334e7d; }
+
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .qr-inner { grid-template-columns: 1fr; }
     }
 
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      @page { margin: 0.65in; }
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .mapping-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .workbook-nav, .no-print, .drill-section { display: none !important; }
+      h2 { font-size: 16pt; border-bottom: 1px solid #999; break-after: avoid; }
+      a { color: #000; text-decoration: none; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 3</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 3</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Functions as Machines</h1>
       <p class="subtitle">
-        Printable practice for function notation, domain, range, mapping tables, composition, inverse functions, and encryption as a function.
+        Interactive practice for function evaluation, inverse functions, composition, one-to-one checks, and XOR encryption as a function.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+      <nav class="workbook-nav no-print" aria-label="Jump to section">
+        <a class="nav-link" href="#ref">Quick Reference</a>
+        <a class="nav-link" href="#drill-eval">Evaluate f(x)</a>
+        <a class="nav-link" href="#drill-inverse">Inverse</a>
+        <a class="nav-link" href="#drill-compose">Composition</a>
+        <a class="nav-link" href="#drill-one-to-one">One-to-One</a>
+        <a class="nav-link" href="#drill-xor">XOR Encryption</a>
+        <a class="nav-link" href="#drill-compose2">A+: Square Compose</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Treat each function like a machine: identify the input, apply the rule, and write the output. When checking whether a function is reversible, look for collisions: two different inputs producing the same output.
-          </p>
-        </div>
-      </section>
+      <figure class="module-figure">
+        <img src="tutorial3.png" alt="Functions as Machines module infographic" />
+        <figcaption>Module 3 — Functions as Machines infographic</figcaption>
+      </figure>
 
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Function vocabulary</div>
-            <table class="data-table">
-              <thead>
+      <!-- ── Quick Reference ─────────────────────────────── -->
+      <section id="ref">
+        <details class="quick-ref" open>
+          <summary>Quick Reference — Function Concepts &amp; Notation</summary>
+          <div class="qr-inner">
+
+            <div class="qr-card">
+              <h4>Vocabulary</h4>
+              <table>
                 <tr><th>Term</th><th>Meaning</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Function</td><td>A rule that assigns each allowed input exactly one output.</td></tr>
-                <tr><td>Domain</td><td>The set of allowed inputs.</td></tr>
-                <tr><td>Codomain</td><td>The declared set where outputs are supposed to live.</td></tr>
-                <tr><td>Range</td><td>The outputs actually produced.</td></tr>
-                <tr><td>One-to-one</td><td>No two different inputs produce the same output.</td></tr>
-                <tr><td>Inverse</td><td>A function that undoes another function.</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Core notation</div>
-            <div class="math-display">
-              \[
-                f:A\to B
-              \]
-              \[
-                f(x)=\text{output of }f\text{ on input }x
-              \]
-              \[
-                (g\circ f)(x)=g(f(x))
-              \]
-              \[
-                f^{-1}(f(x))=x
-              \]
-              \[
-                C=E_K(P), \qquad P=D_K(C)
-              \]
+                <tr><td>Function</td><td>Rule: each input → exactly one output</td></tr>
+                <tr><td>Domain</td><td>Set of allowed inputs</td></tr>
+                <tr><td>Codomain</td><td>Declared set of possible outputs</td></tr>
+                <tr><td>Range</td><td>Outputs actually produced</td></tr>
+                <tr><td>One-to-one</td><td>No two inputs → same output</td></tr>
+                <tr><td>Onto</td><td>Every codomain value is reached</td></tr>
+                <tr><td>Permutation</td><td>One-to-one AND onto (reversible rearrangement)</td></tr>
+                <tr><td>Inverse</td><td>Undoes the original function</td></tr>
+              </table>
             </div>
+
+            <div class="qr-card">
+              <h4>Core Notation</h4>
+              <div class="math-mini">
+                \(f : A \to B\) — function from domain \(A\) to codomain \(B\)<br>
+                \(f(x)\) — output of \(f\) on input \(x\)<br>
+                \((g \circ f)(x) = g(f(x))\) — do \(f\) first, then \(g\)<br>
+                \(f^{-1}(f(x)) = x\) — inverse undoes \(f\)<br>
+                \(C = E_K(P)\) — encryption keyed by \(K\)<br>
+                \(P = D_K(C) = E_K^{-1}(C)\) — decryption
+              </div>
+            </div>
+
+            <div class="qr-card">
+              <h4>Key Properties</h4>
+              <ul>
+                <li>One input → exactly one output (always)</li>
+                <li>Two inputs → same output: <strong>allowed</strong>, but breaks invertibility</li>
+                <li>One input → two outputs: <strong>never</strong> a function</li>
+                <li>Composition order matters: \(g \circ f \neq f \circ g\) in general</li>
+                <li>Inverse exists only when function is one-to-one</li>
+                <li>XOR is self-inverse: \((P \oplus K) \oplus K = P\)</li>
+              </ul>
+            </div>
+
+            <div class="qr-card">
+              <h4>Crypto Connection</h4>
+              <ul>
+                <li>AES SubBytes = lookup function (S-box)</li>
+                <li>AES ShiftRows = byte permutation function</li>
+                <li>AES round = composition of 4 sub-functions</li>
+                <li>Full AES = composition of 10 round functions</li>
+                <li>Decryption = inverse function composition in reverse order</li>
+                <li>Block cipher key → selects one permutation from a family</li>
+              </ul>
+            </div>
+
           </div>
-        </div>
+        </details>
       </section>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. Explain \(f(x)\) in friendly language.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What is the domain of a function?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What is the range of a function?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Explain why output collisions are a problem for decryption.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
+      <!-- ── Drill 1: Evaluate f(x) ──────────────────────── -->
+      <section class="drill-section" id="drill-eval">
+        <h2>Drill 1 — Evaluate f(x)</h2>
+        <p>Substitute the given input and compute the output.</p>
+        <div class="drill-wrap" id="d1"></div>
       </section>
 
-      <section id="evaluating-functions">
-        <h2>Part B: Evaluating functions</h2>
-        <p>For each problem, substitute the input value and simplify.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Function</th>
-              <th>Input</th>
-              <th>Work</th>
-              <th>Output</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>\(f(x)=2x+1\)</td><td>\(x=4\)</td><td></td><td></td></tr>
-            <tr><td>B2</td><td>\(f(x)=3x+2\)</td><td>\(x=5\)</td><td></td><td></td></tr>
-            <tr><td>B3</td><td>\(h(x)=x^2\)</td><td>\(x=7\)</td><td></td><td></td></tr>
-            <tr><td>B4</td><td>\(r(x)=x-9\)</td><td>\(x=14\)</td><td></td><td></td></tr>
-            <tr><td>B5</td><td>\(m(x)=4x\)</td><td>\(x=8\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
+      <!-- ── Drill 2: Find an Inverse ────────────────────── -->
+      <section class="drill-section" id="drill-inverse">
+        <h2>Drill 2 — Inverse Functions</h2>
+        <p>Use the inverse to recover the original input.</p>
+        <div class="drill-wrap" id="d2"></div>
       </section>
 
-      <section id="mapping-tables">
-        <h2>Part C: Mapping tables</h2>
-
-        <div class="problem">
-          <div class="problem-title">C1. Use the table to answer the questions.</div>
-          <table class="mapping-table">
-            <tbody>
-              <tr><th>Input \(x\)</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
-              <tr><th>Output \(f(x)\)</th><td>3</td><td>5</td><td>1</td><td>4</td><td>0</td><td>2</td></tr>
-            </tbody>
-          </table>
-          <p>What is \(f(2)\)?</p>
-          <span class="blank-line"></span>
-          <p>What is \(f(5)\)?</p>
-          <span class="blank-line"></span>
-          <p>Is this function one-to-one? Explain.</p>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Is this table a function?</div>
-          <table class="mapping-table">
-            <tbody>
-              <tr><th>Input \(x\)</th><td>0</td><td>1</td><td>1</td><td>2</td></tr>
-              <tr><th>Output</th><td>4</td><td>5</td><td>7</td><td>8</td></tr>
-            </tbody>
-          </table>
-          <p>Answer and reason:</p>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. Identify the range.</div>
-          <p>Let the domain be \(\{0,1,2,3\}\), and let \(f(x)=x^2\).</p>
-          <p>List the outputs:</p>
-          <span class="blank-line"></span>
-          <p>Range:</p>
-          <span class="blank-line"></span>
-        </div>
+      <!-- ── Drill 3: Composition ────────────────────────── -->
+      <section class="drill-section" id="drill-compose">
+        <h2>Drill 3 — Function Composition</h2>
+        <p>Apply f first, then feed the result into g.</p>
+        <div class="drill-wrap" id="d3"></div>
       </section>
 
-      <section id="one-to-one-onto">
-        <h2>Part D: One-to-one and onto</h2>
-        <p>For each table, decide whether the function is one-to-one. Then explain why.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Input row</th>
-              <th>Output row</th>
-              <th>One-to-one?</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>D1</td><td>0, 1, 2, 3</td><td>2, 0, 3, 1</td><td></td><td></td></tr>
-            <tr><td>D2</td><td>0, 1, 2, 3</td><td>2, 2, 1, 0</td><td></td><td></td></tr>
-            <tr><td>D3</td><td>A, B, C, D</td><td>D, C, B, A</td><td></td><td></td></tr>
-            <tr><td>D4</td><td>A, B, C, D</td><td>X, Y, X, Z</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-
-        <div class="problem">
-          <div class="problem-title">D5. Why is one-to-one important for reversible encryption?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
+      <!-- ── Drill 4: One-to-One Check ───────────────────── -->
+      <section class="drill-section" id="drill-one-to-one">
+        <h2>Drill 4 — One-to-One Check</h2>
+        <p>Decide whether the mapping table is one-to-one. Type <strong>YES</strong> or <strong>NO</strong>.</p>
+        <div class="drill-wrap" id="d4"></div>
       </section>
 
-      <section id="composition">
-        <h2>Part E: Function composition</h2>
-        <p>Remember: \((g\circ f)(x)=g(f(x))\), so do \(f\) first.</p>
-
-        <div class="problem">
-          <div class="problem-title">E1. Let \(f(x)=x+3\) and \(g(x)=2x\). Find \((g\circ f)(5)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E2. Let \(f(x)=x+2\) and \(g(x)=x^2\). Find \((g\circ f)(3)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E3. Using the same functions from E2, find \((f\circ g)(3)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E4. Explain why \((g\circ f)(3)\) and \((f\circ g)(3)\) are not necessarily the same.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
+      <!-- ── Drill 5: XOR Encryption ─────────────────────── -->
+      <section class="drill-section" id="drill-xor">
+        <h2>Drill 5 — XOR Encryption</h2>
+        <p>Compute ciphertext using \(E_K(P) = P \oplus K\). Enter your answer as hex, e.g. <code>0x4F</code>.</p>
+        <div class="drill-wrap" id="d5"></div>
       </section>
 
-      <section id="inverse-functions">
-        <h2>Part F: Inverse functions</h2>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Function</th>
-              <th>Inverse function</th>
-              <th>Check with one value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>F1</td><td>\(f(x)=x+5\)</td><td></td><td></td></tr>
-            <tr><td>F2</td><td>\(f(x)=x-7\)</td><td></td><td></td></tr>
-            <tr><td>F3</td><td>\(f(x)=2x\)</td><td></td><td></td></tr>
-            <tr><td>F4</td><td>\(f(x)=x/3\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-
-        <div class="problem">
-          <div class="problem-title">F5. Explain why a function with output collisions cannot have an inverse function.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
+      <!-- ── Drill 6: A+ — Square Composition ───────────── -->
+      <section class="drill-section" id="drill-compose2">
+        <h2>Drill 6 — A+: Compose with x²</h2>
+        <p>A more challenging composition: apply the linear function first, then square the result.</p>
+        <div class="drill-wrap" id="d6"></div>
       </section>
 
-      <section id="cryptography-practice">
-        <h2>Part G: Cryptography-flavored function practice</h2>
-
-        <div class="problem">
-          <div class="problem-title">G1. Read the formula.</div>
-          <div class="math-display">
-            \[
-              C=E_K(P)
-            \]
-          </div>
-          <p>Explain what \(C\), \(E_K\), and \(P\) mean.</p>
-          <p>\(C\):</p>
-          <span class="blank-line"></span>
-          <p>\(E_K\):</p>
-          <span class="blank-line"></span>
-          <p>\(P\):</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. XOR encryption function.</div>
-          <p>Let \(E_K(P)=P\oplus K\). If \(P=\)<code>0x57</code> and \(K=\)<code>0x83</code>, find \(C\).</p>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G3. XOR decryption function.</div>
-          <p>Let \(D_K(C)=C\oplus K\). If \(C=\)<code>0xD4</code> and \(K=\)<code>0x83</code>, recover \(P\).</p>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G4. Rounds as composition.</div>
-          <p>If a toy cipher has three rounds \(R_1\), \(R_2\), and \(R_3\), write a function expression showing that plaintext \(P\) goes through \(R_1\), then \(R_2\), then \(R_3\).</p>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Statement</th>
-              <th>True or False?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>In \(f(x)\), the notation means \(f\times x\).</td><td></td></tr>
-            <tr><td>A function may assign one input two different outputs.</td><td></td></tr>
-            <tr><td>The range is the set of outputs actually produced.</td><td></td></tr>
-            <tr><td>A permutation of a finite set is reversible.</td><td></td></tr>
-            <tr><td>Composition means chaining functions together.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            For function problems, always ask: What is the input? What rule is being applied? What output is produced?
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> \(f(x)\) means the output produced when input \(x\) is put into function \(f\). It does not mean multiplication.</p>
-          <p><strong>A2.</strong> The domain is the set of allowed inputs.</p>
-          <p><strong>A3.</strong> The range is the set of outputs the function actually produces.</p>
-          <p><strong>A4.</strong> Output collisions are a problem because if two different plaintexts produce the same ciphertext, decryption cannot know which original plaintext to return.</p>
-        </div>
-
-        <h3>Part B: Evaluating functions</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Work</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>\(f(4)=2(4)+1=8+1\)</td><td>9</td></tr>
-            <tr><td>B2</td><td>\(f(5)=3(5)+2=15+2\)</td><td>17</td></tr>
-            <tr><td>B3</td><td>\(h(7)=7^2\)</td><td>49</td></tr>
-            <tr><td>B4</td><td>\(r(14)=14-9\)</td><td>5</td></tr>
-            <tr><td>B5</td><td>\(m(8)=4(8)\)</td><td>32</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Mapping tables</h3>
-        <div class="answer-step">
-          <p><strong>C1.</strong> From the table, \(f(2)=1\), and \(f(5)=2\). Yes, the function is one-to-one because every output appears only once.</p>
-          <p><strong>C2.</strong> No, this is not a function. Input 1 is assigned two different outputs, 5 and 7.</p>
-          <p><strong>C3.</strong> With domain \(\{0,1,2,3\}\), the outputs are \(0^2=0\), \(1^2=1\), \(2^2=4\), and \(3^2=9\). The range is \(\{0,1,4,9\}\).</p>
-        </div>
-
-        <h3>Part D: One-to-one and onto</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>One-to-one?</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td>Yes</td><td>Outputs 2, 0, 3, and 1 are all different.</td></tr>
-            <tr><td>D2</td><td>No</td><td>Output 2 appears twice.</td></tr>
-            <tr><td>D3</td><td>Yes</td><td>Outputs D, C, B, and A are all different.</td></tr>
-            <tr><td>D4</td><td>No</td><td>Output X appears twice.</td></tr>
-          </tbody>
-        </table>
-        <div class="answer-step">
-          <p><strong>D5 sample answer.</strong> One-to-one is important because reversible encryption needs each ciphertext to point back to exactly one plaintext. If two plaintexts collide into one ciphertext, decryption becomes ambiguous.</p>
-        </div>
-
-        <h3>Part E: Function composition</h3>
-        <div class="answer-step">
-          <p><strong>E1.</strong> \(f(5)=5+3=8\). Then \(g(8)=2(8)=16\). So \((g\circ f)(5)=16\).</p>
-          <p><strong>E2.</strong> \(f(3)=3+2=5\). Then \(g(5)=5^2=25\). So \((g\circ f)(3)=25\).</p>
-          <p><strong>E3.</strong> \(g(3)=3^2=9\). Then \(f(9)=9+2=11\). So \((f\circ g)(3)=11\).</p>
-          <p><strong>E4 sample answer.</strong> Function order matters. Doing \(f\) first and then \(g\) can produce a different result from doing \(g\) first and then \(f\).</p>
-        </div>
-
-        <h3>Part F: Inverse functions</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Inverse</th><th>Check</th></tr></thead>
-          <tbody>
-            <tr><td>F1</td><td>\(f^{-1}(x)=x-5\)</td><td>\(f(10)=15\), then \(f^{-1}(15)=10\)</td></tr>
-            <tr><td>F2</td><td>\(f^{-1}(x)=x+7\)</td><td>\(f(10)=3\), then \(f^{-1}(3)=10\)</td></tr>
-            <tr><td>F3</td><td>\(f^{-1}(x)=x/2\)</td><td>\(f(10)=20\), then \(f^{-1}(20)=10\)</td></tr>
-            <tr><td>F4</td><td>\(f^{-1}(x)=3x\)</td><td>\(f(12)=4\), then \(f^{-1}(4)=12\)</td></tr>
-          </tbody>
-        </table>
-        <div class="answer-step">
-          <p><strong>F5 sample answer.</strong> If two inputs produce the same output, the inverse would not know which input to return. One output would point backward to multiple possible inputs, so the undoing rule would not be a proper function.</p>
-        </div>
-
-        <h3>Part G: Cryptography-flavored function practice</h3>
-        <div class="answer-step">
-          <p><strong>G1.</strong> \(C\) is ciphertext. \(E_K\) is the encryption function using key \(K\). \(P\) is plaintext.</p>
-          <p><strong>G2.</strong> \(C=\texttt{0x57}\oplus\texttt{0x83}=\texttt{0xD4}\).</p>
-          <div class="math-display">
-            \[
-              01010111_2\oplus10000011_2=11010100_2
-            \]
-          </div>
-          <p><strong>G3.</strong> \(P=\texttt{0xD4}\oplus\texttt{0x83}=\texttt{0x57}\).</p>
-          <div class="math-display">
-            \[
-              11010100_2\oplus10000011_2=01010111_2
-            \]
-          </div>
-          <p><strong>G4.</strong> One valid expression is:</p>
-          <div class="math-display">
-            \[
-              C=R_3(R_2(R_1(P)))
-            \]
-          </div>
-          <p>This means \(P\) goes through \(R_1\), then \(R_2\), then \(R_3\).</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>In \(f(x)\), the notation means \(f\times x\).</td><td>False</td><td>It means apply function \(f\) to input \(x\).</td></tr>
-            <tr><td>A function may assign one input two different outputs.</td><td>False</td><td>Each allowed input must have exactly one output.</td></tr>
-            <tr><td>The range is the set of outputs actually produced.</td><td>True</td><td>That is the definition of range.</td></tr>
-            <tr><td>A permutation of a finite set is reversible.</td><td>True</td><td>It is one-to-one and onto.</td></tr>
-            <tr><td>Composition means chaining functions together.</td><td>True</td><td>The output of one function becomes the input of another.</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 3: Functions as Machines.
-      </p>
+    </main>
 
     <nav class="bottom-nav no-print" aria-label="Bottom navigation">
-        <div class="nav-bundle">
-            <a href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
-        </div>
-        <div class="nav-bundle">
-            <a href="tutorial_03_functions_as_machines_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
-        </div>
+      <div class="nav-bundle">
+        <a href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_03_functions_as_machines_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+      </div>
     </nav>
-    </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ── Generic drill engine ────────────────────────────────────────────────
+    function makeDrill(cfg) {
+      var el      = document.getElementById(cfg.id);
+      var correct = 0;
+      var total   = 0;
+      var state   = {};
+
+      function render() {
+        state = cfg.gen();
+        el.innerHTML =
+          '<div class="drill-question" id="'+cfg.id+'-q"></div>' +
+          (state.table || '') +
+          '<div class="drill-input-row">' +
+            '<input class="drill-inp" id="'+cfg.id+'-inp" placeholder="'+( cfg.placeholder||'Answer')+'" />' +
+            '<button class="drill-check-btn" id="'+cfg.id+'-chk">Check</button>' +
+            '<button class="drill-next-btn" id="'+cfg.id+'-nxt">Next →</button>' +
+          '</div>' +
+          '<div class="drill-feedback" id="'+cfg.id+'-fb"></div>' +
+          '<div class="drill-score" id="'+cfg.id+'-sc">Score: <span>'+correct+' / '+total+'</span></div>';
+
+        document.getElementById(cfg.id+'-q').innerHTML = state.q;
+        var inp = document.getElementById(cfg.id+'-inp');
+        inp.focus({ preventScroll: true });
+
+        document.getElementById(cfg.id+'-chk').addEventListener('click', check);
+        document.getElementById(cfg.id+'-nxt').addEventListener('click', function(){ total = total; render(); });
+        inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); });
+      }
+
+      function check() {
+        var inp = document.getElementById(cfg.id+'-inp');
+        var fb  = document.getElementById(cfg.id+'-fb');
+        var sc  = document.getElementById(cfg.id+'-sc');
+        var raw = inp.value.trim();
+        if (!raw) return;
+        total++;
+        var ok = cfg.check(raw, state.a);
+        if (ok) correct++;
+        fb.style.display = 'block';
+        fb.className = 'drill-feedback ' + (ok ? 'correct' : 'wrong');
+        fb.innerHTML = ok
+          ? '✓ Correct! ' + (state.hint || '')
+          : '✗ Not quite. ' + (state.hint || 'Answer: ' + state.a);
+        sc.innerHTML = 'Score: <span>' + correct + ' / ' + total + '</span>';
+      }
+
+      render();
+    }
+
+    // ── Helper: random int in [lo, hi] ─────────────────────────────────────
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+
+    // ── Drill 1: Evaluate f(x) = ax + b ────────────────────────────────────
+    makeDrill({
+      id: 'd1',
+      placeholder: 'Number',
+      gen: function () {
+        var a = rnd(2, 6), b = rnd(1, 9), x = rnd(2, 10);
+        var ans = a * x + b;
+        return {
+          q: 'Let \\(f(x) = ' + a + 'x + ' + b + '\\). Find \\(f(' + x + ')\\).',
+          a: String(ans),
+          hint: '\\(f(' + x + ') = ' + a + '(' + x + ') + ' + b + ' = ' + (a*x) + ' + ' + b + ' = ' + ans + '\\)'
+        };
+      },
+      check: function (inp, ans) { return inp.trim() === ans; }
+    });
+
+    // ── Drill 2: Inverse — recover the input ───────────────────────────────
+    makeDrill({
+      id: 'd2',
+      placeholder: 'Number',
+      gen: function () {
+        var a = rnd(2, 9), x = rnd(3, 12);
+        var fx = x + a;
+        return {
+          q: 'Let \\(f(x) = x + ' + a + '\\). If \\(f(' + x + ') = ' + fx + '\\), what is \\(f^{-1}(' + fx + ')\\)?',
+          a: String(x),
+          hint: 'To undo "+' + a + '", subtract ' + a + ': \\(f^{-1}(' + fx + ') = ' + fx + ' - ' + a + ' = ' + x + '\\)'
+        };
+      },
+      check: function (inp, ans) { return inp.trim() === ans; }
+    });
+
+    // ── Drill 3: Composition (g∘f)(x), f(x)=x+a, g(x)=bx ─────────────────
+    makeDrill({
+      id: 'd3',
+      placeholder: 'Number',
+      gen: function () {
+        var a = rnd(1, 5), b = rnd(2, 5), x = rnd(2, 8);
+        var fx  = x + a;
+        var gfx = b * fx;
+        return {
+          q: 'Let \\(f(x) = x + ' + a + '\\) and \\(g(x) = ' + b + 'x\\). Find \\((g\\circ f)(' + x + ')\\).',
+          a: String(gfx),
+          hint: 'Step 1: \\(f(' + x + ') = ' + x + ' + ' + a + ' = ' + fx + '\\). ' +
+                'Step 2: \\(g(' + fx + ') = ' + b + '(' + fx + ') = ' + gfx + '\\).'
+        };
+      },
+      check: function (inp, ans) { return inp.trim() === ans; }
+    });
+
+    // ── Drill 4: One-to-one check ──────────────────────────────────────────
+    makeDrill({
+      id: 'd4',
+      placeholder: 'YES or NO',
+      gen: function () {
+        var isOTO = Math.random() < 0.5;
+        var inputs  = [0, 1, 2, 3];
+        var outputs;
+        if (isOTO) {
+          // distinct outputs — a permutation
+          var pool = [0, 1, 2, 3];
+          outputs = [];
+          for (var i = pool.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+          }
+          outputs = pool;
+        } else {
+          // collision: two inputs share the same output
+          var collisionOut = rnd(0, 3);
+          outputs = [collisionOut, collisionOut, rnd(0,3), rnd(0,3)];
+          // Make sure there IS a collision and it isn't accidentally OTO
+          if (outputs[2] !== collisionOut && outputs[3] !== collisionOut &&
+              outputs[2] !== outputs[3]) {
+            // Force collision just in case
+            outputs[2] = collisionOut;
+          }
+        }
+        var rows = '';
+        rows += '<tr><th>Input</th>' + inputs.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>';
+        rows += '<tr><th>Output</th>' + outputs.map(function(v){ return '<td>'+v+'</td>'; }).join('') + '</tr>';
+        var ans = isOTO ? 'YES' : 'NO';
+        var hint = isOTO
+          ? 'All outputs are distinct, so no two inputs collide — one-to-one.'
+          : 'Two different inputs produce the same output — not one-to-one.';
+        return {
+          q: 'Is this mapping table one-to-one?',
+          table: '<table class="drill-table"><tbody>' + rows + '</tbody></table>',
+          a: ans,
+          hint: hint
+        };
+      },
+      check: function (inp, ans) { return inp.trim().toUpperCase() === ans; }
+    });
+
+    // ── Drill 5: XOR encryption ────────────────────────────────────────────
+    makeDrill({
+      id: 'd5',
+      placeholder: '0xXX',
+      gen: function () {
+        var P = rnd(0x10, 0xEF);
+        var K = rnd(0x10, 0xEF);
+        var C = (P ^ K) & 0xFF;
+        function h(n) { return '0x' + n.toString(16).toUpperCase().padStart(2, '0'); }
+        return {
+          q: 'Let \\(E_K(P) = P \\oplus K\\). If \\(P = \\texttt{' + h(P) + '}\\) and \\(K = \\texttt{' + h(K) + '}\\), find \\(C\\).',
+          a: h(C),
+          hint: '\\(' + h(P) + ' \\oplus ' + h(K) + ' = \\texttt{' + h(C) + '}\\)'
+        };
+      },
+      check: function (inp, ans) {
+        var clean = inp.trim().toUpperCase().replace(/^0X/, '');
+        var aclean = ans.toUpperCase().replace(/^0X/, '');
+        return clean === aclean || inp.trim().toUpperCase() === ans.toUpperCase();
+      }
+    });
+
+    // ── Drill 6: A+ — Compose with x² ────────────────────────────────────
+    makeDrill({
+      id: 'd6',
+      placeholder: 'Number',
+      gen: function () {
+        var a = rnd(1, 4), x = rnd(2, 6);
+        var fx  = x + a;
+        var gfx = fx * fx;
+        return {
+          q: 'Let \\(f(x) = x + ' + a + '\\) and \\(g(x) = x^2\\). Find \\((g\\circ f)(' + x + ')\\).',
+          a: String(gfx),
+          hint: 'Step 1: \\(f(' + x + ') = ' + fx + '\\). Step 2: \\(g(' + fx + ') = ' + fx + '^2 = ' + gfx + '\\).'
+        };
+      },
+      check: function (inp, ans) { return inp.trim() === ans; }
+    });
+
+  }());
+  </script>
 </body>
 </html>

@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 3: Functions as Machines | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root { --ws: #2a6049; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #eaf4ee);
+      border: 1px solid #b0d4be;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    header.worksheet-header .course-label { color: var(--ws); }
+    header.worksheet-header .volume-label { color: #3d7a5e; }
+
+    .version-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: #eaf4ee;
+      border: 1px solid #b0d4be;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+    }
+
+    .version-label {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--ws);
+      flex: 1;
+    }
+
+    .ws-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .ws-btn-new    { background: var(--ws); color: #fff; }
+    .ws-btn-new:hover { opacity: 0.85; }
+    .ws-btn-blank  { background: #eaf4ee; color: var(--ws); border: 1.5px solid #b0d4be; }
+    .ws-btn-blank:hover  { background: #d5ebdf; }
+    .ws-btn-ans    { background: #2a4a6e; color: #fff; }
+    .ws-btn-ans:hover    { opacity: 0.85; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 0 0 28px;
+    }
+
+    .field-line {
+      border-bottom: 1.5px solid #333;
+      min-height: 32px;
+      padding-top: 6px;
+    }
+
+    .field-label { font-weight: 750; color: #333; display: block; margin-bottom: 2px; }
+
+    /* Section headings */
+    .ws-part {
+      margin-bottom: 32px;
+    }
+
+    .ws-part h2 {
+      background: var(--ws);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+
+    /* Questions */
+    .q {
+      margin-bottom: 18px;
+      break-inside: avoid;
+    }
+
+    .q-num {
+      font-weight: 900;
+      color: var(--ws);
+      margin-right: 6px;
+    }
+
+    .q-body { line-height: 1.7; }
+
+    .ans-input {
+      display: inline-block;
+      border: none;
+      border-bottom: 1.5px solid #555;
+      background: #f0faf4;
+      padding: 3px 8px;
+      min-width: 120px;
+      font-size: 0.97rem;
+      border-radius: 0;
+      color: #1a2740;
+    }
+
+    .ans-input:focus { outline: none; border-bottom-color: var(--ws); background: #e0f5e8; }
+
+    .blank-line {
+      display: block;
+      border-bottom: 1.4px solid #555;
+      min-height: 28px;
+      margin: 8px 0 12px;
+    }
+
+    .blank-line-sm {
+      display: block;
+      border-bottom: 1.4px solid #555;
+      min-height: 22px;
+      margin: 4px 0 8px;
+    }
+
+    .work-box {
+      border: 1px dashed #9cbfad;
+      border-radius: 10px;
+      min-height: 72px;
+      padding: 8px;
+      margin: 8px 0 14px;
+      background: #f9fdfb;
+    }
+
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 0.94rem;
+    }
+
+    .ws-table th, .ws-table td {
+      border: 1px solid #b0d4be;
+      padding: 8px 10px;
+      vertical-align: middle;
+    }
+
+    .ws-table th { background: #eaf4ee; color: var(--ws); text-align: left; }
+    .ws-table td.center { text-align: center; }
+
+    .mapping-row { display: flex; gap: 0; margin: 10px 0; }
+    .mapping-row .cell {
+      border: 1px solid #b0d4be;
+      padding: 7px 14px;
+      text-align: center;
+      background: #fff;
+      min-width: 44px;
+    }
+    .mapping-row .cell.hdr { background: #eaf4ee; font-weight: 700; color: var(--ws); min-width: 80px; }
+
+    /* Print answers */
+    .print-answer {
+      display: none;
+    }
+
+    body.show-answers .print-answer {
+      display: block !important;
+      color: #1a7a42;
+      font-weight: 700;
+      margin-top: 4px;
+      font-size: 0.93rem;
+    }
+
+    @media (max-width: 680px) {
+      .student-info { grid-template-columns: 1fr; }
+      header.worksheet-header, main { padding: 20px; }
+    }
+
+    @media print {
+      @page { margin: 0.65in; }
+      body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.4; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .no-print, .version-bar { display: none !important; }
+      .ws-part h2 { background: #eee !important; color: #000 !important; border: 1px solid #999; }
+      .ans-input { background: transparent !important; border-bottom: 1.5px solid #444 !important; }
+      .blank-line, .blank-line-sm { border-bottom: 1.5px solid #444 !important; }
+      .work-box { background: #fff !important; border: 1px dashed #999; }
+      .ws-table th { background: #eee !important; }
+      h2 { break-after: avoid; }
+      .q { break-inside: avoid; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 3</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Functions as Machines</h1>
+      <p class="subtitle">
+        Graded worksheet — function notation, evaluation, mapping tables, one-to-one, composition, inverse functions, and XOR encryption.
+      </p>
+      <nav class="tutorial-nav no-print">
+        <a class="nav-link" href="index.html">🏠 Dashboard</a>
+      </nav>
+    </header>
+
+    <main>
+
+      <!-- Version bar -->
+      <div class="version-bar no-print">
+        <span class="version-label" id="ver-label">Version — </span>
+        <button class="ws-btn ws-btn-new" onclick="newVersion()">New Version</button>
+        <button class="ws-btn ws-btn-blank" onclick="window.print()">Print Blank</button>
+        <button class="ws-btn ws-btn-ans" onclick="printWithAnswers()">Print with Answers</button>
+      </div>
+
+      <!-- Student info -->
+      <div class="student-info">
+        <div><span class="field-label">Name:</span><div class="field-line"></div></div>
+        <div><span class="field-label">Date:</span><div class="field-line"></div></div>
+      </div>
+
+      <!-- ── Part 1: Vocabulary ───────────────────────────── -->
+      <div class="ws-part">
+        <h2>Part 1 — Vocabulary (Q1–5)</h2>
+
+        <div class="q">
+          <span class="q-num">Q1.</span><span class="q-body">What is a <strong>function</strong>? Give the definition in your own words.</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q2.</span><span class="q-body">What is the <strong>domain</strong> of a function?</span>
+          <div class="blank-line"></div>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q3.</span><span class="q-body">What is the difference between <strong>codomain</strong> and <strong>range</strong>?</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q4.</span><span class="q-body">What does it mean for a function to be <strong>one-to-one</strong>?</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q5.</span><span class="q-body">What is a <strong>permutation</strong> of a finite set?</span>
+          <div class="blank-line"></div>
+        </div>
+      </div>
+
+      <!-- ── Part 2: Evaluating Functions ───────────────────── -->
+      <div class="ws-part">
+        <h2>Part 2 — Evaluating Functions (Q6–12)</h2>
+
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Function</th>
+              <th>Input</th>
+              <th>Work space</th>
+              <th>Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Q6</td>
+              <td>\(f(x) = <span id="q6-fn">2x + 1</span>\)</td>
+              <td>\(x = <span id="q6-x">4</span>\)</td>
+              <td><input class="ans-input" id="q6-work" placeholder="show work" style="min-width:180px" /></td>
+              <td><input class="ans-input" id="q6-ans" placeholder="answer" style="min-width:60px" />
+                <span class="print-answer" id="q6-pa"></span></td>
+            </tr>
+            <tr>
+              <td>Q7</td>
+              <td>\(f(x) = <span id="q7-fn">3x + 2</span>\)</td>
+              <td>\(x = <span id="q7-x">5</span>\)</td>
+              <td><input class="ans-input" id="q7-work" placeholder="show work" style="min-width:180px" /></td>
+              <td><input class="ans-input" id="q7-ans" placeholder="answer" style="min-width:60px" />
+                <span class="print-answer" id="q7-pa"></span></td>
+            </tr>
+            <tr>
+              <td>Q8</td>
+              <td>\(h(x) = x^2\)</td>
+              <td>\(x = <span id="q8-x">7</span>\)</td>
+              <td><input class="ans-input" id="q8-work" placeholder="show work" style="min-width:180px" /></td>
+              <td><input class="ans-input" id="q8-ans" placeholder="answer" style="min-width:60px" />
+                <span class="print-answer" id="q8-pa"></span></td>
+            </tr>
+            <tr>
+              <td>Q9</td>
+              <td>\(r(x) = x - <span id="q9-b">9</span>\)</td>
+              <td>\(x = <span id="q9-x">14</span>\)</td>
+              <td><input class="ans-input" id="q9-work" placeholder="show work" style="min-width:180px" /></td>
+              <td><input class="ans-input" id="q9-ans" placeholder="answer" style="min-width:60px" />
+                <span class="print-answer" id="q9-pa"></span></td>
+            </tr>
+            <tr>
+              <td>Q10</td>
+              <td>\(m(x) = <span id="q10-a">4</span>x\)</td>
+              <td>\(x = <span id="q10-x">8</span>\)</td>
+              <td><input class="ans-input" id="q10-work" placeholder="show work" style="min-width:180px" /></td>
+              <td><input class="ans-input" id="q10-ans" placeholder="answer" style="min-width:60px" />
+                <span class="print-answer" id="q10-pa"></span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="q">
+          <span class="q-num">Q11.</span>
+          <span class="q-body">Let \(f(x) = <span id="q11-a">2</span>x + <span id="q11-b">5</span>\). Find \(f(<span id="q11-x">3</span>)\). Show your work.</span>
+          <div class="work-box"></div>
+          <span>Answer: </span><input class="ans-input" id="q11-ans" style="min-width:80px" />
+          <span class="print-answer" id="q11-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q12.</span>
+          <span class="q-body">Let \(g(x) = x^2 + <span id="q12-b">3</span>\). Find \(g(<span id="q12-x">5</span>)\). Show your work.</span>
+          <div class="work-box"></div>
+          <span>Answer: </span><input class="ans-input" id="q12-ans" style="min-width:80px" />
+          <span class="print-answer" id="q12-pa"></span>
+        </div>
+      </div>
+
+      <!-- ── Part 3: Mapping Tables ──────────────────────────── -->
+      <div class="ws-part">
+        <h2>Part 3 — Mapping Tables (Q13–17)</h2>
+
+        <div class="q">
+          <span class="q-num">Q13.</span>
+          <span class="q-body">Use the table to answer: What is \(f(2)\)? What is \(f(5)\)?</span>
+          <div class="mapping-row">
+            <div class="cell hdr">Input x</div>
+            <div class="cell">0</div><div class="cell">1</div><div class="cell">2</div>
+            <div class="cell">3</div><div class="cell">4</div><div class="cell">5</div>
+          </div>
+          <div class="mapping-row">
+            <div class="cell hdr">Output f(x)</div>
+            <div class="cell">3</div><div class="cell">5</div><div class="cell">1</div>
+            <div class="cell">4</div><div class="cell">0</div><div class="cell">2</div>
+          </div>
+          \(f(2) = \) <input class="ans-input" style="min-width:60px" />&nbsp;&nbsp;
+          \(f(5) = \) <input class="ans-input" style="min-width:60px" />
+          <span class="print-answer">f(2) = 1 &nbsp; f(5) = 2</span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q14.</span>
+          <span class="q-body">Is the table in Q13 one-to-one? Explain why or why not.</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+          <span class="print-answer">Yes — every output value appears exactly once, so no two inputs collide.</span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q15.</span>
+          <span class="q-body">Is this table a valid function? Explain.</span>
+          <div class="mapping-row">
+            <div class="cell hdr">Input x</div>
+            <div class="cell">0</div><div class="cell">1</div><div class="cell">1</div><div class="cell">2</div>
+          </div>
+          <div class="mapping-row">
+            <div class="cell hdr">Output</div>
+            <div class="cell">4</div><div class="cell">5</div><div class="cell">7</div><div class="cell">8</div>
+          </div>
+          <div class="blank-line"></div>
+          <span class="print-answer">No — input 1 is assigned two different outputs (5 and 7), violating the one-output rule.</span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q16.</span>
+          <span class="q-body">Let the domain be \(\{0, 1, 2, 3\}\) and \(f(x) = x^2\). List all outputs and identify the range.</span>
+          <div class="blank-line"></div>
+          <span>Range: </span><input class="ans-input" style="min-width:180px" />
+          <span class="print-answer">Outputs: 0, 1, 4, 9. Range = {0, 1, 4, 9}.</span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q17.</span>
+          <span class="q-body">For each row, decide: is the function one-to-one? Write Yes or No and give a brief reason.</span>
+          <table class="ws-table">
+            <thead><tr><th>#</th><th>Inputs</th><th>Outputs</th><th>One-to-one?</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr><td>a</td><td>0, 1, 2, 3</td><td>2, 0, 3, 1</td>
+                <td><input class="ans-input" style="min-width:50px" /></td>
+                <td><input class="ans-input" style="min-width:200px" /></td></tr>
+              <tr><td>b</td><td>0, 1, 2, 3</td><td>2, 2, 1, 0</td>
+                <td><input class="ans-input" style="min-width:50px" /></td>
+                <td><input class="ans-input" style="min-width:200px" /></td></tr>
+              <tr><td>c</td><td>A, B, C, D</td><td>D, C, B, A</td>
+                <td><input class="ans-input" style="min-width:50px" /></td>
+                <td><input class="ans-input" style="min-width:200px" /></td></tr>
+            </tbody>
+          </table>
+          <span class="print-answer">a: Yes — all different. b: No — output 2 appears twice. c: Yes — all different.</span>
+        </div>
+      </div>
+
+      <!-- ── Part 4: Composition ─────────────────────────────── -->
+      <div class="ws-part">
+        <h2>Part 4 — Function Composition (Q18–22)</h2>
+
+        <div class="q">
+          <span class="q-num">Q18.</span>
+          <span class="q-body">Let \(f(x) = x + <span id="q18-a">3</span>\) and \(g(x) = <span id="q18-b">2</span>x\). Find \((g\circ f)(<span id="q18-x">5</span>)\). Show each step.</span>
+          <div class="work-box"></div>
+          <span>Answer: </span><input class="ans-input" id="q18-ans" style="min-width:80px" />
+          <span class="print-answer" id="q18-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q19.</span>
+          <span class="q-body">Using the same functions from Q18, find \((f\circ g)(<span id="q19-x">5</span>)\). Show each step.</span>
+          <div class="work-box"></div>
+          <span>Answer: </span><input class="ans-input" id="q19-ans" style="min-width:80px" />
+          <span class="print-answer" id="q19-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q20.</span>
+          <span class="q-body">Are \((g\circ f)\) and \((f\circ g)\) equal? Explain why order matters in composition.</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q21.</span>
+          <span class="q-body">Let \(f(x) = x + <span id="q21-a">2</span>\) and \(g(x) = x^2\). Find \((g\circ f)(<span id="q21-x">3</span>)\).</span>
+          <div class="work-box"></div>
+          <span>Answer: </span><input class="ans-input" id="q21-ans" style="min-width:80px" />
+          <span class="print-answer" id="q21-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q22.</span>
+          <span class="q-body">A cipher has three rounds \(R_1\), \(R_2\), \(R_3\). Write a function expression showing plaintext \(P\) going through all three rounds in order.</span>
+          <div class="blank-line"></div>
+          <span class="print-answer">C = R₃(R₂(R₁(P)))</span>
+        </div>
+      </div>
+
+      <!-- ── Part 5: Inverse Functions ──────────────────────── -->
+      <div class="ws-part">
+        <h2>Part 5 — Inverse Functions (Q23–27)</h2>
+
+        <table class="ws-table">
+          <thead>
+            <tr><th>#</th><th>Function</th><th>Inverse function</th><th>Check (verify with one value)</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Q23</td>
+              <td>\(f(x) = x + <span id="q23-a">5</span>\)</td>
+              <td><input class="ans-input" id="q23-ans" style="min-width:130px" />
+                <span class="print-answer" id="q23-pa"></span></td>
+              <td><input class="ans-input" style="min-width:160px" /></td>
+            </tr>
+            <tr>
+              <td>Q24</td>
+              <td>\(f(x) = x - <span id="q24-a">7</span>\)</td>
+              <td><input class="ans-input" id="q24-ans" style="min-width:130px" />
+                <span class="print-answer" id="q24-pa"></span></td>
+              <td><input class="ans-input" style="min-width:160px" /></td>
+            </tr>
+            <tr>
+              <td>Q25</td>
+              <td>\(f(x) = <span id="q25-a">2</span>x\)</td>
+              <td><input class="ans-input" id="q25-ans" style="min-width:130px" />
+                <span class="print-answer" id="q25-pa"></span></td>
+              <td><input class="ans-input" style="min-width:160px" /></td>
+            </tr>
+            <tr>
+              <td>Q26</td>
+              <td>\(f(x) = x/3\)</td>
+              <td><input class="ans-input" id="q26-ans" style="min-width:130px" /></td>
+              <td><input class="ans-input" style="min-width:160px" /></td>
+            </tr>
+          </tbody>
+        </table>
+        <span class="print-answer" style="display:none">Q26: f⁻¹(x) = 3x</span>
+
+        <div class="q">
+          <span class="q-num">Q27.</span>
+          <span class="q-body">Explain why a function with output collisions cannot have an inverse function.</span>
+          <div class="blank-line"></div>
+          <div class="blank-line"></div>
+          <span class="print-answer">If two inputs share one output, the inverse would not know which input to return — it would need to produce two outputs for one input, violating the definition of a function.</span>
+        </div>
+      </div>
+
+      <!-- ── Part 6: Cryptography ──────────────────────────── -->
+      <div class="ws-part">
+        <h2>Part 6 — Cryptography Applications (Q28–31)</h2>
+
+        <div class="q">
+          <span class="q-num">Q28.</span>
+          <span class="q-body">Write out what each symbol means in the equation \(C = E_K(P)\):</span><br>
+          \(C\): <input class="ans-input" style="min-width:260px" /><br>
+          \(E_K\): <input class="ans-input" style="min-width:260px" /><br>
+          \(P\): <input class="ans-input" style="min-width:260px" />
+          <span class="print-answer">C = ciphertext. E_K = encryption function using key K. P = plaintext.</span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q29.</span>
+          <span class="q-body">Let \(E_K(P) = P \oplus K\). If \(P = \texttt{<span id="q29-p">0x57</span>}\) and \(K = \texttt{<span id="q29-k">0x83</span>}\), find \(C\). Show bit-by-bit XOR work.</span>
+          <div class="work-box" style="min-height:90px"></div>
+          <span>Answer \(C = \)</span><input class="ans-input" id="q29-ans" style="min-width:80px" />
+          <span class="print-answer" id="q29-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q30.</span>
+          <span class="q-body">Using the same key \(K = \texttt{<span id="q30-k">0x83</span>}\), decrypt \(C = \texttt{<span id="q30-c">0xD4</span>}\) by computing \(D_K(C) = C \oplus K\).</span>
+          <div class="work-box"></div>
+          <span>Answer \(P = \)</span><input class="ans-input" id="q30-ans" style="min-width:80px" />
+          <span class="print-answer" id="q30-pa"></span>
+        </div>
+
+        <div class="q">
+          <span class="q-num">Q31.</span>
+          <span class="q-body">
+            True or False: For each statement, circle T or F and give a brief reason.
+          </span>
+          <table class="ws-table" style="margin-top:10px">
+            <thead><tr><th>Statement</th><th>T / F</th></tr></thead>
+            <tbody>
+              <tr><td>\(f(x)\) notation means \(f\) multiplied by \(x\).</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+              <tr><td>A function may assign one input two different outputs.</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+              <tr><td>The range is always equal to the codomain.</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+              <tr><td>A permutation of a finite set is reversible.</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+              <tr><td>AES encryption is designed to be a permutation for every key.</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+              <tr><td>Composition means applying two functions in sequence.</td><td><input class="ans-input" style="min-width:40px" /></td></tr>
+            </tbody>
+          </table>
+          <span class="print-answer">F — T/F means apply the function. F. F — range ⊆ codomain, not necessarily equal. T. T. T.</span>
+        </div>
+      </div>
+
+    </main>
+
+    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <div class="nav-bundle">
+        <a href="worksheet_02_bitwise_operations_as_algebra_html.html" class="nav-item" id="prevLink">← Previous</a>
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item" id="nextLink">Next →</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_03_functions_as_machines_html.html" class="nav-item nav-secondary">Tutorial</a>
+        <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item nav-secondary">Practice</a>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var V = {};
+
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+    function unique(n, gen) {
+      var used = {}, out = [];
+      while (out.length < n) { var v = gen(); if (!used[v]) { used[v] = true; out.push(v); } }
+      return out;
+    }
+    function hex(n) { return '0x' + ((n & 0xFF) >>> 0).toString(16).toUpperCase().padStart(2, '0'); }
+
+    function generateVersion() {
+      V.label = 'Version ' + (Math.floor(Math.random() * 9000) + 1000);
+
+      // Q6: f(x)=ax+b at x
+      V.q6a = rnd(2,5); V.q6b = rnd(1,8); V.q6x = rnd(2,9);
+      V.q6ans = V.q6a * V.q6x + V.q6b;
+
+      // Q7: f(x)=ax+b at x (different values)
+      V.q7a = rnd(2,6); V.q7b = rnd(1,9); V.q7x = rnd(3,10);
+      V.q7ans = V.q7a * V.q7x + V.q7b;
+
+      // Q8: x² at x
+      V.q8x = rnd(5,12); V.q8ans = V.q8x * V.q8x;
+
+      // Q9: x-b at x
+      V.q9b = rnd(3,8); V.q9x = rnd(V.q9b+2, V.q9b+12); V.q9ans = V.q9x - V.q9b;
+
+      // Q10: ax at x
+      V.q10a = rnd(3,6); V.q10x = rnd(4,10); V.q10ans = V.q10a * V.q10x;
+
+      // Q11: ax+b at x
+      V.q11a = rnd(2,4); V.q11b = rnd(2,9); V.q11x = rnd(2,8);
+      V.q11ans = V.q11a * V.q11x + V.q11b;
+
+      // Q12: x²+b at x
+      V.q12b = rnd(1,7); V.q12x = rnd(3,8); V.q12ans = V.q12x * V.q12x + V.q12b;
+
+      // Q18-19: composition
+      V.q18a = rnd(2,6); V.q18b = rnd(2,4); V.q18x = rnd(3,9);
+      V.q18ans = V.q18b * (V.q18x + V.q18a);   // (g∘f)(x) = b(x+a)
+      V.q19x = V.q18x;
+      V.q19ans = V.q18b * V.q19x + V.q18a;      // (f∘g)(x) = bx+a
+
+      // Q21: compose with x²
+      V.q21a = rnd(1,4); V.q21x = rnd(2,7);
+      V.q21ans = Math.pow(V.q21x + V.q21a, 2);
+
+      // Q23: x+a inverse
+      V.q23a = rnd(3,9); V.q23ans = 'f⁻¹(x) = x − ' + V.q23a;
+
+      // Q24: x-a inverse
+      V.q24a = rnd(3,9); V.q24ans = 'f⁻¹(x) = x + ' + V.q24a;
+
+      // Q25: kx inverse
+      V.q25a = rnd(2,5); V.q25ans = 'f⁻¹(x) = x / ' + V.q25a;
+
+      // Q29-30: XOR
+      V.q29p = rnd(0x10, 0xEF); V.q29k = rnd(0x10, 0xEF);
+      V.q29c = (V.q29p ^ V.q29k) & 0xFF;
+      V.q30k = V.q29k; V.q30c = V.q29c; V.q30p = V.q29p;
+    }
+
+    function setText(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function applyVersion() {
+      document.getElementById('ver-label').textContent = V.label + ' — Modules may be printed with different numbers.';
+
+      setText('q6-fn',  V.q6a + 'x + ' + V.q6b);   setText('q6-x',  V.q6x);
+      setText('q7-fn',  V.q7a + 'x + ' + V.q7b);   setText('q7-x',  V.q7x);
+      setText('q8-x',   V.q8x);
+      setText('q9-b',   V.q9b);                     setText('q9-x',  V.q9x);
+      setText('q10-a',  V.q10a);                    setText('q10-x', V.q10x);
+      setText('q11-a',  V.q11a); setText('q11-b', V.q11b); setText('q11-x', V.q11x);
+      setText('q12-b',  V.q12b); setText('q12-x', V.q12x);
+
+      setText('q18-a', V.q18a); setText('q18-b', V.q18b); setText('q18-x', V.q18x);
+      setText('q19-x', V.q19x);
+      setText('q21-a', V.q21a); setText('q21-x', V.q21x);
+
+      setText('q23-a', V.q23a);
+      setText('q24-a', V.q24a);
+      setText('q25-a', V.q25a);
+
+      setText('q29-p', hex(V.q29p)); setText('q29-k', hex(V.q29k));
+      setText('q30-k', hex(V.q30k)); setText('q30-c', hex(V.q30c));
+
+      // Print answers
+      function pa(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = 'Answer: ' + val;
+      }
+      pa('q6-pa',  V.q6ans);   pa('q7-pa',  V.q7ans);   pa('q8-pa',  V.q8ans);
+      pa('q9-pa',  V.q9ans);   pa('q10-pa', V.q10ans);  pa('q11-pa', V.q11ans);
+      pa('q12-pa', V.q12ans);
+      pa('q18-pa', V.q18ans);  pa('q19-pa', V.q19ans);  pa('q21-pa', V.q21ans);
+      pa('q23-pa', V.q23ans);  pa('q24-pa', V.q24ans);  pa('q25-pa', V.q25ans);
+      pa('q29-pa', hex(V.q29c)); pa('q30-pa', hex(V.q30p));
+
+      if (window.MathJax) { MathJax.typesetPromise && MathJax.typesetPromise(); }
+    }
+
+    function clearInputs() {
+      document.querySelectorAll('.ans-input').forEach(function(el){ el.value = ''; });
+    }
+
+    window.newVersion = function () {
+      generateVersion();
+      clearInputs();
+      applyVersion();
+    };
+
+    window.printWithAnswers = function () {
+      document.body.classList.add('show-answers');
+      window.print();
+      document.body.classList.remove('show-answers');
+    };
+
+    generateVersion();
+    applyVersion();
+  }());
+  </script>
+</body>
+</html>
