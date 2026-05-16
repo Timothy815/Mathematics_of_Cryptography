@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 4: Modular Arithmetic | Mathematics of Cryptography</title>
+  <title>Practice 4: Modular Arithmetic | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,615 +35,534 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .wbnav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      color: #7d5a00;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .wbnav-link:hover { background: #f5e8b0; }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      background: #fffcf2;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+    details.quick-ref summary {
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.quick-ref summary::before {
+      content: '▶';
+      font-size: 0.75rem;
+      transition: transform 0.15s;
+    }
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      padding: 6px 22px 22px;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .mod-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .mod-table th, .mod-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .mod-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .mod-table th,
-    .mod-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
+    .qr-card {
+      border: 1px solid #e8dbbf;
+      border-radius: 12px;
       background: #ffffff;
-      break-inside: avoid;
+      padding: 14px 16px;
     }
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #7d5a00;
+    }
+    .qr-card p, .qr-card li { font-size: 0.88rem; margin: 4px 0; }
+    .qr-card table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .qr-card td, .qr-card th { border: 1px solid #e8dbbf; padding: 5px 8px; }
+    .qr-card th { background: #fff8e6; color: #7d5a00; font-weight: 700; }
 
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
+    /* Drill cards */
+    .drill-section { margin: 0 0 40px; }
+    .drill-section h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #334e7d;
+      border-bottom: 2px solid #e8dbbf;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .drill-card {
+      background: #fffcf2;
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .drill-q {
+      font-size: 1.15rem;
+      min-height: 2.4em;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .drill-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .drill-input {
+      padding: 9px 14px;
+      border: 2px solid #c9b97a;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #ffffff;
+      color: #16243d;
+      width: 140px;
+      transition: border-color 0.15s;
+    }
+    .drill-input:focus { outline: none; border-color: #7d5a00; }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+    .drill-btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .drill-btn:hover { opacity: 0.85; }
+    .drill-btn-check { background: #334e7d; color: #ffffff; }
+    .drill-btn-next  { background: #e8dbbf; color: #7d5a00; }
+    .drill-fb {
+      min-height: 2em;
+      margin-top: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .drill-fb.ok  { color: #2e7d32; }
+    .drill-fb.err { color: #c62828; }
 
-    .clock-line {
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      margin: 12px 0;
-      font-family: "Cascadia Code", "Consolas", monospace;
+      justify-content: space-between;
+      gap: 14px;
     }
-
-    .clock-slot {
-      width: 38px;
-      height: 38px;
-      border: 1px solid #c7d2ea;
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 900;
-      background: #ffffff;
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
     }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #fff8e6; border-color: #e8dbbf; color: #7d5a00; }
+    .nav-secondary:hover { background: #f5e8b0; }
 
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
-
-    @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
-      .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .mod-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .drill-card { padding: 18px; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 4</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 4</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Modular Arithmetic</h1>
       <p class="subtitle">
-        Printable practice for remainders, congruence, wraparound arithmetic, negative numbers, multiplication modulo n, and Caesar shifts.
+        Six interactive drills covering remainders, congruence, wraparound addition and subtraction, multiplication, and Caesar cipher shifts.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Drill navigation">
+        <a class="wbnav-link" href="#d1-sec">Drill 1 — Remainders</a>
+        <a class="wbnav-link" href="#d2-sec">Drill 2 — Congruence</a>
+        <a class="wbnav-link" href="#d3-sec">Drill 3 — Addition</a>
+        <a class="wbnav-link" href="#d4-sec">Drill 4 — Subtraction</a>
+        <a class="wbnav-link" href="#d5-sec">Drill 5 — Multiplication</a>
+        <a class="wbnav-link" href="#d6-sec">Drill 6 — Caesar</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            For each modular arithmetic problem, think in two layers: ordinary arithmetic first, then wrap back into the allowed range. Show division or wraparound work when the problem asks for it.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Core ideas</div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Idea</th><th>Meaning</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Modulus \(n\)</td><td>The wraparound size.</td></tr>
-                <tr><td>\(a\bmod n\)</td><td>The remainder after dividing \(a\) by \(n\).</td></tr>
-                <tr><td>Residues modulo \(n\)</td><td>Usually \(0,1,2,\dots,n-1\).</td></tr>
-                <tr><td>\(a\equiv b\pmod n\)</td><td>\(a\) and \(b\) have the same remainder modulo \(n\).</td></tr>
-                <tr><td>Congruence test</td><td>\(a\equiv b\pmod n\) means \(n\mid(a-b)\).</td></tr>
-              </tbody>
+      <!-- ── Quick Reference ── -->
+      <details class="quick-ref no-print">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <h4>Vocabulary</h4>
+            <table>
+              <tr><th>Symbol</th><th>Meaning</th></tr>
+              <tr><td>\(n\)</td><td>The modulus (wraparound size)</td></tr>
+              <tr><td>\(a \bmod n\)</td><td>Remainder of \(a \div n\)</td></tr>
+              <tr><td>\(\equiv\)</td><td>Congruence (same remainder)</td></tr>
+              <tr><td>\(\mathbb{Z}_n\)</td><td>Residues \(\{0,1,\ldots,n{-}1\}\)</td></tr>
             </table>
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Core formulas</div>
-            <div class="math-display">
-              \[
-                a=qn+r,\qquad 0\le r<n
-              \]
-              \[
-                a\bmod n=r
-              \]
-              \[
-                a\equiv b\pmod n \iff n\mid(a-b)
-              \]
-              \[
-                C\equiv P+K\pmod{26}
-              \]
-            </div>
+          <div class="qr-card">
+            <h4>Division Form</h4>
+            <p>Write \(a = qn + r\) where \(0 \le r < n\).</p>
+            <p>Then \(a \bmod n = r\).</p>
+            <p><strong>Congruence tests:</strong></p>
+            <p>\(a \equiv b \pmod n\) iff their remainders match, OR iff \(n \mid (a-b)\).</p>
+          </div>
+          <div class="qr-card">
+            <h4>Arithmetic Rules</h4>
+            <p><strong>Add:</strong> \((a+b) \bmod n\) — add, then reduce.</p>
+            <p><strong>Subtract:</strong> \((a-b) \bmod n\) — if result is negative, add \(n\).</p>
+            <p><strong>Multiply:</strong> \((a \cdot b) \bmod n\) — multiply, then reduce.</p>
+          </div>
+          <div class="qr-card">
+            <h4>Caesar Cipher</h4>
+            <p>\(A=0,\;B=1,\;\ldots,\;Z=25\)</p>
+            <p><strong>Encrypt:</strong> \(C \equiv P + K \pmod{26}\)</p>
+            <p><strong>Decrypt:</strong> \(P \equiv C - K \pmod{26}\)</p>
+            <p>(Add 26 if result is negative.)</p>
           </div>
         </div>
-      </section>
+      </details>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. Define modulus in friendly language.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What does \(a\bmod n\) ask for?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What does \(a\equiv b\pmod n\) mean?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why are the standard residues modulo \(n\) usually \(0\) through \(n-1\), not 1 through \(n\)?</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="remainders">
-        <h2>Part B: Remainders</h2>
-        <p>Write each number in the form \(a=qn+r\), then give the remainder.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Expression</th>
-              <th>Division form \(a=qn+r\)</th>
-              <th>Remainder</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>\(17\bmod 5\)</td><td></td><td></td></tr>
-            <tr><td>B2</td><td>\(41\bmod 12\)</td><td></td><td></td></tr>
-            <tr><td>B3</td><td>\(58\bmod 7\)</td><td></td><td></td></tr>
-            <tr><td>B4</td><td>\(100\bmod 9\)</td><td></td><td></td></tr>
-            <tr><td>B5</td><td>\(255\bmod 16\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="clock-arithmetic">
-        <h2>Part C: Clock arithmetic</h2>
-        <p>Use modulo 12. The standard residues are 0 through 11.</p>
-
-        <div class="box quick-reference-box">
-          <div class="box-title">Modulo 12 positions</div>
-          <div class="clock-line">
-            <span class="clock-slot">0</span>
-            <span class="clock-slot">1</span>
-            <span class="clock-slot">2</span>
-            <span class="clock-slot">3</span>
-            <span class="clock-slot">4</span>
-            <span class="clock-slot">5</span>
-            <span class="clock-slot">6</span>
-            <span class="clock-slot">7</span>
-            <span class="clock-slot">8</span>
-            <span class="clock-slot">9</span>
-            <span class="clock-slot">10</span>
-            <span class="clock-slot">11</span>
+      <!-- ── Drill 1: Remainders ── -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Finding Remainders</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-inp" type="text" placeholder="Remainder" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d1-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d1-next">Next →</button>
           </div>
-        </div>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Expression</th>
-              <th>Ordinary result</th>
-              <th>Modulo 12 result</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>C1</td><td>\(7+8\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>C2</td><td>\(9+8\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>C3</td><td>\(3-8\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>C4</td><td>\(4-9\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>C5</td><td>\(10+17\pmod{12}\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="congruence">
-        <h2>Part D: Congruence checks</h2>
-        <p>Decide whether each statement is true. Show either matching remainders or the divisibility test.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Statement</th>
-              <th>True?</th>
-              <th>Reason/work</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>D1</td><td>\(17\equiv5\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>D2</td><td>\(38\equiv2\pmod{12}\)</td><td></td><td></td></tr>
-            <tr><td>D3</td><td>\(29\equiv3\pmod{13}\)</td><td></td><td></td></tr>
-            <tr><td>D4</td><td>\(44\equiv8\pmod{9}\)</td><td></td><td></td></tr>
-            <tr><td>D5</td><td>\(101\equiv1\pmod{10}\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="modular-operations">
-        <h2>Part E: Modular addition, subtraction, and multiplication</h2>
-        <p>Do ordinary arithmetic first, then reduce modulo \(n\).</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Expression</th>
-              <th>Ordinary arithmetic</th>
-              <th>Reduced answer</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>E1</td><td>\(19+11\pmod{26}\)</td><td></td><td></td></tr>
-            <tr><td>E2</td><td>\(8+25\pmod{26}\)</td><td></td><td></td></tr>
-            <tr><td>E3</td><td>\(4-13\pmod{26}\)</td><td></td><td></td></tr>
-            <tr><td>E4</td><td>\(7\cdot9\pmod{26}\)</td><td></td><td></td></tr>
-            <tr><td>E5</td><td>\(8\cdot7\pmod{26}\)</td><td></td><td></td></tr>
-            <tr><td>E6</td><td>\(15\cdot15\pmod{26}\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="zn">
-        <h2>Part F: Working in \(\mathbb{Z}_n\)</h2>
-
-        <div class="problem">
-          <div class="problem-title">F1. List the standard residues in \(\mathbb{Z}_5\).</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F2. List the standard residues in \(\mathbb{Z}_8\).</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F3. In \(\mathbb{Z}_{12}\), which standard residue does 49 land on?</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F4. In \(\mathbb{Z}_{16}\), which standard residue does 255 land on?</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
+          <div class="drill-fb" id="d1-fb"></div>
         </div>
       </section>
 
-      <section id="caesar-practice">
-        <h2>Part G: Caesar cipher preview</h2>
-        <p>Use \(A=0, B=1, C=2, \dots, Z=25\). Caesar encryption uses:</p>
-        <div class="math-display">
-          \[
-            C\equiv P+K\pmod{26}
-          \]
-        </div>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Plain letter</th>
-              <th>\(P\)</th>
-              <th>Key \(K\)</th>
-              <th>Work</th>
-              <th>Encrypted letter</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>G1</td><td>A</td><td>0</td><td>3</td><td></td><td></td></tr>
-            <tr><td>G2</td><td>H</td><td>7</td><td>5</td><td></td><td></td></tr>
-            <tr><td>G3</td><td>Y</td><td>24</td><td>5</td><td></td><td></td></tr>
-            <tr><td>G4</td><td>Z</td><td>25</td><td>2</td><td></td><td></td></tr>
-            <tr><td>G5</td><td>M</td><td>12</td><td>19</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="challenge">
-        <h2>Part H: Challenge problems</h2>
-        <div class="box challenge-box">
-          <div class="box-title">Stretch the concept</div>
-          <p>
-            These problems ask you to explain or connect ideas. A correct answer should show the wraparound reasoning clearly.
-          </p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H1. Explain why \(12\equiv0\pmod{12}\), but 12 is not one of the standard residues modulo 12.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Explain why \(-1\equiv25\pmod{26}\).</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H3. A byte has 256 possible values. Explain how unsigned byte wraparound is related to modulo 256 arithmetic.</div>
-          <div class="work-space large-work-space"></div>
+      <!-- ── Drill 2: Congruence ── -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Congruence Check</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-inp" type="text" placeholder="YES or NO" autocomplete="off" style="width:120px;" />
+            <button class="drill-btn drill-btn-check" id="d2-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d2-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
         </div>
       </section>
 
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Statement</th>
-              <th>True or False?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>\(a\bmod n\) asks for the quotient after division.</td><td></td></tr>
-            <tr><td>Modulo 12 standard residues are usually 0 through 11.</td><td></td></tr>
-            <tr><td>\(17\equiv5\pmod{12}\) means 17 and 5 are the same ordinary integer.</td><td></td></tr>
-            <tr><td>In modular arithmetic, subtraction can produce a negative intermediate result that wraps back into range.</td><td></td></tr>
-            <tr><td>Caesar cipher shifts can be modeled with addition modulo 26.</td><td></td></tr>
-          </tbody>
-        </table>
+      <!-- ── Drill 3: Modular Addition ── -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Modular Addition</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d3-inp" type="text" placeholder="Number" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d3-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d3-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+        </div>
       </section>
 
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            When unsure, write \(a=qn+r\). The remainder \(r\) is the modular result when \(0\le r<n\).
-          </p>
+      <!-- ── Drill 4: Modular Subtraction ── -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Modular Subtraction</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-inp" type="text" placeholder="Number" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d4-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d4-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
         </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> The modulus is the wraparound size, like the number of positions on a clock.</p>
-          <p><strong>A2.</strong> \(a\bmod n\) asks for the remainder after dividing \(a\) by \(n\).</p>
-          <p><strong>A3.</strong> \(a\equiv b\pmod n\) means \(a\) and \(b\) have the same remainder modulo \(n\). Technically, \(n\mid(a-b)\).</p>
-          <p><strong>A4.</strong> There are \(n\) residues. Counting from 0 through \(n-1\) gives exactly \(n\) positions, and \(n\) itself wraps back to 0.</p>
-        </div>
-
-        <h3>Part B: Remainders</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Division form</th><th>Remainder</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>\(17=3\cdot5+2\)</td><td>2</td></tr>
-            <tr><td>B2</td><td>\(41=3\cdot12+5\)</td><td>5</td></tr>
-            <tr><td>B3</td><td>\(58=8\cdot7+2\)</td><td>2</td></tr>
-            <tr><td>B4</td><td>\(100=11\cdot9+1\)</td><td>1</td></tr>
-            <tr><td>B5</td><td>\(255=15\cdot16+15\)</td><td>15</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Clock arithmetic</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Work</th><th>Result</th></tr></thead>
-          <tbody>
-            <tr><td>C1</td><td>\(7+8=15\), \(15\bmod12=3\)</td><td>3</td></tr>
-            <tr><td>C2</td><td>\(9+8=17\), \(17\bmod12=5\)</td><td>5</td></tr>
-            <tr><td>C3</td><td>\(3-8=-5\), \(-5+12=7\)</td><td>7</td></tr>
-            <tr><td>C4</td><td>\(4-9=-5\), \(-5+12=7\)</td><td>7</td></tr>
-            <tr><td>C5</td><td>\(10+17=27\), \(27\bmod12=3\)</td><td>3</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part D: Congruence checks</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>True?</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td>True</td><td>\(17\bmod12=5\), and \(5\bmod12=5\).</td></tr>
-            <tr><td>D2</td><td>True</td><td>\(38\bmod12=2\), and \(2\bmod12=2\).</td></tr>
-            <tr><td>D3</td><td>True</td><td>\(29-3=26\), and 26 is divisible by 13.</td></tr>
-            <tr><td>D4</td><td>True</td><td>\(44-8=36\), and 36 is divisible by 9.</td></tr>
-            <tr><td>D5</td><td>True</td><td>\(101\bmod10=1\).</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part E: Modular operations</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Ordinary arithmetic</th><th>Reduced answer</th></tr></thead>
-          <tbody>
-            <tr><td>E1</td><td>\(19+11=30\)</td><td>\(30\bmod26=4\)</td></tr>
-            <tr><td>E2</td><td>\(8+25=33\)</td><td>\(33\bmod26=7\)</td></tr>
-            <tr><td>E3</td><td>\(4-13=-9\)</td><td>\(-9+26=17\)</td></tr>
-            <tr><td>E4</td><td>\(7\cdot9=63\)</td><td>\(63\bmod26=11\)</td></tr>
-            <tr><td>E5</td><td>\(8\cdot7=56\)</td><td>\(56\bmod26=4\)</td></tr>
-            <tr><td>E6</td><td>\(15\cdot15=225\)</td><td>\(225\bmod26=17\)</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part F: Working in \(\mathbb{Z}_n\)</h3>
-        <div class="answer-step">
-          <p><strong>F1.</strong> \(\mathbb{Z}_5=\{0,1,2,3,4\}\).</p>
-          <p><strong>F2.</strong> \(\mathbb{Z}_8=\{0,1,2,3,4,5,6,7\}\).</p>
-          <p><strong>F3.</strong> \(49=4\cdot12+1\), so 49 lands on 1 in \(\mathbb{Z}_{12}\).</p>
-          <p><strong>F4.</strong> \(255=15\cdot16+15\), so 255 lands on 15 in \(\mathbb{Z}_{16}\).</p>
-        </div>
-
-        <h3>Part G: Caesar cipher preview</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Work</th><th>Encrypted letter</th></tr></thead>
-          <tbody>
-            <tr><td>G1</td><td>\(0+3=3\)</td><td>D</td></tr>
-            <tr><td>G2</td><td>\(7+5=12\)</td><td>M</td></tr>
-            <tr><td>G3</td><td>\(24+5=29\), \(29\bmod26=3\)</td><td>D</td></tr>
-            <tr><td>G4</td><td>\(25+2=27\), \(27\bmod26=1\)</td><td>B</td></tr>
-            <tr><td>G5</td><td>\(12+19=31\), \(31\bmod26=5\)</td><td>F</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part H: Challenge problems</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> \(12\equiv0\pmod{12}\) because 12 leaves remainder 0 when divided by 12. But the standard residues modulo 12 are 0 through 11, so 12 wraps back to 0 instead of appearing as its own standard residue.</p>
-          <p><strong>H2 sample answer.</strong> \(-1\equiv25\pmod{26}\) because adding 26 to \(-1\) gives 25. Also, \(-1-25=-26\), and \(-26\) is divisible by 26.</p>
-          <p><strong>H3 sample answer.</strong> An unsigned byte has 256 possible values, 0 through 255. If arithmetic overflows past 255 and wraps around, it behaves like arithmetic modulo 256 because values are reduced back into the range 0 through 255.</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>\(a\bmod n\) asks for the quotient after division.</td><td>False</td><td>It asks for the remainder.</td></tr>
-            <tr><td>Modulo 12 standard residues are usually 0 through 11.</td><td>True</td><td>That gives 12 total positions.</td></tr>
-            <tr><td>\(17\equiv5\pmod{12}\) means 17 and 5 are the same ordinary integer.</td><td>False</td><td>It means they have the same remainder modulo 12.</td></tr>
-            <tr><td>In modular arithmetic, subtraction can produce a negative intermediate result that wraps back into range.</td><td>True</td><td>For example, \(3-8=-5\equiv7\pmod{12}\).</td></tr>
-            <tr><td>Caesar cipher shifts can be modeled with addition modulo 26.</td><td>True</td><td>The alphabet has 26 letters.</td></tr>
-          </tbody>
-        </table>
       </section>
 
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 4: Modular Arithmetic.
-      </p>
+      <!-- ── Drill 5: Modular Multiplication ── -->
+      <section class="drill-section" id="d5-sec">
+        <h2>Drill 5 — Modular Multiplication</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d5-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d5-inp" type="text" placeholder="Number" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d5-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d5-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d5-fb"></div>
+        </div>
+      </section>
 
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <!-- ── Drill 6: Caesar ── -->
+      <section class="drill-section" id="d6-sec">
+        <h2>Drill 6 — Caesar Cipher</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d6-q">Loading…</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d6-inp" type="text" placeholder="Letter (A–Z)" autocomplete="off" style="width:150px;text-transform:uppercase;" />
+            <button class="drill-btn drill-btn-check" id="d6-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d6-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d6-fb"></div>
+        </div>
+      </section>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_05_multiplicative_inverses_modulo_n_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item">← Practice 3</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item">Practice 5 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="worksheet_04_modular_arithmetic_html.html" class="nav-item nav-secondary">Worksheet</a>
         </div>
-    </nav>
+      </nav>
+
     </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+    function pick(arr)   { return arr[Math.floor(Math.random() * arr.length)]; }
+    function modPos(a, n) { return ((a % n) + n) % n; }
+
+    var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    /* ── makeDrill ─────────────────────────────────────────────────── */
+    function makeDrill(cfg) {
+      var state;
+      var checked = false;
+
+      var qEl    = document.getElementById(cfg.id + '-q');
+      var inp    = document.getElementById(cfg.id + '-inp');
+      var fb     = document.getElementById(cfg.id + '-fb');
+      var btnChk = document.getElementById(cfg.id + '-check');
+      var btnNxt = document.getElementById(cfg.id + '-next');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+
+      function load() {
+        state   = cfg.gen();
+        checked = false;
+        inp.value = '';
+        inp.className = 'drill-input';
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = state.q;
+        typeset(qEl);
+        inp.focus({ preventScroll: true });
+      }
+
+      function check() {
+        var raw = inp.value.trim();
+        var ok  = cfg.check(raw, state);
+        checked = true;
+        if (ok) {
+          inp.className = 'drill-input correct';
+          fb.innerHTML = '&#10003; Correct! ' + state.ok;
+          fb.className = 'drill-fb ok';
+        } else {
+          inp.className = 'drill-input wrong';
+          fb.innerHTML = '&#10007; Not quite. ' + state.err;
+          fb.className = 'drill-fb err';
+        }
+        typeset(fb);
+      }
+
+      btnChk.addEventListener('click', function () { if (checked) load(); else check(); });
+      btnNxt.addEventListener('click', load);
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { if (checked) load(); else check(); }
+      });
+
+      load();
+    }
+
+    /* ── Drill 1: Remainder ──────────────────────────────────────── */
+    makeDrill({
+      id: 'd1',
+      gen: function () {
+        var moduli = [5, 6, 7, 8, 9, 11, 12, 13, 16];
+        var n = pick(moduli);
+        var q = rnd(2, 7);
+        var r = rnd(1, n - 1);  // remainder never zero
+        var a = q * n + r;
+        return {
+          q:   'Compute \\(' + a + ' \\bmod ' + n + '\\).',
+          ans: String(r),
+          ok:  '\\(' + a + ' = ' + q + '\\cdot ' + n + ' + ' + r + '\\). The remainder is \\(' + r + '\\).',
+          err: 'Write \\(' + a + ' = ' + q + '\\cdot ' + n + ' + ' + r + '\\). The remainder \\(r\\) satisfies \\(0 \\le r < ' + n + '\\), so \\(r = ' + r + '\\).'
+        };
+      },
+      check: function (inp, s) { return inp === s.ans; }
+    });
+
+    /* ── Drill 2: Congruence ─────────────────────────────────────── */
+    makeDrill({
+      id: 'd2',
+      gen: function () {
+        var moduli = [5, 6, 7, 8, 9, 10, 11, 12];
+        var n = pick(moduli);
+        var r = rnd(1, n - 1);
+        var q1 = rnd(1, 7);
+        var q2 = rnd(1, 7);
+        if (q1 === q2) q2 = (q2 % 7) + 1;
+        var a = q1 * n + r;
+        var yes = Math.random() < 0.5;
+        var b, ans, ok, err;
+        if (yes) {
+          b   = q2 * n + r;
+          ans = 'YES';
+          ok  = '\\(' + a + ' \\bmod ' + n + ' = ' + r + '\\) and \\(' + b + ' \\bmod ' + n + ' = ' + r + '\\). Same remainder — YES.';
+          err = '\\(' + a + ' - ' + b + ' = ' + (a - b) + '\\), which is divisible by ' + n + '. They are congruent — YES.';
+        } else {
+          var r2 = (r + 1) % n;
+          b   = q2 * n + r2;
+          ans = 'NO';
+          ok  = '\\(' + a + ' \\bmod ' + n + ' = ' + r + '\\) but \\(' + b + ' \\bmod ' + n + ' = ' + r2 + '\\). Different remainders — NO.';
+          err = ok;
+        }
+        return {
+          q:   'Is \\(' + a + ' \\equiv ' + b + ' \\pmod{' + n + '}\\)? Type YES or NO.',
+          ans: ans,
+          ok:  ok,
+          err: err
+        };
+      },
+      check: function (inp, s) { return inp.toUpperCase() === s.ans; }
+    });
+
+    /* ── Drill 3: Modular Addition ───────────────────────────────── */
+    makeDrill({
+      id: 'd3',
+      gen: function () {
+        var moduli = [7, 8, 10, 11, 12, 13, 16, 26];
+        var n = pick(moduli);
+        // Ensure a + b >= n so wraparound occurs
+        var a = rnd(Math.ceil(n / 2), n - 1);
+        var b = rnd(Math.ceil(n / 2), n - 1);
+        var raw = a + b;
+        var r   = raw % n;
+        return {
+          q:   'Compute \\((' + a + ' + ' + b + ') \\bmod ' + n + '\\).',
+          ans: String(r),
+          ok:  '\\(' + a + ' + ' + b + ' = ' + raw + '\\), and \\(' + raw + ' \\bmod ' + n + ' = ' + r + '\\).',
+          err: 'Add first: \\(' + a + ' + ' + b + ' = ' + raw + '\\). Then reduce: \\(' + raw + ' \\bmod ' + n + ' = ' + r + '\\).'
+        };
+      },
+      check: function (inp, s) { return inp.trim() === s.ans; }
+    });
+
+    /* ── Drill 4: Modular Subtraction ────────────────────────────── */
+    makeDrill({
+      id: 'd4',
+      gen: function () {
+        var moduli = [7, 8, 10, 11, 12, 13, 16, 26];
+        var n = pick(moduli);
+        // Force a < b so a - b is always negative → student must wrap
+        var a = rnd(0, n - 3);
+        var b = rnd(a + 2, n - 1);
+        var raw = a - b;                 // always negative
+        var r   = modPos(raw, n);        // ((a-b)%n+n)%n
+        return {
+          q:   'Compute \\((' + a + ' - ' + b + ') \\bmod ' + n + '\\).',
+          ans: String(r),
+          ok:  '\\(' + a + ' - ' + b + ' = ' + raw + '\\). Since this is negative, add \\(' + n + '\\): \\(' + raw + ' + ' + n + ' = ' + r + '\\).',
+          err: '\\(' + a + ' - ' + b + ' = ' + raw + '\\). When the result is negative, add the modulus: \\(' + raw + ' + ' + n + ' = ' + r + '\\).'
+        };
+      },
+      check: function (inp, s) { return inp.trim() === s.ans; }
+    });
+
+    /* ── Drill 5: Modular Multiplication ────────────────────────── */
+    makeDrill({
+      id: 'd5',
+      gen: function () {
+        var moduli = [7, 8, 11, 13, 16, 17, 26];
+        var n = pick(moduli);
+        // Ensure product > n so reduction is needed
+        var a, b, prod;
+        do {
+          a    = rnd(2, Math.min(n - 1, 12));
+          b    = rnd(2, Math.min(n - 1, 12));
+          prod = a * b;
+        } while (prod < n);
+        var q = Math.floor(prod / n);
+        var r = prod % n;
+        return {
+          q:   'Compute \\((' + a + ' \\cdot ' + b + ') \\bmod ' + n + '\\).',
+          ans: String(r),
+          ok:  '\\(' + a + ' \\times ' + b + ' = ' + prod + '\\). Then \\(' + prod + ' = ' + q + '\\cdot ' + n + ' + ' + r + '\\), so the answer is \\(' + r + '\\).',
+          err: 'Multiply first: \\(' + a + ' \\times ' + b + ' = ' + prod + '\\). Divide by ' + n + ': quotient ' + q + ', remainder \\(' + r + '\\).'
+        };
+      },
+      check: function (inp, s) { return inp.trim() === s.ans; }
+    });
+
+    /* ── Drill 6: Caesar Cipher ─────────────────────────────────── */
+    makeDrill({
+      id: 'd6',
+      gen: function () {
+        // Bias toward letters near Z so wraparound appears often
+        var pIdx = Math.random() < 0.45 ? rnd(20, 25) : rnd(0, 25);
+        var K    = rnd(1, 25);
+        var P    = LETTERS[pIdx];
+        var cIdx = (pIdx + K) % 26;
+        var C    = LETTERS[cIdx];
+        var sum  = pIdx + K;
+        var needsWrap = sum >= 26;
+        var hint = '\\(' + P + ' = ' + pIdx + '\\). Then \\(' + pIdx + ' + ' + K + ' = ' + sum + '\\)';
+        if (needsWrap) {
+          hint += ', and \\(' + sum + ' \\bmod 26 = ' + cIdx + '\\)';
+        }
+        hint += '. The ciphertext letter is \\(\\textbf{' + C + '}\\).';
+        return {
+          q:   'Encrypt the letter \\(' + P + '\\) with Caesar key \\(K = ' + K + '\\). Use \\(C \\equiv P + K \\pmod{26}\\).',
+          ans: C,
+          ok:  hint,
+          err: hint
+        };
+      },
+      check: function (inp, s) { return inp.trim().toUpperCase() === s.ans; }
+    });
+
+  })();
+  </script>
 </body>
 </html>

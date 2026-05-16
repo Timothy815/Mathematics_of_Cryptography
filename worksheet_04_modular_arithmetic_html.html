@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 4: Modular Arithmetic | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root { --ws: #2a6049; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #eaf4ee);
+      border: 1px solid #b0d4be;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    header.worksheet-header .course-label { color: var(--ws); font-weight: 800; }
+    header.worksheet-header h1 { color: var(--ws); }
+
+    /* Version bar */
+    .version-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 22px 0 0;
+      padding-top: 18px;
+      border-top: 1px solid #b0d4be;
+    }
+    .ver-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--ws);
+      background: var(--ws);
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .ver-btn:hover { opacity: 0.85; }
+    .ver-btn.outline { background: #ffffff; color: var(--ws); }
+    .ver-btn.outline:hover { background: #eaf4ee; }
+
+    /* Student info */
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .field-line { border-bottom: 1.5px solid #333; min-height: 30px; padding-top: 4px; }
+    .field-label { font-weight: 750; color: #333; }
+
+    /* Section headers */
+    .part-header {
+      background: var(--ws);
+      color: #ffffff;
+      border-radius: 10px 10px 0 0;
+      padding: 10px 18px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin: 32px 0 0;
+    }
+
+    /* Tables */
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 18px;
+      font-size: 0.94rem;
+    }
+    .ws-table th, .ws-table td {
+      border: 1px solid var(--border);
+      padding: 9px 11px;
+      vertical-align: middle;
+    }
+    .ws-table th {
+      background: #eaf4ee;
+      color: var(--ws);
+      font-weight: 700;
+      text-align: left;
+    }
+    .ws-table td:first-child { font-weight: 700; color: #444; }
+
+    /* Answer inputs */
+    .ans-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1.5px solid #999;
+      font-size: 0.93rem;
+      padding: 4px 0;
+      background: transparent;
+      font-family: inherit;
+    }
+    .ans-input:focus { outline: none; border-bottom-color: var(--ws); }
+
+    /* Print answers */
+    .print-answer {
+      display: none;
+      font-size: 0.82rem;
+      color: #c62828;
+      font-style: italic;
+      margin-top: 4px;
+    }
+    body.show-answers .print-answer { display: block !important; }
+
+    /* Problem boxes */
+    .ws-problem {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+    .ws-problem p { margin: 0 0 8px; }
+    .work-box {
+      border: 1px dashed #aaa;
+      border-radius: 8px;
+      min-height: 60px;
+      margin: 8px 0;
+      padding: 6px;
+      background: #fafafa;
+    }
+    .work-box.large { min-height: 100px; }
+
+    /* Reference strip */
+    .ref-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 0 0 18px;
+    }
+    .ref-card {
+      flex: 1 1 180px;
+      border: 1px solid #b0d4be;
+      border-radius: 10px;
+      background: #f3faf5;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+    }
+    .ref-card strong { display: block; color: var(--ws); margin-bottom: 4px; }
+
+    @media (max-width: 700px) {
+      header.worksheet-header, main { padding: 20px; }
+      .student-info { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 0.6in; }
+      body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.35; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .version-bar, .no-print { display: none !important; }
+      h1 { font-size: 22pt; }
+      h2 { font-size: 14pt; break-after: avoid; }
+      .ws-table, .ws-problem, .ref-strip { break-inside: avoid; }
+      .ws-table th { background: #eee !important; color: #000 !important; }
+      .part-header { background: #eee !important; color: #000 !important; border-radius: 0; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 4</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Modular Arithmetic</h1>
+      <p class="subtitle">
+        Remainders, congruence, wraparound addition and subtraction, modular multiplication, and Caesar cipher shifts.
+        Each "New Version" regenerates all numbered problems with fresh values.
+      </p>
+
+      <div class="version-bar no-print">
+        <button class="ver-btn" onclick="newVersion()">New Version</button>
+        <button class="ver-btn outline" onclick="window.print()">Print Blank</button>
+        <button class="ver-btn outline" onclick="printWithAnswers()">Print with Answers</button>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- Student Info -->
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <div class="field-line"></div>
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <div class="field-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Reference strip -->
+      <div class="ref-strip no-print">
+        <div class="ref-card">
+          <strong>Division Form</strong>
+          \(a = qn + r\), \(0 \le r < n\)<br>
+          \(a \bmod n = r\)
+        </div>
+        <div class="ref-card">
+          <strong>Congruence</strong>
+          \(a \equiv b \pmod{n}\)<br>
+          iff same remainder, iff \(n \mid (a-b)\)
+        </div>
+        <div class="ref-card">
+          <strong>Subtract (negative wrap)</strong>
+          If \(a-b < 0\), add \(n\).
+        </div>
+        <div class="ref-card">
+          <strong>Caesar</strong>
+          \(C \equiv P + K \pmod{26}\)<br>
+          \(A=0,\ldots,Z=25\)
+        </div>
+      </div>
+
+      <!-- ── Part 1: Vocabulary ── -->
+      <div class="part-header">Part 1 — Vocabulary (Q1–5)</div>
+      <div class="ws-problem">
+        <p><strong>Q1.</strong> What does the modulus \(n\) represent in modular arithmetic?</p>
+        <div class="work-box"></div>
+        <div class="print-answer">Answer: The modulus \(n\) is the wraparound size — the number of positions in the circular number system.</div>
+      </div>
+      <div class="ws-problem">
+        <p><strong>Q2.</strong> What does the expression \(a \bmod n\) compute?</p>
+        <div class="work-box"></div>
+        <div class="print-answer">Answer: \(a \bmod n\) gives the remainder after dividing \(a\) by \(n\). It satisfies \(a = qn + r\) with \(0 \le r < n\).</div>
+      </div>
+      <div class="ws-problem">
+        <p><strong>Q3.</strong> List the elements of \(\mathbb{Z}_7\).</p>
+        <div class="work-box"></div>
+        <div class="print-answer">Answer: \(\mathbb{Z}_7 = \{0, 1, 2, 3, 4, 5, 6\}\).</div>
+      </div>
+      <div class="ws-problem">
+        <p><strong>Q4.</strong> State the two equivalent tests for \(a \equiv b \pmod{n}\).</p>
+        <div class="work-box"></div>
+        <div class="print-answer">Answer: (i) \(a\) and \(b\) have the same remainder modulo \(n\). (ii) \(n\) divides \(a - b\).</div>
+      </div>
+      <div class="ws-problem">
+        <p><strong>Q5.</strong> Why are the standard residues modulo \(n\) labelled \(0\) through \(n-1\) rather than \(1\) through \(n\)?</p>
+        <div class="work-box"></div>
+        <div class="print-answer">Answer: There are exactly \(n\) residues. Starting at 0 and going to \(n-1\) gives \(n\) positions, and \(n\) itself wraps back to 0.</div>
+      </div>
+
+      <!-- ── Part 2: Division Form ── -->
+      <div class="part-header">Part 2 — Division Form and Remainders (Q6–13)</div>
+      <p style="margin:14px 0 10px;">Write each number in the form \(a = qn + r\), then state the remainder.</p>
+
+      <table class="ws-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Expression</th>
+            <th>Division form \(\;a = qn + r\)</th>
+            <th>Remainder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q6</td>
+            <td id="p2q6-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q6-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q6-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q7</td>
+            <td id="p2q7-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q7-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q7-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q8</td>
+            <td id="p2q8-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q8-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q8-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q9</td>
+            <td id="p2q9-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q9-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q9-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q10</td>
+            <td id="p2q10-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q10-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q10-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q11</td>
+            <td id="p2q11-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q11-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q11-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q12</td>
+            <td id="p2q12-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q12-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q12-r"></div></td>
+          </tr>
+          <tr>
+            <td>Q13</td>
+            <td id="p2q13-expr">\(\phantom{00} \bmod \phantom{0}\)</td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q13-div"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p2q13-r"></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ── Part 3: Congruence ── -->
+      <div class="part-header">Part 3 — Congruence Checks (Q14–20)</div>
+      <p style="margin:14px 0 10px;">Decide whether each statement is true. Show your reasoning (matching remainders or the divisibility test).</p>
+
+      <table class="ws-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Statement</th>
+            <th>True?</th>
+            <th>Reason / Work</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q14</td>
+            <td id="p3q14-stmt">\(\phantom{00} \equiv \phantom{0} \pmod{\phantom{0}}\)</td>
+            <td><input class="ans-input" style="width:50px;" /><div class="print-answer" id="p3q14-ans"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p3q14-why"></div></td>
+          </tr>
+          <tr>
+            <td>Q15</td>
+            <td id="p3q15-stmt">\(\phantom{00} \equiv \phantom{0} \pmod{\phantom{0}}\)</td>
+            <td><input class="ans-input" style="width:50px;" /><div class="print-answer" id="p3q15-ans"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p3q15-why"></div></td>
+          </tr>
+          <tr>
+            <td>Q16</td>
+            <td id="p3q16-stmt">\(\phantom{00} \equiv \phantom{0} \pmod{\phantom{0}}\)</td>
+            <td><input class="ans-input" style="width:50px;" /><div class="print-answer" id="p3q16-ans"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p3q16-why"></div></td>
+          </tr>
+          <tr>
+            <td>Q17</td>
+            <td id="p3q17-stmt">\(\phantom{00} \equiv \phantom{0} \pmod{\phantom{0}}\)</td>
+            <td><input class="ans-input" style="width:50px;" /><div class="print-answer" id="p3q17-ans"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p3q17-why"></div></td>
+          </tr>
+          <tr>
+            <td>Q18</td>
+            <td id="p3q18-stmt">\(\phantom{00} \equiv \phantom{0} \pmod{\phantom{0}}\)</td>
+            <td><input class="ans-input" style="width:50px;" /><div class="print-answer" id="p3q18-ans"></div></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p3q18-why"></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ── Part 4: Modular Arithmetic ── -->
+      <div class="part-header">Part 4 — Modular Arithmetic (Q19–25)</div>
+      <p style="margin:14px 0 10px;">Do ordinary arithmetic first, then reduce modulo \(n\). For subtraction: if the result is negative, add \(n\).</p>
+
+      <table class="ws-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Expression</th>
+            <th>Ordinary result</th>
+            <th>Reduced answer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q19</td>
+            <td id="p4q19-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q19-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q20</td>
+            <td id="p4q20-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q20-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q21</td>
+            <td id="p4q21-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q21-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q22</td>
+            <td id="p4q22-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q22-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q23</td>
+            <td id="p4q23-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q23-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q24</td>
+            <td id="p4q24-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q24-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q25</td>
+            <td id="p4q25-expr">&nbsp;</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" /><div class="print-answer" id="p4q25-ans"></div></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- ── Part 5: Caesar ── -->
+      <div class="part-header">Part 5 — Caesar Cipher (Q26–30)</div>
+      <p style="margin:14px 0 4px;">Use \(A=0,\;B=1,\;\ldots,\;Z=25\). Encrypt: \(C \equiv P + K \pmod{26}\). Decrypt: \(P \equiv C - K \pmod{26}\) (add 26 if negative).</p>
+
+      <table class="ws-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Letter</th>
+            <th>Key \(K\)</th>
+            <th>Direction</th>
+            <th>Work</th>
+            <th>Answer</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q26</td>
+            <td id="p5q26-letter">&nbsp;</td>
+            <td id="p5q26-key">&nbsp;</td>
+            <td>Encrypt</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" style="width:60px;" /><div class="print-answer" id="p5q26-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q27</td>
+            <td id="p5q27-letter">&nbsp;</td>
+            <td id="p5q27-key">&nbsp;</td>
+            <td>Encrypt</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" style="width:60px;" /><div class="print-answer" id="p5q27-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q28</td>
+            <td id="p5q28-letter">&nbsp;</td>
+            <td id="p5q28-key">&nbsp;</td>
+            <td>Decrypt</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" style="width:60px;" /><div class="print-answer" id="p5q28-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q29</td>
+            <td id="p5q29-letter">&nbsp;</td>
+            <td id="p5q29-key">&nbsp;</td>
+            <td>Encrypt</td>
+            <td><input class="ans-input" /></td>
+            <td><input class="ans-input" style="width:60px;" /><div class="print-answer" id="p5q29-ans"></div></td>
+          </tr>
+          <tr>
+            <td>Q30</td>
+            <td colspan="5">
+              <span id="p5q30-word-prompt">Encrypt the word <strong id="p5q30-word">MATH</strong> with key \(K = \)<strong id="p5q30-wkey">3</strong>. Show each letter separately.</span><br>
+              <input class="ans-input" style="margin-top:6px;" /><div class="print-answer" id="p5q30-ans"></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Bottom nav -->
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation" style="margin-top:32px;border-top:1px solid var(--border);padding-top:20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item">← Tutorial</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item">Practice →</a>
+        </div>
+      </nav>
+
+    </main>
+  </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var WORDS   = ['MATH','CODE','LOCK','WORD','BYTE','MASK','SEND','SALT','HARD','FAST','OPEN','DATA'];
+
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+    function pick(arr)   { return arr[Math.floor(Math.random() * arr.length)]; }
+    function modPos(a, n) { return ((a % n) + n) % n; }
+
+    var V = {};
+
+    function generateVersion() {
+      /* Part 2: 8 remainder problems */
+      var moduli2 = [5, 6, 7, 8, 9, 10, 11, 12];
+      // shuffle so each problem gets a different modulus
+      moduli2.sort(function () { return Math.random() - 0.5; });
+      V.p2 = [];
+      for (var i = 0; i < 8; i++) {
+        var n = moduli2[i];
+        var q = rnd(2, 8);
+        var r = rnd(1, n - 1);
+        V.p2.push({ a: q * n + r, n: n, q: q, r: r });
+      }
+
+      /* Part 3: 5 congruence problems — alternating YES / NO */
+      V.p3 = [];
+      for (var j = 0; j < 5; j++) {
+        var cn = pick([5,6,7,8,9,10,11,12]);
+        var cr = rnd(1, cn - 1);
+        var q1 = rnd(1, 7), q2 = rnd(1, 7);
+        if (q1 === q2) q2 = (q2 % 7) + 1;
+        var ca = q1 * cn + cr;
+        var yes = j % 2 === 0;
+        var cb, ans, why;
+        if (yes) {
+          cb  = q2 * cn + cr;
+          ans = 'Yes';
+          why = ca + ' mod ' + cn + ' = ' + cr + ' and ' + cb + ' mod ' + cn + ' = ' + cr + '. Same remainder.';
+        } else {
+          var cr2 = (cr + 1) % cn;
+          cb  = q2 * cn + cr2;
+          ans = 'No';
+          why = ca + ' mod ' + cn + ' = ' + cr + ' but ' + cb + ' mod ' + cn + ' = ' + cr2 + '. Different remainders.';
+        }
+        V.p3.push({ a: ca, b: cb, n: cn, ans: ans, why: why });
+      }
+
+      /* Part 4: 7 arithmetic problems */
+      V.p4 = [];
+      // Q19-20: addition mod 12 / 26
+      var addMods = [12, 26];
+      for (var ai = 0; ai < 2; ai++) {
+        var an = addMods[ai];
+        var aa = rnd(Math.ceil(an/2), an-1);
+        var ab = rnd(Math.ceil(an/2), an-1);
+        var ar = (aa + ab) % an;
+        V.p4.push({ type:'add', a:aa, b:ab, n:an, raw:aa+ab, r:ar });
+      }
+      // Q21-22: subtraction mod 12 / 26 (a < b guaranteed)
+      var subMods = [12, 26];
+      for (var si = 0; si < 2; si++) {
+        var sn = subMods[si];
+        var sa = rnd(0, sn-3);
+        var sb = rnd(sa+2, sn-1);
+        var sr = modPos(sa - sb, sn);
+        V.p4.push({ type:'sub', a:sa, b:sb, n:sn, raw:sa-sb, r:sr });
+      }
+      // Q23: multiplication mod 11 or 13
+      var mn = pick([11, 13, 17]);
+      var ma, mb, mp;
+      do { ma = rnd(2, mn-1); mb = rnd(2, mn-1); mp = ma*mb; } while (mp < mn);
+      V.p4.push({ type:'mul', a:ma, b:mb, n:mn, raw:mp, r:mp%mn });
+      // Q24: multiplication mod 26
+      var ma2, mb2, mp2;
+      do { ma2 = rnd(2, 12); mb2 = rnd(2, 12); mp2 = ma2*mb2; } while (mp2 < 26);
+      V.p4.push({ type:'mul', a:ma2, b:mb2, n:26, raw:mp2, r:mp2%26 });
+      // Q25: addition mod a random modulus
+      var rn = pick([7, 8, 9, 16]);
+      var ra = rnd(Math.ceil(rn/2), rn-1);
+      var rb = rnd(Math.ceil(rn/2), rn-1);
+      V.p4.push({ type:'add', a:ra, b:rb, n:rn, raw:ra+rb, r:(ra+rb)%rn });
+
+      /* Part 5: Caesar */
+      V.p5 = [];
+      // Q26-27: encrypt (bias Y/Z for wraparound)
+      for (var ci = 0; ci < 2; ci++) {
+        var pIdx = Math.random() < 0.4 ? rnd(20,25) : rnd(0,25);
+        var cK   = rnd(1, 12);
+        var cIdx = (pIdx + cK) % 26;
+        V.p5.push({ letter: LETTERS[pIdx], key: cK, dir: 'enc', ans: LETTERS[cIdx],
+          work: LETTERS[pIdx]+'='+pIdx+', '+pIdx+'+'+cK+'='+(pIdx+cK)+', mod 26 = '+cIdx+' = '+LETTERS[cIdx] });
+      }
+      // Q28: decrypt
+      var dIdx = rnd(0, 25);
+      var dK   = rnd(1, 12);
+      var dPIdx = modPos(dIdx - dK, 26);
+      V.p5.push({ letter: LETTERS[dIdx], key: dK, dir: 'dec', ans: LETTERS[dPIdx],
+        work: LETTERS[dIdx]+'='+dIdx+', '+dIdx+'-'+dK+'='+(dIdx-dK)+', mod 26 = '+dPIdx+' = '+LETTERS[dPIdx] });
+      // Q29: encrypt near end of alphabet
+      var eIdx = rnd(20, 25);
+      var eK   = rnd(3, 15);
+      var eRIdx = (eIdx + eK) % 26;
+      V.p5.push({ letter: LETTERS[eIdx], key: eK, dir: 'enc', ans: LETTERS[eRIdx],
+        work: LETTERS[eIdx]+'='+eIdx+', '+eIdx+'+'+eK+'='+(eIdx+eK)+', mod 26 = '+eRIdx+' = '+LETTERS[eRIdx] });
+      // Q30: word
+      V.p5word  = pick(WORDS);
+      V.p5wkey  = rnd(3, 13);
+      V.p5wans  = V.p5word.split('').map(function(ch) {
+        var pi = ch.charCodeAt(0) - 65;
+        var ci2 = (pi + V.p5wkey) % 26;
+        return ch + '(' + pi + ')+' + V.p5wkey + '→' + ci2 + '=' + LETTERS[ci2];
+      }).join(', ');
+      V.p5wcipher = V.p5word.split('').map(function(ch) {
+        return LETTERS[(ch.charCodeAt(0) - 65 + V.p5wkey) % 26];
+      }).join('');
+    }
+
+    function sm(id, latex) {
+      /* Set element innerHTML to a LaTeX expression */
+      var el = document.getElementById(id);
+      if (!el) return null;
+      el.innerHTML = '\\(' + latex + '\\)';
+      return el;
+    }
+
+    function st(id, text) {
+      var el = document.getElementById(id);
+      if (!el) return null;
+      el.textContent = text;
+      return el;
+    }
+
+    function applyVersion() {
+      var els = [];
+      function push(el) { if (el) els.push(el); }
+
+      /* Part 2 */
+      var p2ids = ['p2q6','p2q7','p2q8','p2q9','p2q10','p2q11','p2q12','p2q13'];
+      for (var i = 0; i < 8; i++) {
+        var d = V.p2[i];
+        push(sm(p2ids[i]+'-expr', d.a + ' \\bmod ' + d.n));
+        var divEl = document.getElementById(p2ids[i]+'-div');
+        if (divEl) { divEl.textContent = d.a + ' = ' + d.q + '×' + d.n + ' + ' + d.r; }
+        var rEl   = document.getElementById(p2ids[i]+'-r');
+        if (rEl)   { rEl.textContent = String(d.r); }
+      }
+
+      /* Part 3 */
+      var p3ids = ['p3q14','p3q15','p3q16','p3q17','p3q18'];
+      for (var j = 0; j < 5; j++) {
+        var c = V.p3[j];
+        push(sm(p3ids[j]+'-stmt', c.a + ' \\equiv ' + c.b + ' \\pmod{' + c.n + '}'));
+        var aEl = document.getElementById(p3ids[j]+'-ans');
+        if (aEl) aEl.textContent = c.ans;
+        var wEl = document.getElementById(p3ids[j]+'-why');
+        if (wEl) wEl.textContent = c.why;
+      }
+
+      /* Part 4 */
+      var p4ids = ['p4q19','p4q20','p4q21','p4q22','p4q23','p4q24','p4q25'];
+      var ops = { add:'\\(({0} + {1}) \\bmod {2}\\)', sub:'\\(({0} - {1}) \\bmod {2}\\)', mul:'\\(({0} \\cdot {1}) \\bmod {2}\\)' };
+      for (var k = 0; k < 7; k++) {
+        var p = V.p4[k];
+        var exprEl = document.getElementById(p4ids[k]+'-expr');
+        if (exprEl) {
+          var sym = p.type === 'add' ? '+' : (p.type === 'sub' ? '-' : '\\cdot');
+          exprEl.innerHTML = '\\((' + p.a + ' ' + sym + ' ' + p.b + ') \\bmod ' + p.n + '\\)';
+          els.push(exprEl);
+        }
+        var ansEl = document.getElementById(p4ids[k]+'-ans');
+        if (ansEl) {
+          var rawStr = p.type === 'sub' && p.raw < 0 ? p.raw + ' + ' + p.n + ' = ' + p.r : String(p.r);
+          ansEl.textContent = rawStr;
+        }
+      }
+
+      /* Part 5 */
+      var p5ids = ['p5q26','p5q27','p5q28','p5q29'];
+      for (var ci = 0; ci < 4; ci++) {
+        var cv = V.p5[ci];
+        var lEl = document.getElementById(p5ids[ci]+'-letter');
+        if (lEl) lEl.textContent = cv.letter;
+        var kEl = document.getElementById(p5ids[ci]+'-key');
+        if (kEl) kEl.textContent = String(cv.key);
+        var caEl = document.getElementById(p5ids[ci]+'-ans');
+        if (caEl) caEl.textContent = cv.ans + '  (' + cv.work + ')';
+      }
+
+      /* Q30 word */
+      var wEl = document.getElementById('p5q30-word');
+      if (wEl) wEl.textContent = V.p5word;
+      var wkEl = document.getElementById('p5q30-wkey');
+      if (wkEl) wkEl.textContent = String(V.p5wkey);
+      var waEl = document.getElementById('p5q30-ans');
+      if (waEl) waEl.textContent = 'Ciphertext: ' + V.p5wcipher + '  (' + V.p5wans + ')';
+
+      /* Run MathJax on all updated elements */
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise(els);
+      }
+    }
+
+    function clearInputs() {
+      var inputs = document.querySelectorAll('.ans-input');
+      for (var i = 0; i < inputs.length; i++) inputs[i].value = '';
+    }
+
+    function newVersion() {
+      generateVersion();
+      applyVersion();
+      clearInputs();
+    }
+
+    function printWithAnswers() {
+      document.body.classList.add('show-answers');
+      window.print();
+      document.body.classList.remove('show-answers');
+    }
+    window.printWithAnswers = printWithAnswers;
+    window.newVersion = newVersion;
+
+    /* Initial load */
+    generateVersion();
+    applyVersion();
+
+  })();
+  </script>
+</body>
+</html>

@@ -508,6 +508,107 @@
         </div>
       </section>
 
+      <section id="mod-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Mod Explorer</h2>
+          <p>Enter any whole number \(a\) and a modulus \(n\). The calculator shows the division form, the remainder, and the congruence check.</p>
+
+          <div style="display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin:18px 0 10px;">
+            <div>
+              <label style="display:block;font-size:0.8rem;font-weight:700;color:var(--muted);margin-bottom:4px;">Dividend \(a\)</label>
+              <input id="me-a" type="number" value="47" min="0" max="9999"
+                style="width:90px;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-size:1.1rem;font-weight:700;font-family:'Cascadia Code',monospace;color:#16243d;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;font-weight:700;color:var(--muted);margin-bottom:4px;">Modulus \(n\)</label>
+              <input id="me-n" type="number" value="12" min="2" max="99"
+                style="width:70px;padding:9px 12px;border:2px solid var(--border);border-radius:8px;font-size:1.1rem;font-weight:700;font-family:'Cascadia Code',monospace;color:#16243d;" />
+            </div>
+            <button id="me-compute" type="button" class="ctrl-btn" style="margin-bottom:0;">Compute</button>
+          </div>
+
+          <div id="me-out" style="background:#f7f9ff;border:1px solid #d0d9ee;border-radius:12px;padding:18px 22px;min-height:80px;font-size:1rem;line-height:1.8;"></div>
+
+          <p style="margin:18px 0 6px;font-weight:700;">Arithmetic Calculator</p>
+          <p style="margin:0 0 12px;font-size:0.88rem;color:var(--muted);">Pick \(a\), \(b\), and \(n\), then choose an operation.</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+            <div>
+              <label style="display:block;font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:3px;">\(a\)</label>
+              <input id="mc-a" type="number" value="19" min="0" max="999" style="width:70px;padding:7px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Cascadia Code',monospace;font-weight:700;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:3px;">\(b\)</label>
+              <input id="mc-b" type="number" value="11" min="0" max="999" style="width:70px;padding:7px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Cascadia Code',monospace;font-weight:700;" />
+            </div>
+            <div>
+              <label style="display:block;font-size:0.75rem;font-weight:700;color:var(--muted);margin-bottom:3px;">\(n\)</label>
+              <input id="mc-n" type="number" value="26" min="2" max="999" style="width:70px;padding:7px 10px;border:2px solid var(--border);border-radius:8px;font-family:'Cascadia Code',monospace;font-weight:700;" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="ctrl-btn" data-op="add">Add</button>
+            <button class="ctrl-btn" data-op="sub">Subtract</button>
+            <button class="ctrl-btn" data-op="mul">Multiply</button>
+          </div>
+          <div id="mc-out" style="background:#f7f9ff;border:1px solid #d0d9ee;border-radius:12px;padding:18px 22px;min-height:60px;margin-top:14px;font-size:0.97rem;line-height:1.9;"></div>
+        </div>
+      </section>
+
+      <script>
+      (function () {
+        function modPos(a, n) { return ((a % n) + n) % n; }
+        function typeset(el) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]); }
+
+        document.getElementById('me-compute').addEventListener('click', function () {
+          var a = parseInt(document.getElementById('me-a').value) || 0;
+          var n = parseInt(document.getElementById('me-n').value) || 2;
+          if (n < 2) n = 2;
+          if (a < 0) a = modPos(a, n);
+          var q = Math.floor(a / n);
+          var r = a % n;
+          var out = document.getElementById('me-out');
+          out.innerHTML =
+            '\\('+a+' = '+q+'\\cdot '+n+' + '+r+'\\)<br>' +
+            '\\('+a+' \\bmod '+n+' = \\mathbf{'+r+'}\\)<br>' +
+            '\\('+a+' \\equiv '+r+' \\pmod{'+n+'}\\)&ensp;' +
+            '(Check: \\('+(a-r)+'\\) is divisible by \\('+n+'\\))';
+          typeset(out);
+        });
+        // Run once on load
+        document.getElementById('me-compute').click();
+
+        document.querySelectorAll('[data-op]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var a   = parseInt(document.getElementById('mc-a').value) || 0;
+            var b   = parseInt(document.getElementById('mc-b').value) || 0;
+            var n   = parseInt(document.getElementById('mc-n').value) || 2;
+            if (n < 2) n = 2;
+            var op  = btn.dataset.op;
+            var out = document.getElementById('mc-out');
+            var raw, r, html;
+            if (op === 'add') {
+              raw  = a + b;
+              r    = raw % n;
+              html = '\\('+a+' + '+b+' = '+raw+'\\)<br>\\('+raw+' \\bmod '+n+' = \\mathbf{'+r+'}\\)<br>\\(('+a+'+'+b+') \\equiv '+r+' \\pmod{'+n+'}\\)';
+            } else if (op === 'sub') {
+              raw  = a - b;
+              r    = modPos(raw, n);
+              var neg = raw < 0 ? '&ensp;(negative → add \\('+n+'\\): \\('+raw+'+'+n+'='+r+'\\))' : '';
+              html = '\\('+a+' - '+b+' = '+raw+'\\)'+neg+'<br>\\(('+a+'-'+b+') \\equiv \\mathbf{'+r+'} \\pmod{'+n+'}\\)';
+            } else {
+              raw  = a * b;
+              var mq = Math.floor(raw / n);
+              r    = raw % n;
+              html = '\\('+a+' \\times '+b+' = '+raw+'\\)<br>\\('+raw+' = '+mq+'\\cdot '+n+'+'+r+'\\)<br>\\(('+a+'\\cdot '+b+') \\equiv \\mathbf{'+r+'} \\pmod{'+n+'}\\)';
+            }
+            out.innerHTML = html;
+            typeset(out);
+          });
+        });
+      })();
+      </script>
+
       <section id="modular-addition">
         <h2>Modular addition</h2>
         <p>
@@ -920,7 +1021,7 @@
             <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item" id="nextLink">Next →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item nav-secondary">Switch to Workbook</a>
+            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item nav-secondary">Switch to Practice</a>
         </div>
     </nav>
     </main>
