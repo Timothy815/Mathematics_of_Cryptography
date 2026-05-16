@@ -125,6 +125,22 @@
 
     .print-answer { display: none; }
 
+    /* ─── Auto-grading feedback ─── */
+    .ans-input.correct { background: #edf7ed !important; border-bottom-color: #2e7d32 !important; border-radius: 4px; padding: 4px 6px; }
+    .ans-input.wrong   { background: #fdeaea !important; border-bottom-color: #c62828 !important; border-radius: 4px; padding: 4px 6px; }
+
+    .score-panel {
+      display: none;
+      background: #f0f5f2;
+      border: 2px solid var(--ws);
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin: 14px 0 0;
+      font-size: 0.95rem;
+    }
+    .score-panel.visible { display: block; }
+    .score-num { font-size: 1.5rem; font-weight: 900; color: var(--ws); }
+
     /* ─── Print: blank ─── */
     @page { margin: 0.75in; }
     @media print {
@@ -140,10 +156,15 @@
       .problem, table { break-inside: avoid; }
       .problem, .work-space { background: #fff !important; border-color: #bbb; }
       .ans-cell { background: #fff !important; }
-      .ans-input {
+      .ans-input,
+      .ans-input.correct,
+      .ans-input.wrong {
         border: none !important;
         border-bottom: 1.5px solid #444 !important;
         background: transparent !important;
+        border-radius: 0 !important;
+        color: #000 !important;
+        padding: 4px 2px !important;
       }
       .print-answer { display: none !important; }
     }
@@ -183,8 +204,13 @@
         <span class="version-bar-label">Version:</span>
         <span id="version-label" style="font-family:monospace; font-size:0.88rem; color:#555;"></span>
         <button class="ws-btn ws-btn-new"   onclick="newVersion()">New Version</button>
+        <button class="ws-btn ws-btn-new"   onclick="checkAll()" style="background:#1a5276;">Check All</button>
         <button class="ws-btn ws-btn-print" onclick="window.print()">Print Blank</button>
         <button class="ws-btn ws-btn-print" onclick="printWithAnswers()">Print with Answers</button>
+      </div>
+      <div class="score-panel no-print" id="score-panel">
+        Score: <span class="score-num" id="score-num">—</span>
+        &ensp;·&ensp; <span id="score-detail"></span>
       </div>
 
       <nav class="tutorial-nav no-print" aria-label="Navigation">
@@ -482,10 +508,11 @@
       <div class="nav-bundle">
         <a href="worksheet_01_binary_hexadecimal_and_bases_html.html" class="nav-item">← Worksheet 1</a>
         <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="worksheet_03_functions_as_machines_html.html" class="nav-item">Worksheet 3 →</a>
       </div>
       <div class="nav-bundle">
         <a href="tutorial_02_bitwise_operations_as_algebra_html.html" class="nav-item nav-secondary">Tutorial 2</a>
-        <a href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html" class="nav-item nav-secondary">Practice 2</a>
+        <a href="tutorial_02_bitwise_operations_as_algebra_workbook_html.html" class="nav-item nav-secondary">Workbook 2</a>
       </div>
     </nav>
 
@@ -655,14 +682,104 @@
           toHex2(V.dec_c) + ' XOR ' + toHex2(V.dec_k) + ' = ' + toHex2(V.dec_p));
       }
 
+      /* ── Wire answer keys onto each input after applyVersion ── */
+      function wireAnswers() {
+        function set(id, ans) {
+          var el = document.getElementById(id);
+          if (el) el.dataset.answer = String(ans).trim().toLowerCase();
+        }
+        // Static truth table (Q5–Q10)
+        var ttAnswers = { 'q5-input':'1','q6-input':'0','q7-input':'0','q8-input':'1','q9-input':'1','q10-input':'0' };
+        // Wire truth table inputs by position
+        var ttInputs = document.querySelectorAll('.truth-table .ans-input');
+        var ttKeys = ['1','0','0','1','1','0'];
+        ttInputs.forEach(function(inp, i) { if (ttKeys[i] !== undefined) inp.dataset.answer = ttKeys[i]; });
+
+        // XOR bytes
+        set('q11-bin', toBin8(V.xor[0].r));
+        set('q11-hex', toHex2(V.xor[0].r).toLowerCase());
+        set('q12-bin', toBin8(V.xor[1].r));
+        set('q12-hex', toHex2(V.xor[1].r).toLowerCase());
+        set('q13-bin', toBin8(V.xor[2].r));
+        set('q13-hex', toHex2(V.xor[2].r).toLowerCase());
+
+        // AND / OR / NOT / nibble
+        set('q14-ans', toBin8(V.and_r));
+        set('q15-ans', toBin8(V.or_r));
+        set('q16-ans', toBin8(V.not_r));
+        set('q17-ans', toBin8(V.nib_r));
+        set('q17-hex', toHex2(V.nib_r).toLowerCase());
+
+        // Shifts / rotations
+        set('q18-ans', toBin8(V.shl_r));
+        set('q19-ans', toBin8(V.shr_r));
+        set('q20-ans', toBin8(V.rotl_r));
+        set('q21-ans', toBin8(V.rotr_r));
+
+        // T/F (Q22–Q26)
+        var tfInputs = document.querySelectorAll('.tf-table .ans-input');
+        var tfKeys = ['t','f','t','f','t'];
+        tfInputs.forEach(function(inp, i) { if (tfKeys[i] !== undefined) inp.dataset.answer = tfKeys[i]; });
+
+        // Crypto
+        set('q27-ans', toHex2(V.enc_c).toLowerCase());
+        set('q28-ans', toHex2(V.dec_p).toLowerCase());
+      }
+
+      function checkInput(el) {
+        if (!el.dataset || !el.dataset.answer) return;
+        var user = el.value.trim().toLowerCase();
+        if (user === '') { el.className = 'ans-input' + (el.className.includes('ans-input-wide') ? ' ans-input-wide' : el.className.includes('ans-input-short') ? ' ans-input-short' : ''); return; }
+        // Accept with or without 0x prefix for hex answers
+        var ans = el.dataset.answer;
+        var ok = (user === ans) || ('0x' + user === ans) || (user === '0x' + ans) || (user.replace(/^0x/,'') === ans.replace(/^0x/,''));
+        var base = 'ans-input' + (el.className.includes('ans-input-wide') ? ' ans-input-wide' : el.className.includes('ans-input-short') ? ' ans-input-short' : '');
+        el.className = base + ' ' + (ok ? 'correct' : 'wrong');
+        return ok;
+      }
+
+      window.checkAll = function () {
+        var total = 0, correct = 0;
+        document.querySelectorAll('.ans-input[data-answer]').forEach(function(inp) {
+          if (inp.value.trim() === '') return;
+          total++;
+          if (checkInput(inp)) correct++;
+        });
+        // Count all checkable inputs for total possible
+        var possible = document.querySelectorAll('.ans-input[data-answer]').length;
+        var panel = document.getElementById('score-panel');
+        var numEl = document.getElementById('score-num');
+        var detEl = document.getElementById('score-detail');
+        panel.classList.add('visible');
+        numEl.textContent = correct + ' / ' + possible + ' (' + Math.round(correct/possible*100) + '%)';
+        detEl.textContent = (possible - total) + ' question(s) left blank.';
+      };
+
+      // Attach live blur-checking to all checkable inputs
+      function attachLiveChecking() {
+        document.querySelectorAll('.ans-input').forEach(function(inp) {
+          if (inp._liveWired) return;
+          inp._liveWired = true;
+          inp.addEventListener('blur', function() { if (this.dataset.answer) checkInput(this); });
+          inp.addEventListener('keydown', function(e) { if (e.key === 'Enter' && this.dataset.answer) { e.preventDefault(); checkInput(this); } });
+        });
+      }
+
       function clearInputs() {
-        document.querySelectorAll('.ans-input').forEach(function (inp) { inp.value = ''; });
+        document.querySelectorAll('.ans-input').forEach(function (inp) {
+          inp.value = '';
+          inp.className = inp.className.replace(/\s*(correct|wrong)/g, '');
+        });
+        var panel = document.getElementById('score-panel');
+        if (panel) panel.classList.remove('visible');
       }
 
       window.newVersion = function () {
         generateVersion();
         clearInputs();
         applyVersion();
+        wireAnswers();
+        attachLiveChecking();
       };
 
       window.printWithAnswers = function () {
@@ -673,6 +790,8 @@
 
       generateVersion();
       applyVersion();
+      wireAnswers();
+      attachLiveChecking();
     }());
     </script>
   </div>

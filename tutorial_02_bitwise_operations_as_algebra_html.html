@@ -295,6 +295,21 @@
         </p>
       </section>
 
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box purpose-box">
+          <div class="box-title">After completing this module you will be able to</div>
+          <ul>
+            <li>Compute XOR, AND, OR, and NOT on 8-bit values by hand and in binary.</li>
+            <li>Apply an AND mask to isolate or clear specific bits in a byte.</li>
+            <li>Perform logical left and right shifts and explain which bits are lost.</li>
+            <li>Perform left and right rotations and explain why no bits are lost.</li>
+            <li>Classify each operation as reversible or irreversible and justify your answer.</li>
+            <li>Encrypt and decrypt a single byte using XOR with a known key.</li>
+          </ul>
+        </div>
+      </section>
+
       <section id="symbols-used">
         <h2>Symbols used in this tutorial</h2>
         <p>
@@ -944,21 +959,74 @@
       </section>
 
       <section id="practice">
-        <h2>Check your understanding</h2>
-        <div class="box intuition-box">
-          <div class="box-title">Before moving on</div>
-          <p>
-            You should be able to compute XOR, AND, OR, NOT, a left shift, and a rotate for any pair
-            of 8-bit values without looking at the truth tables. If any of those still feel uncertain,
-            use the interactive explorer above to build intuition — then head to the Practice page for
-            scored drills.
-          </p>
-          <p style="margin-top:12px; font-weight:700;">Two quick self-checks using values from this tutorial:</p>
-          <ul style="margin-top:6px;">
-            <li><code>01010111 XOR 10000011</code> = <code>11010100</code> &nbsp;(= 0xD4)</li>
-            <li>8-bit NOT of <code>01010111</code> = <code>10101000</code> &nbsp;(= 0xA8)</li>
-          </ul>
-        </div>
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Compute <code>01100101 XOR 10110011</code>. Give the result in binary and in hex.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>XOR column by column:</p>
+              <pre style="font-size:0.9rem; line-height:1.6; background:#f5f2ea; padding:10px 14px; border-radius:8px;">
+  01100101
+⊕ 10110011
+──────────
+  11010110</pre>
+              <p>Binary: <code>11010110</code> &ensp; Hex: <code>0xD6</code></p>
+            </details>
+          </li>
+          <li>
+            Apply the AND mask <code>0x0F</code> (binary <code>00001111</code>) to <code>10110101</code>. What is the result? What does this operation accomplish?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <pre style="font-size:0.9rem; line-height:1.6; background:#f5f2ea; padding:10px 14px; border-radius:8px;">
+  10110101
+& 00001111
+──────────
+  00000101</pre>
+              <p>Result: <code>00000101</code> (= <code>0x05</code>). The mask zeroes the upper nibble and preserves the lower nibble — it extracts the low four bits.</p>
+            </details>
+          </li>
+          <li>
+            Compute the 8-bit NOT of <code>11001010</code>. Then verify that applying NOT again returns the original value.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>NOT <code>11001010</code> = <code>00110101</code>. NOT <code>00110101</code> = <code>11001010</code>. ✓</p>
+              <p>NOT is its own inverse: applying it twice always restores the original.</p>
+            </details>
+          </li>
+          <li>
+            Left-shift <code>01011001</code> by 2 positions. Which bits are lost? Which positions are filled with zeros?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Shift left by 2: move every bit two positions left, drop the two leftmost bits, fill two zeros on the right.</p>
+              <p><code>01011001 &lt;&lt; 2 = 01100100</code></p>
+              <p>The two leftmost bits <code>01</code> are permanently lost. The two rightmost positions become <code>00</code>.</p>
+            </details>
+          </li>
+          <li>
+            You encrypt a plaintext byte P = <code>0x4A</code> with key K = <code>0x73</code> using XOR: C = P ⊕ K. What is C? Then decrypt: compute P = C ⊕ K and verify you recover <code>0x4A</code>.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Encryption: <code>0x4A XOR 0x73</code></p>
+              <pre style="font-size:0.9rem; line-height:1.6; background:#f5f2ea; padding:10px 14px; border-radius:8px;">
+  01001010  (0x4A)
+⊕ 01110011  (0x73)
+──────────
+  00111001  (0x39)</pre>
+              <p>C = <code>0x39</code>. &ensp; Decryption: <code>0x39 XOR 0x73 = 0x4A</code>. ✓</p>
+            </details>
+          </li>
+          <li>
+            Rotate <code>10110001</code> left by 3 positions. How does this differ from a left shift by 3?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Rotation wraps the three leftmost bits <code>101</code> around to the right end.</p>
+              <p>Rotate left 3: <code>10110001 → 10001101</code></p>
+              <p>Shift left 3 would give: <code>10110001 → 10001000</code> (three zeros fill the right, three bits are lost).</p>
+              <p>Rotation loses nothing; shift loses the three high bits permanently.</p>
+            </details>
+          </li>
+        </ol>
       </section>
 
       <section id="cryptography-connection">

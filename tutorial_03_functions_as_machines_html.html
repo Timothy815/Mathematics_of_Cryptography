@@ -273,6 +273,21 @@
         </p>
       </section>
 
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box purpose-box">
+          <div class="box-title">After completing this module you will be able to</div>
+          <ul>
+            <li>Define a function and identify its domain, codomain, and range.</li>
+            <li>Evaluate a function at a given input and trace the output.</li>
+            <li>Determine whether a function is one-to-one and whether it is onto.</li>
+            <li>Find the inverse of a simple function and explain when an inverse exists.</li>
+            <li>Compose two functions and compute the output of the composition.</li>
+            <li>Explain why an encryption function must be invertible, and why a one-way function cannot serve as a cipher alone.</li>
+          </ul>
+        </div>
+      </section>
+
       <section id="symbols-used">
         <h2>Symbols used in this tutorial</h2>
         <p>
@@ -999,19 +1014,70 @@
       </section>
 
       <section id="practice">
-        <h2>Check your understanding</h2>
-        <div class="box intuition-box">
-          <div class="box-title">Before moving on</div>
-          <p>You should be able to do all of the following without help:</p>
-          <ul>
-            <li>Given \(f(x)=3x+2\), compute \(f(5)\). <em>(Answer: 17)</em></li>
-            <li>Given \(f(x)=x+5\), find \(f^{-1}(x)\). <em>(Answer: \(f^{-1}(x)=x-5\))</em></li>
-            <li>Given \(f(x)=x+2\) and \(g(x)=x^2\), compute \((g\circ f)(3)\). <em>(Answer: 25)</em></li>
-            <li>Identify whether a mapping table has output collisions and cannot be inverted.</li>
-            <li>Compute \(E_K(\texttt{0x2D})\) with key \(K=\texttt{0x0F}\) using XOR. <em>(Answer: <code>0x22</code>)</em></li>
-          </ul>
-          <p>If any of those are uncertain, re-read the relevant section or use the Function Machine Explorer above.</p>
-        </div>
+        <h2>Practice problems</h2>
+        <ol class="practice-list">
+          <li>
+            Let \(f(x) = 4x - 3\). Compute \(f(7)\) and identify the domain if \(x\) must be a positive integer.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\(f(7) = 4(7) - 3 = 28 - 3 = 25\).</p>
+              <p>If \(x\) must be a positive integer, the domain is \(\{1, 2, 3, \dots\}\).</p>
+            </details>
+          </li>
+          <li>
+            The mapping below shows a function from \(\{A, B, C, D\}\) to \(\{1, 2, 3, 4\}\):
+            \(A\to 2,\; B\to 4,\; C\to 2,\; D\to 3\).
+            Is this function one-to-one? Is it onto? Can it be inverted?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><strong>One-to-one?</strong> No — both \(A\) and \(C\) map to 2. Two different inputs produce the same output.</p>
+              <p><strong>Onto?</strong> No — the output value 1 is never reached.</p>
+              <p><strong>Invertible?</strong> No. Because it is not one-to-one, reversing it at output 2 would be ambiguous (which input, \(A\) or \(C\)?). A function must be a bijection (one-to-one and onto) to have an inverse.</p>
+            </details>
+          </li>
+          <li>
+            Find the inverse of \(f(x) = 5x + 2\). Verify by checking that \(f(f^{-1}(x)) = x\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>Solve \(y = 5x + 2\) for \(x\): \(x = \dfrac{y-2}{5}\).</p>
+              <p>So \(f^{-1}(x) = \dfrac{x-2}{5}\).</p>
+              <p>Verify: \(f(f^{-1}(x)) = 5\cdot\dfrac{x-2}{5}+2 = (x-2)+2 = x\). ✓</p>
+            </details>
+          </li>
+          <li>
+            Let \(f(x) = x + 3\) and \(g(x) = 2x\). Compute \((f \circ g)(5)\) and \((g \circ f)(5)\). Are they equal?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>\((f \circ g)(5) = f(g(5)) = f(10) = 13\).</p>
+              <p>\((g \circ f)(5) = g(f(5)) = g(8) = 16\).</p>
+              <p>They are not equal. Function composition is generally not commutative — the order matters.</p>
+            </details>
+          </li>
+          <li>
+            Using the XOR encryption function \(E_K(P) = P \oplus K\) with key \(K = \texttt{0x83}\):
+            (a) encrypt \(P = \texttt{0x5C}\) to find ciphertext \(C\);
+            (b) decrypt \(C\) by applying the same key to verify you recover \(P\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>(a) \(C = \texttt{0x5C} \oplus \texttt{0x83}\)</p>
+              <pre style="font-size:0.9rem; background:#f5f2ea; padding:8px 12px; border-radius:8px;">
+  01011100  (0x5C)
+⊕ 10000011  (0x83)
+──────────
+  11011111  (0xDF)</pre>
+              <p>So \(C = \texttt{0xDF}\).</p>
+              <p>(b) \(\texttt{0xDF} \oplus \texttt{0x83} = \texttt{0x5C} = P\). ✓</p>
+            </details>
+          </li>
+          <li>
+            The AES SubBytes step is defined by a fixed lookup table (an S-box) that maps every byte value to a unique other byte value. Explain why this qualifies as a function and why it must be a bijection. What would go wrong for decryption if two different byte values mapped to the same output?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>It qualifies as a function because each input byte maps to exactly one output byte — the rule is deterministic and unambiguous.</p>
+              <p>It must be a bijection (one-to-one and onto) because the decryption step applies the inverse S-box. If two inputs \(a \neq b\) mapped to the same output \(c\), then given ciphertext byte \(c\), decryption would not know whether to recover \(a\) or \(b\). The original plaintext could not be recovered unambiguously, making the cipher useless.</p>
+            </details>
+          </li>
+        </ol>
       </section>
 
       <section id="cryptography-connection">
@@ -1169,7 +1235,7 @@
             <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item" id="nextLink">Next →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item nav-secondary">Switch to Practice</a>
+            <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item nav-secondary">Switch to Workbook</a>
         </div>
     </nav>
     </main>

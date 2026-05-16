@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Practice 4: Modular Arithmetic | Mathematics of Cryptography</title>
+  <title>Workbook 4: Modular Arithmetic | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -35,7 +35,7 @@
       margin: 22px 0 0;
     }
 
-    .wbnav-link {
+    .nav-link {
       padding: 7px 16px;
       border-radius: 8px;
       background: #fff8e6;
@@ -46,7 +46,7 @@
       text-decoration: none;
       transition: background 0.15s;
     }
-    .wbnav-link:hover { background: #f5e8b0; }
+    .nav-link:hover { background: #f5e8b0; }
 
     /* Quick reference */
     details.quick-ref {
@@ -196,7 +196,7 @@
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Practice 4</div>
+      <div class="course-label">Mathematics of Cryptography · Workbook 4</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Modular Arithmetic</h1>
       <p class="subtitle">
@@ -204,13 +204,14 @@
       </p>
 
       <nav class="workbook-nav no-print" aria-label="Drill navigation">
-        <a class="wbnav-link" href="#d1-sec">Drill 1 — Remainders</a>
-        <a class="wbnav-link" href="#d2-sec">Drill 2 — Congruence</a>
-        <a class="wbnav-link" href="#d3-sec">Drill 3 — Addition</a>
-        <a class="wbnav-link" href="#d4-sec">Drill 4 — Subtraction</a>
-        <a class="wbnav-link" href="#d5-sec">Drill 5 — Multiplication</a>
-        <a class="wbnav-link" href="#d6-sec">Drill 6 — Caesar</a>
+        <a class="nav-link" href="#d1-sec">Drill 1 — Remainders</a>
+        <a class="nav-link" href="#d2-sec">Drill 2 — Congruence</a>
+        <a class="nav-link" href="#d3-sec">Drill 3 — Addition</a>
+        <a class="nav-link" href="#d4-sec">Drill 4 — Subtraction</a>
+        <a class="nav-link" href="#d5-sec">Drill 5 — Multiplication</a>
+        <a class="nav-link" href="#d6-sec">Drill 6 — Caesar</a>
         <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print Reference Card</button>
       </nav>
     </header>
 
@@ -339,9 +340,9 @@
 
       <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-          <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item">← Practice 3</a>
+          <a href="tutorial_03_functions_as_machines_workbook_html.html" class="nav-item">← Workbook 3</a>
           <a href="index.html" class="nav-item">🏠 Dashboard</a>
-          <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item">Practice 5 →</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_workbook_html.html" class="nav-item">Workbook 5 →</a>
         </div>
         <div class="nav-bundle">
           <a href="tutorial_04_modular_arithmetic_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
@@ -495,16 +496,26 @@
       gen: function () {
         var moduli = [7, 8, 10, 11, 12, 13, 16, 26];
         var n = pick(moduli);
-        // Force a < b so a - b is always negative → student must wrap
-        var a = rnd(0, n - 3);
-        var b = rnd(a + 2, n - 1);
-        var raw = a - b;                 // always negative
-        var r   = modPos(raw, n);        // ((a-b)%n+n)%n
+        // ~half wrap (a < b), ~half don't wrap (a >= b)
+        var wraps = Math.random() < 0.5;
+        var a, b, raw, r;
+        if (wraps) {
+          a = rnd(0, n - 3);
+          b = rnd(a + 2, n - 1);
+        } else {
+          b = rnd(1, Math.floor(n / 2));
+          a = rnd(b, n - 1);
+        }
+        raw = a - b;
+        r   = modPos(raw, n);
+        var feedback = raw < 0
+          ? '\\(' + a + ' - ' + b + ' = ' + raw + '\\). Since this is negative, add \\(' + n + '\\): \\(' + raw + ' + ' + n + ' = ' + r + '\\).'
+          : '\\(' + a + ' - ' + b + ' = ' + raw + '\\). Already in range \\(0\\) to \\(' + (n-1) + '\\), so no adjustment needed.';
         return {
           q:   'Compute \\((' + a + ' - ' + b + ') \\bmod ' + n + '\\).',
           ans: String(r),
-          ok:  '\\(' + a + ' - ' + b + ' = ' + raw + '\\). Since this is negative, add \\(' + n + '\\): \\(' + raw + ' + ' + n + ' = ' + r + '\\).',
-          err: '\\(' + a + ' - ' + b + ' = ' + raw + '\\). When the result is negative, add the modulus: \\(' + raw + ' + ' + n + ' = ' + r + '\\).'
+          ok:  feedback,
+          err: feedback
         };
       },
       check: function (inp, s) { return inp.trim() === s.ans; }
