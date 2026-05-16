@@ -69,6 +69,19 @@
       min-height: 28px;
       margin: 6px 0 12px;
     }
+    /* Written-response textarea */
+    .written-area {
+      width: 100%; padding: 8px 12px; margin-top: 6px;
+      border: 2px solid #ccd6e8; border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f4fb; box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+    /* Write-wrap: textarea on screen → ruled lines on print */
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
 
     .work-space {
       border: 1px dashed #aaa;
@@ -167,6 +180,10 @@
         padding: 4px 2px !important;
       }
       .print-answer { display: none !important; }
+      /* Textarea → ruled print lines */
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
     }
 
     /* ─── Print: with answers ─── */
@@ -233,30 +250,37 @@
 
       <div class="problem">
         <div class="problem-title">Q1. Define XOR in your own words. What does it output and when?</div>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <span class="print-answer">XOR outputs 1 when two input bits are different, and 0 when they are the same.</span>
       </div>
 
       <div class="problem">
         <div class="problem-title">Q2. Define AND. What does it output and when?</div>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <span class="print-answer">AND outputs 1 only when both input bits are 1. All other input combinations produce 0.</span>
       </div>
 
       <div class="problem">
         <div class="problem-title">Q3. What is a bit mask? Give one example of how AND masking is used.</div>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <span class="print-answer">A bit mask is a binary pattern used with AND, OR, or XOR to select, clear, or force specific bit positions. Example: AND with 0x0F (00001111) keeps only the low nibble of a byte.</span>
       </div>
 
       <div class="problem">
         <div class="problem-title">Q4. Explain the difference between a logical shift and a rotation.</div>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <span class="print-answer">A logical shift moves bits and fills empty positions with 0; bits that fall off the edge are permanently lost. A rotation moves bits and wraps edge bits around to the opposite side, so no bits are lost.</span>
       </div>
 
@@ -493,9 +517,10 @@
       <div class="problem">
         <div class="problem-title">Q29. Reflection.</div>
         <p>Why is AND masking dangerous if used as a direct encryption step? Use the idea of reversibility in your answer.</p>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
-        <span class="blank-line"></span>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <span class="print-answer">AND masking clears bits to 0, permanently destroying information. If bits are lost during encryption, decryption cannot recover the original value from the result alone. A cipher step must be reversible so the recipient can decrypt — AND masking violates that requirement.</span>
       </div>
 
@@ -793,6 +818,19 @@
       wireAnswers();
       attachLiveChecking();
     }());
+
+    // Generate ruled print lines for each write-wrap
+    document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+      var ta = wrap.querySelector('textarea');
+      var ld = wrap.querySelector('.write-lines');
+      if (!ta || !ld) return;
+      var rows = parseInt(ta.getAttribute('rows')) || 3;
+      for (var i = 0; i < rows; i++) {
+        var d = document.createElement('div');
+        d.className = 'wl';
+        ld.appendChild(d);
+      }
+    });
     </script>
   </div>
 </body>
