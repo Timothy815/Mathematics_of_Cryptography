@@ -137,6 +137,10 @@
       background: #f0f0f0;
     }
     .written-area:focus { outline: none; border-color: var(--ws); background: #fff; }
+    /* Write-wrap: textarea on screen → ruled lines on print */
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
 
     /* ── Multi-part table layout ─────────────────────────────── */
     .mp-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -198,7 +202,10 @@
         border-radius: 0 !important; background: transparent !important;
         min-width: 60px;
       }
-      .written-area { border: 1px solid #999; background: transparent; min-height: 80px; }
+      /* Textarea → ruled print lines */
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
       /* T/F buttons print as circles the student can tick */
       .tf-btn { border: 1px solid #999; background: #fff; color: #000; }
       .tf-btn.selected,
@@ -539,7 +546,10 @@
           Using what you learned in this module, explain <em>why</em> hexadecimal is the natural choice
           for representing bytes — and what would be awkward about using decimal instead.
         </div>
-        <textarea class="written-area" id="a25" rows="5"></textarea>
+        <div class="write-wrap">
+          <textarea class="written-area" id="a25" rows="5"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="q-result" id="r25"></div>
       </div>
     </section>
@@ -933,6 +943,19 @@
   updateProgress();
 
 })();
+
+// Generate ruled print lines for each write-wrap
+document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+  var ta = wrap.querySelector('textarea');
+  var ld = wrap.querySelector('.write-lines');
+  if (!ta || !ld) return;
+  var rows = parseInt(ta.getAttribute('rows')) || 4;
+  for (var i = 0; i < rows; i++) {
+    var d = document.createElement('div');
+    d.className = 'wl';
+    ld.appendChild(d);
+  }
+});
 </script>
 </body>
 </html>

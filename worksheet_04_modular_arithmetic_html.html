@@ -141,6 +141,10 @@
       margin-top: 6px;
     }
     .open-textarea:focus { outline: none; border-color: var(--ws); background: #fff; }
+    /* Write-wrap: textarea on screen → ruled lines on print */
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
 
     /* Print answers */
     .print-answer {
@@ -217,11 +221,10 @@
         border-bottom: 1px solid #888 !important;
         color: #000 !important;
       }
-      .open-textarea {
-        border: 1px solid #999 !important;
-        background: #fff !important;
-        color: #000 !important;
-      }
+      /* Textarea → ruled print lines */
+      .open-textarea { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
       a { color: #000; text-decoration: none; }
     }
   </style>
@@ -275,23 +278,38 @@
 
       <div style="border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:16px 18px;margin-bottom:4px;">
         <p style="margin:0 0 6px;"><strong>Q1.</strong> What does the modulus \(n\) represent in modular arithmetic?</p>
-        <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+        <div class="write-wrap">
+          <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="print-answer">The modulus \(n\) is the wraparound size — the count of positions in the circular number system before returning to 0.</div>
 
         <p style="margin:14px 0 6px;"><strong>Q2.</strong> What does the expression \(a \bmod n\) compute?</p>
-        <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+        <div class="write-wrap">
+          <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="print-answer">\(a \bmod n\) gives the remainder \(r\) after dividing \(a\) by \(n\), satisfying \(a = qn + r\) with \(0 \le r &lt; n\).</div>
 
         <p style="margin:14px 0 6px;"><strong>Q3.</strong> List the elements of \(\mathbb{Z}_8\).</p>
-        <textarea class="open-textarea" rows="1" placeholder="Write your answer…" style="min-height:36px;"></textarea>
+        <div class="write-wrap">
+          <textarea class="open-textarea" rows="1" placeholder="Write your answer…" style="min-height:36px;"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="print-answer">\(\mathbb{Z}_8 = \{0, 1, 2, 3, 4, 5, 6, 7\}\)</div>
 
         <p style="margin:14px 0 6px;"><strong>Q4.</strong> State the two equivalent tests for \(a \equiv b \pmod{n}\).</p>
-        <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+        <div class="write-wrap">
+          <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="print-answer">(i) \(a\) and \(b\) have the same remainder modulo \(n\). (ii) \(n\) divides \(a - b\).</div>
 
         <p style="margin:14px 0 6px;"><strong>Q5.</strong> Explain in one or two sentences why negative numbers can have a well-defined result modulo \(n\).</p>
-        <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+        <div class="write-wrap">
+          <textarea class="open-textarea" rows="2" placeholder="Write your answer…"></textarea>
+          <div class="write-lines"></div>
+        </div>
         <div class="print-answer">Modular arithmetic defines residues as the unique value in \(\{0,\ldots,n-1\}\) that is congruent to the number. Adding \(n\) (as many times as needed) brings any negative integer into that range.</div>
       </div>
 
@@ -787,6 +805,21 @@
     buildTables();
 
   })();
+
+  // Generate ruled print lines for each write-wrap
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 4;
+    // Short single-line fields get at least 2 lines for legibility when printed
+    if (rows < 2) rows = 2;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
   </script>
 </body>
 </html>
