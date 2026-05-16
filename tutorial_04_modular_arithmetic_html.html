@@ -600,265 +600,318 @@
       (function () {
         var CX = 160, CY = 160, RING = 130;
 
+        /* ── State ──────────────────────────────────────────── */
         var state = {
           n: 12, pos: 0, startPos: 0,
           op: 'add', a: 7, b: 8,
-          trail: [],    // array of positions visited (in order)
+          trail: [],
           stepsLeft: 0,
-          jumpSize: 1,  // jump size for multiply
-          autoTimer: null,
-          started: false
+          jumpSize: 1,
+          handAngle: -Math.PI / 2,  // absolute angle; accumulates across laps
+          animating: false
+        };
+        var autoRunning = false;
+        var autoTimer   = null;
+
+        /* ── Persistent SVG element refs ────────────────────── */
+        var els = {
+          hand: null, shadow: null,
+          circles: [], texts: [],
+          nr: 19   // number-circle radius, cached for drawHand
         };
 
-        /* ── SVG helper ─────────────────────────────────── */
+        /* ── SVG helpers ────────────────────────────────────── */
         function svgEl(tag, attrs) {
           var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
           for (var k in attrs) e.setAttribute(k, attrs[k]);
           return e;
         }
-
-        /* Position on the clock ring for slot k of n */
+        function slotAngle(k, n) { return -Math.PI / 2 + 2 * Math.PI * k / n; }
         function slotXY(k, n) {
-          var ang = -Math.PI / 2 + (2 * Math.PI * k) / n;
-          return { x: CX + RING * Math.cos(ang), y: CY + RING * Math.sin(ang), ang: ang };
+          var a = slotAngle(k, n);
+          return { x: CX + RING * Math.cos(a), y: CY + RING * Math.sin(a) };
         }
 
-        /* ── Draw the full clock ────────────────────────── */
-        function buildClock() {
+        /* ── Build the static SVG scaffold ─────────────────── */
+        /* Called only when n changes (or on first load).       */
+        /* Creates all elements and stores live refs in els[].  */
+        function initSVG() {
           var svg = document.getElementById('clock-svg');
           svg.innerHTML = '';
           var n = state.n;
+          var r  = n <= 12 ? 19 : n <= 18 ? 16 : 13;
+          var fs = n <= 12 ? 13 : n <= 18 ? 11 : 9;
+          els.nr = r; els.circles = []; els.texts = [];
 
-          // Outer and inner circles
-          svg.appendChild(svgEl('circle', { cx: CX, cy: CY, r: 148, fill: '#eef3ff', stroke: '#334e7d', 'stroke-width': '2.5' }));
-          svg.appendChild(svgEl('circle', { cx: CX, cy: CY, r: 95,  fill: 'white',   stroke: '#c7d2ea', 'stroke-width': '1'   }));
+          // Rings
+          svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:148, fill:'#eef3ff', stroke:'#334e7d', 'stroke-width':'2.5' }));
+          svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:95,  fill:'white',   stroke:'#c7d2ea', 'stroke-width':'1'   }));
 
           // Tick marks
           for (var k = 0; k < n; k++) {
-            var p0 = slotXY(k, n);
-            var inner = RING - 10;
-            var ti = { x: CX + inner * Math.cos(p0.ang), y: CY + inner * Math.sin(p0.ang) };
-            var to = { x: CX + (RING + 8) * Math.cos(p0.ang), y: CY + (RING + 8) * Math.sin(p0.ang) };
-            svg.appendChild(svgEl('line', { x1: ti.x, y1: ti.y, x2: to.x, y2: to.y, stroke: '#c7d2ea', 'stroke-width': '1' }));
+            var a = slotAngle(k, n);
+            svg.appendChild(svgEl('line', {
+              x1: CX+(RING-10)*Math.cos(a), y1: CY+(RING-10)*Math.sin(a),
+              x2: CX+(RING+8 )*Math.cos(a), y2: CY+(RING+8 )*Math.sin(a),
+              stroke:'#c7d2ea', 'stroke-width':'1'
+            }));
           }
 
-          // Build a quick trail-count lookup
-          var trailSet = {};
-          for (var i = 0; i < state.trail.length; i++) {
-            trailSet[state.trail[i]] = true;
-          }
-
-          // Number circles
-          var r   = n <= 12 ? 19 : n <= 18 ? 16 : 13;
-          var fs  = n <= 12 ? 13 : n <= 18 ? 11 : 9;
-
+          // Number circles + labels (store refs for live colour updates)
           for (var k = 0; k < n; k++) {
             var p = slotXY(k, n);
-            var isCurrent = (k === state.pos);
-            var isStart   = (k === state.startPos && state.started && k !== state.pos);
-            var inTrail   = trailSet[k] && !isCurrent;
-
-            var fill, stroke, fw;
-            if (isCurrent) {
-              fill = '#ffd700'; stroke = '#c8960a'; fw = '900';
-            } else if (isStart) {
-              fill = '#ddeeff'; stroke = '#334e7d'; fw = '700';
-            } else if (inTrail) {
-              fill = '#e8f5e9'; stroke = '#81c784'; fw = '700';
-            } else {
-              fill = '#ffffff'; stroke = '#c7d2ea'; fw = '700';
-            }
-
-            svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: r, fill: fill, stroke: stroke, 'stroke-width': '1.5' }));
-            var txt = svgEl('text', {
-              x: p.x, y: p.y,
-              'text-anchor': 'middle', 'dominant-baseline': 'central',
-              'font-size': fs, 'font-weight': fw,
-              'font-family': 'Cascadia Code, Consolas, monospace', fill: '#16243d'
+            var c = svgEl('circle', { cx:p.x, cy:p.y, r:r, fill:'#ffffff', stroke:'#c7d2ea', 'stroke-width':'1.5' });
+            var t = svgEl('text', {
+              x:p.x, y:p.y, 'text-anchor':'middle', 'dominant-baseline':'central',
+              'font-size':fs, 'font-weight':'700',
+              'font-family':'Cascadia Code, Consolas, monospace', fill:'#16243d'
             });
-            txt.textContent = k;
-            svg.appendChild(txt);
+            t.textContent = k;
+            svg.appendChild(c); svg.appendChild(t);
+            els.circles.push(c); els.texts.push(t);
           }
 
-          // Hand (from center to current position)
-          var hp = slotXY(state.pos, n);
-          var hLen = RING - r - 6;
-          var hx = CX + hLen * Math.cos(hp.ang);
-          var hy = CY + hLen * Math.sin(hp.ang);
-          // Shadow
-          svg.appendChild(svgEl('line', { x1: CX, y1: CY, x2: hx, y2: hy, stroke: 'rgba(0,0,0,0.12)', 'stroke-width': '5', 'stroke-linecap': 'round' }));
-          // Hand
-          svg.appendChild(svgEl('line', { x1: CX, y1: CY, x2: hx, y2: hy, stroke: '#c8960a', 'stroke-width': '3', 'stroke-linecap': 'round' }));
+          // Hand shadow + hand (rendered above numbers)
+          els.shadow = svgEl('line', { x1:CX, y1:CY, x2:CX, y2:CY-RING+r+6, stroke:'rgba(0,0,0,0.12)', 'stroke-width':'5',  'stroke-linecap':'round' });
+          els.hand   = svgEl('line', { x1:CX, y1:CY, x2:CX, y2:CY-RING+r+6, stroke:'#c8960a',          'stroke-width':'3',  'stroke-linecap':'round' });
+          svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:7, fill:'#334e7d' }));  // bottom layer dot
+          svg.appendChild(els.shadow);
+          svg.appendChild(els.hand);
+          svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:7, fill:'#334e7d' }));  // top layer dot
 
-          // Center dot
-          svg.appendChild(svgEl('circle', { cx: CX, cy: CY, r: 7, fill: '#334e7d' }));
+          drawHand(state.handAngle);
+          paintNumbers();
         }
 
-        /* ── Helpers ──────────────────────────────────────── */
+        /* ── Update only the hand tip (called every rAF) ───── */
+        function drawHand(angle) {
+          var len = RING - els.nr - 6;
+          var hx = CX + len * Math.cos(angle);
+          var hy = CY + len * Math.sin(angle);
+          if (els.hand) {
+            els.hand.setAttribute('x2', hx);   els.hand.setAttribute('y2', hy);
+            els.shadow.setAttribute('x2', hx); els.shadow.setAttribute('y2', hy);
+          }
+        }
+
+        /* ── Repaint number-circle colours ─────────────────── */
+        function paintNumbers() {
+          var n = state.n;
+          var trailSet = {};
+          for (var i = 0; i < state.trail.length; i++) trailSet[state.trail[i]] = true;
+
+          for (var k = 0; k < n; k++) {
+            var cur   = k === state.pos;
+            var start = k === state.startPos && state.started && !cur;
+            var trail = trailSet[k] && !cur;
+            var fill, stroke, fw;
+            if (cur)        { fill='#ffd700'; stroke='#c8960a'; fw='900'; }
+            else if (start) { fill='#ddeeff'; stroke='#334e7d'; fw='700'; }
+            else if (trail) { fill='#e8f5e9'; stroke='#81c784'; fw='700'; }
+            else            { fill='#ffffff'; stroke='#c7d2ea'; fw='700'; }
+            els.circles[k].setAttribute('fill',   fill);
+            els.circles[k].setAttribute('stroke', stroke);
+            els.texts[k].setAttribute('font-weight', fw);
+          }
+        }
+
+        /* ── Tween the hand from its current angle to target ─ */
+        /* onDone fires when the animation completes.           */
+        function tweenTo(targetAngle, onDone) {
+          var from = state.handAngle;
+          var t0   = null;
+          // Duration scales with arc size: 350 ms per full lap, min 280 ms
+          var arc  = Math.abs(targetAngle - from);
+          var dur  = Math.max(280, arc / (2 * Math.PI) * 1400);
+          state.animating = true;
+
+          function ease(t) { return t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+
+          function frame(ts) {
+            if (!t0) t0 = ts;
+            var t = Math.min((ts - t0) / dur, 1);
+            drawHand(from + (targetAngle - from) * ease(t));
+            if (t < 1) {
+              requestAnimationFrame(frame);
+            } else {
+              state.handAngle = targetAngle;
+              drawHand(targetAngle);
+              state.animating = false;
+              if (onDone) onDone();
+            }
+          }
+          requestAnimationFrame(frame);
+        }
+
+        /* ── Helpers ────────────────────────────────────────── */
         function modPos(a, n) { return ((a % n) + n) % n; }
 
         function getInputs() {
-          var n = Math.min(24, Math.max(2, parseInt(document.getElementById('ce-n').value) || 12));
-          var a = parseInt(document.getElementById('ce-a').value) || 0;
-          var b = Math.max(0, parseInt(document.getElementById('ce-b').value) || 0);
+          var n  = Math.min(24, Math.max(2, parseInt(document.getElementById('ce-n').value) || 12));
+          var a  = modPos(parseInt(document.getElementById('ce-a').value) || 0, n);
+          var b  = Math.max(0, parseInt(document.getElementById('ce-b').value) || 0);
           var op = document.querySelector('input[name="ce-op"]:checked').value;
-          // Normalise a into [0, n-1]
-          a = modPos(a, n);
-          // Cap b to avoid infinite-looking runs
-          var maxB = (op === 'mul') ? 30 : 50;
-          if (b > maxB) b = maxB;
-          return { n: n, a: a, b: b, op: op };
+          if (b > (op === 'mul' ? 30 : 50)) b = (op === 'mul' ? 30 : 50);
+          return { n:n, a:a, b:b, op:op };
         }
 
         function appendLog(html) {
           var el = document.getElementById('ce-log');
-          var d = document.createElement('div');
+          var d  = document.createElement('div');
           d.innerHTML = html;
           el.appendChild(d);
           el.scrollTop = el.scrollHeight;
         }
-
         function clearLog() { document.getElementById('ce-log').innerHTML = ''; }
 
         function updateStatus() {
           var el = document.getElementById('ce-status');
           if (!state.started) { el.innerHTML = 'Press <strong>Set</strong> to place the cursor on the clock.'; return; }
-          var opSym = { add: '+', sub: '−', mul: '×' }[state.op];
-          var remaining = state.stepsLeft === 0
+          var sym  = { add:'+', sub:'−', mul:'×' }[state.op];
+          var rest = state.stepsLeft === 0
             ? '<span class="ce-result">Done ✓</span>'
-            : (state.op === 'mul'
-                ? 'Jumps remaining: <strong>' + state.stepsLeft + '</strong>'
-                : 'Steps remaining: <strong>' + state.stepsLeft + '</strong>');
-          el.innerHTML =
-            state.a + ' ' + opSym + ' ' + state.b +
-            ' ≡ <strong>' + state.pos + '</strong> (mod ' + state.n + ')' +
-            '&ensp;·&ensp;' + remaining;
+            : (state.op === 'mul' ? 'Jumps remaining: <strong>'+state.stepsLeft+'</strong>'
+                                  : 'Steps remaining: <strong>'+state.stepsLeft+'</strong>');
+          el.innerHTML = state.a+' '+sym+' '+state.b+' ≡ <strong>'+state.pos+'</strong> (mod '+state.n+')&ensp;·&ensp;'+rest;
         }
 
         function setStepButtons() {
-          var done = state.stepsLeft === 0;
-          document.getElementById('ce-step').disabled = done;
-          document.getElementById('ce-auto').disabled = done;
+          var off = state.stepsLeft === 0;
+          document.getElementById('ce-step').disabled = off;
+          document.getElementById('ce-auto').disabled = off;
         }
 
-        /* ── Main actions ─────────────────────────────────── */
+        /* ── doSet ──────────────────────────────────────────── */
         function doSet() {
           stopAuto();
           var inp = getInputs();
           state.n = inp.n; state.a = inp.a; state.b = inp.b; state.op = inp.op;
-          state.trail = [];
-          state.started = true;
+          state.trail = []; state.started = true; state.animating = false;
 
-          if (state.op === 'add') {
-            state.pos = state.a;
-            state.startPos = state.a;
-            state.stepsLeft = state.b;
-            state.jumpSize = 1;
-          } else if (state.op === 'sub') {
-            state.pos = state.a;
-            state.startPos = state.a;
-            state.stepsLeft = state.b;
-            state.jumpSize = 1;
+          if (state.op === 'add' || state.op === 'sub') {
+            state.pos = state.a; state.startPos = state.a;
+            state.stepsLeft = state.b; state.jumpSize = 1;
           } else {
-            // multiply: start at 0, jump by a, b times
-            state.pos = 0;
-            state.startPos = 0;
-            state.jumpSize = state.a;
-            state.stepsLeft = state.b;
+            state.pos = 0; state.startPos = 0;
+            state.jumpSize = state.a; state.stepsLeft = state.b;
           }
 
+          state.handAngle = slotAngle(state.pos, state.n);
           state.trail.push(state.pos);
           clearLog();
-          appendLog('Start at <strong>' + state.pos + '</strong>');
-          if (state.op === 'mul') {
-            appendLog('<span style="color:#555;font-size:0.8em;">' +
-              state.a + ' × ' + state.b + ' = jump +' + state.a + ' repeated ' + state.b + ' time(s)</span>');
-          }
-          if (state.stepsLeft === 0) {
-            appendLog('<span class="ce-result">✓ Result: ' + state.pos + '</span>');
-          }
+          appendLog('Start at <strong>'+state.pos+'</strong>');
+          if (state.op === 'mul')
+            appendLog('<span style="color:#555;font-size:0.8em;">'+state.a+' × '+state.b+' = jump +'+state.a+' repeated '+state.b+' time(s)</span>');
+          if (state.stepsLeft === 0)
+            appendLog('<span class="ce-result">✓ Result: '+state.pos+'</span>');
 
-          buildClock();
+          initSVG();
           updateStatus();
           setStepButtons();
         }
 
-        function doStep() {
-          if (state.stepsLeft <= 0) return;
-          var prev = state.pos;
+        /* ── doStep: compute next state, tween hand, call onDone ── */
+        function doStep(onDone) {
+          if (state.stepsLeft <= 0 || state.animating) return;
+          var prev = state.pos, delta, logMsg;
 
           if (state.op === 'add') {
             state.pos = (state.pos + 1) % state.n;
             state.stepsLeft--;
-            appendLog('+1 &nbsp; ' + prev + ' → <strong>' + state.pos + '</strong>');
+            delta  = 2*Math.PI / state.n;
+            logMsg = '+1 &nbsp; '+prev+' → <strong>'+state.pos+'</strong>';
           } else if (state.op === 'sub') {
             state.pos = modPos(state.pos - 1, state.n);
             state.stepsLeft--;
-            appendLog('−1 &nbsp; ' + prev + ' → <strong>' + state.pos + '</strong>');
+            delta  = -(2*Math.PI / state.n);
+            logMsg = '−1 &nbsp; '+prev+' → <strong>'+state.pos+'</strong>';
           } else {
-            // multiply: one jump of size jumpSize
             state.pos = modPos(state.pos + state.jumpSize, state.n);
             state.stepsLeft--;
-            var jumpsTotal = state.b;
-            var jumpsDone  = jumpsTotal - state.stepsLeft;
-            appendLog('Jump ' + jumpsDone + '/' + jumpsTotal +
-              ' (+' + state.jumpSize + '): ' + prev + ' → <strong>' + state.pos + '</strong>');
+            delta  = state.jumpSize * 2*Math.PI / state.n;
+            var jd = state.b - state.stepsLeft;
+            logMsg = 'Jump '+jd+'/'+state.b+' (+'+state.jumpSize+'): '+prev+' → <strong>'+state.pos+'</strong>';
           }
 
           state.trail.push(state.pos);
-          buildClock();
+          appendLog(logMsg);
+          paintNumbers();   // update colours immediately so dest lights up
           updateStatus();
 
-          if (state.stepsLeft === 0) {
-            stopAuto();
-            appendLog('<span class="ce-result">✓ Result: ' + state.pos + '</span>');
-            setStepButtons();
-          }
+          tweenTo(state.handAngle + delta, function () {
+            if (state.stepsLeft === 0) {
+              stopAuto();
+              appendLog('<span class="ce-result">✓ Result: '+state.pos+'</span>');
+              setStepButtons();
+            }
+            if (onDone) onDone();
+          });
+        }
+
+        /* ── Auto-run: chain tweens with a small gap ────────── */
+        function scheduleNext() {
+          if (!autoRunning || state.stepsLeft === 0) { stopAuto(); return; }
+          autoTimer = setTimeout(function () {
+            if (!autoRunning) return;
+            doStep(function () {
+              if (state.stepsLeft > 0 && autoRunning) scheduleNext();
+              else stopAuto();
+            });
+          }, 60);
+        }
+
+        function startAuto() {
+          if (state.animating || state.stepsLeft === 0) return;
+          autoRunning = true;
+          document.getElementById('ce-auto').textContent = 'Pause';
+          doStep(function () {
+            if (state.stepsLeft > 0 && autoRunning) scheduleNext();
+            else stopAuto();
+          });
         }
 
         function stopAuto() {
-          if (state.autoTimer) { clearInterval(state.autoTimer); state.autoTimer = null; }
+          autoRunning = false;
+          if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
           var btn = document.getElementById('ce-auto');
           if (btn) btn.textContent = 'Auto';
         }
 
-        function startAuto() {
-          if (state.autoTimer || state.stepsLeft === 0) return;
-          document.getElementById('ce-auto').textContent = 'Pause';
-          state.autoTimer = setInterval(function () {
-            doStep();
-            if (state.stepsLeft === 0) stopAuto();
-          }, 480);
-        }
-
-        /* ── Event listeners ─────────────────────────────── */
+        /* ── Event listeners ────────────────────────────────── */
         document.getElementById('ce-set').addEventListener('click', doSet);
-        document.getElementById('ce-step').addEventListener('click', doStep);
-        document.getElementById('ce-auto').addEventListener('click', function () {
-          if (state.autoTimer) { stopAuto(); } else { startAuto(); }
+
+        document.getElementById('ce-step').addEventListener('click', function () {
+          if (!state.animating) doStep();
         });
+
+        document.getElementById('ce-auto').addEventListener('click', function () {
+          if (autoRunning) stopAuto(); else startAuto();
+        });
+
         document.getElementById('ce-reset').addEventListener('click', function () {
-          stopAuto();
+          stopAuto(); state.animating = false;
           state.started = false; state.trail = []; state.stepsLeft = 0;
           var inp = getInputs();
           state.n = inp.n; state.pos = 0;
-          buildClock(); clearLog(); updateStatus();
+          state.handAngle = slotAngle(0, state.n);
+          initSVG(); clearLog(); updateStatus();
           document.getElementById('ce-step').disabled = true;
           document.getElementById('ce-auto').disabled = true;
         });
 
-        // Rebuild clock preview when modulus input changes
         document.getElementById('ce-n').addEventListener('input', function () {
-          stopAuto();
+          stopAuto(); state.animating = false;
           var n = Math.min(24, Math.max(2, parseInt(this.value) || 12));
           state.n = n; state.pos = 0; state.trail = []; state.started = false;
-          buildClock(); clearLog(); updateStatus();
+          state.handAngle = slotAngle(0, n);
+          initSVG(); clearLog(); updateStatus();
           document.getElementById('ce-step').disabled = true;
           document.getElementById('ce-auto').disabled = true;
         });
 
         // Initial draw
-        buildClock();
+        state.handAngle = slotAngle(0, state.n);
+        initSVG();
       })();
       </script>
 
