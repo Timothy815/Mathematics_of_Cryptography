@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 5: Multiplicative Inverses Modulo n | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    :root { --ws: #1f3763; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #e8edf6);
+      border: 1px solid #b0bed8;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+    header.worksheet-header .course-label { color: var(--ws); font-weight: 800; }
+    header.worksheet-header h1 { color: var(--ws); }
+
+    /* Version bar */
+    .version-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin: 22px 0 0;
+      padding-top: 18px;
+      border-top: 1px solid #b0bed8;
+    }
+    .ver-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1px solid var(--ws);
+      background: var(--ws);
+      color: #ffffff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .ver-btn:hover { opacity: 0.85; }
+    .ver-btn.outline { background: #ffffff; color: var(--ws); }
+    .ver-btn.outline:hover { background: #e8edf6; }
+    #version-label {
+      font-size: 0.8rem;
+      color: #5a6a8a;
+      font-family: "Cascadia Code","Consolas",monospace;
+    }
+
+    /* Score panel */
+    .score-panel {
+      display: none;
+      padding: 8px 18px;
+      background: #e8edf6;
+      border: 1px solid var(--ws);
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--ws);
+    }
+    .score-panel.visible { display: inline-block; }
+
+    /* Student info */
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .field-label { font-weight: 750; color: #333; font-size: 0.9rem; display: block; margin-bottom: 4px; }
+    .field-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1.5px solid #555;
+      background: transparent;
+      font-size: 0.95rem;
+      padding: 4px 2px;
+      font-family: inherit;
+      color: #222;
+      box-sizing: border-box;
+    }
+    .field-input:focus { outline: none; border-bottom-color: var(--ws); }
+
+    /* Part headers */
+    .part-header {
+      background: var(--ws);
+      color: #ffffff;
+      border-radius: 10px 10px 0 0;
+      padding: 10px 18px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      margin: 32px 0 0;
+    }
+    .part-body {
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 16px 18px;
+      margin-bottom: 4px;
+    }
+
+    /* Tables */
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 18px;
+      font-size: 0.93rem;
+    }
+    .ws-table th, .ws-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: middle;
+    }
+    .ws-table th {
+      background: #e8edf6;
+      color: var(--ws);
+      font-weight: 700;
+      text-align: left;
+    }
+    .ws-table td:first-child { font-weight: 700; color: #555; width: 42px; text-align: center; }
+    .ws-table td { text-align: left; }
+
+    /* Answer inputs */
+    .ans-input {
+      font-family: "Cascadia Code","Consolas",monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border: 2px solid #c7d2ea;
+      border-radius: 8px;
+      background: #f0f4fb;
+      color: #16243d;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .ans-input:focus { outline: none; border-color: var(--ws); background: #fff; }
+    .ans-input.correct { background: #edf7ed !important; border-color: #2e7d32 !important; color: #1b5e20; }
+    .ans-input.wrong   { background: #fdeaea !important; border-color: #c62828 !important; color: #7f0000; }
+
+    /* Question blocks */
+    .ws-problem {
+      margin: 12px 0;
+      padding: 10px 0;
+      border-bottom: 1px solid #eaedf4;
+    }
+    .ws-problem:last-child { border-bottom: none; }
+    .q-label { font-weight: 700; color: var(--ws); }
+
+    /* Write-wrap pattern */
+    .write-wrap { display: block; margin-top: 6px; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
+
+    .written-area {
+      width: 100%;
+      border: 1px solid #c7d2ea;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      padding: 8px 10px;
+      font-family: inherit;
+      resize: vertical;
+      background: #f8f9fc;
+      color: #222;
+      box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--ws); background: #fff; }
+
+    /* Reference strip */
+    .ref-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 0 0 16px;
+    }
+    .ref-card {
+      flex: 1 1 160px;
+      border: 1px solid #b0bed8;
+      border-radius: 10px;
+      background: #f0f4fb;
+      padding: 10px 14px;
+      font-size: 0.83rem;
+    }
+    .ref-card strong {
+      display: block;
+      color: var(--ws);
+      margin-bottom: 3px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* Legend */
+    .check-legend {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin: 10px 0 0;
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+    .leg-item { display: flex; align-items: center; gap: 5px; }
+    .leg-swatch { width: 28px; height: 14px; border-radius: 4px; border: 1px solid #ccc; }
+    .leg-check { background: #edf7ed; border-color: #2e7d32; }
+    .leg-wrong  { background: #fdeaea; border-color: #c62828; }
+
+    /* Bottom nav secondary links */
+    .nav-secondary {
+      background: #e8edf6 !important;
+      color: var(--ws) !important;
+      border: 1px solid #b0bed8 !important;
+    }
+    .nav-secondary:hover { background: #d0daf0 !important; }
+
+    @media (max-width: 700px) {
+      header.worksheet-header, main { padding: 20px; }
+      .student-info { grid-template-columns: 1fr; }
+      .ws-table { font-size: 0.85rem; }
+    }
+
+    @page { margin: 0.75in; }
+    @media print {
+      body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.4; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .version-bar, .no-print, .check-legend, .ref-strip, .score-panel { display: none !important; }
+      h1 { font-size: 20pt; }
+      h2 { font-size: 13pt; break-after: avoid; }
+      .ws-table, .ws-problem { break-inside: avoid; }
+      .ws-table th { background: #eee !important; color: #000 !important; }
+      .part-header { background: #eee !important; color: #000 !important; border-radius: 0; }
+      /* Student info inputs → underlines */
+      .field-input {
+        border: none !important;
+        border-bottom: 1.5px solid #555 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+      }
+      /* Strip all browser-checking colours — print as blank inputs */
+      .ans-input,
+      .ans-input.correct,
+      .ans-input.wrong {
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 1.5px solid #555 !important;
+        border-radius: 0 !important;
+        color: #000 !important;
+        padding: 4px 2px !important;
+        font-weight: normal !important;
+      }
+      /* Textarea → ruled print lines */
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 5</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Multiplicative Inverses Modulo <span style="font-style:italic;">n</span></h1>
+      <p class="subtitle">
+        Verifying inverses · Finding inverses · Existence conditions · Affine cipher decryption.
+        Computed answers are checked live — press <kbd>Enter</kbd> or click away to check.
+        Written questions are for your own reflection and are not auto-graded.
+      </p>
+      <nav class="tutorial-nav no-print" style="margin-top:14px;padding-top:14px;border-top:1px solid #b0bed8;">
+        <div class="nav-bundle">
+          <a href="index.html" class="nav-item">Dashboard</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Tutorial 5</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_workbook_html.html" class="nav-item nav-secondary">Workbook 5</a>
+        </div>
+      </nav>
+      <div class="version-bar no-print">
+        <button class="ver-btn" onclick="newVersion()">&#8635; New Version</button>
+        <span id="version-label"></span>
+        <button class="ver-btn outline" onclick="checkAll()">&#10003; Check All</button>
+        <div class="score-panel" id="score-panel">
+          Score: <span id="score-num">—</span> &ensp;·&ensp; <span id="score-detail"></span>
+        </div>
+      </div>
+      <div class="check-legend no-print">
+        <span class="leg-item"><span class="leg-swatch leg-check"></span> Correct</span>
+        <span class="leg-item"><span class="leg-swatch leg-wrong"></span> Incorrect — try again</span>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- Student Info -->
+      <section>
+        <div class="student-info">
+          <div>
+            <label class="field-label" for="si-name">Name:</label>
+            <input class="field-input" id="si-name" type="text" autocomplete="off" placeholder=" ">
+          </div>
+          <div>
+            <label class="field-label" for="si-date">Date:</label>
+            <input class="field-input" id="si-date" type="text" autocomplete="off" placeholder=" ">
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Reference -->
+      <div class="ref-strip no-print">
+        <div class="ref-card"><strong>Definition</strong>\(a^{-1} \pmod{n}\) is the unique \(x \in \{0,\ldots,n-1\}\) such that \(a \cdot x \equiv 1 \pmod{n}\).</div>
+        <div class="ref-card"><strong>Existence</strong>\(a^{-1} \pmod{n}\) exists if and only if \(\gcd(a,n)=1\).</div>
+        <div class="ref-card"><strong>Verify</strong>To check: multiply \(a \cdot x\) and reduce mod \(n\). If the result is 1, \(x\) is the inverse.</div>
+        <div class="ref-card"><strong>Affine Decrypt</strong>\(P \equiv a^{-1}(C - b) \pmod{26}\). Add 26 if result is negative.</div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Part 1 — Verify the Claim (Q1–Q4, T/F)
+      ══════════════════════════════════════════ -->
+      <div class="part-header">Part 1 — Verify the Claim (Q1–Q4) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">T/F — auto-checked</span></div>
+      <div class="part-body">
+        <p style="margin:0 0 12px;font-size:0.88rem;">For each claim, verify by computing the product and reducing modulo \(n\). Enter <strong>T</strong> (true) or <strong>F</strong> (false).</p>
+        <table class="ws-table" id="p1-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Claim</th>
+              <th style="width:110px;">T / F &#10003;</th>
+            </tr>
+          </thead>
+          <tbody id="p1-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Part 2 — Find the Inverse (Q5–Q7)
+      ══════════════════════════════════════════ -->
+      <div class="part-header">Part 2 — Find the Inverse (Q5–Q7) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Number answer — auto-checked</span></div>
+      <div class="part-body">
+        <p style="margin:0 0 12px;font-size:0.88rem;">Find the multiplicative inverse. Give your answer as a number in \(\{1, \ldots, n-1\}\). You may use trial-and-error or the extended Euclidean algorithm.</p>
+        <div id="p2-container"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Part 3 — Does the Inverse Exist? (Q8–Q12)
+      ══════════════════════════════════════════ -->
+      <div class="part-header">Part 3 — Does the Inverse Exist? (Q8–Q12) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Y/N — auto-checked</span></div>
+      <div class="part-body">
+        <p style="margin:0 0 12px;font-size:0.88rem;">For each pair \((a, n)\), decide whether \(a^{-1} \pmod{n}\) exists. Enter <strong>Y</strong> (yes) or <strong>N</strong> (no). Hint: compute \(\gcd(a, n)\).</p>
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th style="width:80px;">\(a\)</th>
+              <th style="width:80px;">\(n\)</th>
+              <th>Does \(a^{-1} \pmod{n}\) exist? &#10003;</th>
+            </tr>
+          </thead>
+          <tbody id="p3-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Part 4 — Affine Cipher Decryption (Q13–Q14)
+      ══════════════════════════════════════════ -->
+      <div class="part-header">Part 4 — Affine Cipher Decryption (Q13–Q14) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Number answer — auto-checked</span></div>
+      <div class="part-body">
+        <p style="margin:0 0 12px;font-size:0.88rem;">The affine cipher encrypts as \(C \equiv aP + b \pmod{26}\). To decrypt: \(P \equiv a^{-1}(C - b) \pmod{26}\). Add 26 if the intermediate value is negative.</p>
+        <div id="p4-container"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Part 5 — Written Reflection (Q15–Q16)
+      ══════════════════════════════════════════ -->
+      <div class="part-header">Part 5 — Written Reflection (Q15–Q16) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Open-ended — not auto-graded</span></div>
+      <div class="part-body">
+        <div class="ws-problem">
+          <p style="margin:0 0 6px;"><span class="q-label">Q15.</span> In your own words, explain why some numbers do not have a multiplicative inverse modulo \(n\).</p>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+        <div class="ws-problem">
+          <p style="margin:0 0 6px;"><span class="q-label">Q16.</span> Write the equation that defines \(a^{-1} \pmod{n}\) and explain each part of the equation.</p>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom nav -->
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_04_modular_arithmetic_html.html" class="nav-item">&#8592; Worksheet 4</a>
+          <a href="index.html" class="nav-item">Dashboard</a>
+          <a href="worksheet_06_euclidean_algorithm_html.html" class="nav-item">Worksheet 6 &#8594;</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Tutorial 5</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_workbook_html.html" class="nav-item nav-secondary">Workbook 5</a>
+        </div>
+      </nav>
+
+    </main>
+  </div><!-- .page -->
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Known inverse pairs: { a, x, n } where a*x ≡ 1 (mod n) ─── */
+    var INVERSE_PAIRS = [
+      { a:3,  x:7,  n:10 },
+      { a:5,  x:21, n:26 },
+      { a:7,  x:7,  n:12 },
+      { a:9,  x:3,  n:26 },
+      { a:11, x:19, n:26 },
+      { a:3,  x:9,  n:26 },
+      { a:7,  x:15, n:26 },
+      { a:5,  x:5,  n:12 },
+      { a:11, x:11, n:12 }
+    ];
+
+    /* Affine-cipher invertible-mod-26 table */
+    var AFFINE_PAIRS = [
+      { a:3,  inv:9  },
+      { a:5,  inv:21 },
+      { a:7,  inv:15 },
+      { a:9,  inv:3  },
+      { a:11, inv:19 },
+      { a:15, inv:7  },
+      { a:17, inv:23 },
+      { a:19, inv:11 },
+      { a:21, inv:5  },
+      { a:23, inv:17 },
+      { a:25, inv:25 }
+    ];
+
+    /* Pool for Part 3 (existence) */
+    var EXIST_POOL = [
+      { a:5,  n:26, ans:'Y' },
+      { a:2,  n:6,  ans:'N' },
+      { a:4,  n:10, ans:'N' },
+      { a:7,  n:12, ans:'Y' },
+      { a:13, n:26, ans:'N' },
+      { a:15, n:26, ans:'Y' },
+      { a:6,  n:9,  ans:'N' },
+      { a:11, n:12, ans:'Y' }
+    ];
+
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+
+    function shuffle(arr) {
+      var a = arr.slice();
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+
+    function modPos(a, n) { return ((a % n) + n) % n; }
+
+    /* ── Version state ─────────────────────────────────────────────── */
+    var V = {};
+    var versionCount = 0;
+
+    function generateVersion() {
+      versionCount++;
+
+      /* Part 1: 2 TRUE + 2 FALSE, shuffled */
+      var shuffledPairs = shuffle(INVERSE_PAIRS);
+      var truePairs = shuffledPairs.slice(0, 2).map(function(p) {
+        return { a: p.a, x: p.x, n: p.n, answer: 'T' };
+      });
+      var falsePairs = shuffledPairs.slice(2, 4).map(function(p) {
+        // Perturb x by +1 or -1, keep in range [1, n-1]
+        var delta = (Math.random() < 0.5) ? 1 : -1;
+        var badX = p.x + delta;
+        if (badX < 1) badX = p.x + 1;
+        if (badX >= p.n) badX = p.x - 1;
+        if (badX < 1) badX = 2; // fallback
+        return { a: p.a, x: badX, n: p.n, answer: 'F' };
+      });
+      V.p1 = shuffle(truePairs.concat(falsePairs));
+
+      /* Part 2: pick 3 from inverse pairs */
+      V.p2 = shuffle(INVERSE_PAIRS).slice(0, 3);
+
+      /* Part 3: pick 5 from existence pool */
+      V.p3 = shuffle(EXIST_POOL).slice(0, 5);
+
+      /* Part 4: 2 affine decryption problems */
+      var shuffledAffine = shuffle(AFFINE_PAIRS);
+      V.p4 = [];
+      for (var i = 0; i < 2; i++) {
+        var ap = shuffledAffine[i];
+        var b  = rnd(1, 12);
+        var P  = rnd(1, 20);
+        var C  = modPos(ap.a * P + b, 26);
+        V.p4.push({ a: ap.a, ainv: ap.inv, b: b, P: P, C: C });
+      }
+    }
+
+    /* ── Input checking ─────────────────────────────────────────────── */
+    function checkInput(el) {
+      if (!el.dataset || !el.dataset.answer) return;
+      var user    = el.value.trim().toLowerCase();
+      var correct = el.dataset.answer.toLowerCase();
+      if (user === '') { el.className = 'ans-input'; return; }
+      var nUser    = parseFloat(user);
+      var nCorrect = parseFloat(correct);
+      var ok = (user === correct) ||
+               (!isNaN(nUser) && !isNaN(nCorrect) && nUser === nCorrect);
+      el.className = 'ans-input ' + (ok ? 'correct' : 'wrong');
+    }
+
+    function attachChecker(el) {
+      if (el._checkerOn) return;
+      el._checkerOn = true;
+      el.addEventListener('blur', function () { checkInput(this); });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); checkInput(this); }
+      });
+    }
+
+    /* ── DOM helpers ──────────────────────────────────────────────── */
+    var mjEls = [];
+
+    function mkInput(id, style) {
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id   = id;
+      inp.className = 'ans-input';
+      inp.autocomplete = 'off';
+      if (style) { Object.keys(style).forEach(function(k) { inp.style[k] = style[k]; }); }
+      return inp;
+    }
+
+    /* ── Apply version to DOM ─────────────────────────────────────── */
+    function applyVersion() {
+      mjEls = [];
+
+      /* Version label */
+      document.getElementById('version-label').textContent = 'Version ' + versionCount;
+
+      /* ── Part 1 ── */
+      var p1body = document.getElementById('p1-tbody');
+      p1body.innerHTML = '';
+      V.p1.forEach(function(item, idx) {
+        var qn = idx + 1;
+        var tr = document.createElement('tr');
+
+        var tdQ = document.createElement('td');
+        tdQ.textContent = 'Q' + qn;
+        tr.appendChild(tdQ);
+
+        var tdClaim = document.createElement('td');
+        tdClaim.innerHTML = 'Is \\(' + item.a + ' \\cdot ' + item.x + ' \\equiv 1 \\pmod{' + item.n + '}\\)?';
+        mjEls.push(tdClaim);
+        tr.appendChild(tdClaim);
+
+        var tdAns = document.createElement('td');
+        var inp = mkInput('p1q' + qn, { width: '60px' });
+        inp.maxLength = 1;
+        inp.placeholder = 'T / F';
+        inp.dataset.answer = item.answer;
+        attachChecker(inp);
+        tdAns.appendChild(inp);
+        tr.appendChild(tdAns);
+
+        p1body.appendChild(tr);
+      });
+
+      /* ── Part 2 ── */
+      var p2cont = document.getElementById('p2-container');
+      p2cont.innerHTML = '';
+      V.p2.forEach(function(item, idx) {
+        var qn = 5 + idx;
+        var div = document.createElement('div');
+        div.className = 'ws-problem';
+
+        var p = document.createElement('p');
+        p.style.margin = '0 0 8px';
+        p.innerHTML = '<span class="q-label">Q' + qn + '.</span> Find \\(' + item.a + '^{-1} \\pmod{' + item.n + '}\\).';
+        mjEls.push(p);
+        div.appendChild(p);
+
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+        var label = document.createElement('span');
+        label.style.fontSize = '0.88rem';
+        label.innerHTML = '\\(' + item.a + '^{-1} \\equiv \\)';
+        mjEls.push(label);
+        row.appendChild(label);
+
+        var inp = mkInput('p2q' + qn, { width: '80px' });
+        inp.placeholder = '?';
+        inp.dataset.answer = String(item.x);
+        attachChecker(inp);
+        row.appendChild(inp);
+
+        var modLabel = document.createElement('span');
+        modLabel.style.fontSize = '0.88rem';
+        modLabel.innerHTML = '\\(\\pmod{' + item.n + '}\\)';
+        mjEls.push(modLabel);
+        row.appendChild(modLabel);
+
+        div.appendChild(row);
+        p2cont.appendChild(div);
+      });
+
+      /* ── Part 3 ── */
+      var p3body = document.getElementById('p3-tbody');
+      p3body.innerHTML = '';
+      V.p3.forEach(function(item, idx) {
+        var qn = 8 + idx;
+        var tr = document.createElement('tr');
+
+        var tdQ = document.createElement('td');
+        tdQ.textContent = 'Q' + qn;
+        tr.appendChild(tdQ);
+
+        var tdA = document.createElement('td');
+        tdA.textContent = item.a;
+        tr.appendChild(tdA);
+
+        var tdN = document.createElement('td');
+        tdN.textContent = item.n;
+        tr.appendChild(tdN);
+
+        var tdAns = document.createElement('td');
+        var inp = mkInput('p3q' + qn, { width: '60px' });
+        inp.maxLength = 1;
+        inp.placeholder = 'Y / N';
+        inp.dataset.answer = item.ans;
+        attachChecker(inp);
+        tdAns.appendChild(inp);
+        tr.appendChild(tdAns);
+
+        p3body.appendChild(tr);
+      });
+
+      /* ── Part 4 ── */
+      var p4cont = document.getElementById('p4-container');
+      p4cont.innerHTML = '';
+      V.p4.forEach(function(item, idx) {
+        var qn = 13 + idx;
+        var div = document.createElement('div');
+        div.className = 'ws-problem';
+
+        var p = document.createElement('p');
+        p.style.margin = '0 0 8px';
+        p.innerHTML =
+          '<span class="q-label">Q' + qn + '.</span> ' +
+          'The affine cipher \\(C \\equiv aP + b \\pmod{26}\\) produced \\(C = ' + item.C + '\\). ' +
+          'Given that \\(a = ' + item.a + '\\), \\(b = ' + item.b + '\\), and ' +
+          '\\(a^{-1} \\equiv ' + item.ainv + ' \\pmod{26}\\), recover the plaintext number \\(P\\).';
+        mjEls.push(p);
+        div.appendChild(p);
+
+        var row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:10px;';
+        var label = document.createElement('span');
+        label.style.fontSize = '0.88rem';
+        label.innerHTML = '\\(P = \\)';
+        mjEls.push(label);
+        row.appendChild(label);
+
+        var inp = mkInput('p4q' + qn, { width: '80px' });
+        inp.placeholder = '?';
+        inp.dataset.answer = String(item.P);
+        attachChecker(inp);
+        row.appendChild(inp);
+
+        div.appendChild(row);
+        p4cont.appendChild(div);
+      });
+
+      /* ── Re-typeset MathJax ── */
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise(mjEls);
+      }
+    }
+
+    /* ── Clear all answer inputs ────────────────────────────────── */
+    function clearInputs() {
+      document.querySelectorAll('.ans-input').forEach(function(inp) {
+        inp.value = '';
+        inp.className = 'ans-input';
+      });
+      var panel = document.getElementById('score-panel');
+      panel.classList.remove('visible');
+    }
+
+    /* ── Check all ──────────────────────────────────────────────── */
+    function checkAll() {
+      var total = 0, correct = 0;
+      document.querySelectorAll('.ans-input').forEach(function(el) {
+        if (!el.dataset || !el.dataset.answer) return;
+        total++;
+        if (el.value.trim()) checkInput(el);
+        if (el.classList.contains('correct')) correct++;
+      });
+      var panel = document.getElementById('score-panel');
+      document.getElementById('score-num').textContent = correct + ' / ' + total;
+      var pct = total > 0 ? Math.round(correct / total * 100) : 0;
+      document.getElementById('score-detail').textContent = pct + '% correct';
+      panel.classList.add('visible');
+    }
+
+    /* ── New Version ────────────────────────────────────────────── */
+    function newVersion() {
+      clearInputs();
+      generateVersion();
+      applyVersion();
+    }
+
+    window.newVersion = newVersion;
+    window.checkAll   = checkAll;
+
+    /* ── Initial load ─────────────────────────────────────────── */
+    generateVersion();
+    applyVersion();
+
+  })();
+
+  /* Generate ruled print lines for each write-wrap */
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 4;
+    if (rows < 2) rows = 2;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
+  </script>
+</body>
+</html>
