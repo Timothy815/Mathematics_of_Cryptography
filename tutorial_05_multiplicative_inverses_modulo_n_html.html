@@ -91,6 +91,44 @@
 
     .chain-step.hit { background: #fff4d8; border-color: #ead399; }
 
+    /* ── Coverage Map widget ─────────────────────────────────── */
+    .cmap-widget {
+      background: #f4f7fd; border: 1px solid #b0bed8;
+      border-radius: 14px; padding: 18px; margin: 18px 0;
+    }
+    .cmap-controls {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      align-items: center; margin-bottom: 14px;
+    }
+    .cmap-ctrl-group { display: flex; align-items: center; gap: 8px; font-size: 0.88rem; }
+    .cmap-select {
+      font-size: 0.88rem; border: 1px solid #b0bed8; border-radius: 6px;
+      padding: 4px 8px; background: #fff; color: #1f3763; font-weight: 700;
+    }
+    .cmap-btn {
+      padding: 6px 14px; border-radius: 7px; border: 1px solid #1f3763;
+      background: #1f3763; color: #fff; font-size: 0.82rem; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .cmap-btn:hover { opacity: .85; }
+    .cmap-btn.outline { background: #fff; color: #1f3763; }
+    .cmap-btn.outline:hover { background: #e8edf6; }
+    .cmap-main { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .cmap-legend-wrap { flex: 1 1 160px; font-size: 0.84rem; padding-top: 4px; }
+    .cmap-legend-title {
+      font-weight: 700; color: #1f3763; margin-bottom: 8px;
+      text-transform: uppercase; font-size: 0.78rem; letter-spacing: .06em;
+    }
+    .cmap-legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .cmap-swatch {
+      width: 24px; height: 16px; border-radius: 4px; border: 1.5px solid #ccc;
+      flex-shrink: 0; display: inline-block;
+    }
+    .cmap-counter {
+      margin-top: 14px; font-size: 0.82rem; color: #555;
+      font-family: "Cascadia Code","Consolas",monospace; min-height: 18px;
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -483,6 +521,68 @@
         </p>
       </section>
 
+      <section id="coverage-map">
+        <h2>Coverage map: why some multipliers miss position 1</h2>
+        <p>
+          The ring below makes the pattern visible. Choose a modulus \(n\) and a number \(a\), then step through
+          the products \(a \cdot 1,\; a \cdot 2,\; \ldots,\; a \cdot (n-1)\) and watch where each one lands modulo \(n\).
+          The gold <strong>★ 1</strong> is the only position that matters for an inverse.
+        </p>
+
+        <div class="cmap-widget no-print">
+          <div class="cmap-controls">
+            <div class="cmap-ctrl-group">
+              <label for="cmap-n">Modulus \(n\):</label>
+              <select id="cmap-n" class="cmap-select" onchange="cmapSetN()">
+                <option value="6" selected>6</option><option value="7">7</option>
+                <option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option><option value="11">11</option>
+                <option value="12">12</option>
+              </select>
+            </div>
+            <div class="cmap-ctrl-group">
+              <label for="cmap-a">Number \(a\):</label>
+              <select id="cmap-a" class="cmap-select" onchange="cmapSetA()"></select>
+            </div>
+            <div class="cmap-ctrl-group">
+              <button class="cmap-btn" onclick="cmapStep()">Step →</button>
+              <button class="cmap-btn outline" onclick="cmapRevealAll()">Reveal all</button>
+              <button class="cmap-btn outline" onclick="cmapReset()">&#8635; Reset</button>
+            </div>
+          </div>
+          <div class="cmap-main">
+            <div>
+              <svg id="cmap-svg" width="270" height="270" viewBox="0 0 270 270"
+                aria-label="Modular ring visualising which residues are reachable by multiplication by a.">
+              </svg>
+            </div>
+            <div class="cmap-legend-wrap">
+              <div class="cmap-legend-title">Legend</div>
+              <div class="cmap-legend-item">
+                <span class="cmap-swatch" style="background:#f7f9fd;border-color:#b0bed8;"></span>Not yet reached
+              </div>
+              <div class="cmap-legend-item">
+                <span class="cmap-swatch" style="background:#c8f5d8;border-color:#43a047;"></span>Reached once
+              </div>
+              <div class="cmap-legend-item">
+                <span class="cmap-swatch" style="background:#fde8c0;border-color:#ef6c00;"></span>Reached 2+ times — collision
+              </div>
+              <div class="cmap-legend-item">
+                <span class="cmap-swatch" style="background:#fff8e0;border-color:#c9a227;border-width:2.5px;"></span>Position 1 — the target ★
+              </div>
+              <div class="cmap-counter" id="cmap-counter"></div>
+            </div>
+          </div>
+          <div id="cmap-result" style="display:none;margin-top:14px;padding:12px 16px;border-radius:10px;border:1px solid #ccc;font-size:0.9rem;"></div>
+        </div>
+
+        <p>
+          Start with \(a=2\), \(n=6\): after all steps, only positions 0, 2, and 4 are ever reached.
+          Position 1 stays dark — unreachable. Now try \(a=5\), \(n=6\): every position is reached exactly once.
+          That permutation structure is precisely why an inverse must exist.
+        </p>
+      </section>
+
       <section id="gcd-rule">
         <h2>The greatest common divisor rule</h2>
         <p>
@@ -795,5 +895,167 @@
     </nav>
     </main>
   </div>
+  <script>
+  /* ══════════════ Coverage Map Visualizer ══════════════ */
+  (function () {
+    'use strict';
+    var CX=135, CY=135, R=100, NR=14;
+
+    var cm = { n:6, a:2, step:0, visits:{}, hAng:-Math.PI/2,
+               animId:null, animStart:null };
+
+    function ns(tag,attrs){
+      var e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+      Object.keys(attrs||{}).forEach(function(k){e.setAttribute(k,attrs[k]);});
+      return e;
+    }
+    function ang(k,n){ return -Math.PI/2+k/n*2*Math.PI; }
+    function pos(k,n){ var a=ang(k,n); return {x:CX+R*Math.cos(a),y:CY+R*Math.sin(a)}; }
+    function ease(t){ return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; }
+
+    function nodeColor(k){
+      var v=cm.visits[k]||0, isTgt=(k===1);
+      if(v===0) return {f:isTgt?'#fff8e0':'#f7f9fd', s:isTgt?'#c9a227':'#b0bed8'};
+      if(v===1) return {f:isTgt?'#b8f0c4':'#c8f5d8', s:isTgt?'#2e7d32':'#43a047'};
+      return {f:'#fde8c0', s:'#ef6c00'};
+    }
+
+    function buildRing(){
+      var n=cm.n, svg=document.getElementById('cmap-svg'); if(!svg)return;
+      svg.innerHTML='';
+      var d=ns('defs');
+      var mk=ns('marker',{id:'cmap-arr',markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+      mk.appendChild(ns('polygon',{points:'0 0,8 3,0 6',fill:'#1f3763'}));
+      d.appendChild(mk); svg.appendChild(d);
+      svg.appendChild(ns('circle',{cx:CX,cy:CY,r:R,fill:'none',stroke:'#dde3f0','stroke-width':'1.5'}));
+      var hx=CX+R*0.7*Math.cos(cm.hAng), hy=CY+R*0.7*Math.sin(cm.hAng);
+      svg.appendChild(ns('line',{id:'cmap-hand',x1:CX,y1:CY,x2:hx,y2:hy,
+        stroke:'#1f3763','stroke-width':'2.5','stroke-linecap':'round','marker-end':'url(#cmap-arr)'}));
+      svg.appendChild(ns('circle',{cx:CX,cy:CY,r:3,fill:'#1f3763',opacity:'0.4'}));
+      for(var k=0;k<n;k++){
+        var p=pos(k,n), c=nodeColor(k);
+        svg.appendChild(ns('circle',{id:'cmap-nd-'+k,cx:p.x,cy:p.y,r:NR,
+          fill:c.f,stroke:c.s,'stroke-width':k===1?'2.5':'1.5'}));
+        var t=ns('text',{x:p.x,y:p.y+4,'text-anchor':'middle','font-size':'12','font-weight':'700',
+          fill:k===1?'#8b6914':'#333','pointer-events':'none','font-family':'monospace'});
+        t.textContent=k; svg.appendChild(t);
+      }
+      var p1=pos(1,n);
+      var star=ns('text',{x:p1.x,y:p1.y-NR-3,'text-anchor':'middle','font-size':'10',
+        'font-weight':'700',fill:'#c9a227','pointer-events':'none'});
+      star.textContent='★'; svg.appendChild(star);
+      updateCounter();
+    }
+
+    function updateNode(k){
+      var c=nodeColor(k);
+      var nd=document.getElementById('cmap-nd-'+k);
+      if(nd){nd.setAttribute('fill',c.f);nd.setAttribute('stroke',c.s);}
+    }
+
+    function moveHand(a){
+      var h=document.getElementById('cmap-hand'); if(!h)return;
+      h.setAttribute('x2',CX+R*0.7*Math.cos(a));
+      h.setAttribute('y2',CY+R*0.7*Math.sin(a));
+    }
+
+    function animTo(target,cb){
+      if(cm.animId){cancelAnimationFrame(cm.animId);cm.animId=null;}
+      var from=cm.hAng, diff=target-from;
+      while(diff<=0) diff+=2*Math.PI;
+      if(diff>=2*Math.PI-0.01) diff=0;
+      if(diff<0.02){cm.hAng=target;moveHand(target);if(cb)cb();return;}
+      var dur=Math.max(420,Math.min(900,420+diff*100));
+      cm.animStart=null;
+      function step(ts){
+        if(!cm.animStart)cm.animStart=ts;
+        var t=Math.min((ts-cm.animStart)/dur,1);
+        moveHand(from+diff*ease(t));
+        if(t<1){cm.animId=requestAnimationFrame(step);}
+        else{cm.hAng=target;cm.animId=null;if(cb)cb();}
+      }
+      cm.animId=requestAnimationFrame(step);
+    }
+
+    function updateCounter(){
+      var el=document.getElementById('cmap-counter'); if(!el)return;
+      var n=cm.n,a=cm.a,s=cm.step;
+      if(s===0) el.textContent='No steps yet — press Step → to begin.';
+      else if(s<n) el.textContent='Step '+s+' of '+(n-1)+': '+a+'·'+s+'='+
+        (a*s)+' ≡ '+(a*s)%n+' (mod '+n+')';
+      else el.textContent='All '+(n-1)+' multipliers shown.';
+    }
+
+    function checkDone(){
+      var el=document.getElementById('cmap-result'); if(!el)return;
+      if(cm.step<cm.n-1){el.style.display='none';return;}
+      var reached1=(cm.visits[1]||0)>0;
+      el.style.display='block';
+      if(reached1){
+        el.style.cssText='display:block;margin-top:14px;padding:12px 16px;border-radius:10px;'+
+          'background:#edf7ed;border:1px solid #66bb6a;color:#1b5e20;font-size:0.9rem;';
+        el.innerHTML='<strong>Position 1 was reached.</strong> Multiplication by '+cm.a+
+          ' modulo '+cm.n+' hits every position exactly once — it is a permutation. '+
+          'Since position 1 is reachable, <strong>'+cm.a+'⁻¹ exists (mod '+cm.n+')</strong>.';
+      } else {
+        el.style.cssText='display:block;margin-top:14px;padding:12px 16px;border-radius:10px;'+
+          'background:#fdeaea;border:1px solid #ef9a9a;color:#7f0000;font-size:0.9rem;';
+        el.innerHTML='<strong>Position 1 was never reached.</strong> No matter which multiplier '+
+          'you use, '+cm.a+'·x (mod '+cm.n+') never equals 1. '+
+          '<strong>'+cm.a+' has no inverse mod '+cm.n+'.</strong>';
+      }
+    }
+
+    function doStep(){
+      if(cm.animId||cm.step>=cm.n-1)return;
+      cm.step++;
+      var x=cm.step, res=(cm.a*x)%cm.n;
+      cm.visits[res]=(cm.visits[res]||0)+1;
+      animTo(ang(res,cm.n),function(){
+        updateNode(res); updateCounter(); checkDone();
+      });
+    }
+
+    function revealAll(){
+      if(cm.animId){cancelAnimationFrame(cm.animId);cm.animId=null;}
+      var n=cm.n,a=cm.a;
+      for(var x=1;x<n;x++){
+        var r=(a*x)%n; cm.visits[r]=(cm.visits[r]||0)+1;
+      }
+      cm.step=n-1; cm.hAng=ang((a*(n-1))%n,n);
+      buildRing(); checkDone();
+    }
+
+    function cmapPopA(){
+      var sel=document.getElementById('cmap-a'); if(!sel)return;
+      var prev=cm.a; sel.innerHTML='';
+      for(var i=2;i<cm.n;i++){
+        var o=document.createElement('option');
+        o.value=i; o.textContent=i; if(i===prev)o.selected=true;
+        sel.appendChild(o);
+      }
+      cm.a=parseInt(sel.value);
+    }
+
+    window.cmapSetN=function(){
+      var s=document.getElementById('cmap-n'); if(!s)return;
+      cm.n=parseInt(s.value); cmapPopA(); cmapReset();
+    };
+    window.cmapSetA=function(){
+      var s=document.getElementById('cmap-a'); if(!s)return;
+      cm.a=parseInt(s.value); cmapReset();
+    };
+    window.cmapStep=function(){ doStep(); };
+    window.cmapRevealAll=function(){ revealAll(); };
+    window.cmapReset=function(){
+      if(cm.animId){cancelAnimationFrame(cm.animId);cm.animId=null;}
+      cm.step=0; cm.visits={}; cm.hAng=ang(0,cm.n);
+      buildRing();
+      var el=document.getElementById('cmap-result'); if(el)el.style.display='none';
+    };
+
+    window.addEventListener('load',function(){ cmapPopA(); buildRing(); });
+  })();
+  </script>
 </body>
 </html>

@@ -225,10 +225,56 @@
     }
     .nav-secondary:hover { background: #d0daf0 !important; }
 
+    /* ── Trial-and-Error Inverse Finder widget ──────────────────── */
+    .taf-widget {
+      background: #f4f7fd;
+      border: 1px solid #b0bed8;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 4px 0 0;
+    }
+    .taf-controls {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px;
+    }
+    .taf-ctrl-group { display: flex; align-items: center; gap: 7px; font-size: 0.85rem; }
+    .taf-select, .taf-x-input {
+      font-size: 0.85rem; border: 1px solid #b0bed8; border-radius: 6px;
+      padding: 4px 8px; background: #fff; color: var(--ws); font-weight: 700;
+    }
+    .taf-btn {
+      padding: 5px 13px; border-radius: 7px; border: 1px solid var(--ws);
+      background: var(--ws); color: #fff; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .taf-btn:hover { opacity: .85; }
+    .taf-btn.outline { background: #fff; color: var(--ws); }
+    .taf-btn.outline:hover { background: #e8edf6; }
+    .taf-main { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+    .taf-svg-wrap { flex: 0 0 auto; }
+    .taf-log-title {
+      font-weight: 700; color: var(--ws); font-size: 0.78rem;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px;
+    }
+    .taf-log {
+      flex: 1 1 160px; max-height: 230px; overflow-y: auto; font-size: 0.8rem;
+      font-family: "Cascadia Code","Consolas",monospace;
+    }
+    .taf-log-entry {
+      padding: 3px 7px; border-radius: 5px; margin-bottom: 3px;
+      background: #fff; border: 1px solid #e0e4ee; color: #444;
+    }
+    .taf-log-entry.hit { background: #edf7ed; border-color: #66bb6a; color: #1b5e20; }
+    .taf-status {
+      margin-top: 10px; padding: 7px 12px; border-radius: 8px; font-size: 0.85rem;
+      min-height: 30px; background: #e8edf6; color: var(--ws); border: 1px solid #b0bed8;
+      transition: background .2s, color .2s;
+    }
+
     @media (max-width: 700px) {
       header.worksheet-header, main { padding: 20px; }
       .student-info { grid-template-columns: 1fr; }
       .ws-table { font-size: 0.85rem; }
+      .taf-main { flex-direction: column; align-items: center; }
     }
 
     @page { margin: 0.75in; }
@@ -320,7 +366,6 @@
       <!-- Quick Reference -->
       <div class="ref-strip no-print">
         <div class="ref-card"><strong>Definition</strong>\(a^{-1} \pmod{n}\) is the unique \(x \in \{0,\ldots,n-1\}\) such that \(a \cdot x \equiv 1 \pmod{n}\).</div>
-        <div class="ref-card"><strong>Existence</strong>\(a^{-1} \pmod{n}\) exists if and only if \(\gcd(a,n)=1\).</div>
         <div class="ref-card"><strong>Verify</strong>To check: multiply \(a \cdot x\) and reduce mod \(n\). If the result is 1, \(x\) is the inverse.</div>
         <div class="ref-card"><strong>Affine Decrypt</strong>\(P \equiv a^{-1}(C - b) \pmod{26}\). Add 26 if result is negative.</div>
       </div>
@@ -348,8 +393,62 @@
       ══════════════════════════════════════════ -->
       <div class="part-header">Part 2 — Find the Inverse (Q5–Q7) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Number answer — auto-checked</span></div>
       <div class="part-body">
-        <p style="margin:0 0 12px;font-size:0.88rem;">Find the multiplicative inverse. Give your answer as a number in \(\{1, \ldots, n-1\}\). You may use trial-and-error or the extended Euclidean algorithm.</p>
+        <p style="margin:0 0 12px;font-size:0.88rem;">Find the multiplicative inverse. Give your answer as a number in \(\{1, \ldots, n-1\}\). Use trial-and-error: test \(x = 1, 2, 3, \ldots\) until \(a \cdot x \equiv 1 \pmod{n}\).</p>
         <div id="p2-container"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           Interactive: Trial-and-Error Inverse Finder
+      ══════════════════════════════════════════ -->
+      <div class="part-header no-print" style="background:#2d4a6a;">
+        &#x1F9EA; Interactive — Trial-and-Error Inverse Finder
+        &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Explore at your own pace — not graded</span>
+      </div>
+      <div class="part-body no-print">
+        <p style="margin:0 0 10px;font-size:0.88rem;">
+          Pick a modulus <em>n</em> and a number <em>a</em>, then guess values of <em>x</em>.
+          The pointer sweeps to where \(a \cdot x \bmod n\) lands on the ring.
+          The gold <strong>★ 1</strong> is your target — can you reach it?
+        </p>
+        <div class="taf-widget">
+          <div class="taf-controls">
+            <div class="taf-ctrl-group">
+              <label for="taf-n">\(n\) =</label>
+              <select id="taf-n" class="taf-select" onchange="tafSetN()">
+                <option value="6">6</option><option value="7">7</option>
+                <option value="8">8</option><option value="9">9</option>
+                <option value="10" selected>10</option><option value="11">11</option>
+                <option value="12">12</option>
+              </select>
+            </div>
+            <div class="taf-ctrl-group">
+              <label for="taf-a">\(a\) =</label>
+              <select id="taf-a" class="taf-select" onchange="tafSetA()"></select>
+            </div>
+            <div class="taf-ctrl-group">
+              <label for="taf-x-inp">Try \(x\) =</label>
+              <input id="taf-x-inp" type="number" min="1" class="taf-x-input" style="width:58px;"
+                onkeydown="if(event.key==='Enter')tafManualTry();">
+              <button class="taf-btn" onclick="tafManualTry()">Try</button>
+            </div>
+            <div class="taf-ctrl-group">
+              <button class="taf-btn outline" id="taf-auto-btn" onclick="tafToggleAuto()">Auto-search</button>
+              <button class="taf-btn outline" onclick="tafReset()">&#8635; Reset</button>
+            </div>
+          </div>
+          <div class="taf-main">
+            <div class="taf-svg-wrap">
+              <svg id="taf-svg" width="230" height="230" viewBox="0 0 230 230"
+                aria-label="Modular ring showing positions 0 to n-1. Gold star marks position 1, the target.">
+              </svg>
+            </div>
+            <div>
+              <div class="taf-log-title">Attempt log</div>
+              <div class="taf-log" id="taf-log-entries"></div>
+            </div>
+          </div>
+          <div class="taf-status" id="taf-status">Pick <em>a</em> and try values of <em>x</em>.</div>
+        </div>
       </div>
 
       <!-- ══════════════════════════════════════════
@@ -357,7 +456,7 @@
       ══════════════════════════════════════════ -->
       <div class="part-header">Part 3 — Does the Inverse Exist? (Q8–Q12) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Y/N — auto-checked</span></div>
       <div class="part-body">
-        <p style="margin:0 0 12px;font-size:0.88rem;">For each pair \((a, n)\), decide whether \(a^{-1} \pmod{n}\) exists. Enter <strong>Y</strong> (yes) or <strong>N</strong> (no). Hint: compute \(\gcd(a, n)\).</p>
+        <p style="margin:0 0 12px;font-size:0.88rem;">For each pair \((a, n)\), decide whether \(a^{-1} \pmod{n}\) exists. Use trial-and-error: test \(a \cdot x \pmod{n}\) for \(x = 1, 2, \ldots, n-1\). If any result equals 1 the inverse exists (Y); if you exhaust all values without hitting 1 it does not (N). Enter <strong>Y</strong> or <strong>N</strong>.</p>
         <table class="ws-table">
           <thead>
             <tr>
@@ -449,16 +548,18 @@
       { a:25, inv:25 }
     ];
 
-    /* Pool for Part 3 (existence) */
+    /* Pool for Part 3 (existence) — small n so trial-and-error is feasible */
     var EXIST_POOL = [
-      { a:5,  n:26, ans:'Y' },
-      { a:2,  n:6,  ans:'N' },
-      { a:4,  n:10, ans:'N' },
-      { a:7,  n:12, ans:'Y' },
-      { a:13, n:26, ans:'N' },
-      { a:15, n:26, ans:'Y' },
-      { a:6,  n:9,  ans:'N' },
-      { a:11, n:12, ans:'Y' }
+      { a:3,  n:10, ans:'Y' },   /* 3·7=21≡1  */
+      { a:4,  n:10, ans:'N' },   /* never hits 1 */
+      { a:5,  n:12, ans:'Y' },   /* 5·5=25≡1  */
+      { a:4,  n:6,  ans:'N' },   /* only hits 0,2,4 */
+      { a:7,  n:9,  ans:'Y' },   /* 7·4=28≡1  */
+      { a:6,  n:9,  ans:'N' },   /* only hits 0,3,6 */
+      { a:7,  n:10, ans:'Y' },   /* 7·3=21≡1  */
+      { a:8,  n:10, ans:'N' },   /* only hits 0,2,4,6,8 */
+      { a:11, n:12, ans:'Y' },   /* 11·11=121≡1 */
+      { a:3,  n:6,  ans:'N' }    /* only hits 0,3 */
     ];
 
     function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
@@ -736,6 +837,194 @@
     generateVersion();
     applyVersion();
 
+  })();
+
+  /* ══════════════ Trial-and-Error Inverse Finder ══════════════ */
+  (function () {
+    'use strict';
+    var CX=115, CY=115, R=86, NR=12;
+
+    var taf = { n:10, a:3, attempts:[], nColor:{}, done:false,
+                hAng:-Math.PI/2, animId:null, animStart:null, autoOn:false };
+
+    function ns(tag,attrs){
+      var e=document.createElementNS('http://www.w3.org/2000/svg',tag);
+      Object.keys(attrs||{}).forEach(function(k){e.setAttribute(k,attrs[k]);});
+      return e;
+    }
+    function ang(k,n){ return -Math.PI/2+k/n*2*Math.PI; }
+    function pos(k,n){ var a=ang(k,n); return {x:CX+R*Math.cos(a),y:CY+R*Math.sin(a)}; }
+    function ease(t){ return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; }
+
+    function buildRing(){
+      var n=taf.n, svg=document.getElementById('taf-svg'); if(!svg)return;
+      svg.innerHTML='';
+      var d=ns('defs');
+      var mk=ns('marker',{id:'taf-arr',markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+      mk.appendChild(ns('polygon',{points:'0 0,8 3,0 6',fill:'#1f3763'}));
+      d.appendChild(mk); svg.appendChild(d);
+      svg.appendChild(ns('circle',{cx:CX,cy:CY,r:R,fill:'none',stroke:'#dde3f0','stroke-width':'1.5'}));
+      var hx=CX+R*0.68*Math.cos(taf.hAng), hy=CY+R*0.68*Math.sin(taf.hAng);
+      svg.appendChild(ns('line',{id:'taf-hand',x1:CX,y1:CY,x2:hx,y2:hy,
+        stroke:'#1f3763','stroke-width':'2.5','stroke-linecap':'round','marker-end':'url(#taf-arr)'}));
+      svg.appendChild(ns('circle',{cx:CX,cy:CY,r:3,fill:'#1f3763',opacity:'0.4'}));
+      for(var k=0;k<n;k++){
+        var p=pos(k,n), isTgt=(k===1);
+        var nc=taf.nColor[k];
+        var fill=nc?nc.f:(isTgt?'#fff8e0':'#f7f9fd');
+        var strk=nc?nc.s:(isTgt?'#c9a227':'#b0bed8');
+        svg.appendChild(ns('circle',{id:'taf-nd-'+k,cx:p.x,cy:p.y,r:NR,
+          fill:fill,stroke:strk,'stroke-width':isTgt?'2.5':'1.5'}));
+        var t=ns('text',{x:p.x,y:p.y+4,'text-anchor':'middle','font-size':'11','font-weight':'700',
+          fill:isTgt?'#8b6914':'#333','pointer-events':'none','font-family':'monospace'});
+        t.textContent=k; svg.appendChild(t);
+      }
+      var p1=pos(1,n);
+      var star=ns('text',{x:p1.x,y:p1.y-NR-3,'text-anchor':'middle','font-size':'10',
+        'font-weight':'700',fill:'#c9a227','pointer-events':'none'});
+      star.textContent='★'; svg.appendChild(star);
+    }
+
+    function moveHand(a){
+      var h=document.getElementById('taf-hand'); if(!h)return;
+      h.setAttribute('x2',CX+R*0.68*Math.cos(a));
+      h.setAttribute('y2',CY+R*0.68*Math.sin(a));
+    }
+
+    function animTo(target,cb){
+      if(taf.animId){cancelAnimationFrame(taf.animId);taf.animId=null;}
+      var from=taf.hAng, diff=target-from;
+      while(diff<=0) diff+=2*Math.PI;
+      if(diff>=2*Math.PI-0.01) diff=0;
+      if(diff<0.02){ taf.hAng=target; moveHand(target); if(cb)cb(); return; }
+      var dur=Math.max(420,Math.min(1000,420+diff*110));
+      taf.animStart=null;
+      function step(ts){
+        if(!taf.animStart)taf.animStart=ts;
+        var t=Math.min((ts-taf.animStart)/dur,1);
+        moveHand(from+diff*ease(t));
+        if(t<1){taf.animId=requestAnimationFrame(step);}
+        else{taf.hAng=target;taf.animId=null;if(cb)cb();}
+      }
+      taf.animId=requestAnimationFrame(step);
+    }
+
+    function setNode(k,f,s){
+      taf.nColor[k]={f:f,s:s};
+      var nd=document.getElementById('taf-nd-'+k);
+      if(nd){nd.setAttribute('fill',f);nd.setAttribute('stroke',s);}
+    }
+
+    function addLog(html,isHit){
+      var el=document.getElementById('taf-log-entries'); if(!el)return;
+      var d=document.createElement('div');
+      d.className='taf-log-entry'+(isHit?' hit':'');
+      d.innerHTML=html; el.insertBefore(d,el.firstChild);
+    }
+
+    function setStatus(html,type){
+      var el=document.getElementById('taf-status'); if(!el)return;
+      el.innerHTML=html;
+      var bg=type==='ok'?'#edf7ed':type==='err'?'#fdeaea':'#e8edf6';
+      var bc=type==='ok'?'#66bb6a':type==='err'?'#ef9a9a':'#b0bed8';
+      var tc=type==='ok'?'#1b5e20':type==='err'?'#7f0000':'var(--ws)';
+      el.style.background=bg; el.style.borderColor=bc; el.style.color=tc;
+    }
+
+    function doTry(x,cb){
+      var n=taf.n,a=taf.a; x=parseInt(x);
+      if(isNaN(x)||x<1||x>=n){
+        setStatus('Enter a value of x between 1 and '+(n-1)+'.','err');
+        if(cb)cb(false,false); return;
+      }
+      var prod=a*x, res=prod%n, hit=(res===1);
+      taf.attempts.push({x:x});
+      addLog('<b>x='+x+'</b>: '+a+'×'+x+'='+prod+' ≡ <b>'+res+'</b> (mod '+n+')'
+        +(hit?' <span style="color:#1b5e20;font-weight:700">✓ Hit!</span>':'  <span style="color:#c62828">✗</span>'),hit);
+      animTo(ang(res,n),function(){
+        if(hit){
+          setNode(1,'#b8f0c4','#2e7d32');
+          setStatus('<strong>✓ Found! &nbsp;'+a+'<sup>−1</sup> ≡ '+x+' (mod '+n+')</strong>','ok');
+          taf.done=true; if(cb)cb(true,false);
+        } else {
+          if(res!==1) setNode(res,'#fde8e8','#ef9a9a');
+          var tried={};
+          taf.attempts.forEach(function(t){tried[t.x]=true;});
+          var exh=true;
+          for(var i=1;i<n;i++){if(!tried[i]){exh=false;break;}}
+          if(exh){
+            setStatus('<strong>✗ All values tried — '+a+' has no inverse mod '+n+'.</strong>','err');
+            taf.done=true; if(cb)cb(false,true);
+          } else {
+            setStatus(a+'·'+x+' ≡ '+res+' (mod '+n+') — not 1, keep trying.','');
+            if(cb)cb(false,false);
+          }
+        }
+      });
+      var inp=document.getElementById('taf-x-inp'); if(inp)inp.value='';
+    }
+
+    function nextUntried(){
+      var tried={};
+      taf.attempts.forEach(function(t){tried[t.x]=true;});
+      for(var i=1;i<taf.n;i++){if(!tried[i])return i;}
+      return null;
+    }
+
+    function stopAuto(){
+      taf.autoOn=false;
+      var b=document.getElementById('taf-auto-btn'); if(b)b.textContent='Auto-search';
+    }
+
+    function autoStep(){
+      if(!taf.autoOn||taf.done){stopAuto();return;}
+      var x=nextUntried(); if(x===null){stopAuto();return;}
+      doTry(x,function(hit,exh){
+        if(hit||exh||!taf.autoOn) stopAuto();
+        else setTimeout(autoStep,280);
+      });
+    }
+
+    function tafPopA(){
+      var sel=document.getElementById('taf-a'); if(!sel)return;
+      var prev=taf.a; sel.innerHTML='';
+      for(var i=2;i<taf.n;i++){
+        var o=document.createElement('option');
+        o.value=i; o.textContent=i; if(i===prev)o.selected=true;
+        sel.appendChild(o);
+      }
+      taf.a=parseInt(sel.value);
+    }
+
+    window.tafSetN=function(){
+      var s=document.getElementById('taf-n'); if(!s)return;
+      taf.n=parseInt(s.value); tafPopA(); tafReset();
+    };
+    window.tafSetA=function(){
+      var s=document.getElementById('taf-a'); if(!s)return;
+      taf.a=parseInt(s.value); tafReset();
+    };
+    window.tafManualTry=function(){
+      if(taf.done||taf.autoOn)return;
+      doTry(document.getElementById('taf-x-inp').value,null);
+    };
+    window.tafToggleAuto=function(){
+      if(taf.autoOn){stopAuto();return;}
+      if(taf.done)return;
+      taf.autoOn=true;
+      var b=document.getElementById('taf-auto-btn'); if(b)b.textContent='Stop';
+      autoStep();
+    };
+    window.tafReset=function(){
+      stopAuto();
+      if(taf.animId){cancelAnimationFrame(taf.animId);taf.animId=null;}
+      taf.attempts=[]; taf.nColor={}; taf.done=false; taf.hAng=ang(0,taf.n);
+      buildRing();
+      var l=document.getElementById('taf-log-entries'); if(l)l.innerHTML='';
+      setStatus('Pick <em>a</em> and try values of <em>x</em>.','');
+    };
+
+    window.addEventListener('load',function(){ tafPopA(); buildRing(); });
   })();
 
   /* Generate ruled print lines for each write-wrap */
