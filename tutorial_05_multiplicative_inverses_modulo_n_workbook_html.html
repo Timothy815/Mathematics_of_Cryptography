@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 5: Multiplicative Inverses Modulo n | Mathematics of Cryptography</title>
+  <title>Practice 5: Multiplicative Inverses Modulo n | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,716 +35,570 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      color: #7d5a00;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #f5e8b0; }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      background: #fffcf2;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+    details.quick-ref summary {
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.quick-ref summary::before {
+      content: '▶';
+      font-size: 0.75rem;
+      transition: transform 0.15s;
+    }
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      padding: 6px 22px 22px;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+    .qr-card {
+      border: 1px solid #e8dbbf;
+      border-radius: 12px;
+      background: #ffffff;
+      padding: 14px 16px;
     }
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #7d5a00;
+    }
+    .qr-card p, .qr-card li { font-size: 0.88rem; margin: 4px 0; }
+    .qr-card table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .qr-card td, .qr-card th { border: 1px solid #e8dbbf; padding: 5px 8px; text-align: center; }
+    .qr-card th { background: #fff8e6; color: #7d5a00; font-weight: 700; }
+    .qr-card .yes { color: #2e7d32; font-weight: 700; }
+    .qr-card .no  { color: #c62828; font-weight: 700; }
 
-    .data-table,
-    .work-table,
-    .answer-table,
-    .mod-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
+    /* Drill cards */
+    .drill-section { margin: 0 0 40px; }
+    .drill-section h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #334e7d;
+      border-bottom: 2px solid #e8dbbf;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .drill-card {
+      background: #fffcf2;
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .drill-q {
+      font-size: 1.15rem;
+      min-height: 2.4em;
+      margin-bottom: 18px;
+      line-height: 1.6;
+    }
+    .drill-hint {
+      font-size: 0.88rem;
+      color: #7d5a00;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+    .drill-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .drill-input {
+      padding: 9px 14px;
+      border: 2px solid #c9b97a;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #ffffff;
+      color: #16243d;
+      width: 140px;
+      transition: border-color 0.15s;
+    }
+    .drill-input:focus { outline: none; border-color: #7d5a00; }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+    .drill-btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .drill-btn:hover { opacity: 0.85; }
+    .drill-btn-check { background: #334e7d; color: #ffffff; }
+    .drill-btn-next  { background: #e8dbbf; color: #7d5a00; }
+    .drill-fb {
+      min-height: 2em;
+      margin-top: 14px;
       font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .drill-fb.ok  { color: #2e7d32; }
+    .drill-fb.err { color: #c62828; }
+
+    /* Score streak display */
+    .drill-streak {
+      font-size: 0.8rem;
+      color: #7d5a00;
+      margin-top: 12px;
+      font-weight: 600;
     }
 
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .mod-table th, .mod-table td {
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
       border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
     }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #fff8e6; border-color: #e8dbbf; color: #7d5a00; }
+    .nav-secondary:hover { background: #f5e8b0; }
 
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .mod-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .mod-table th,
-    .mod-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    /* Written-response textarea */
-    .written-area {
-      width: 100%; padding: 8px 12px; margin-top: 6px;
-      border: 2px solid #c7d2ea; border-radius: 8px;
-      font-family: system-ui, sans-serif; font-size: 0.95rem;
-      line-height: 1.6; resize: vertical; color: #16243d;
-      background: #f0f4fb; box-sizing: border-box;
-    }
-    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
-    /* Write-wrap: textarea on screen → ruled lines on print */
-    .write-wrap { display: block; }
-    .write-lines { display: none; }
-    .wl { height: 1.9em; }
-
-    /* Ans-input for short answers */
-    .ans-input {
-      font-family: "Cascadia Code", "Consolas", monospace;
-      font-size: 1rem; font-weight: 700;
-      padding: 6px 10px; border: 2px solid #c7d2ea; border-radius: 8px;
-      background: #f0f4fb; color: #16243d; min-width: 80px;
-    }
-    .ans-input:focus { outline: none; border-color: var(--accent); background: #fff; }
-    .ans-input.wide { width: 100%; max-width: 320px; }
-
-    /* Student-info input fields */
-    .field-input {
-      width: 100%; border: none; border-bottom: 1.5px solid #333;
-      background: transparent; font-size: 1rem; padding: 4px 2px;
-      color: #16243d; font-family: inherit;
-    }
-    .field-input:focus { outline: none; border-bottom-color: var(--accent); }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
-    }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .search-row {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(90px, 1fr));
-      gap: 8px;
-      margin: 12px 0;
-      min-width: 580px;
-    }
-
-    .search-cell {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      min-height: 56px;
-      padding: 8px;
-      text-align: center;
-      font-family: "Cascadia Code", "Consolas", monospace;
-      background: #ffffff;
-    }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-      .search-row { grid-template-columns: repeat(2, minmax(90px, 1fr)); min-width: 0; }
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .drill-card { padding: 18px; }
     }
 
     @page { margin: 0.75in; }
     @media print {
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space, .search-cell {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .mod-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
-      /* Inputs print as clean underlines */
-      .ans-input {
-        border: none !important; border-bottom: 1.5px solid #444 !important;
-        border-radius: 0 !important; background: transparent !important;
-        color: #000 !important;
-      }
-      .field-input { border-bottom: 1.5px solid #444 !important; }
-      /* Textarea → ruled print lines */
-      .written-area { display: none !important; }
-      .write-lines { display: block !important; }
-      .wl { height: 1.9em; border-bottom: 1px solid #888; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .workbook-nav, .no-print, .drill-section { display: none !important; }
+      .quick-ref { display: block !important; border: 1px solid #ccc; }
+      .quick-ref summary { display: none; }
+      .qr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+      h1 { font-size: 20pt; }
+      h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
+      a { color: #000; text-decoration: none; }
+      .bottom-nav { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 5</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 5</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Multiplicative Inverses Modulo \(n\)</h1>
       <p class="subtitle">
-        Printable practice for checking, finding, and using modular multiplicative inverses.
+        Four interactive drills: check whether an inverse exists, find it by trial, verify a claim, and use an inverse to undo multiplication.
       </p>
 
-      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <a class="nav-link" href="tutorial_05_multiplicative_inverses_modulo_n_html.html">Tutorial 5</a>
-        <a class="nav-link" href="#warm-up">Part A</a>
-        <a class="nav-link" href="#checking-inverses">Part B</a>
-        <a class="nav-link" href="#searching-inverses">Part C</a>
-        <a class="nav-link" href="#gcd-rule">Part D</a>
-        <a class="nav-link" href="#non-invertible">Part E</a>
-        <a class="nav-link" href="#undoing-multiplication">Part F</a>
-        <a class="nav-link" href="#affine-preview">Part G</a>
-        <a class="nav-link" href="#challenge">Part H</a>
-        <a class="nav-link" href="#answer-key">Answers</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Drill navigation">
+        <a class="nav-link" href="#d1-sec">Drill 1 — Existence</a>
+        <a class="nav-link" href="#d2-sec">Drill 2 — Find It</a>
+        <a class="nav-link" href="#d3-sec">Drill 3 — Verify</a>
+        <a class="nav-link" href="#d4-sec">Drill 4 — Undo</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print Reference Card</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <input class="field-input" type="text" placeholder="Your name" autocomplete="off" />
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <input class="field-input" type="text" placeholder="Date" autocomplete="off" />
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            A multiplicative inverse is an undoing number. For each problem, ask whether multiplying by a candidate lands on 1 modulo \(n\). When using the greatest common divisor rule, remember: an inverse exists exactly when \(\gcd(a,n)=1\).
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Core ideas</div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Idea</th><th>Meaning</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Inverse of \(a\)</td><td>A number that multiplies with \(a\) to give 1 modulo \(n\).</td></tr>
-                <tr><td>Unit modulo \(n\)</td><td>A residue that has a multiplicative inverse.</td></tr>
-                <tr><td>Coprime</td><td>Two numbers whose greatest common divisor is 1.</td></tr>
-                <tr><td>No inverse</td><td>Multiplication collapses information and cannot be undone uniquely.</td></tr>
-              </tbody>
+      <!-- ── Quick Reference ── -->
+      <details class="quick-ref no-print">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <h4>What is an inverse?</h4>
+            <p>The <strong>multiplicative inverse</strong> of \(a\) modulo \(n\) is a number \(x\) such that</p>
+            <p style="text-align:center;">\(a \cdot x \equiv 1 \pmod{n}\)</p>
+            <p>We write this as \(x = a^{-1} \pmod{n}\).</p>
+            <p>Example: \(3^{-1} \equiv 7 \pmod{10}\) because \(3 \cdot 7 = 21 \equiv 1\).</p>
+          </div>
+          <div class="qr-card">
+            <h4>How to find by trial</h4>
+            <p>Test \(x = 1, 2, 3, \ldots\) until \(a \cdot x \bmod n = 1\):</p>
+            <table>
+              <tr><th>\(x\)</th><th>\(3x \bmod 10\)</th></tr>
+              <tr><td>1</td><td>3</td></tr>
+              <tr><td>2</td><td>6</td></tr>
+              <tr><td>3</td><td>9</td></tr>
+              <tr><td>4</td><td>2</td></tr>
+              <tr><td><strong>7</strong></td><td><strong>1 ✓</strong></td></tr>
             </table>
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Core formulas</div>
-            <div class="math-display">
-              \[
-                ax\equiv1\pmod n
-              \]
-              \[
-                x\equiv a^{-1}\pmod n
-              \]
-              \[
-                a^{-1}\pmod n\text{ exists exactly when }\gcd(a,n)=1
-              \]
-              \[
-                P\equiv a^{-1}(C-b)\pmod{26}
-              \]
-            </div>
+          <div class="qr-card">
+            <h4>When does it exist?</h4>
+            <p>An inverse exists when <strong>\(a\) and \(n\) share no common factor</strong> greater than 1.</p>
+            <table>
+              <tr><th>\(a\)</th><th>\(n\)</th><th>Shares factor?</th><th>Inverse?</th></tr>
+              <tr><td>3</td><td>10</td><td>No</td><td class="yes">Yes</td></tr>
+              <tr><td>4</td><td>10</td><td>2</td><td class="no">No</td></tr>
+              <tr><td>7</td><td>12</td><td>No</td><td class="yes">Yes</td></tr>
+              <tr><td>6</td><td>12</td><td>6</td><td class="no">No</td></tr>
+            </table>
           </div>
+          <div class="qr-card">
+            <h4>Units of \(\mathbb{Z}_{10}\)</h4>
+            <p>Numbers 1–9 that have inverses modulo 10:</p>
+            <table>
+              <tr><th>\(a\)</th><th>\(a^{-1}\)</th><th>Check</th></tr>
+              <tr><td>1</td><td>1</td><td>\(1{\cdot}1=1\)</td></tr>
+              <tr><td>3</td><td>7</td><td>\(3{\cdot}7=21\)</td></tr>
+              <tr><td>7</td><td>3</td><td>\(7{\cdot}3=21\)</td></tr>
+              <tr><td>9</td><td>9</td><td>\(9{\cdot}9=81\)</td></tr>
+            </table>
+            <p style="margin-top:8px;">2, 4, 5, 6, 8 have <span class="no">no inverse</span> mod 10.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- ── Drill 1: Existence Check ── -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Does the Inverse Exist?</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint" id="d1-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-inp" type="text" placeholder="YES or NO"
+                   autocomplete="off" style="width:130px;" />
+            <button class="drill-btn drill-btn-check" id="d1-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d1-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
       </section>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. Define multiplicative inverse modulo \(n\) in friendly language.</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
+      <!-- ── Drill 2: Find the Inverse ── -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Find the Inverse by Trial</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint" id="d2-hint">Test \(x = 1, 2, 3, \ldots\) until \(a \cdot x \bmod n = 1\).</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-inp" type="text" placeholder="Inverse" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d2-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d2-next">Next →</button>
           </div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What does \(a^{-1}\pmod n\) mean technically?</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What does it mean for two numbers to be coprime?</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why is an inverse important for decryption?</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
-          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
         </div>
       </section>
 
-      <section id="checking-inverses">
-        <h2>Part B: Checking inverse claims</h2>
-        <p>For each claim, multiply the number by the proposed inverse and reduce modulo \(n\).</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Claim</th>
-              <th>Product</th>
-              <th>Product mod \(n\)</th>
-              <th>True?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>\(3^{-1}\equiv7\pmod{10}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>B2</td><td>\(5^{-1}\equiv21\pmod{26}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>B3</td><td>\(7^{-1}\equiv7\pmod{12}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>B4</td><td>\(9^{-1}\equiv3\pmod{26}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>B5</td><td>\(4^{-1}\equiv4\pmod{10}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="searching-inverses">
-        <h2>Part C: Finding inverses by search</h2>
-        <p>Test residues until the product lands on 1.</p>
-
-        <div class="problem">
-          <div class="problem-title">C1. Find \(3^{-1}\pmod{10}\).</div>
-          <p>Fill in the search row.</p>
-          <div class="search-row">
-            <div class="search-cell">x=1<br>3x mod 10:</div>
-            <div class="search-cell">x=2<br>3x mod 10:</div>
-            <div class="search-cell">x=3<br>3x mod 10:</div>
-            <div class="search-cell">x=4<br>3x mod 10:</div>
-            <div class="search-cell">x=5<br>3x mod 10:</div>
-            <div class="search-cell">x=6<br>3x mod 10:</div>
-            <div class="search-cell">x=7<br>3x mod 10:</div>
-            <div class="search-cell">x=8<br>3x mod 10:</div>
-            <div class="search-cell">x=9<br>3x mod 10:</div>
+      <!-- ── Drill 3: Verify a Claim ── -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Is This Claim True?</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint" id="d3-hint">Multiply and reduce. Does the product equal 1?</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d3-inp" type="text" placeholder="YES or NO"
+                   autocomplete="off" style="width:130px;" />
+            <button class="drill-btn drill-btn-check" id="d3-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d3-next">Next →</button>
           </div>
-          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Find \(7^{-1}\pmod{12}\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. Find \(11^{-1}\pmod{26}\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
         </div>
       </section>
 
-      <section id="gcd-rule">
-        <h2>Part D: The greatest common divisor rule</h2>
-        <p>Use the rule: an inverse exists exactly when \(\gcd(a,n)=1\).</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>\(a\)</th>
-              <th>\(n\)</th>
-              <th>\(\gcd(a,n)\)</th>
-              <th>Inverse exists?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>D1</td><td>5</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>D2</td><td>2</td><td>6</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>D3</td><td>4</td><td>10</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>D4</td><td>7</td><td>12</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>D5</td><td>13</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-            <tr><td>D6</td><td>15</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="non-invertible">
-        <h2>Part E: Non-invertible examples</h2>
-
-        <div class="problem">
-          <div class="problem-title">E1. Show that 2 has no inverse modulo 6 by completing the table.</div>
-          <table class="mod-table">
-            <thead>
-              <tr><th>\(x\)</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>\(2x\bmod6\)</td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td></tr>
-            </tbody>
-          </table>
-          <p>Does the result ever equal 1? <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E2. Explain why multiplication by 2 modulo 6 causes collisions.</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
+      <!-- ── Drill 4: Undo Multiplication ── -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Undo the Multiplication</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint" id="d4-hint">Multiply both sides by \(a^{-1}\): \(P \equiv a^{-1} \cdot C \pmod{n}\).</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-inp" type="text" placeholder="P = ?" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d4-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d4-next">Next →</button>
           </div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E3. Show that 13 has no inverse modulo 26.</div>
-          <p>Use either the greatest common divisor rule or a short explanation.</p>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
-          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
         </div>
       </section>
 
-      <section id="undoing-multiplication">
-        <h2>Part F: Using inverses to undo multiplication</h2>
-        <p>Use the known inverse to recover \(P\).</p>
-
-        <div class="problem">
-          <div class="problem-title">F1. If \(C\equiv5P\pmod{26}\), \(5^{-1}\equiv21\pmod{26}\), and \(C=9\), recover \(P\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F2. If \(C\equiv9P\pmod{26}\), \(9^{-1}\equiv3\pmod{26}\), and \(C=15\), recover \(P\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F3. If \(C\equiv7P\pmod{12}\), \(7^{-1}\equiv7\pmod{12}\), and \(C=5\), recover \(P\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-      </section>
-
-      <section id="affine-preview">
-        <h2>Part G: Affine cipher preview</h2>
-        <p>Affine cipher decryption uses:</p>
-        <div class="math-display">
-          \[
-            P\equiv a^{-1}(C-b)\pmod{26}
-          \]
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G1. Let \(C\equiv5P+8\pmod{26}\). Since \(5^{-1}\equiv21\pmod{26}\), decrypt \(C=13\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Plaintext number \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Let \(C\equiv9P+2\pmod{26}\). Since \(9^{-1}\equiv3\pmod{26}\), decrypt \(C=20\).</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-          <p>Plaintext number \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G3. Why would \(C\equiv13P+4\pmod{26}\) be a bad affine cipher rule?</div>
-          <div class="write-wrap">
-            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
-            <div class="write-lines"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="challenge">
-        <h2>Part H: Challenge problems</h2>
-        <div class="box challenge-box">
-          <div class="box-title">Stretch the concept</div>
-          <p>
-            These problems ask you to connect invertibility to information preservation.
-          </p>
-        </div>
-
-        <div class=”problem”>
-          <div class=”problem-title”>H1. Explain why the inverse of a number depends on the modulus.</div>
-          <p>Use the fact that \(3^{-1}\equiv7\pmod{10}\), but \(3^{-1}\equiv9\pmod{26}\).</p>
-          <div class=”write-wrap”>
-            <textarea class=”written-area” rows=”4” placeholder=”Write your answer…”></textarea>
-            <div class=”write-lines”></div>
-          </div>
-        </div>
-
-        <div class=”problem”>
-          <div class=”problem-title”>H2. Explain why “nonzero” is not enough for invertibility modulo \(n\).</div>
-          <div class=”write-wrap”>
-            <textarea class=”written-area” rows=”4” placeholder=”Write your answer…”></textarea>
-            <div class=”write-lines”></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>A modular inverse of \(a\) is a number \(x\) such that \(ax\equiv1\pmod n\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
-            <tr><td>Every nonzero number has an inverse modulo every \(n\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
-            <tr><td>An inverse exists exactly when \(\gcd(a,n)=1\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
-            <tr><td>If multiplication causes collisions, it cannot be undone uniquely.</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
-            <tr><td>The inverse of a number is always the same regardless of modulus.</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            The key test is always: does the product reduce to 1 modulo \(n\)? If yes, you found an inverse.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> A multiplicative inverse modulo \(n\) is an undoing number for multiplication in a wraparound number system.</p>
-          <p><strong>A2.</strong> \(a^{-1}\pmod n\) means a residue \(x\) such that \(ax\equiv1\pmod n\).</p>
-          <p><strong>A3.</strong> Two numbers are coprime if their greatest common divisor is 1.</p>
-          <p><strong>A4.</strong> An inverse is important because decryption often needs to undo multiplication. Without an inverse, the original value may not be recoverable.</p>
-        </div>
-
-        <h3>Part B: Checking inverse claims</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Product</th><th>Product mod \(n\)</th><th>True?</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>\(3\cdot7=21\)</td><td>\(21\bmod10=1\)</td><td>True</td></tr>
-            <tr><td>B2</td><td>\(5\cdot21=105\)</td><td>\(105\bmod26=1\)</td><td>True</td></tr>
-            <tr><td>B3</td><td>\(7\cdot7=49\)</td><td>\(49\bmod12=1\)</td><td>True</td></tr>
-            <tr><td>B4</td><td>\(9\cdot3=27\)</td><td>\(27\bmod26=1\)</td><td>True</td></tr>
-            <tr><td>B5</td><td>\(4\cdot4=16\)</td><td>\(16\bmod10=6\)</td><td>False</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Finding inverses by search</h3>
-        <div class="answer-step">
-          <p><strong>C1.</strong> \(3\cdot7=21\), and \(21\bmod10=1\). Therefore \(3^{-1}\equiv7\pmod{10}\).</p>
-          <p><strong>C2.</strong> \(7\cdot7=49\), and \(49\bmod12=1\). Therefore \(7^{-1}\equiv7\pmod{12}\).</p>
-          <p><strong>C3.</strong> \(11\cdot19=209\), and \(209\bmod26=1\). Therefore \(11^{-1}\equiv19\pmod{26}\).</p>
-        </div>
-
-        <h3>Part D: The greatest common divisor rule</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>\(\gcd(a,n)\)</th><th>Inverse exists?</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td>\(\gcd(5,26)=1\)</td><td>Yes</td></tr>
-            <tr><td>D2</td><td>\(\gcd(2,6)=2\)</td><td>No</td></tr>
-            <tr><td>D3</td><td>\(\gcd(4,10)=2\)</td><td>No</td></tr>
-            <tr><td>D4</td><td>\(\gcd(7,12)=1\)</td><td>Yes</td></tr>
-            <tr><td>D5</td><td>\(\gcd(13,26)=13\)</td><td>No</td></tr>
-            <tr><td>D6</td><td>\(\gcd(15,26)=1\)</td><td>Yes</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part E: Non-invertible examples</h3>
-        <div class="answer-step">
-          <p><strong>E1.</strong> The row is: \(0,2,4,0,2,4\). It never equals 1, so 2 has no inverse modulo 6.</p>
-          <p><strong>E2 sample answer.</strong> Multiplication by 2 modulo 6 causes collisions because different inputs land on the same output. For example, 0 and 3 both land on 0, 1 and 4 both land on 2, and 2 and 5 both land on 4.</p>
-          <p><strong>E3 sample answer.</strong> \(\gcd(13,26)=13\), not 1, so 13 has no inverse modulo 26.</p>
-        </div>
-
-        <h3>Part F: Using inverses to undo multiplication</h3>
-        <div class="answer-step">
-          <p><strong>F1.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv21C\equiv21\cdot9=189\equiv7\pmod{26}
-            \]
-          </div>
-          <p><strong>F2.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv3C\equiv3\cdot15=45\equiv19\pmod{26}
-            \]
-          </div>
-          <p><strong>F3.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv7C\equiv7\cdot5=35\equiv11\pmod{12}
-            \]
-          </div>
-        </div>
-
-        <h3>Part G: Affine cipher preview</h3>
-        <div class="answer-step">
-          <p><strong>G1.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv21(C-8)\equiv21(13-8)\equiv21\cdot5=105\equiv1\pmod{26}
-            \]
-          </div>
-          <p><strong>G2.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv3(C-2)\equiv3(20-2)\equiv3\cdot18=54\equiv2\pmod{26}
-            \]
-          </div>
-          <p><strong>G3 sample answer.</strong> It is bad because 13 has no inverse modulo 26. Since \(\gcd(13,26)=13\), multiplication by 13 cannot be undone uniquely.</p>
-        </div>
-
-        <h3>Part H: Challenge problems</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> The inverse depends on the modulus because the wraparound size changes which products land on 1. \(3\cdot7=21\equiv1\pmod{10}\), but modulo 26, \(3\cdot9=27\equiv1\pmod{26}\).</p>
-          <p><strong>H2 sample answer.</strong> Nonzero is not enough because the number also must be coprime to the modulus. For example, 2 is nonzero modulo 6, but \(\gcd(2,6)=2\), so it has no inverse.</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>A modular inverse of \(a\) is a number \(x\) such that \(ax\equiv1\pmod n\).</td><td>True</td><td>That is the definition.</td></tr>
-            <tr><td>Every nonzero number has an inverse modulo every \(n\).</td><td>False</td><td>The number must be coprime to \(n\).</td></tr>
-            <tr><td>An inverse exists exactly when \(\gcd(a,n)=1\).</td><td>True</td><td>This is the inverse-existence rule.</td></tr>
-            <tr><td>If multiplication causes collisions, it cannot be undone uniquely.</td><td>True</td><td>One output could have multiple original inputs.</td></tr>
-            <tr><td>The inverse of a number is always the same regardless of modulus.</td><td>False</td><td>The inverse depends on the wraparound size.</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 5: Multiplicative Inverses Modulo n.
-      </p>
-
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item" id="prevLink">← Workbook 4</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item" id="nextLink">Workbook 6 →</a>
+          <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item">← Practice 4</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item">Practice 6 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Tutorial 5</a>
+          <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Tutorial 5</a>
+          <a href="worksheet_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Worksheet</a>
         </div>
-    </nav>
+      </nav>
+
     </main>
   </div>
+
   <script>
-  // Generate ruled print lines for each write-wrap
-  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
-    var ta = wrap.querySelector('textarea');
-    var ld = wrap.querySelector('.write-lines');
-    if (!ta || !ld) return;
-    var rows = parseInt(ta.getAttribute('rows')) || 3;
-    for (var i = 0; i < rows; i++) {
-      var d = document.createElement('div');
-      d.className = 'wl';
-      ld.appendChild(d);
+  (function () {
+    'use strict';
+
+    function rnd(lo, hi) { return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+    function pick(arr)   { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    /* ── Shared data pools ─────────────────────────────────────────── */
+
+    /* Existence pool: small n, balanced YES/NO */
+    var EXIST_POOL = [
+      { a:3,  n:10, ans:'YES',
+        ok:  '\\(3 \\cdot 7 = 21 \\equiv 1 \\pmod{10}\\) — an inverse exists. \\(3^{-1} \\equiv 7\\).',
+        err: '3 and 10 share no common factor, so an inverse does exist. \\(3 \\cdot 7 = 21 \\equiv 1 \\pmod{10}\\).' },
+      { a:4,  n:10, ans:'NO',
+        ok:  '4 and 10 both divide by 2, so no inverse exists. \\(4x \\bmod 10\\) is always even — never 1.',
+        err: '4 and 10 share the factor 2. \\(4x \\bmod 10\\) is always even, so it can never equal 1.' },
+      { a:7,  n:12, ans:'YES',
+        ok:  '\\(7 \\cdot 7 = 49 \\equiv 1 \\pmod{12}\\) — an inverse exists. \\(7^{-1} \\equiv 7\\).',
+        err: '7 and 12 share no common factor, so an inverse does exist. \\(7 \\cdot 7 = 49 \\equiv 1 \\pmod{12}\\).' },
+      { a:6,  n:12, ans:'NO',
+        ok:  '6 and 12 both divide by 6, so no inverse exists. \\(6x \\bmod 12\\) is always a multiple of 6 — never 1.',
+        err: '6 and 12 share the factor 6. \\(6x \\bmod 12\\) can never equal 1.' },
+      { a:5,  n:9,  ans:'YES',
+        ok:  '\\(5 \\cdot 2 = 10 \\equiv 1 \\pmod{9}\\) — an inverse exists. \\(5^{-1} \\equiv 2\\).',
+        err: '5 and 9 share no common factor, so an inverse does exist. \\(5 \\cdot 2 = 10 \\equiv 1 \\pmod{9}\\).' },
+      { a:3,  n:9,  ans:'NO',
+        ok:  '3 and 9 both divide by 3, so no inverse exists. \\(3x \\bmod 9\\) is always a multiple of 3 — never 1.',
+        err: '3 and 9 share the factor 3. \\(3x \\bmod 9\\) can never equal 1.' },
+      { a:7,  n:10, ans:'YES',
+        ok:  '\\(7 \\cdot 3 = 21 \\equiv 1 \\pmod{10}\\) — an inverse exists. \\(7^{-1} \\equiv 3\\).',
+        err: '7 and 10 share no common factor, so an inverse does exist. \\(7 \\cdot 3 = 21 \\equiv 1 \\pmod{10}\\).' },
+      { a:5,  n:10, ans:'NO',
+        ok:  '5 and 10 both divide by 5, so no inverse exists. \\(5x \\bmod 10\\) is always 5 or 0 — never 1.',
+        err: '5 and 10 share the factor 5. \\(5x \\bmod 10\\) can never equal 1.' },
+      { a:11, n:12, ans:'YES',
+        ok:  '\\(11 \\cdot 11 = 121 \\equiv 1 \\pmod{12}\\) — an inverse exists. \\(11^{-1} \\equiv 11\\).',
+        err: '11 and 12 share no common factor, so an inverse does exist. \\(11 \\cdot 11 = 121 \\equiv 1 \\pmod{12}\\).' },
+      { a:4,  n:6,  ans:'NO',
+        ok:  '4 and 6 both divide by 2, so no inverse exists. \\(4x \\bmod 6\\) cycles through 4, 2, 0 — never 1.',
+        err: '4 and 6 share the factor 2. \\(4x \\bmod 6\\) can never equal 1.' },
+      { a:5,  n:6,  ans:'YES',
+        ok:  '\\(5 \\cdot 5 = 25 \\equiv 1 \\pmod{6}\\) — an inverse exists. \\(5^{-1} \\equiv 5\\).',
+        err: '5 and 6 share no common factor, so an inverse does exist. \\(5 \\cdot 5 = 25 \\equiv 1 \\pmod{6}\\).' },
+      { a:2,  n:6,  ans:'NO',
+        ok:  '2 and 6 both divide by 2, so no inverse exists. \\(2x \\bmod 6\\) cycles through 2, 4, 0 — never 1.',
+        err: '2 and 6 share the factor 2. \\(2x \\bmod 6\\) can never equal 1.' },
+      { a:3,  n:8,  ans:'YES',
+        ok:  '\\(3 \\cdot 3 = 9 \\equiv 1 \\pmod{8}\\) — an inverse exists. \\(3^{-1} \\equiv 3\\).',
+        err: '3 and 8 share no common factor, so an inverse does exist. \\(3 \\cdot 3 = 9 \\equiv 1 \\pmod{8}\\).' },
+      { a:4,  n:8,  ans:'NO',
+        ok:  '4 and 8 both divide by 4, so no inverse exists. \\(4x \\bmod 8\\) is always even — never 1.',
+        err: '4 and 8 share the factor 4. \\(4x \\bmod 8\\) can never equal 1.' },
+      { a:2,  n:9,  ans:'YES',
+        ok:  '\\(2 \\cdot 5 = 10 \\equiv 1 \\pmod{9}\\) — an inverse exists. \\(2^{-1} \\equiv 5\\).',
+        err: '2 and 9 share no common factor, so an inverse does exist. \\(2 \\cdot 5 = 10 \\equiv 1 \\pmod{9}\\).' },
+      { a:6,  n:9,  ans:'NO',
+        ok:  '6 and 9 both divide by 3, so no inverse exists. \\(6x \\bmod 9\\) is always a multiple of 3 — never 1.',
+        err: '6 and 9 share the factor 3. \\(6x \\bmod 9\\) can never equal 1.' }
+    ];
+
+    /* Find-inverse pool: all valid, n ≤ 12 (trial-and-error friendly) */
+    var FIND_POOL = [
+      { a:3,  n:10, inv:7  },  /* 3·7=21    */
+      { a:7,  n:10, inv:3  },  /* 7·3=21    */
+      { a:9,  n:10, inv:9  },  /* 9·9=81    */
+      { a:7,  n:12, inv:7  },  /* 7·7=49    */
+      { a:11, n:12, inv:11 },  /* 11·11=121 */
+      { a:5,  n:12, inv:5  },  /* 5·5=25    */
+      { a:5,  n:9,  inv:2  },  /* 5·2=10    */
+      { a:2,  n:9,  inv:5  },  /* 2·5=10    */
+      { a:4,  n:9,  inv:7  },  /* 4·7=28    */
+      { a:3,  n:8,  inv:3  },  /* 3·3=9     */
+      { a:5,  n:8,  inv:5  },  /* 5·5=25    */
+      { a:7,  n:8,  inv:7  },  /* 7·7=49    */
+      { a:3,  n:7,  inv:5  },  /* 3·5=15    */
+      { a:4,  n:7,  inv:2  },  /* 4·2=8     */
+      { a:5,  n:7,  inv:3  },  /* 5·3=15    */
+      { a:6,  n:7,  inv:6  },  /* 6·6=36    */
+      { a:2,  n:7,  inv:4  },  /* 2·4=8     */
+      { a:5,  n:6,  inv:5  }   /* 5·5=25    */
+    ];
+
+    /* ── makeDrill ─────────────────────────────────────────────────── */
+    function makeDrill(cfg) {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl     = document.getElementById(cfg.id + '-q');
+      var inp     = document.getElementById(cfg.id + '-inp');
+      var fb      = document.getElementById(cfg.id + '-fb');
+      var strk    = document.getElementById(cfg.id + '-streak');
+      var btnChk  = document.getElementById(cfg.id + '-check');
+      var btnNxt  = document.getElementById(cfg.id + '-next');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+
+      function load() {
+        state   = cfg.gen();
+        checked = false;
+        inp.value = '';
+        inp.className = 'drill-input';
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = state.q;
+        typeset(qEl);
+        inp.focus({ preventScroll: true });
+      }
+
+      function check() {
+        var raw = inp.value.trim();
+        var ok  = cfg.check(raw, state);
+        checked = true;
+        total++;
+        if (ok) {
+          correct++;
+          inp.className = 'drill-input correct';
+          fb.innerHTML = '&#10003; ' + state.ok;
+          fb.className = 'drill-fb ok';
+        } else {
+          inp.className = 'drill-input wrong';
+          fb.innerHTML = '&#10007; ' + state.err;
+          fb.className = 'drill-fb err';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      btnChk.addEventListener('click', function () { if (checked) load(); else check(); });
+      btnNxt.addEventListener('click', load);
+      inp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { if (checked) load(); else check(); }
+      });
+
+      load();
     }
-  });
+
+    /* ── Drill 1: Existence Check ───────────────────────────────────── */
+    makeDrill({
+      id: 'd1',
+      gen: function () {
+        var p = pick(EXIST_POOL);
+        return {
+          q:   'Does \\(' + p.a + '^{-1} \\pmod{' + p.n + '}\\) exist? Type YES or NO.',
+          ans: p.ans,
+          ok:  p.ok,
+          err: p.err
+        };
+      },
+      check: function (inp, s) { return inp.toUpperCase() === s.ans; }
+    });
+
+    /* ── Drill 2: Find the Inverse ──────────────────────────────────── */
+    makeDrill({
+      id: 'd2',
+      gen: function () {
+        var p = pick(FIND_POOL);
+        var product = p.a * p.inv;
+        return {
+          q:   'Find \\(' + p.a + '^{-1} \\pmod{' + p.n + '}\\). Test \\(x = 1, 2, \\ldots\\) until \\(' + p.a + 'x \\equiv 1 \\pmod{' + p.n + '}\\).',
+          ans: String(p.inv),
+          ok:  '\\(' + p.a + ' \\cdot ' + p.inv + ' = ' + product + ' \\equiv 1 \\pmod{' + p.n + '}\\). Correct — \\(' + p.a + '^{-1} \\equiv ' + p.inv + '\\).',
+          err: 'The inverse is \\(' + p.inv + '\\), since \\(' + p.a + ' \\cdot ' + p.inv + ' = ' + product + ' \\equiv 1 \\pmod{' + p.n + '}\\).'
+        };
+      },
+      check: function (inp, s) { return inp.trim() === s.ans; }
+    });
+
+    /* ── Drill 3: Verify a Claim ────────────────────────────────────── */
+    makeDrill({
+      id: 'd3',
+      gen: function () {
+        var p = pick(FIND_POOL);
+        var correct = Math.random() < 0.5;
+        var x;
+        if (correct) {
+          x = p.inv;
+        } else {
+          /* pick a different x in [1, n-1] — guaranteed wrong since inverse is unique */
+          do { x = rnd(1, p.n - 1); } while (x === p.inv);
+        }
+        var product = (p.a * x) % p.n;
+        var ans     = (product === 1) ? 'YES' : 'NO';
+        var explain = '\\(' + p.a + ' \\cdot ' + x + ' = ' + (p.a * x) + ' \\equiv ' + product + ' \\pmod{' + p.n + '}\\). ' +
+                      (product === 1 ? 'This equals 1 — YES, it is the inverse.' : 'This does not equal 1 — NO, it is not an inverse.');
+        return {
+          q:   'Is \\(' + x + '\\) the inverse of \\(' + p.a + '\\) modulo \\(' + p.n + '\\)? Type YES or NO.',
+          ans: ans,
+          ok:  explain,
+          err: explain
+        };
+      },
+      check: function (inp, s) { return inp.toUpperCase() === s.ans; }
+    });
+
+    /* ── Drill 4: Undo Multiplication ───────────────────────────────── */
+    makeDrill({
+      id: 'd4',
+      gen: function () {
+        var p = pick(FIND_POOL);
+        var P = rnd(1, p.n - 1);
+        var C = (p.a * P) % p.n;
+        var step = p.inv * C;
+        return {
+          q:   'If \\(C \\equiv ' + p.a + 'P \\pmod{' + p.n + '}\\) and \\(' + p.a + '^{-1} \\equiv ' + p.inv + ' \\pmod{' + p.n + '}\\), find \\(P\\) when \\(C = ' + C + '\\).',
+          ans: String(P),
+          ok:  '\\(P \\equiv ' + p.inv + ' \\cdot C \\equiv ' + p.inv + ' \\cdot ' + C + ' = ' + step + ' \\equiv ' + P + ' \\pmod{' + p.n + '}\\). Correct!',
+          err: 'Multiply both sides by \\(' + p.inv + '\\): \\(P \\equiv ' + p.inv + ' \\cdot ' + C + ' = ' + step + ' \\equiv ' + P + ' \\pmod{' + p.n + '}\\).'
+        };
+      },
+      check: function (inp, s) { return inp.trim() === s.ans; }
+    });
+
+  })();
   </script>
 </body>
 </html>
