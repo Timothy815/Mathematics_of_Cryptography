@@ -1269,21 +1269,47 @@
               </div>
             </details>
           </li>
+          <li>
+            AES-128 uses a 128-bit key. Express this key size in bytes and in hexadecimal pairs, and explain why cryptographic keys and hash outputs are almost always written in hexadecimal rather than binary or decimal.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>128 bits ÷ 8 = <strong>16 bytes</strong>. Each byte maps to exactly two hex digits, so 16 bytes = <strong>32 hex digits</strong> (16 hex pairs).</p>
+              <p>Binary would require 128 characters — tedious and error-prone to read. Decimal has no clean correspondence to byte boundaries. Hexadecimal has a fixed 2-digits-per-byte mapping that makes boundaries visible instantly. A 128-bit AES key like <code>2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c</code> is unambiguous: 16 groups, 16 bytes, 128 bits.</p>
+            </details>
+          </li>
         </ol>
       </section>
 
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Cryptographic algorithms usually operate on fixed-size pieces of data. AES, for example, works heavily
-          with bytes. Those bytes are often written in hexadecimal because hex is compact and maps cleanly to binary.
+          Every cryptographic algorithm ultimately operates on bits. Understanding binary and hexadecimal is not background material — it is the language that cryptographic specifications are written in.
         </p>
-        <ul>
-          <li>Binary shows the actual bits that bitwise operations manipulate.</li>
-          <li>Hexadecimal gives a readable shorthand for bytes and larger blocks.</li>
-          <li>Fixed-width thinking prepares you for overflow, modular arithmetic, and finite-field reduction.</li>
-          <li>Byte fluency makes AES examples such as <code>0x57 · 0x83</code> much easier to follow later.</li>
-        </ul>
+
+        <h3>Bits are the atoms of cryptographic computation</h3>
+        <p>
+          AES, SHA-256, ChaCha20, and every other modern cipher manipulate data at the bit level. When a specification says "XOR the state with the round key" or "rotate right by 17 positions," those instructions refer to specific bit patterns. Binary notation makes those patterns visible and checkable. You cannot read an algorithm description without it.
+        </p>
+
+        <h3>Hexadecimal is the professional shorthand for bytes</h3>
+        <p>
+          Cryptographic keys, hash outputs, and ciphertext are almost always displayed in hexadecimal. A 128-bit AES key is 16 bytes — 32 hex digits. A SHA-256 digest is 32 bytes — 64 hex digits. The reason is the clean 1-to-1 correspondence: every byte maps to exactly two hex digits, so hex strings have unambiguous byte boundaries that binary strings hide.
+        </p>
+        <div class="math-display">
+          \[
+            \underbrace{\texttt{2b\;7e\;15\;16\;\ldots}}_{\text{4 of 16 bytes in a typical AES-128 key}}
+          \]
+        </div>
+
+        <h3>Fixed-width arithmetic is modular arithmetic in disguise</h3>
+        <p>
+          When a computer adds two 8-bit numbers and the result exceeds 255, the carry is discarded and the result wraps around. That wrap is exactly arithmetic modulo \(2^8 = 256\). Fixed-width overflow is not a bug — it is a deliberately chosen bounded mathematical structure. Later modules will show how that same wrapping behaviour becomes the mathematical foundation for RSA, Diffie–Hellman, and AES.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">The chain from this tutorial forward</div>
+          <p>Binary and hex encode the data. Bitwise operations transform it. Functions describe those transformations precisely. Modular arithmetic gives the transformations structure. Inverses allow encryption to be undone. Each tutorial adds one layer to the same underlying machinery.</p>
+        </div>
       </section>
 
       <section id="one-page-recap" class="page-break">
@@ -1375,7 +1401,7 @@
       <section id="next">
         <h2>What comes next</h2>
         <p>
-          The next tutorial should be <strong>Bitwise Operations as Algebra</strong>. Now that bits and bytes are visible,
+          The next tutorial should be <strong><a href="tutorial_02_bitwise_operations_as_algebra_html.html">Bitwise Operations as Algebra</a></strong>. Now that bits and bytes are visible,
           we can learn how operations such as exclusive OR, AND, shifts, and rotations transform them.
         </p>
       </section>

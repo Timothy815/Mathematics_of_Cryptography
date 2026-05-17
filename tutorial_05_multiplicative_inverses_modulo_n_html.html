@@ -637,16 +637,10 @@
           For small moduli, we can find an inverse by testing residues until the product lands on 1.
         </p>
 
-        <h3>Example: find \(3^{-1}\pmod{10}\)</h3>
+        <h3>Example 1: find \(3^{-1}\pmod{10}\)</h3>
         <p>
-          We need:
+          We need \(3x\equiv1\pmod{10}\). Test each residue:
         </p>
-        <div class="math-display">
-          \[
-            3x\equiv1\pmod{10}
-          \]
-        </div>
-
         <div class="equation-chain">
           <span class="chain-step">3·1=3</span>
           <span class="chain-step">3·2=6</span>
@@ -656,14 +650,72 @@
           <span class="chain-step">3·6=18≡8</span>
           <span class="chain-step hit">3·7=21≡1</span>
         </div>
+        <div class="math-display">
+          \[ 3^{-1}\equiv7\pmod{10} \]
+        </div>
 
+        <h3>Example 2: find \(9^{-1}\pmod{26}\)</h3>
         <p>
-          Therefore:
+          We need \(9x\equiv1\pmod{26}\). Test each residue:
+        </p>
+        <div class="equation-chain">
+          <span class="chain-step">9·1=9</span>
+          <span class="chain-step">9·2=18</span>
+          <span class="chain-step hit">9·3=27≡1</span>
+        </div>
+        <p>
+          The inverse is found at \(x=3\) — only three trials needed.
         </p>
         <div class="math-display">
-          \[
-            3^{-1}\equiv7\pmod{10}
-          \]
+          \[ 9^{-1}\equiv3\pmod{26} \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">How long can the search take?</div>
+          <p>
+            If the inverse exists, you are guaranteed to find it within \(n-1\) trials. Sometimes it arrives early
+            (as in Example 2 above). Sometimes it takes almost the full range (Example 1 took 7 of 9 possible trials).
+            For large moduli, trial-and-error becomes impractical — that is exactly why the Euclidean algorithm exists.
+          </p>
+        </div>
+
+        <div class="no-print" style="margin-top:18px;">
+          <div style="background:#f4f7fd;border:1px solid #b0bed8;border-radius:12px;padding:16px;">
+            <div style="font-weight:700;color:#1f3763;font-size:0.82rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">
+              &#x1F9EE; Build the search table yourself
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;font-size:0.88rem;">
+              <div style="display:flex;align-items:center;gap:7px;">
+                <label for="st-a">\(a\) =</label>
+                <select id="st-a" style="font-size:0.88rem;border:1px solid #b0bed8;border-radius:6px;padding:4px 8px;background:#fff;color:#1f3763;font-weight:700;" onchange="stReset()"></select>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px;">
+                <label for="st-n">\(n\) =</label>
+                <select id="st-n" style="font-size:0.88rem;border:1px solid #b0bed8;border-radius:6px;padding:4px 8px;background:#fff;color:#1f3763;font-weight:700;" onchange="stPopA();stReset();">
+                  <option value="7">7</option><option value="9">9</option>
+                  <option value="10" selected>10</option><option value="11">11</option>
+                  <option value="12">12</option><option value="13">13</option>
+                </select>
+              </div>
+              <button onclick="stStep()" style="padding:5px 14px;border-radius:7px;border:1px solid #1f3763;background:#1f3763;color:#fff;font-size:0.8rem;font-weight:700;cursor:pointer;" id="st-step-btn">Next row →</button>
+              <button onclick="stAll()" style="padding:5px 14px;border-radius:7px;border:1px solid #1f3763;background:#fff;color:#1f3763;font-size:0.8rem;font-weight:700;cursor:pointer;">Show all</button>
+              <button onclick="stReset()" style="padding:5px 14px;border-radius:7px;border:1px solid #b0bed8;background:#fff;color:#555;font-size:0.8rem;font-weight:700;cursor:pointer;">&#8635; Reset</button>
+            </div>
+            <div style="overflow-x:auto;">
+              <table id="st-table" style="border-collapse:collapse;font-size:0.88rem;font-family:'Cascadia Code','Consolas',monospace;min-width:320px;">
+                <thead>
+                  <tr>
+                    <th style="border:1px solid #b0bed8;padding:6px 12px;background:#e8edf6;color:#1f3763;">\(x\)</th>
+                    <th style="border:1px solid #b0bed8;padding:6px 12px;background:#e8edf6;color:#1f3763;">\(a \cdot x\)</th>
+                    <th style="border:1px solid #b0bed8;padding:6px 12px;background:#e8edf6;color:#1f3763;">\(a \cdot x \bmod n\)</th>
+                    <th style="border:1px solid #b0bed8;padding:6px 12px;background:#e8edf6;color:#1f3763;">Hit?</th>
+                  </tr>
+                </thead>
+                <tbody id="st-tbody"></tbody>
+              </table>
+            </div>
+            <div id="st-result" style="margin-top:10px;font-size:0.88rem;min-height:22px;color:#1f3763;font-weight:600;"></div>
+          </div>
         </div>
       </section>
 
@@ -796,21 +848,58 @@
               </div>
             </details>
           </li>
+          <li>
+            An affine cipher uses \(C\equiv7P+3\pmod{26}\). First verify that decryption is possible, then find \(7^{-1}\pmod{26}\) by trial, and finally decrypt the ciphertext letter number \(C=24\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p><strong>Step 1 — can we decrypt?</strong> We need \(\gcd(7,26)=1\). Since 7 is prime and does not divide 26, \(\gcd(7,26)=1\). Decryption is possible.</p>
+              <p><strong>Step 2 — find \(7^{-1}\pmod{26}\) by trial.</strong> Test \(7x\bmod26\):</p>
+              <p style="font-family:monospace;font-size:0.88rem;">7·1=7, 7·2=14, 7·3=21, 7·4=28≡2, 7·5=35≡9, 7·6=42≡16, 7·7=49≡23, 7·8=56≡4, 7·9=63≡11, 7·10=70≡18, 7·11=77≡25, 7·12=84≡6, 7·13=91≡13, 7·14=98≡20, <strong>7·15=105≡1 ✓</strong></p>
+              <div class="math-display">\[ 7^{-1}\equiv15\pmod{26} \]</div>
+              <p><strong>Step 3 — decrypt \(C=24\).</strong></p>
+              <div class="math-display">
+                \[ P\equiv15(24-3)\pmod{26} \]
+                \[ P\equiv15\cdot21\pmod{26} \]
+                \[ P\equiv315\pmod{26} \]
+                \[ P\equiv315-12\cdot26=315-312=3\pmod{26} \]
+              </div>
+              <p>The plaintext letter number is \(P=3\) (the letter D).</p>
+            </details>
+          </li>
         </ol>
       </section>
 
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Multiplicative inverses are one of the first places where cryptographic mathematics becomes selective. Some operations are reversible, and some are not.
+          Multiplicative inverses are one of the first places where cryptographic mathematics becomes selective. Not every number participates — only those coprime to the modulus. That selectivity is a feature, not a limitation.
         </p>
-        <ul>
-          <li>Affine cipher decryption requires a modular inverse.</li>
-          <li>RSA private key generation relies on modular inverses.</li>
-          <li>Diffie-Hellman and elliptic curve cryptography use inverse-like reasoning inside modular structures.</li>
-          <li>AES uses multiplicative inverses in \(\mathrm{GF}(2^8)\) when constructing its S-box.</li>
-          <li>Invertibility is central to deciding whether a transformation can be used in a reversible encryption path.</li>
-        </ul>
+
+        <h3>Classical cryptography: the affine cipher</h3>
+        <p>
+          The affine cipher \(C\equiv aP+b\pmod{26}\) requires \(\gcd(a,26)=1\) for decryption to be possible. There are exactly 12 valid values of \(a\) modulo 26 — the units of \(\mathbb{Z}_{26}\). Choosing any other value collapses multiple plaintext letters into the same ciphertext letter, permanently destroying information.
+        </p>
+
+        <h3>RSA: inverses at the heart of public-key cryptography</h3>
+        <p>
+          Generating an RSA private key requires computing \(d\equiv e^{-1}\pmod{\phi(n)}\), where \(\phi(n)=(p-1)(q-1)\). The public exponent \(e\) must satisfy \(\gcd(e,\phi(n))=1\) — precisely the condition that guarantees the inverse exists. Every RSA key pair in use today was created using a modular inverse computation.
+        </p>
+
+        <h3>AES S-box: inverses in \(\mathrm{GF}(2^8)\)</h3>
+        <p>
+          The AES SubBytes step maps each byte to its multiplicative inverse in the finite field \(\mathrm{GF}(2^8)\), followed by an affine transformation. The byte <code>0x00</code> maps to itself by convention; all other 255 bytes have inverses in this field, making the S-box a bijection and therefore invertible — a requirement for decryption.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Where modular inverses appear in cryptographic systems</div>
+          <ul style="margin:10px 0 0 18px;line-height:1.9;">
+            <li><strong>Affine cipher</strong> — inverse of the multiplication key modulo 26</li>
+            <li><strong>RSA key generation</strong> — private exponent \(d=e^{-1}\pmod{\phi(n)}\)</li>
+            <li><strong>ECDSA signatures</strong> — inverse of the signing nonce \(k^{-1}\pmod{q}\)</li>
+            <li><strong>AES S-box</strong> — multiplicative inverse in \(\mathrm{GF}(2^8)\)</li>
+            <li><strong>Elliptic curve point operations</strong> — modular inverses in projective-to-affine coordinate conversion</li>
+          </ul>
+        </div>
       </section>
 
       <section id="one-page-recap" class="page-break">
@@ -882,7 +971,7 @@
       <section id="next">
         <h2>What comes next</h2>
         <p>
-          The next tutorial should be <strong>The Euclidean Algorithm</strong>. Trial-and-error works for small numbers, but cryptography needs a systematic way to find greatest common divisors. That is exactly what the Euclidean algorithm gives us.
+          The next tutorial should be <strong><a href="tutorial_06_euclidean_algorithm_html.html">The Euclidean Algorithm</a></strong>. Trial-and-error works for small numbers, but cryptography needs a systematic way to find greatest common divisors. That is exactly what the Euclidean algorithm gives us.
         </p>
       </section>
 
@@ -902,6 +991,94 @@
     </nav>
     </main>
   </div>
+  <script>
+  /* ══════════════ Search Table Builder ══════════════ */
+  (function () {
+    'use strict';
+    var st = { n: 10, a: 3, step: 0, done: false };
+
+    function stPopA() {
+      var sn = document.getElementById('st-n');
+      var sa = document.getElementById('st-a');
+      if (!sn || !sa) return;
+      st.n = parseInt(sn.value);
+      var prev = st.a;
+      sa.innerHTML = '';
+      for (var i = 2; i < st.n; i++) {
+        var o = document.createElement('option');
+        o.value = i; o.textContent = i; sa.appendChild(o);
+      }
+      sa.value = String(prev);
+      if (!sa.value) sa.value = sa.options[0].value;
+      st.a = parseInt(sa.value);
+    }
+
+    function stAddRow(x) {
+      var tbody = document.getElementById('st-tbody');
+      if (!tbody) return;
+      var a = st.a, n = st.n;
+      var prod = a * x, res = prod % n, hit = (res === 1);
+      var tr = document.createElement('tr');
+      var bg = hit ? 'background:#edf7ed;' : '';
+      tr.innerHTML =
+        '<td style="border:1px solid #b0bed8;padding:5px 12px;text-align:center;' + bg + '">' + x + '</td>' +
+        '<td style="border:1px solid #b0bed8;padding:5px 12px;text-align:center;' + bg + '">' + prod + '</td>' +
+        '<td style="border:1px solid #b0bed8;padding:5px 12px;text-align:center;' + bg + 'font-weight:' + (hit?'700':'400') + ';color:' + (hit?'#1b5e20':'inherit') + ';">' + res + '</td>' +
+        '<td style="border:1px solid #b0bed8;padding:5px 12px;text-align:center;' + bg + '">' +
+          (hit ? '<span style="color:#1b5e20;font-weight:700;">✓</span>' : '<span style="color:#c62828;">✗</span>') +
+        '</td>';
+      tbody.appendChild(tr);
+
+      if (hit) {
+        var res_el = document.getElementById('st-result');
+        if (res_el) res_el.innerHTML = '<span style="color:#1b5e20;">Found: ' + a + '⁻¹ ≡ ' + x + ' (mod ' + n + ')</span>';
+        st.done = true;
+        var btn = document.getElementById('st-step-btn');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; }
+      } else if (x === n - 1) {
+        var res_el2 = document.getElementById('st-result');
+        if (res_el2) res_el2.innerHTML = '<span style="color:#7f0000;">All values tried — ' + a + ' has no inverse mod ' + n + '.</span>';
+        st.done = true;
+        var btn2 = document.getElementById('st-step-btn');
+        if (btn2) { btn2.disabled = true; btn2.style.opacity = '0.4'; }
+      }
+    }
+
+    window.stStep = function () {
+      if (st.done) return;
+      st.step++;
+      stAddRow(st.step);
+      if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+    };
+
+    window.stAll = function () {
+      if (st.done) return;
+      for (var x = st.step + 1; x < st.n && !st.done; x++) {
+        st.step = x; stAddRow(x);
+      }
+      if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+    };
+
+    window.stReset = function () {
+      var sn = document.getElementById('st-n');
+      var sa = document.getElementById('st-a');
+      if (sn) st.n = parseInt(sn.value);
+      if (sa) st.a = parseInt(sa.value);
+      st.step = 0; st.done = false;
+      var tbody = document.getElementById('st-tbody');
+      if (tbody) tbody.innerHTML = '';
+      var res_el = document.getElementById('st-result');
+      if (res_el) res_el.innerHTML = '';
+      var btn = document.getElementById('st-step-btn');
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    };
+
+    window.stPopA = stPopA;
+
+    window.addEventListener('load', function () { stPopA(); stReset(); });
+  })();
+  </script>
+
   <script>
   /* ══════════════ Coverage Map Visualizer ══════════════ */
   (function () {

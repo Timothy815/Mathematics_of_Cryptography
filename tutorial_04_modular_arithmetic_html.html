@@ -1345,16 +1345,37 @@
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Modular arithmetic gives cryptography its wraparound worlds. Many cryptographic systems work inside a fixed mathematical space instead of ordinary unbounded arithmetic.
+          Modular arithmetic is the mathematical environment where nearly all public-key cryptography lives. Its wraparound structure provides bounded, finite spaces that make both computation and security proofs tractable.
         </p>
-        <ul>
-          <li>Classical ciphers use modulo 26 for letters.</li>
-          <li>RSA uses modular exponentiation with very large moduli.</li>
-          <li>Diffie-Hellman uses powers modulo a prime.</li>
-          <li>Elliptic curve cryptography uses modular arithmetic over finite fields.</li>
-          <li>Finite-field arithmetic, including AES-style arithmetic, is a more advanced cousin of modular thinking.</li>
-          <li>Fixed-width computer arithmetic often wraps around modulo powers of 2, such as \(2^8\), \(2^{16}\), or \(2^{32}\).</li>
-        </ul>
+
+        <h3>Classical ciphers live in \(\mathbb{Z}_{26}\)</h3>
+        <p>
+          The Caesar cipher shifts each letter by a fixed amount modulo 26. The affine cipher multiplies and shifts modulo 26. Both encrypt by applying modular arithmetic to letter indices and decrypt by reversing it. These ciphers are simple enough to analyze by hand and rich enough to demonstrate every concept — bounded arithmetic, invertibility, key choice — that reappears in modern systems.
+        </p>
+
+        <h3>RSA: exponentiation modulo a large number</h3>
+        <p>
+          RSA encryption computes \(C \equiv M^e \pmod{n}\) where \(n = pq\) is the product of two large primes. Decryption computes \(M \equiv C^d \pmod{n}\) using a private exponent \(d\). The security argument depends entirely on the modular structure: computing \(e\)-th roots modulo a large \(n\) is hard without knowing \(p\) and \(q\).
+        </p>
+
+        <h3>Diffie–Hellman: shared secrets from public information</h3>
+        <p>
+          Diffie–Hellman key exchange works in \(\mathbb{Z}_p^*\) — the multiplicative group modulo a prime \(p\). Alice sends \(g^a \bmod p\), Bob sends \(g^b \bmod p\), and both compute the shared secret \(g^{ab} \bmod p\). The security relies on the discrete logarithm problem: given \(g^a \bmod p\), recovering the exponent \(a\) has no known efficient algorithm.
+        </p>
+
+        <h3>AES and \(\mathrm{GF}(2^8)\)</h3>
+        <p>
+          AES operates on bytes using arithmetic in the finite field \(\mathrm{GF}(2^8)\). Addition in this field is bitwise XOR. Multiplication is polynomial multiplication modulo an irreducible degree-8 polynomial. The structure is more sophisticated than plain \(\mathbb{Z}_n\), but the core intuition — a bounded space with consistent arithmetic rules — comes directly from modular thinking.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Three flavours of modular arithmetic in cryptography</div>
+          <ul style="margin:10px 0 0 18px;line-height:1.9;">
+            <li><strong>\(\mathbb{Z}_n\)</strong> — integers modulo \(n\): used in RSA, classical ciphers, hash compression functions</li>
+            <li><strong>\(\mathbb{Z}_p^*\)</strong> — nonzero integers modulo a prime: used in Diffie–Hellman, ElGamal, DSA</li>
+            <li><strong>\(\mathrm{GF}(2^k)\)</strong> — binary finite fields: used in AES, GHASH (GCM authentication), binary elliptic curves</li>
+          </ul>
+        </div>
       </section>
 
       <section id="one-page-recap" class="page-break">
@@ -1428,7 +1449,7 @@
       <section id="next">
         <h2>What comes next</h2>
         <p>
-          The next tutorial should be <strong>Multiplicative Inverses Modulo \(n\)</strong>. Modular addition is easy to undo with subtraction, but modular multiplication raises a deeper question: when can multiplication be reversed?
+          The next tutorial should be <strong><a href="tutorial_05_multiplicative_inverses_modulo_n_html.html">Multiplicative Inverses Modulo \(n\)</a></strong>. Modular addition is easy to undo with subtraction, but modular multiplication raises a deeper question: when can multiplication be reversed?
         </p>
       </section>
 
