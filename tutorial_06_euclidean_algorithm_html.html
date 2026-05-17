@@ -89,6 +89,72 @@
       font-weight: 800;
     }
 
+    /* ── Algorithm Explorer widget ── */
+    .ea-widget {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: #f8f9fd;
+      padding: 22px 26px;
+      margin: 18px 0;
+    }
+    .ea-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .ea-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+    }
+    .ea-btn {
+      padding: 8px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .ea-btn:hover { opacity: 0.85; }
+    .ea-btn-step  { background: #334e7d; color: #fff; }
+    .ea-btn-auto  { background: #2e7d32; color: #fff; }
+    .ea-btn-reset { background: #e8dbbf; color: #7d5a00; }
+    .ea-pair {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-height: 1.7em;
+      margin-bottom: 12px;
+    }
+    .ea-steps { display: grid; gap: 8px; min-height: 20px; }
+    .ea-step-card {
+      background: #fff;
+      border: 1px solid #c7d2ea;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .ea-result {
+      background: #eaf7ef;
+      border: 2px solid #2e7d32;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #1b5e20;
+      text-align: center;
+      margin-top: 12px;
+      display: none;
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -97,8 +163,8 @@
       .tile-grid { grid-template-columns: repeat(6, minmax(28px, 1fr)); }
     }
 
+    @page { margin: 0.65in; }
     @media print {
-      @page { margin: 0.65in; }
       body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
       header.tutorial-header, main {
@@ -130,7 +196,9 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_05_multiplicative_inverses_modulo_n_html.html">← Tutorial 5</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_07_extended_euclidean_algorithm_html.html">Tutorial 7 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
@@ -350,6 +418,24 @@
             <li>If \(r=0\), then \(b\) is the greatest common divisor.</li>
             <li>If \(r\neq0\), replace \((a,b)\) with \((b,r)\), and repeat.</li>
           </ol>
+        </div>
+      </section>
+
+      <section id="algorithm-explorer">
+        <h2>Explore: Step Through the Algorithm</h2>
+        <p class="no-print">Choose a pair and press <strong>Step</strong> to execute one division at a time. Watch how the pair shrinks until the remainder reaches zero, then the GCD is revealed.</p>
+        <p class="print-only">Carry out the algorithm on each pair: write \(a = qb + r\), replace \((a,b)\) with \((b,r)\), and repeat until the remainder is zero. The last nonzero remainder is the GCD.</p>
+
+        <div class="ea-widget no-print">
+          <div class="ea-controls">
+            <select class="ea-select" id="ea-sel" aria-label="Choose a pair"></select>
+            <button class="ea-btn ea-btn-step"  id="ea-step">Step</button>
+            <button class="ea-btn ea-btn-auto"  id="ea-auto">Auto</button>
+            <button class="ea-btn ea-btn-reset" id="ea-reset">Reset</button>
+          </div>
+          <div class="ea-pair" id="ea-pair"></div>
+          <div class="ea-steps" id="ea-steps"></div>
+          <div class="ea-result" id="ea-result"></div>
         </div>
       </section>
 
@@ -599,6 +685,38 @@
               <p>Yes. Since \(\gcd(35,64)=1\), 35 has a multiplicative inverse modulo 64.</p>
             </details>
           </li>
+          <li>
+            Find \(\gcd(144,89)\).
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[144=1\cdot89+55\]
+                \[89=1\cdot55+34\]
+                \[55=1\cdot34+21\]
+                \[34=1\cdot21+13\]
+                \[21=1\cdot13+8\]
+                \[13=1\cdot8+5\]
+                \[8=1\cdot5+3\]
+                \[5=1\cdot3+2\]
+                \[3=1\cdot2+1\]
+                \[2=2\cdot1+0\]
+              </div>
+              <p>The last nonzero remainder is 1, so \(\gcd(144,89)=1\). These are consecutive Fibonacci numbers and are always coprime.</p>
+            </details>
+          </li>
+          <li>
+            Does 7 have an inverse modulo 26? Use the Euclidean algorithm to justify your answer.
+            <details class="solution">
+              <summary>Show solution</summary>
+              <div class="math-display">
+                \[26=3\cdot7+5\]
+                \[7=1\cdot5+2\]
+                \[5=2\cdot2+1\]
+                \[2=2\cdot1+0\]
+              </div>
+              <p>Since \(\gcd(26,7)=1\), yes — 7 has a multiplicative inverse modulo 26. (This means 7 is a valid multiplier for the affine cipher.)</p>
+            </details>
+          </li>
         </ol>
       </section>
 
@@ -607,13 +725,41 @@
         <p>
           The Euclidean algorithm is a foundation stone. It is not glamorous, but many cryptographic systems stand on it.
         </p>
-        <ul>
-          <li>It tells us whether modular inverses exist.</li>
-          <li>It prepares us for the extended Euclidean algorithm.</li>
-          <li>It supports affine cipher decryption, RSA key generation, and elliptic curve arithmetic.</li>
-          <li>It gives a fast way to test coprimality even for large numbers.</li>
-          <li>The same idea later reappears in polynomial form for finite-field arithmetic.</li>
-        </ul>
+
+        <h3>Affine cipher key validation</h3>
+        <p>
+          The affine cipher encrypts with \(C \equiv aP + b \pmod{26}\). For decryption to work, \(a^{-1}\pmod{26}\) must exist, which requires \(\gcd(a,26)=1\). The Euclidean algorithm confirms this instantly. For example, \(\gcd(7,26)=1\), so 7 is a valid key — but \(\gcd(13,26)=13\), so 13 is not.
+        </p>
+
+        <h3>RSA key generation</h3>
+        <p>
+          RSA requires choosing an encryption exponent \(e\) such that \(\gcd(e,\varphi(n))=1\), where \(\varphi(n)\) is Euler's totient. Before computing the private key, the algorithm verifies that the public exponent is valid. Without this check, decryption would be impossible.
+        </p>
+
+        <h3>Gateway to the Extended Euclidean Algorithm</h3>
+        <p>
+          The Euclidean algorithm answers the yes/no question: does an inverse exist? Module 07 extends it to answer the how question: it finds coefficients \(s\) and \(t\) such that \(sa + tb = \gcd(a,b)\). When \(\gcd(a,n)=1\), that gives \(s\) as the actual modular inverse — efficiently, for numbers hundreds of digits long.
+        </p>
+
+        <h3>Polynomial arithmetic in \(\text{GF}(2^8)\)</h3>
+        <p>
+          AES operates in a finite field where elements are polynomials over \(\text{GF}(2)\). The S-box inversion step requires finding multiplicative inverses of polynomials. The Euclidean algorithm for polynomials over \(\text{GF}(2)\) works identically to the integer version — the same logic, a different number system.
+        </p>
+
+        <div class="box technical-box">
+          <div class="box-title">Valid affine multipliers modulo 26</div>
+          <p>
+            There are exactly 12 values \(a \in \{1,\ldots,25\}\) with \(\gcd(a,26)=1\):
+          </p>
+          <div class="math-display">
+            \[
+              1,\;3,\;5,\;7,\;9,\;11,\;15,\;17,\;19,\;21,\;23,\;25
+            \]
+          </div>
+          <p>
+            The other 14 values share a factor of 2 or 13 with 26, so they have no inverse and cannot be used as cipher keys.
+          </p>
+        </div>
       </section>
 
       <section id="one-page-recap" class="page-break">
@@ -683,7 +829,7 @@
       <section id="next">
         <h2>What comes next</h2>
         <p>
-          The next tutorial should be <strong>The Extended Euclidean Algorithm</strong>. The Euclidean algorithm finds the greatest common divisor. The extended version goes further and finds the hidden coefficients that let us calculate modular inverses directly.
+          <a href="tutorial_07_extended_euclidean_algorithm_html.html"><strong>Tutorial 7: The Extended Euclidean Algorithm</strong></a> goes further. The Euclidean algorithm finds the greatest common divisor. The extended version also finds the hidden coefficients \(s\) and \(t\) such that \(sa + tb = \gcd(a,b)\) — and when \(\gcd(a,n)=1\), that coefficient \(s\) is the modular inverse you need.
         </p>
       </section>
 
@@ -703,5 +849,118 @@
     </nav>
     </main>
   </div>
+  <script>
+  (function () {
+    'use strict';
+
+    var EXAMPLES = [
+      { label: 'gcd(48, 18)',   a: 48,  b: 18  },
+      { label: 'gcd(252, 105)', a: 252, b: 105 },
+      { label: 'gcd(151, 25)',  a: 151, b: 25  },
+      { label: 'gcd(391, 299)', a: 391, b: 299 },
+      { label: 'gcd(99, 78)',   a: 99,  b: 78  },
+      { label: 'gcd(64, 35)',   a: 64,  b: 35  },
+      { label: 'gcd(144, 89)',  a: 144, b: 89  }
+    ];
+
+    var ea = { a: 0, b: 0, done: false, timer: null };
+
+    var selEl   = document.getElementById('ea-sel');
+    var pairEl  = document.getElementById('ea-pair');
+    var stepsEl = document.getElementById('ea-steps');
+    var resEl   = document.getElementById('ea-result');
+    var stepBtn = document.getElementById('ea-step');
+    var autoBtn = document.getElementById('ea-auto');
+    var resetBtn = document.getElementById('ea-reset');
+
+    if (!selEl) return; /* widget not present (e.g. print) */
+
+    EXAMPLES.forEach(function (ex, i) {
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = ex.label;
+      selEl.appendChild(opt);
+    });
+
+    function typeset(el) {
+      if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+    }
+
+    function setBtns(done) {
+      stepBtn.disabled = done; stepBtn.style.opacity = done ? '0.4' : '1';
+      autoBtn.disabled = done; autoBtn.style.opacity = done ? '0.4' : '1';
+    }
+
+    function loadExample(idx) {
+      if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
+      var ex = EXAMPLES[idx];
+      ea.a = ex.a; ea.b = ex.b; ea.done = false;
+      stepsEl.innerHTML = '';
+      resEl.style.display = 'none';
+      pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+      typeset(pairEl);
+      setBtns(false);
+    }
+
+    function doStep() {
+      if (ea.done) return;
+      var a = ea.a, b = ea.b;
+      var q = Math.floor(a / b);
+      var r = a % b;
+
+      var card = document.createElement('div');
+      card.className = 'ea-step-card';
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(6px)';
+      card.innerHTML = '\\(' + a + ' = ' + q + ' \\cdot ' + b + ' + ' + r + '\\)' +
+        ' &nbsp;→&nbsp; ' +
+        '\\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
+      stepsEl.appendChild(card);
+
+      function fadeIn() {
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }
+
+      if (window.MathJax && MathJax.typesetPromise) {
+        MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeIn); });
+      } else {
+        requestAnimationFrame(fadeIn);
+      }
+
+      if (r === 0) {
+        ea.done = true;
+        setBtns(true);
+        if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
+        resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
+          (b === 1 ? ' — the numbers are <strong>coprime</strong>.' : '.');
+        resEl.style.display = 'block';
+        typeset(resEl);
+      } else {
+        ea.a = b; ea.b = r;
+        pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+        typeset(pairEl);
+      }
+    }
+
+    stepBtn.addEventListener('click', doStep);
+
+    autoBtn.addEventListener('click', function () {
+      if (ea.done) return;
+      autoBtn.disabled = true; autoBtn.style.opacity = '0.4';
+      stepBtn.disabled = true; stepBtn.style.opacity = '0.4';
+      ea.timer = setInterval(function () {
+        doStep();
+        if (ea.done) { clearInterval(ea.timer); ea.timer = null; }
+      }, 950);
+    });
+
+    resetBtn.addEventListener('click', function () { loadExample(parseInt(selEl.value)); });
+    selEl.addEventListener('change', function () { loadExample(parseInt(selEl.value)); });
+
+    loadExample(0);
+  })();
+  </script>
 </body>
 </html>
