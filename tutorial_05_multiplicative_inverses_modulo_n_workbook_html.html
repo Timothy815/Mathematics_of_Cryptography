@@ -98,6 +98,38 @@
       margin: 8px 0 12px;
     }
 
+    /* Written-response textarea */
+    .written-area {
+      width: 100%; padding: 8px 12px; margin-top: 6px;
+      border: 2px solid #c7d2ea; border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f4fb; box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+    /* Write-wrap: textarea on screen → ruled lines on print */
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
+
+    /* Ans-input for short answers */
+    .ans-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1rem; font-weight: 700;
+      padding: 6px 10px; border: 2px solid #c7d2ea; border-radius: 8px;
+      background: #f0f4fb; color: #16243d; min-width: 80px;
+    }
+    .ans-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .ans-input.wide { width: 100%; max-width: 320px; }
+
+    /* Student-info input fields */
+    .field-input {
+      width: 100%; border: none; border-bottom: 1.5px solid #333;
+      background: transparent; font-size: 1rem; padding: 4px 2px;
+      color: #16243d; font-family: inherit;
+    }
+    .field-input:focus { outline: none; border-bottom-color: var(--accent); }
+
     .work-space {
       border: 1px dashed #999999;
       border-radius: 10px;
@@ -156,9 +188,8 @@
       .search-row { grid-template-columns: repeat(2, minmax(90px, 1fr)); min-width: 0; }
     }
 
+    @page { margin: 0.75in; }
     @media print {
-      @page { margin: 0.6in; }
-
       body {
         background: #ffffff;
         color: #000000;
@@ -199,6 +230,17 @@
       }
 
       a { color: #000000; text-decoration: none; }
+      /* Inputs print as clean underlines */
+      .ans-input {
+        border: none !important; border-bottom: 1.5px solid #444 !important;
+        border-radius: 0 !important; background: transparent !important;
+        color: #000 !important;
+      }
+      .field-input { border-bottom: 1.5px solid #444 !important; }
+      /* Textarea → ruled print lines */
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
     }
   </style>
 </head>
@@ -212,8 +254,18 @@
         Printable practice for checking, finding, and using modular multiplicative inverses.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_05_multiplicative_inverses_modulo_n_html.html">Tutorial 5</a>
+        <a class="nav-link" href="#warm-up">Part A</a>
+        <a class="nav-link" href="#checking-inverses">Part B</a>
+        <a class="nav-link" href="#searching-inverses">Part C</a>
+        <a class="nav-link" href="#gcd-rule">Part D</a>
+        <a class="nav-link" href="#non-invertible">Part E</a>
+        <a class="nav-link" href="#undoing-multiplication">Part F</a>
+        <a class="nav-link" href="#affine-preview">Part G</a>
+        <a class="nav-link" href="#challenge">Part H</a>
+        <a class="nav-link" href="#answer-key">Answers</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
@@ -223,11 +275,11 @@
         <div class="student-info">
           <div>
             <span class="field-label">Name:</span>
-            <div class="field-line"></div>
+            <input class="field-input" type="text" placeholder="Your name" autocomplete="off" />
           </div>
           <div>
             <span class="field-label">Date:</span>
-            <div class="field-line"></div>
+            <input class="field-input" type="text" placeholder="Date" autocomplete="off" />
           </div>
         </div>
       </section>
@@ -285,25 +337,34 @@
 
         <div class="problem">
           <div class="problem-title">A1. Define multiplicative inverse modulo \(n\) in friendly language.</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
 
         <div class="problem">
           <div class="problem-title">A2. What does \(a^{-1}\pmod n\) mean technically?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
 
         <div class="problem">
           <div class="problem-title">A3. What does it mean for two numbers to be coprime?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
 
         <div class="problem">
           <div class="problem-title">A4. Why is an inverse important for decryption?</div>
-          <div class="work-space"></div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
       </section>
 
@@ -322,11 +383,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>B1</td><td>\(3^{-1}\equiv7\pmod{10}\)</td><td></td><td></td><td></td></tr>
-            <tr><td>B2</td><td>\(5^{-1}\equiv21\pmod{26}\)</td><td></td><td></td><td></td></tr>
-            <tr><td>B3</td><td>\(7^{-1}\equiv7\pmod{12}\)</td><td></td><td></td><td></td></tr>
-            <tr><td>B4</td><td>\(9^{-1}\equiv3\pmod{26}\)</td><td></td><td></td><td></td></tr>
-            <tr><td>B5</td><td>\(4^{-1}\equiv4\pmod{10}\)</td><td></td><td></td><td></td></tr>
+            <tr><td>B1</td><td>\(3^{-1}\equiv7\pmod{10}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>B2</td><td>\(5^{-1}\equiv21\pmod{26}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>B3</td><td>\(7^{-1}\equiv7\pmod{12}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>B4</td><td>\(9^{-1}\equiv3\pmod{26}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>B5</td><td>\(4^{-1}\equiv4\pmod{10}\)</td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -349,22 +410,25 @@
             <div class="search-cell">x=8<br>3x mod 10:</div>
             <div class="search-cell">x=9<br>3x mod 10:</div>
           </div>
-          <p>Inverse:</p>
-          <span class="blank-line"></span>
+          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">C2. Find \(7^{-1}\pmod{12}\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Inverse:</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">C3. Find \(11^{-1}\pmod{26}\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Inverse:</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Inverse: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -383,12 +447,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>D1</td><td>5</td><td>26</td><td></td><td></td></tr>
-            <tr><td>D2</td><td>2</td><td>6</td><td></td><td></td></tr>
-            <tr><td>D3</td><td>4</td><td>10</td><td></td><td></td></tr>
-            <tr><td>D4</td><td>7</td><td>12</td><td></td><td></td></tr>
-            <tr><td>D5</td><td>13</td><td>26</td><td></td><td></td></tr>
-            <tr><td>D6</td><td>15</td><td>26</td><td></td><td></td></tr>
+            <tr><td>D1</td><td>5</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>D2</td><td>2</td><td>6</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>D3</td><td>4</td><td>10</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>D4</td><td>7</td><td>12</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>D5</td><td>13</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            <tr><td>D6</td><td>15</td><td>26</td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -403,22 +467,27 @@
               <tr><th>\(x\)</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
             </thead>
             <tbody>
-              <tr><td>\(2x\bmod6\)</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>\(2x\bmod6\)</td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td><td><input class="ans-input" type="text" style="width:44px" autocomplete="off" /></td></tr>
             </tbody>
           </table>
-          <p>Does the result ever equal 1?</p>
-          <span class="blank-line"></span>
+          <p>Does the result ever equal 1? <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">E2. Explain why multiplication by 2 modulo 6 causes collisions.</div>
-          <div class="work-space large-work-space"></div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
 
         <div class="problem">
           <div class="problem-title">E3. Show that 13 has no inverse modulo 26.</div>
           <p>Use either the greatest common divisor rule or a short explanation.</p>
-          <div class="work-space large-work-space"></div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
       </section>
 
@@ -428,23 +497,29 @@
 
         <div class="problem">
           <div class="problem-title">F1. If \(C\equiv5P\pmod{26}\), \(5^{-1}\equiv21\pmod{26}\), and \(C=9\), recover \(P\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">F2. If \(C\equiv9P\pmod{26}\), \(9^{-1}\equiv3\pmod{26}\), and \(C=15\), recover \(P\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">F3. If \(C\equiv7P\pmod{12}\), \(7^{-1}\equiv7\pmod{12}\), and \(C=5\), recover \(P\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Answer: \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -459,21 +534,28 @@
 
         <div class="problem">
           <div class="problem-title">G1. Let \(C\equiv5P+8\pmod{26}\). Since \(5^{-1}\equiv21\pmod{26}\), decrypt \(C=13\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\):</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Plaintext number \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">G2. Let \(C\equiv9P+2\pmod{26}\). Since \(9^{-1}\equiv3\pmod{26}\), decrypt \(C=20\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\):</p>
-          <span class="blank-line"></span>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Show your work…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Plaintext number \(P =\) <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">G3. Why would \(C\equiv13P+4\pmod{26}\) be a bad affine cipher rule?</div>
-          <div class="work-space large-work-space"></div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
         </div>
       </section>
 
@@ -486,15 +568,21 @@
           </p>
         </div>
 
-        <div class="problem">
-          <div class="problem-title">H1. Explain why the inverse of a number depends on the modulus.</div>
+        <div class=”problem”>
+          <div class=”problem-title”>H1. Explain why the inverse of a number depends on the modulus.</div>
           <p>Use the fact that \(3^{-1}\equiv7\pmod{10}\), but \(3^{-1}\equiv9\pmod{26}\).</p>
-          <div class="work-space large-work-space"></div>
+          <div class=”write-wrap”>
+            <textarea class=”written-area” rows=”4” placeholder=”Write your answer…”></textarea>
+            <div class=”write-lines”></div>
+          </div>
         </div>
 
-        <div class="problem">
-          <div class="problem-title">H2. Explain why “nonzero” is not enough for invertibility modulo \(n\).</div>
-          <div class="work-space large-work-space"></div>
+        <div class=”problem”>
+          <div class=”problem-title”>H2. Explain why “nonzero” is not enough for invertibility modulo \(n\).</div>
+          <div class=”write-wrap”>
+            <textarea class=”written-area” rows=”4” placeholder=”Write your answer…”></textarea>
+            <div class=”write-lines”></div>
+          </div>
         </div>
       </section>
 
@@ -505,11 +593,11 @@
             <tr><th>Statement</th><th>True or False?</th></tr>
           </thead>
           <tbody>
-            <tr><td>A modular inverse of \(a\) is a number \(x\) such that \(ax\equiv1\pmod n\).</td><td></td></tr>
-            <tr><td>Every nonzero number has an inverse modulo every \(n\).</td><td></td></tr>
-            <tr><td>An inverse exists exactly when \(\gcd(a,n)=1\).</td><td></td></tr>
-            <tr><td>If multiplication causes collisions, it cannot be undone uniquely.</td><td></td></tr>
-            <tr><td>The inverse of a number is always the same regardless of modulus.</td><td></td></tr>
+            <tr><td>A modular inverse of \(a\) is a number \(x\) such that \(ax\equiv1\pmod n\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
+            <tr><td>Every nonzero number has an inverse modulo every \(n\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
+            <tr><td>An inverse exists exactly when \(\gcd(a,n)=1\).</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
+            <tr><td>If multiplication causes collisions, it cannot be undone uniquely.</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
+            <tr><td>The inverse of a number is always the same regardless of modulus.</td><td><input class="ans-input" type="text" style="width:60px" placeholder="T / F" autocomplete="off" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -634,15 +722,29 @@
 
     <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
+            <a href="tutorial_04_modular_arithmetic_workbook_html.html" class="nav-item" id="prevLink">← Workbook 4</a>
             <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+            <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item" id="nextLink">Workbook 6 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+            <a href="tutorial_05_multiplicative_inverses_modulo_n_html.html" class="nav-item nav-secondary">Tutorial 5</a>
         </div>
     </nav>
     </main>
   </div>
+  <script>
+  // Generate ruled print lines for each write-wrap
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 3;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
+  </script>
 </body>
 </html>
