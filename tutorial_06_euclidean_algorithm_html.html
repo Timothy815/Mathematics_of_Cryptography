@@ -155,6 +155,52 @@
       display: none;
     }
 
+    /* ── Bar visualization ── */
+    .ea-bars { margin-bottom: 14px; display: grid; gap: 7px; }
+    .ea-bar-row { display: flex; align-items: center; gap: 10px; height: 26px; }
+    .ea-bar-label { font-weight: 800; font-size: 0.82rem; color: #334e7d; width: 14px; flex-shrink: 0; }
+    .ea-bar-track { flex: 1; height: 100%; background: #e4e9f5; border-radius: 6px; position: relative; overflow: hidden; }
+    .ea-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 6px; transition: width 0.55s cubic-bezier(.4,0,.2,1), background 0.4s; }
+    .ea-bar-a { background: #334e7d; }
+    .ea-bar-b { background: #c9973a; }
+    .ea-bar-val { font-size: 0.82rem; font-weight: 700; color: #444; min-width: 34px; text-align: right; flex-shrink: 0; }
+    .ea-rem-note { font-size: 0.8rem; color: #2e7d32; font-weight: 700; min-height: 1.3em; margin-top: 2px; }
+
+    /* ── Inverse existence explorer ── */
+    .inv-widget { border: 1px solid var(--border); border-radius: var(--radius); background: #f8f9fd; padding: 22px 26px; margin: 18px 0; }
+    .inv-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .inv-label { font-size: 0.88rem; font-weight: 700; color: #333; display: flex; align-items: center; gap: 5px; }
+    .inv-input { width: 62px; padding: 7px 8px; border: 1px solid #c7d2ea; border-radius: 8px; font-size: 0.95rem; font-family: inherit; text-align: center; }
+    .inv-btn { padding: 7px 15px; border: none; border-radius: 8px; font-size: 0.87rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+    .inv-btn:hover { opacity: 0.85; }
+    .inv-btn:disabled { opacity: 0.4 !important; cursor: not-allowed; }
+    .inv-btn-check { background: #334e7d; color: white; }
+    .inv-btn-next  { background: #c9973a; color: white; }
+    .inv-btn-run   { background: #2e7d32; color: white; }
+    .inv-btn-clear { background: #e8dbbf; color: #7d5a00; }
+    .inv-gcd-steps { font-size: 0.87rem; background: #fff; border: 1px solid #d8dff0; border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; display: none; line-height: 1.9; color: #333; }
+    .inv-status { font-size: 0.95rem; min-height: 2.4em; margin: 10px 0; color: #333; }
+    .inv-orbit { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 5px; margin: 14px 0; }
+    .inv-cell { height: 48px; border-radius: 8px; border: 2px solid #d0d8ea; background: #f0f3fa; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.22s, border-color 0.22s, transform 0.18s, box-shadow 0.18s; }
+    .inv-cell .cell-num { font-size: 0.9rem; font-weight: 700; line-height: 1.2; color: #666; }
+    .inv-cell .cell-k   { font-size: 0.68rem; font-weight: 700; color: transparent; line-height: 1.1; }
+    .inv-cell.target    { border-color: #334e7d; border-style: dashed; }
+    .inv-cell.target .cell-num { color: #334e7d; }
+    .inv-cell.hit  { background: #fff4d8; border-color: #c9973a; border-style: solid; }
+    .inv-cell.hit .cell-num { color: #7d5a00; }
+    .inv-cell.hit .cell-k   { color: #a07030; }
+    .inv-cell.inv-found { background: #eaf7ef !important; border-color: #2e7d32 !important; border-style: solid !important; transform: scale(1.18); box-shadow: 0 3px 14px rgba(46,125,50,0.4); z-index: 1; }
+    .inv-cell.inv-found .cell-num { color: #1b5e20 !important; }
+    .inv-cell.inv-found .cell-k   { color: #2e7d32 !important; }
+    .inv-cell.zero-hit { background: #fff0f0 !important; border-color: #e53935 !important; border-style: solid !important; }
+    .inv-cell.zero-hit .cell-num { color: #b71c1c !important; }
+    .inv-cell.zero-hit .cell-k   { color: #e53935 !important; }
+    @keyframes pop { 0%{transform:scale(1.18)} 50%{transform:scale(1.28)} 100%{transform:scale(1.18)} }
+    .inv-cell.inv-found { animation: pop 0.45s ease; }
+    .inv-result { border-radius: 10px; padding: 12px 18px; font-size: 1rem; font-weight: 800; text-align: center; margin-top: 10px; display: none; }
+    .inv-result.found { background: #eaf7ef; border: 2px solid #2e7d32; color: #1b5e20; }
+    .inv-result.none  { background: #fff0f0; border: 2px solid #e53935; color: #b71c1c; }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -433,6 +479,19 @@
             <button class="ea-btn ea-btn-auto"  id="ea-auto">Auto</button>
             <button class="ea-btn ea-btn-reset" id="ea-reset">Reset</button>
           </div>
+          <div class="ea-bars" id="ea-bars">
+            <div class="ea-bar-row">
+              <span class="ea-bar-label">a</span>
+              <div class="ea-bar-track"><div class="ea-bar-fill ea-bar-a" id="ea-fill-a" style="width:100%"></div></div>
+              <span class="ea-bar-val" id="ea-val-a"></span>
+            </div>
+            <div class="ea-bar-row">
+              <span class="ea-bar-label">b</span>
+              <div class="ea-bar-track"><div class="ea-bar-fill ea-bar-b" id="ea-fill-b" style="width:50%"></div></div>
+              <span class="ea-bar-val" id="ea-val-b"></span>
+            </div>
+            <div class="ea-rem-note" id="ea-rem-note"></div>
+          </div>
           <div class="ea-pair" id="ea-pair"></div>
           <div class="ea-steps" id="ea-steps"></div>
           <div class="ea-result" id="ea-result"></div>
@@ -535,6 +594,31 @@
           <p>
             The Euclidean algorithm tells us whether an inverse exists. The extended Euclidean algorithm, which comes next, tells us how to actually find the inverse efficiently.
           </p>
+        </div>
+      </section>
+
+      <section id="inverse-explorer">
+        <h2>Explorer: does a modular inverse exist?</h2>
+        <p>
+          The Euclidean algorithm tells us <em>whether</em> an inverse exists. Here is the deeper picture: if \(\gcd(a,n)=1\), the multiples \(a \cdot 1,\; a \cdot 2,\; a \cdot 3,\ldots\) taken modulo \(n\) cycle through <em>every</em> residue from 0 to \(n-1\). One of them must land on 1 — and that multiple index is the inverse. If \(\gcd(a,n)>1\), the orbit skips over 1 entirely and cycles back to 0 without ever touching it.
+        </p>
+        <p class="no-print">
+          Choose \(a\) and \(n\) below. Press <strong>Check gcd</strong> to run the algorithm and see the verdict, then use <strong>Next ×</strong> or <strong>Run all</strong> to watch the multiples sweep through the orbit one cell at a time.
+        </p>
+
+        <div class="inv-widget no-print">
+          <div class="inv-controls">
+            <label class="inv-label">a =&thinsp;<input type="number" class="inv-input" id="inv-a" value="7" min="1" max="99"></label>
+            <label class="inv-label">n =&thinsp;<input type="number" class="inv-input" id="inv-n" value="26" min="2" max="50"></label>
+            <button class="inv-btn inv-btn-check" id="inv-check">Check gcd</button>
+            <button class="inv-btn inv-btn-next"  id="inv-next"  disabled>Next ×</button>
+            <button class="inv-btn inv-btn-run"   id="inv-run"   disabled>Run all</button>
+            <button class="inv-btn inv-btn-clear" id="inv-clear">Reset</button>
+          </div>
+          <div class="inv-gcd-steps" id="inv-gcd-steps"></div>
+          <div class="inv-status" id="inv-status">Enter values and press <strong>Check gcd</strong>.</div>
+          <div class="inv-orbit" id="inv-orbit"></div>
+          <div class="inv-result" id="inv-result"></div>
         </div>
       </section>
 
@@ -853,113 +937,289 @@
   (function () {
     'use strict';
 
-    var EXAMPLES = [
-      { label: 'gcd(48, 18)',   a: 48,  b: 18  },
-      { label: 'gcd(252, 105)', a: 252, b: 105 },
-      { label: 'gcd(151, 25)',  a: 151, b: 25  },
-      { label: 'gcd(391, 299)', a: 391, b: 299 },
-      { label: 'gcd(99, 78)',   a: 99,  b: 78  },
-      { label: 'gcd(64, 35)',   a: 64,  b: 35  },
-      { label: 'gcd(144, 89)',  a: 144, b: 89  }
-    ];
+    /* ── Shared utilities ─────────────────────────────────── */
+    function gcdCalc(a, b) { while (b) { var t = b; b = a % b; a = t; } return a; }
+    function typeset(el) { if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]); }
 
-    var ea = { a: 0, b: 0, done: false, timer: null };
+    /* ── Algorithm Explorer ───────────────────────────────── */
+    (function () {
+      var EXAMPLES = [
+        { label: 'gcd(48, 18)',   a: 48,  b: 18  },
+        { label: 'gcd(252, 105)', a: 252, b: 105 },
+        { label: 'gcd(151, 25)',  a: 151, b: 25  },
+        { label: 'gcd(391, 299)', a: 391, b: 299 },
+        { label: 'gcd(99, 78)',   a: 99,  b: 78  },
+        { label: 'gcd(64, 35)',   a: 64,  b: 35  },
+        { label: 'gcd(144, 89)',  a: 144, b: 89  }
+      ];
 
-    var selEl   = document.getElementById('ea-sel');
-    var pairEl  = document.getElementById('ea-pair');
-    var stepsEl = document.getElementById('ea-steps');
-    var resEl   = document.getElementById('ea-result');
-    var stepBtn = document.getElementById('ea-step');
-    var autoBtn = document.getElementById('ea-auto');
-    var resetBtn = document.getElementById('ea-reset');
+      var selEl    = document.getElementById('ea-sel');
+      if (!selEl) return;
 
-    if (!selEl) return; /* widget not present (e.g. print) */
+      var pairEl   = document.getElementById('ea-pair');
+      var stepsEl  = document.getElementById('ea-steps');
+      var resEl    = document.getElementById('ea-result');
+      var stepBtn  = document.getElementById('ea-step');
+      var autoBtn  = document.getElementById('ea-auto');
+      var resetBtn = document.getElementById('ea-reset');
+      var fillA    = document.getElementById('ea-fill-a');
+      var fillB    = document.getElementById('ea-fill-b');
+      var valA     = document.getElementById('ea-val-a');
+      var valB     = document.getElementById('ea-val-b');
+      var remNote  = document.getElementById('ea-rem-note');
 
-    EXAMPLES.forEach(function (ex, i) {
-      var opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = ex.label;
-      selEl.appendChild(opt);
-    });
+      var ea = { a: 0, b: 0, done: false, timer: null, maxVal: 0 };
 
-    function typeset(el) {
-      if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
-    }
+      EXAMPLES.forEach(function (ex, i) {
+        var opt = document.createElement('option');
+        opt.value = i; opt.textContent = ex.label;
+        selEl.appendChild(opt);
+      });
 
-    function setBtns(done) {
-      stepBtn.disabled = done; stepBtn.style.opacity = done ? '0.4' : '1';
-      autoBtn.disabled = done; autoBtn.style.opacity = done ? '0.4' : '1';
-    }
-
-    function loadExample(idx) {
-      if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
-      var ex = EXAMPLES[idx];
-      ea.a = ex.a; ea.b = ex.b; ea.done = false;
-      stepsEl.innerHTML = '';
-      resEl.style.display = 'none';
-      pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
-      typeset(pairEl);
-      setBtns(false);
-    }
-
-    function doStep() {
-      if (ea.done) return;
-      var a = ea.a, b = ea.b;
-      var q = Math.floor(a / b);
-      var r = a % b;
-
-      var card = document.createElement('div');
-      card.className = 'ea-step-card';
-      card.style.opacity = '0';
-      card.style.transform = 'translateY(6px)';
-      card.innerHTML = '\\(' + a + ' = ' + q + ' \\cdot ' + b + ' + ' + r + '\\)' +
-        ' &nbsp;→&nbsp; ' +
-        '\\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
-      stepsEl.appendChild(card);
-
-      function fadeIn() {
-        card.style.transition = 'opacity 0.3s, transform 0.3s';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0)';
+      function updateBars(a, b) {
+        if (!fillA) return;
+        fillA.style.width = (a / ea.maxVal * 100).toFixed(1) + '%';
+        fillB.style.width = (b / ea.maxVal * 100).toFixed(1) + '%';
+        valA.textContent = a;
+        valB.textContent = b;
       }
 
-      if (window.MathJax && MathJax.typesetPromise) {
-        MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeIn); });
-      } else {
-        requestAnimationFrame(fadeIn);
+      function setBtns(done) {
+        stepBtn.disabled = done; stepBtn.style.opacity = done ? '0.4' : '1';
+        autoBtn.disabled = done; autoBtn.style.opacity = done ? '0.4' : '1';
       }
 
-      if (r === 0) {
-        ea.done = true;
-        setBtns(true);
+      function resetBarColor() {
+        if (fillA) fillA.style.background = '#334e7d';
+      }
+
+      function loadExample(idx) {
         if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
-        resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
-          (b === 1 ? ' — the numbers are <strong>coprime</strong>.' : '.');
-        resEl.style.display = 'block';
-        typeset(resEl);
-      } else {
-        ea.a = b; ea.b = r;
+        var ex = EXAMPLES[idx];
+        ea.a = ex.a; ea.b = ex.b; ea.done = false;
+        ea.maxVal = Math.max(ex.a, ex.b);
+        stepsEl.innerHTML = '';
+        resEl.style.display = 'none';
+        if (remNote) remNote.textContent = '';
+        resetBarColor();
+        updateBars(ea.a, ea.b);
         pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
         typeset(pairEl);
+        setBtns(false);
       }
-    }
 
-    stepBtn.addEventListener('click', doStep);
+      function doStep() {
+        if (ea.done) return;
+        var a = ea.a, b = ea.b;
+        var q = Math.floor(a / b);
+        var r = a % b;
 
-    autoBtn.addEventListener('click', function () {
-      if (ea.done) return;
-      autoBtn.disabled = true; autoBtn.style.opacity = '0.4';
-      stepBtn.disabled = true; stepBtn.style.opacity = '0.4';
-      ea.timer = setInterval(function () {
-        doStep();
-        if (ea.done) { clearInterval(ea.timer); ea.timer = null; }
-      }, 950);
-    });
+        var card = document.createElement('div');
+        card.className = 'ea-step-card';
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(6px)';
+        card.innerHTML = '\\(' + a + ' = ' + q + ' \\cdot ' + b + ' + ' + r + '\\)' +
+          ' &nbsp;→&nbsp; ' +
+          '\\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
+        stepsEl.appendChild(card);
 
-    resetBtn.addEventListener('click', function () { loadExample(parseInt(selEl.value)); });
-    selEl.addEventListener('change', function () { loadExample(parseInt(selEl.value)); });
+        function fadeIn() {
+          card.style.transition = 'opacity 0.3s, transform 0.3s';
+          card.style.opacity = '1'; card.style.transform = 'translateY(0)';
+        }
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeIn); });
+        } else { requestAnimationFrame(fadeIn); }
 
-    loadExample(0);
+        if (r === 0) {
+          ea.done = true;
+          setBtns(true);
+          if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
+          /* bars: a = gcd (green), b = 0 */
+          if (fillA) {
+            fillA.style.width = (b / ea.maxVal * 100).toFixed(1) + '%';
+            fillA.style.background = '#2e7d32';
+            fillB.style.width = '0%';
+            valA.textContent = b; valB.textContent = 0;
+            if (remNote) remNote.textContent = 'GCD = ' + b;
+          }
+          resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
+            (b === 1 ? ' — the numbers are <strong>coprime</strong>.' : '.');
+          resEl.style.display = 'block';
+          typeset(resEl);
+        } else {
+          ea.a = b; ea.b = r;
+          updateBars(ea.a, ea.b);
+          if (remNote) remNote.textContent = 'Remainder ' + r + ' → becomes new b';
+          pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+          typeset(pairEl);
+        }
+      }
+
+      stepBtn.addEventListener('click', doStep);
+      autoBtn.addEventListener('click', function () {
+        if (ea.done) return;
+        autoBtn.disabled = true; autoBtn.style.opacity = '0.4';
+        stepBtn.disabled = true; stepBtn.style.opacity = '0.4';
+        ea.timer = setInterval(function () {
+          doStep();
+          if (ea.done) { clearInterval(ea.timer); ea.timer = null; }
+        }, 950);
+      });
+      resetBtn.addEventListener('click', function () { loadExample(parseInt(selEl.value)); });
+      selEl.addEventListener('change',   function () { loadExample(parseInt(selEl.value)); });
+      loadExample(0);
+    })();
+
+    /* ── Inverse Existence Explorer ───────────────────────── */
+    (function () {
+      var invAEl      = document.getElementById('inv-a');
+      if (!invAEl) return;
+
+      var invNEl      = document.getElementById('inv-n');
+      var invCheck    = document.getElementById('inv-check');
+      var invNext     = document.getElementById('inv-next');
+      var invRun      = document.getElementById('inv-run');
+      var invClear    = document.getElementById('inv-clear');
+      var invGcdSteps = document.getElementById('inv-gcd-steps');
+      var invStatus   = document.getElementById('inv-status');
+      var invOrbitEl  = document.getElementById('inv-orbit');
+      var invResultEl = document.getElementById('inv-result');
+
+      var orb = { a: 0, n: 0, k: 0, done: false, timer: null, cells: [] };
+
+      function buildGcdLine(rawA, n) {
+        /* Returns a compact string showing each division step */
+        var parts = [];
+        var aa = rawA, bb = n;
+        if (aa < bb) { aa = n; bb = rawA; }
+        while (bb !== 0) {
+          var q = Math.floor(aa / bb), r = aa % bb;
+          parts.push(aa + ' = ' + q + '·' + bb + ' + ' + r);
+          aa = bb; bb = r;
+        }
+        return parts;
+      }
+
+      function buildOrbit() {
+        var rawA = parseInt(invAEl.value);
+        var n    = parseInt(invNEl.value);
+        if (isNaN(rawA) || isNaN(n) || rawA < 1 || n < 2 || n > 50) {
+          invStatus.innerHTML = '<span style="color:#c0392b">Please use a ≥ 1 and 2 ≤ n ≤ 50.</span>';
+          return;
+        }
+        var a = ((rawA % n) + n) % n;
+        if (a === 0) {
+          invStatus.innerHTML = '<span style="color:#c0392b">a is 0 mod n — choose a different value.</span>';
+          return;
+        }
+        if (orb.timer) { clearInterval(orb.timer); orb.timer = null; }
+
+        var g = gcdCalc(a, n);
+        var steps = buildGcdLine(a, n);
+
+        orb.a = a; orb.n = n; orb.k = 0; orb.done = false; orb.cells = [];
+
+        /* GCD computation display */
+        invGcdSteps.innerHTML = '<strong>Euclidean algorithm — gcd(' + rawA + ', ' + n + '):</strong><br>' +
+          steps.join(' &nbsp;→&nbsp; ') + ' &nbsp;→&nbsp; <strong>gcd = ' + g + '</strong>';
+        invGcdSteps.style.display = 'block';
+        typeset(invGcdSteps);
+
+        /* Build orbit grid */
+        invOrbitEl.innerHTML = '';
+        for (var i = 0; i < n; i++) {
+          var cell = document.createElement('div');
+          cell.className = 'inv-cell' + (i === 1 ? ' target' : '');
+          cell.innerHTML = '<span class="cell-num">' + i + '</span><span class="cell-k">&nbsp;</span>';
+          invOrbitEl.appendChild(cell);
+          orb.cells.push(cell);
+        }
+
+        invResultEl.style.display = 'none';
+        invResultEl.className = 'inv-result';
+
+        var existsMsg = g === 1
+          ? '<strong style="color:#2e7d32">✓ gcd = 1 — an inverse exists.</strong> Step through the multiples of ' + rawA + ' (mod ' + n + ') to find it. Cell&nbsp;1 is the target:'
+          : '<strong style="color:#e53935">✗ gcd = ' + g + ' — no inverse.</strong> The orbit of ' + rawA + ' (mod ' + n + ') only hits multiples of ' + g + ', never 1:';
+        invStatus.innerHTML = existsMsg;
+
+        invNext.disabled = false;
+        invRun.disabled = false;
+      }
+
+      function orbStep() {
+        if (orb.done) return;
+        orb.k++;
+        var val = (orb.a * orb.k) % orb.n;
+        var cell = orb.cells[val];
+
+        if (val === 1) {
+          /* Found the inverse */
+          cell.classList.remove('target');
+          cell.classList.add('inv-found');
+          cell.querySelector('.cell-k').textContent = '×' + orb.k;
+          invStatus.innerHTML =
+            '\\(' + orb.a + ' \\times ' + orb.k + ' = ' + (orb.a * orb.k) +
+            ' \\equiv 1 \\pmod{' + orb.n + '}\\) &nbsp; ✓';
+          typeset(invStatus);
+          invResultEl.className = 'inv-result found';
+          invResultEl.innerHTML =
+            orb.a + '<sup>−1</sup> ≡ <strong>' + orb.k + '</strong> (mod ' + orb.n + ')' +
+            ' &nbsp;|&nbsp; ' + orb.a + ' × ' + orb.k + ' = ' + (orb.a * orb.k) + ' ≡ 1';
+          invResultEl.style.display = 'block';
+          orb.done = true;
+          invNext.disabled = true; invRun.disabled = true;
+          if (orb.timer) { clearInterval(orb.timer); orb.timer = null; }
+        } else if (val === 0 || orb.k >= orb.n) {
+          /* Cycle closed — no inverse */
+          cell.classList.add('zero-hit');
+          cell.querySelector('.cell-k').textContent = '×' + orb.k;
+          invStatus.innerHTML =
+            '\\(' + orb.a + ' \\times ' + orb.k + ' \\equiv 0 \\pmod{' + orb.n + '}\\) — cycle closed, 1 was never reached';
+          typeset(invStatus);
+          invResultEl.className = 'inv-result none';
+          invResultEl.textContent =
+            'No inverse: the orbit cycles back to 0 without touching 1. gcd(' + orb.a + ', ' + orb.n + ') = ' + gcdCalc(orb.a, orb.n) + '.';
+          invResultEl.style.display = 'block';
+          orb.done = true;
+          invNext.disabled = true; invRun.disabled = true;
+          if (orb.timer) { clearInterval(orb.timer); orb.timer = null; }
+        } else {
+          cell.classList.add('hit');
+          cell.querySelector('.cell-k').textContent = '×' + orb.k;
+          invStatus.innerHTML =
+            '\\(' + orb.a + ' \\times ' + orb.k + ' = ' + (orb.a * orb.k) +
+            ' \\equiv ' + val + ' \\pmod{' + orb.n + '}\\)';
+          typeset(invStatus);
+        }
+      }
+
+      invCheck.addEventListener('click', function () {
+        if (orb.timer) { clearInterval(orb.timer); orb.timer = null; }
+        buildOrbit();
+      });
+      invNext.addEventListener('click', orbStep);
+      invRun.addEventListener('click', function () {
+        if (orb.done) return;
+        invNext.disabled = true; invRun.disabled = true;
+        orb.timer = setInterval(function () {
+          orbStep();
+          if (orb.done) { clearInterval(orb.timer); orb.timer = null; }
+        }, 400);
+      });
+      invClear.addEventListener('click', function () {
+        if (orb.timer) { clearInterval(orb.timer); orb.timer = null; }
+        invAEl.value = '7'; invNEl.value = '26';
+        invGcdSteps.style.display = 'none';
+        invOrbitEl.innerHTML = '';
+        invStatus.innerHTML = 'Enter values and press <strong>Check gcd</strong>.';
+        invResultEl.style.display = 'none';
+        invNext.disabled = true; invRun.disabled = true;
+        orb.k = 0; orb.done = false;
+      });
+    })();
+
   })();
   </script>
 </body>
