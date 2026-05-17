@@ -429,7 +429,7 @@
               <label for="taf-x-inp">Try \(x\) =</label>
               <input id="taf-x-inp" type="number" min="1" class="taf-x-input" style="width:58px;"
                 onkeydown="if(event.key==='Enter')tafManualTry();">
-              <button class="taf-btn" onclick="tafManualTry()">Try</button>
+              <button class="taf-btn" id="taf-try-btn" onclick="tafManualTry()">Try</button>
             </div>
             <div class="taf-ctrl-group">
               <button class="taf-btn outline" id="taf-auto-btn" onclick="tafToggleAuto()">Auto-search</button>
@@ -945,7 +945,7 @@
         if(hit){
           setNode(1,'#b8f0c4','#2e7d32');
           setStatus('<strong>✓ Found! &nbsp;'+a+'<sup>−1</sup> ≡ '+x+' (mod '+n+')</strong>','ok');
-          taf.done=true; if(cb)cb(true,false);
+          taf.done=true; setBtns(true); if(cb)cb(true,false);
         } else {
           if(res!==1) setNode(res,'#fde8e8','#ef9a9a');
           var tried={};
@@ -954,7 +954,7 @@
           for(var i=1;i<n;i++){if(!tried[i]){exh=false;break;}}
           if(exh){
             setStatus('<strong>✗ All values tried — '+a+' has no inverse mod '+n+'.</strong>','err');
-            taf.done=true; if(cb)cb(false,true);
+            taf.done=true; setBtns(true); if(cb)cb(false,true);
           } else {
             setStatus(a+'·'+x+' ≡ '+res+' (mod '+n+') — not 1, keep trying.','');
             if(cb)cb(false,false);
@@ -969,6 +969,14 @@
       taf.attempts.forEach(function(t){tried[t.x]=true;});
       for(var i=1;i<taf.n;i++){if(!tried[i])return i;}
       return null;
+    }
+
+    function setBtns(done){
+      var tb=document.getElementById('taf-try-btn');
+      var ab=document.getElementById('taf-auto-btn');
+      if(tb){tb.disabled=done;tb.style.opacity=done?'0.4':'1';}
+      if(ab&&done){ab.disabled=true;ab.style.opacity='0.4';}
+      if(ab&&!done){ab.disabled=false;ab.style.opacity='1';}
     }
 
     function stopAuto(){
@@ -990,9 +998,10 @@
       var prev=taf.a; sel.innerHTML='';
       for(var i=2;i<taf.n;i++){
         var o=document.createElement('option');
-        o.value=i; o.textContent=i; if(i===prev)o.selected=true;
-        sel.appendChild(o);
+        o.value=i; o.textContent=i; sel.appendChild(o);
       }
+      sel.value=String(prev);
+      if(!sel.value) sel.value=sel.options[0].value; // fallback if prev out of range
       taf.a=parseInt(sel.value);
     }
 
@@ -1019,12 +1028,13 @@
       stopAuto();
       if(taf.animId){cancelAnimationFrame(taf.animId);taf.animId=null;}
       taf.attempts=[]; taf.nColor={}; taf.done=false; taf.hAng=ang(0,taf.n);
-      buildRing();
+      buildRing(); setBtns(false);
       var l=document.getElementById('taf-log-entries'); if(l)l.innerHTML='';
-      setStatus('Pick <em>a</em> and try values of <em>x</em>.','');
+      setStatus('<em>a</em> = '+taf.a+', <em>n</em> = '+taf.n+
+        '. Try <em>x</em> = 1, 2, \u2026 to find '+taf.a+'<sup>\u22121</sup> mod '+taf.n+'.','');
     };
 
-    window.addEventListener('load',function(){ tafPopA(); buildRing(); });
+    window.addEventListener('load',function(){ tafPopA(); tafReset(); });
   })();
 
   /* Generate ruled print lines for each write-wrap */
