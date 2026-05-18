@@ -263,6 +263,163 @@
     }
     .bezout-no-inverse .bezout-result { color: #b71c1c; }
 
+    /* ── Parallel Decomposition Visualizer ─────────────────── */
+    .viz-panel {
+      margin-top: 20px;
+      background: #f5f7ff;
+      border: 1.5px solid #b8c8e8;
+      border-radius: 16px;
+      overflow: hidden;
+      animation: bezout-in 0.35s ease;
+    }
+
+    .viz-header {
+      background: #334e7d;
+      color: white;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 10px 18px;
+      letter-spacing: 0.02em;
+    }
+
+    .viz-col-heads {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      background: #e8eeff;
+      border-bottom: 1px solid #c7d2ea;
+    }
+
+    .viz-col-heads div {
+      padding: 7px 18px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #334e7d;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .viz-col-heads div + div {
+      border-left: 1px solid #c7d2ea;
+      color: #7a5210;
+    }
+
+    .viz-ingredient {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      padding: 12px 0;
+    }
+
+    .viz-ingredient + .viz-ingredient { border-top: 1px solid #dde3f0; }
+
+    .viz-val-side, .viz-t-side {
+      padding: 0 18px;
+    }
+    .viz-t-side { border-left: 1px solid #dde3f0; }
+
+    .viz-ingredient-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    .viz-label-n { color: #1f3763; }
+    .viz-label-b { color: #7a5210; }
+    .viz-label-r { color: #1b5e20; }
+    .viz-label-r-no { color: #b71c1c; }
+
+    .viz-blocks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      align-items: flex-start;
+      margin-bottom: 3px;
+    }
+
+    .viz-blk {
+      width: 11px;
+      height: 11px;
+      border-radius: 2px;
+      display: inline-block;
+    }
+    .viz-blk-gap { margin-left: 5px; }
+    .viz-blk-n  { background: #334e7d; }
+    .viz-blk-b  { background: #c9973a; }
+    .viz-blk-r  { background: #2e7d32; }
+    .viz-blk-r-no { background: #e57373; }
+    .viz-blk-zero { background: #d0d0d0; }
+
+    .viz-scale-note {
+      font-size: 0.72rem;
+      color: #aaa;
+    }
+
+    .viz-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .viz-chip {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .viz-chip-gap   { margin-left: 4px; }
+    .viz-chip-pos   { background: #334e7d; }
+    .viz-chip-neg   { background: transparent; border: 2px solid #c0392b; }
+    .viz-chip-more  { font-size: 0.75rem; color: #888; white-space: nowrap; }
+    .viz-chip-zero  { font-size: 0.82rem; color: #bbb; }
+
+    .viz-t-label {
+      font-size: 0.82rem;
+      color: #555;
+    }
+    .viz-t-calc {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #334e7d;
+      margin-top: 4px;
+    }
+    .viz-t-highlight { color: #2e7d32; font-size: 1rem; }
+    .viz-t-highlight-no { color: #b71c1c; font-size: 0.95rem; }
+
+    .viz-divider-row {
+      padding: 5px 18px;
+      background: #eef3ff;
+      border-top: 1px solid #dde3f0;
+      border-bottom: 1px solid #dde3f0;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #555;
+    }
+    .viz-divider-row .viz-t-side {
+      font-style: italic;
+      color: #7a5210;
+    }
+
+    .viz-aha-row {
+      padding: 13px 18px;
+      background: #eaf7ef;
+      border-top: 2px solid #4caf50;
+      font-size: 0.93rem;
+      font-weight: 600;
+      color: #1b5e20;
+      animation: bezout-in 0.4s ease;
+    }
+    .viz-aha-row-no {
+      background: #fff4f4;
+      border-top-color: #e57373;
+      color: #b71c1c;
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -848,6 +1005,20 @@
             </table>
           </div>
 
+          <div class="viz-panel no-print" id="viz-panel" style="display:none">
+            <div class="viz-header">Why t₃ = t₁ &minus; q&thinsp;&times;&thinsp;t₂ &mdash; same arithmetic, both columns</div>
+            <div class="viz-col-heads">
+              <div>Remainders (physical values)</div>
+              <div>Hidden a-copies (t-values)</div>
+            </div>
+            <div id="viz-row-n"  class="viz-ingredient"></div>
+            <div id="viz-div1"   class="viz-divider-row" style="display:none"></div>
+            <div id="viz-row-b"  class="viz-ingredient" style="display:none"></div>
+            <div id="viz-div2"   class="viz-divider-row" style="display:none"></div>
+            <div id="viz-row-r"  class="viz-ingredient" style="display:none"></div>
+            <div id="viz-aha"    style="display:none"></div>
+          </div>
+
           <div class="bezout-balance" id="bezout-balance" style="display:none">
             <div class="bezout-title"  id="bezout-title"></div>
             <div class="bezout-equation" id="bezout-equation"></div>
@@ -1284,6 +1455,9 @@
 
       tbodyEl.appendChild(tr);
 
+      /* Build parallel decomposition visualizer */
+      buildVizPanel(i, nVal, bVal, r, q, t1, t2, t3, isGcd, isZero);
+
       /* Flash the previous row to show where t₁ and t₂ came from */
       if (i > 0) {
         var prev = document.getElementById('eea-tr-' + (i - 1));
@@ -1293,6 +1467,151 @@
           prev.classList.add('eea-row-flash');
           setTimeout(function () { prev.classList.remove('eea-row-flash'); }, 600);
         }
+      }
+    }
+
+    /* ── Parallel decomposition visualizer ──────────────────── */
+    function buildVizPanel(i, nVal, bVal, rVal, q, t1, t2, t3, isGcd, isZero) {
+      var panelEl  = document.getElementById('viz-panel');
+      var rowNEl   = document.getElementById('viz-row-n');
+      var div1El   = document.getElementById('viz-div1');
+      var rowBEl   = document.getElementById('viz-row-b');
+      var div2El   = document.getElementById('viz-div2');
+      var rowREl   = document.getElementById('viz-row-r');
+      var ahaEl    = document.getElementById('viz-aha');
+      if (!panelEl) return;
+
+      panelEl.style.display = '';
+
+      var a = state.a;
+      var n = state.n;
+
+      /* ── Helpers ─────────────────────────────────── */
+
+      /* Build countable block HTML. Blocks group in 5s. */
+      function blocksHtml(val, cls) {
+        if (val <= 0) return '<span class="viz-scale-note">none</span>';
+        var MAX = 25;
+        var unit = val > MAX ? Math.ceil(val / MAX) : 1;
+        var count = Math.round(val / unit);
+        var html = '<div class="viz-blocks">';
+        for (var k = 0; k < count; k++) {
+          var gap = (k > 0 && k % 5 === 0) ? ' viz-blk-gap' : '';
+          html += '<span class="viz-blk ' + cls + gap + '"></span>';
+        }
+        html += '</div>';
+        if (unit > 1) html += '<div class="viz-scale-note">1 block = ' + unit + '</div>';
+        return html;
+      }
+
+      /* Build chip HTML for a t-value. Chips group in 5s. */
+      function chipsHtml(t) {
+        if (t === 0) return '<div class="viz-chips"><span class="viz-chip-zero">0</span></div>';
+        var abs = Math.abs(t);
+        var cls = t > 0 ? 'viz-chip-pos' : 'viz-chip-neg';
+        var MAX = 15;
+        var show = Math.min(abs, MAX);
+        var html = '<div class="viz-chips">';
+        for (var k = 0; k < show; k++) {
+          var gap = (k > 0 && k % 5 === 0) ? ' viz-chip-gap' : '';
+          html += '<span class="viz-chip ' + cls + gap + '"></span>';
+        }
+        if (abs > MAX) html += '<span class="viz-chip-more">+' + (abs - MAX) + '</span>';
+        html += '</div>';
+        return html;
+      }
+
+      /* Build one ingredient row's innerHTML */
+      function ingredientHtml(valLabel, valLabelCls, blocks, tLabel, chips, tCalc) {
+        return '<div class="viz-val-side">' +
+               '<div class="viz-ingredient-label ' + valLabelCls + '">' + valLabel + '</div>' +
+               blocks +
+               '</div>' +
+               '<div class="viz-t-side">' +
+               '<div class="viz-t-label">' + tLabel + '</div>' +
+               chips +
+               (tCalc ? '<div class="viz-t-calc">' + tCalc + '</div>' : '') +
+               '</div>';
+      }
+
+      /* ── Row N ───────────────────────────────────── */
+      rowNEl.innerHTML = ingredientHtml(
+        'n\u2009=\u2009' + nVal, 'viz-label-n',
+        blocksHtml(nVal, 'viz-blk-n'),
+        't\u2081\u2009=\u2009' + t1 + ' hidden a-copies',
+        chipsHtml(t1), null
+      );
+
+      /* ── Divider 1 ───────────────────────────────── */
+      div1El.style.display = '';
+      div1El.innerHTML =
+        '<div class="viz-val-side">\u2212\u2009' + q +
+        '\u00d7\u2009b\u2009=\u2009' + q + '\u00d7' + bVal + '</div>' +
+        '<div class="viz-t-side">\u21d2 subtract\u2009' + q + '\u00d7\u2009t\u2082</div>';
+
+      /* ── Row B ───────────────────────────────────── */
+      rowBEl.style.display = '';
+      rowBEl.innerHTML = ingredientHtml(
+        'b\u2009=\u2009' + bVal + (q > 1 ? '\u2009(\u00d7' + q + ')' : ''), 'viz-label-b',
+        blocksHtml(bVal, 'viz-blk-b'),
+        't\u2082\u2009=\u2009' + t2 + ' hidden a-copies',
+        chipsHtml(t2), null
+      );
+
+      /* ── Divider 2 ───────────────────────────────── */
+      div2El.style.display = '';
+      div2El.innerHTML =
+        '<div class="viz-val-side">= r\u2009(what remains)</div>' +
+        '<div class="viz-t-side">= t\u2083 (what remains)</div>';
+
+      /* ── Row R ───────────────────────────────────── */
+      rowREl.style.display = '';
+      if (isZero) {
+        rowREl.innerHTML = ingredientHtml(
+          'r\u2009=\u20090', 'viz-label-r-no',
+          '<div class="viz-scale-note" style="margin-top:4px">nothing left \u2014 algorithm stops here</div>',
+          't\u2083\u2009=\u2009' + t3,
+          chipsHtml(t3), null
+        );
+      } else {
+        var tCalcStr =
+          't\u2083 = ' + fmtT(t1) + ' \u2212 ' + q + '\u00d7' + fmtT(t2) +
+          ' = <span class="' + (isGcd && rVal === 1 ? 'viz-t-highlight' : '') + '">' +
+          fmtT(t3) + '</span>';
+        rowREl.innerHTML = ingredientHtml(
+          'r\u2009=\u2009' + rVal, isGcd ? 'viz-label-r' : 'viz-label-n',
+          blocksHtml(rVal, isGcd ? 'viz-blk-r' : 'viz-blk-n'),
+          't\u2083\u2009=\u2009' + t3 + ' hidden a-copies',
+          chipsHtml(t3), tCalcStr
+        );
+      }
+
+      /* ── AHA callout ─────────────────────────────── */
+      ahaEl.style.display = '';
+      if (isGcd && rVal === 1) {
+        var inv = ((t3 % n) + n) % n;
+        ahaEl.className = 'viz-aha-row';
+        ahaEl.innerHTML =
+          '\u2b50 r\u2009=\u20091 means <em>this one remainder is literally 1 unit</em> \u2014 and it contains ' +
+          '<strong>t\u2083\u2009=\u2009' + fmtT(t3) + '</strong> copies of a\u2009=\u2009' + a + '.' +
+          '<br>So: <strong>' + fmtT(t3) + '\u00d7' + a + '\u2009\u2261\u20091\u2009(mod\u2009' + n + ')</strong>, ' +
+          'therefore <strong>a\u207b\u00b9\u2009\u2261\u2009' + inv + '\u2009(mod\u2009' + n + ')</strong>.';
+      } else if (isZero) {
+        var g = state.rows[state.rows.length - 2].r;
+        ahaEl.className = 'viz-aha-row viz-aha-row-no';
+        ahaEl.innerHTML =
+          '\u274c r\u2009=\u20090 without ever reaching r\u2009=\u20091. ' +
+          'gcd(' + a + ',\u2009' + n + ')\u2009=\u2009' + g + '\u2009\u2260\u20091, ' +
+          'so ' + a + '\u207b\u00b9 mod ' + n + ' does not exist.';
+      } else {
+        ahaEl.className = 'viz-aha-row';
+        ahaEl.style.background = '#f5f7ff';
+        ahaEl.style.borderTopColor = '#c7d2ea';
+        ahaEl.style.color = '#334e7d';
+        var next = totalDisplayRows() - (i + 1);
+        ahaEl.innerHTML =
+          'r\u2009=\u2009' + rVal + ' is not 1 yet \u2014 ' + next + ' more step' +
+          (next !== 1 ? 's' : '') + ' to go. Keep stepping.';
       }
     }
 
@@ -1360,6 +1679,8 @@
       state.cursor = 0;
       tbodyEl.innerHTML = '';
       balEl.style.display = 'none';
+      var vizEl = document.getElementById('viz-panel');
+      if (vizEl) vizEl.style.display = 'none';
       stepBtn.disabled = false;
       runBtn.disabled  = false;
       var k = totalDisplayRows();
