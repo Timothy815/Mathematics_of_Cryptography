@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 7: The Extended Euclidean Algorithm | Mathematics of Cryptography</title>
+  <title>Practice 7: The Extended Euclidean Algorithm | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,765 +35,614 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      color: #7d5a00;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #f5e8b0; }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      background: #fffcf2;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+    details.quick-ref summary {
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.quick-ref summary::before { content: '▶'; font-size: 0.75rem; transition: transform 0.15s; }
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      padding: 6px 22px 22px;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .division-table,
-    .back-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .division-table th, .division-table td,
-    .back-table th, .back-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .division-table th,
-    .back-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .division-table th,
-    .division-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .extra-large-work-space { min-height: 230px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
+    .qr-card {
+      border: 1px solid #e8dbbf;
+      border-radius: 12px;
       background: #ffffff;
-      break-inside: avoid;
+      padding: 14px 16px;
+    }
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #7d5a00;
+    }
+    .qr-card p, .qr-card li { font-size: 0.88rem; margin: 4px 0; }
+    .qr-card ol { padding-left: 1.2em; }
+    .qr-card table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .qr-card td, .qr-card th { border: 1px solid #e8dbbf; padding: 5px 8px; }
+    .qr-card th { background: #fff8e6; color: #7d5a00; font-weight: 700; }
+
+    /* Drill cards */
+    .drill-section { margin: 0 0 40px; }
+    .drill-section h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #334e7d;
+      border-bottom: 2px solid #e8dbbf;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .drill-card {
+      background: #fffcf2;
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .drill-q {
+      font-size: 1.1rem;
+      min-height: 2.4em;
+      margin-bottom: 6px;
+      line-height: 1.6;
+    }
+    .drill-hint {
+      font-size: 0.86rem;
+      color: #7d5a00;
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+    .drill-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .drill-input {
+      padding: 9px 14px;
+      border: 2px solid #c9b97a;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #ffffff;
+      color: #16243d;
+      width: 140px;
+      transition: border-color 0.15s;
+    }
+    .drill-input:focus { outline: none; border-color: #7d5a00; }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+
+    /* YES/NO buttons for Drill 3 */
+    .drill-yn-btn {
+      padding: 9px 22px;
+      border-radius: 8px;
+      border: 2px solid #c9b97a;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: #ffffff;
+      color: #334e7d;
+      transition: all 0.15s;
+    }
+    .drill-yn-btn:hover { background: #fff8e6; border-color: #7d5a00; }
+    .drill-yn-btn.selected-yes { background: #edf7ed; border-color: #2e7d32; color: #1b5e20; }
+    .drill-yn-btn.selected-no  { background: #fdeaea; border-color: #c62828; color: #7f0000; }
+
+    .drill-btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .drill-btn:hover { opacity: 0.85; }
+    .drill-btn-check { background: #334e7d; color: #ffffff; }
+    .drill-btn-next  { background: #e8dbbf; color: #7d5a00; }
+    .drill-fb {
+      min-height: 2em;
+      margin-top: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .drill-fb.ok  { color: #2e7d32; }
+    .drill-fb.err { color: #c62828; }
+    .drill-streak { font-size: 0.8rem; color: #7d5a00; margin-top: 10px; font-weight: 600; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #fff8e6; border-color: #e8dbbf; color: #7d5a00; }
+    .nav-secondary:hover { background: #f5e8b0; }
+
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .drill-card { padding: 18px; }
     }
 
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
-
+    @page { margin: 0.75in; }
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .division-table th,
-      .back-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .workbook-nav, .no-print, .drill-section { display: none !important; }
+      .quick-ref { display: block !important; border: 1px solid #ccc; }
+      .quick-ref summary { display: none; }
+      .qr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+      h1 { font-size: 20pt; }
+      h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
+      a { color: #000; text-decoration: none; }
+      .bottom-nav { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 7</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 7</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>The Extended Euclidean Algorithm</h1>
       <p class="subtitle">
-        Printable practice for Bézout coefficients, back-substitution, modular inverses, and affine decryption.
+        Four interactive drills: reading Bézout form, converting negative coefficients, verifying inverses, and finding inverses from scratch.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Drill navigation">
+        <a class="nav-link" href="#d1-sec">Drill 1 — Read Bézout</a>
+        <a class="nav-link" href="#d2-sec">Drill 2 — Negative Coeff</a>
+        <a class="nav-link" href="#d3-sec">Drill 3 — Verify Inverse</a>
+        <a class="nav-link" href="#d4-sec">Drill 4 — Find Inverse</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print Reference Card</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Work in two phases. First, run the Euclidean algorithm forward to find the greatest common divisor. Second, walk backward through the remainder equations to express that greatest common divisor as a combination of the original two numbers.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Core ideas</div>
-            <table class="data-table">
-              <thead>
-                <tr><th>Idea</th><th>Meaning</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Bézout coefficients</td><td>The integers \(s\) and \(t\) in \(\gcd(a,b)=sa+tb\).</td></tr>
-                <tr><td>Back-substitution</td><td>Rewriting remainders backward until only the original numbers remain.</td></tr>
-                <tr><td>Inverse coefficient</td><td>For \(a^{-1}\pmod n\), use the coefficient of \(a\) in \(1=sa+tn\).</td></tr>
-                <tr><td>Negative coefficient</td><td>Add the modulus until it becomes a standard positive residue.</td></tr>
-              </tbody>
+      <!-- ── Quick Reference ── -->
+      <details class="quick-ref no-print">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <h4>Bézout's Identity</h4>
+            <p>For any \(a, n\) with \(\gcd(a,n)=1\), there exist integers \(s, t\) such that:</p>
+            <p style="text-align:center;">\(1 = s\cdot a + t\cdot n\)</p>
+            <p>Then \(a^{-1}\equiv s\pmod n\). (The coefficient of \(a\), not \(n\!)\)</p>
+          </div>
+          <div class="qr-card">
+            <h4>Worked Example — 15⁻¹ mod 26</h4>
+            <p>\(26=1\cdot15+11\)</p>
+            <p>\(15=1\cdot11+4\)</p>
+            <p>\(11=2\cdot4+3\)</p>
+            <p>\(4=1\cdot3+1\)</p>
+            <p>Back-sub: \(1=7\cdot15-4\cdot26\)</p>
+            <p>\(15^{-1}\equiv 7\pmod{26}\)</p>
+          </div>
+          <div class="qr-card">
+            <h4>Negative Coefficient</h4>
+            <p>If back-substitution gives a negative \(s\), add \(n\):</p>
+            <p style="text-align:center;">\(s+n\equiv s\pmod n\)</p>
+            <p>Example: \(s=-6,\;n=151\)</p>
+            <p>\(-6+151=145\), so \(25^{-1}\equiv145\pmod{151}\)</p>
+          </div>
+          <div class="qr-card">
+            <h4>Verification</h4>
+            <p>Always check: \(a\times\text{inv}\equiv1\pmod n\)</p>
+            <table>
+              <tr><th>\(a\)</th><th>inv</th><th>\(n\)</th><th>Check</th></tr>
+              <tr><td>15</td><td>7</td><td>26</td><td>\(105=4\cdot26+1\) ✓</td></tr>
+              <tr><td>25</td><td>145</td><td>151</td><td>\(3625=24\cdot151+1\) ✓</td></tr>
+              <tr><td>35</td><td>11</td><td>64</td><td>\(385=6\cdot64+1\) ✓</td></tr>
             </table>
           </div>
+        </div>
+      </details>
 
-          <div class="box quick-reference-box">
-            <div class="box-title">Core formulas</div>
-            <div class="math-display">
-              \[
-                \gcd(a,b)=sa+tb
-              \]
-              \[
-                1=sa+tn
-              \]
-              \[
-                1\equiv sa\pmod n
-              \]
-              \[
-                a^{-1}\equiv s\pmod n
-              \]
-            </div>
+      <!-- ── Drill 1: Read Bézout Form ── -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Read Bézout Form</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint">Identify the coefficient of \(a\) in the equation. If it is negative, add \(n\) first.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-inp" type="text" placeholder="Inverse" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d1-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d1-next">Next →</button>
           </div>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
       </section>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What does Bézout's identity say?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What are Bézout coefficients?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. Why does \(1=sa+tn\) help us find \(a^{-1}\pmod n\)?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. If an inverse coefficient is negative, what should you do?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
+      <!-- ── Drill 2: Negative Coefficient Conversion ── -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Negative Coefficient Conversion</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint">Add the modulus to the negative coefficient to get the standard positive residue.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-inp" type="text" placeholder="Positive residue" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d2-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d2-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
         </div>
       </section>
 
-      <section id="forward-steps">
-        <h2>Part B: Forward Euclidean steps</h2>
-        <p>Run the Euclidean algorithm first. Do not back-substitute yet.</p>
-
-        <div class="problem">
-          <div class="problem-title">B1. Run the Euclidean algorithm for \(26\) and \(15\).</div>
-          <table class="division-table">
-            <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
-            <tbody>
-              <tr><td>1</td><td></td><td></td></tr>
-              <tr><td>2</td><td></td><td></td></tr>
-              <tr><td>3</td><td></td><td></td></tr>
-              <tr><td>4</td><td></td><td></td></tr>
-              <tr><td>5</td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <p>Greatest common divisor:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">B2. Run the Euclidean algorithm for \(151\) and \(25\).</div>
-          <table class="division-table">
-            <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
-            <tbody>
-              <tr><td>1</td><td></td><td></td></tr>
-              <tr><td>2</td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <p>Greatest common divisor:</p>
-          <span class="blank-line"></span>
+      <!-- ── Drill 3: Verify the Inverse ── -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Verify the Inverse</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint">Compute \(a \times x \bmod n\). If the result is 1, the answer is YES.</div>
+          <div class="drill-row" id="d3-yn-row">
+            <button class="drill-yn-btn" id="d3-yes">YES</button>
+            <button class="drill-yn-btn" id="d3-no">NO</button>
+            <button class="drill-btn drill-btn-next" id="d3-next" style="margin-left:10px;">Next →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
         </div>
       </section>
 
-      <section id="back-substitution-guided">
-        <h2>Part C: Guided back-substitution</h2>
-
-        <div class="problem">
-          <div class="problem-title">C1. Complete the back-substitution for \(15^{-1}\pmod{26}\).</div>
-          <p>Useful remainder equations:</p>
-          <div class="math-display">
-            \[
-              11=26-15
-            \]
-            \[
-              4=15-11
-            \]
-            \[
-              3=11-2\cdot4
-            \]
-            \[
-              1=4-3
-            \]
+      <!-- ── Drill 4: Find the Inverse ── -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Find the Inverse</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint">Use the extended Euclidean algorithm. These examples need only 1–3 steps.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-inp" type="text" placeholder="Inverse" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d4-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d4-next">Next →</button>
           </div>
-          <p>Start with \(1=4-3\). Fill in the missing steps.</p>
-          <table class="back-table">
-            <thead><tr><th>Step</th><th>Expression</th></tr></thead>
-            <tbody>
-              <tr><td>1</td><td>\(1=4-3\)</td></tr>
-              <tr><td>2</td><td>\(1=4-(11-2\cdot4)=\)</td></tr>
-              <tr><td>3</td><td>Substitute \(4=15-11\):</td></tr>
-              <tr><td>4</td><td>Substitute \(11=26-15\):</td></tr>
-              <tr><td>5</td><td>Final form \(1=s\cdot15+t\cdot26\):</td></tr>
-            </tbody>
-          </table>
-          <p>Inverse of 15 modulo 26:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Complete the short back-substitution for \(25^{-1}\pmod{151}\).</div>
-          <p>Euclidean step:</p>
-          <div class="math-display">
-            \[
-              151=6\cdot25+1
-            \]
-          </div>
-          <p>Rewrite this equation to isolate 1:</p>
-          <span class="blank-line"></span>
-          <p>Coefficient of 25:</p>
-          <span class="blank-line"></span>
-          <p>Standard positive inverse modulo 151:</p>
-          <span class="blank-line"></span>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
         </div>
       </section>
 
-      <section id="full-inverses">
-        <h2>Part D: Find modular inverses</h2>
-        <p>Use the extended Euclidean algorithm. Show forward steps and backward steps.</p>
-
-        <div class="problem">
-          <div class="problem-title">D1. Find \(7^{-1}\pmod{12}\).</div>
-          <div class="work-space extra-large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D2. Find \(11^{-1}\pmod{26}\).</div>
-          <div class="work-space extra-large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D3. Find \(35^{-1}\pmod{64}\).</div>
-          <div class="work-space extra-large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="negative-residues">
-        <h2>Part E: Negative coefficient conversion</h2>
-        <p>Convert each negative coefficient to its standard positive residue.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Negative coefficient</th>
-              <th>Modulus</th>
-              <th>Standard positive residue</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>E1</td><td>\(-6\)</td><td>151</td><td></td></tr>
-            <tr><td>E2</td><td>\(-7\)</td><td>26</td><td></td></tr>
-            <tr><td>E3</td><td>\(-5\)</td><td>12</td><td></td></tr>
-            <tr><td>E4</td><td>\(-17\)</td><td>64</td><td></td></tr>
-            <tr><td>E5</td><td>\(-1\)</td><td>26</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="read-coefficients">
-        <h2>Part F: Read the inverse from Bézout form</h2>
-        <p>For each equation, identify the modular inverse.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Bézout equation</th>
-              <th>Question</th>
-              <th>Inverse</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>F1</td><td>\(1=7\cdot15-4\cdot26\)</td><td>Find \(15^{-1}\pmod{26}\)</td><td></td></tr>
-            <tr><td>F2</td><td>\(1=-6\cdot25+1\cdot151\)</td><td>Find \(25^{-1}\pmod{151}\)</td><td></td></tr>
-            <tr><td>F3</td><td>\(1=11\cdot35-6\cdot64\)</td><td>Find \(35^{-1}\pmod{64}\)</td><td></td></tr>
-            <tr><td>F4</td><td>\(1=3\cdot26-7\cdot11\)</td><td>Find \(11^{-1}\pmod{26}\)</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="non-invertible">
-        <h2>Part G: Non-invertible cases</h2>
-
-        <div class="problem">
-          <div class="problem-title">G1. Explain why \(13^{-1}\pmod{26}\) does not exist.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Explain why the extended Euclidean algorithm cannot produce an inverse when the greatest common divisor is not 1.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="affine-decryption">
-        <h2>Part H: Affine cipher decryption</h2>
-        <p>Use:</p>
-        <div class="math-display">
-          \[
-            P\equiv a^{-1}(C-b)\pmod{26}
-          \]
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H1. Decrypt \(C=13\) from \(C\equiv15P+8\pmod{26}\). Use \(15^{-1}\equiv7\pmod{26}\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\):</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Decrypt \(C=20\) from \(C\equiv11P+2\pmod{26}\). Use \(11^{-1}\equiv19\pmod{26}\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\):</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="challenge">
-        <h2>Part I: Challenge problem</h2>
-        <div class="box challenge-box">
-          <div class="box-title">Stretch the concept</div>
-          <p>
-            This one connects the method to RSA-style inverse finding, but with tiny numbers.
-          </p>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">I1. Find \(17^{-1}\pmod{3120}\).</div>
-          <p>This is a classic small RSA-style inverse example. Show your Euclidean steps and back-substitution.</p>
-          <div class="work-space extra-large-work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>The extended Euclidean algorithm finds Bézout coefficients.</td><td></td></tr>
-            <tr><td>If \(1=sa+tn\), then \(s\) is an inverse of \(a\) modulo \(n\).</td><td></td></tr>
-            <tr><td>The coefficient of \(n\) gives \(a^{-1}\pmod n\).</td><td></td></tr>
-            <tr><td>Negative inverse coefficients can be converted by adding the modulus.</td><td></td></tr>
-            <tr><td>If \(\gcd(a,n)\neq1\), then \(a^{-1}\pmod n\) does not exist.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            In inverse problems, always read the coefficient of the number being inverted, then reduce that coefficient modulo the modulus.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> Bézout's identity says the greatest common divisor of two integers can be written as an integer combination of those numbers: \(\gcd(a,b)=sa+tb\).</p>
-          <p><strong>A2.</strong> Bézout coefficients are the integers \(s\) and \(t\) that multiply the original numbers in that combination.</p>
-          <p><strong>A3.</strong> If \(1=sa+tn\), then modulo \(n\), the \(tn\) term disappears, leaving \(1\equiv sa\pmod n\). So \(s\) is the inverse of \(a\) modulo \(n\).</p>
-          <p><strong>A4.</strong> Add the modulus until the coefficient lands in the standard range \(0\) through \(n-1\).</p>
-        </div>
-
-        <h3>Part B: Forward Euclidean steps</h3>
-        <div class="answer-step">
-          <p><strong>B1.</strong></p>
-          <div class="math-display">
-            \[
-              26=1\cdot15+11
-            \]
-            \[
-              15=1\cdot11+4
-            \]
-            \[
-              11=2\cdot4+3
-            \]
-            \[
-              4=1\cdot3+1
-            \]
-            \[
-              3=3\cdot1+0
-            \]
-          </div>
-          <p>\(\gcd(26,15)=1\).</p>
-
-          <p><strong>B2.</strong></p>
-          <div class="math-display">
-            \[
-              151=6\cdot25+1
-            \]
-            \[
-              25=25\cdot1+0
-            \]
-          </div>
-          <p>\(\gcd(151,25)=1\).</p>
-        </div>
-
-        <h3>Part C: Guided back-substitution</h3>
-        <div class="answer-step">
-          <p><strong>C1.</strong></p>
-          <div class="math-display">
-            \[
-              1=4-3
-            \]
-            \[
-              1=4-(11-2\cdot4)=3\cdot4-11
-            \]
-            \[
-              1=3(15-11)-11=3\cdot15-4\cdot11
-            \]
-            \[
-              1=3\cdot15-4(26-15)=7\cdot15-4\cdot26
-            \]
-          </div>
-          <p>So \(15^{-1}\equiv7\pmod{26}\).</p>
-
-          <p><strong>C2.</strong></p>
-          <div class="math-display">
-            \[
-              151=6\cdot25+1
-            \]
-            \[
-              1=151-6\cdot25
-            \]
-          </div>
-          <p>The coefficient of 25 is \(-6\). Since \(-6\equiv145\pmod{151}\), \(25^{-1}\equiv145\pmod{151}\).</p>
-        </div>
-
-        <h3>Part D: Find modular inverses</h3>
-        <div class="answer-step">
-          <p><strong>D1.</strong></p>
-          <div class="math-display">
-            \[
-              12=1\cdot7+5
-            \]
-            \[
-              7=1\cdot5+2
-            \]
-            \[
-              5=2\cdot2+1
-            \]
-            \[
-              1=5-2\cdot2
-            \]
-            \[
-              1=5-2(7-5)=3\cdot5-2\cdot7
-            \]
-            \[
-              1=3(12-7)-2\cdot7=3\cdot12-5\cdot7
-            \]
-          </div>
-          <p>The coefficient of 7 is \(-5\), and \(-5\equiv7\pmod{12}\). So \(7^{-1}\equiv7\pmod{12}\).</p>
-
-          <p><strong>D2.</strong></p>
-          <div class="math-display">
-            \[
-              26=2\cdot11+4
-            \]
-            \[
-              11=2\cdot4+3
-            \]
-            \[
-              4=1\cdot3+1
-            \]
-            \[
-              1=4-3
-            \]
-            \[
-              1=4-(11-2\cdot4)=3\cdot4-11
-            \]
-            \[
-              1=3(26-2\cdot11)-11=3\cdot26-7\cdot11
-            \]
-          </div>
-          <p>The coefficient of 11 is \(-7\), and \(-7\equiv19\pmod{26}\). So \(11^{-1}\equiv19\pmod{26}\).</p>
-
-          <p><strong>D3.</strong></p>
-          <div class="math-display">
-            \[
-              64=1\cdot35+29
-            \]
-            \[
-              35=1\cdot29+6
-            \]
-            \[
-              29=4\cdot6+5
-            \]
-            \[
-              6=1\cdot5+1
-            \]
-            \[
-              1=6-5
-            \]
-            \[
-              1=6-(29-4\cdot6)=5\cdot6-29
-            \]
-            \[
-              1=5(35-29)-29=5\cdot35-6\cdot29
-            \]
-            \[
-              1=5\cdot35-6(64-35)=11\cdot35-6\cdot64
-            \]
-          </div>
-          <p>So \(35^{-1}\equiv11\pmod{64}\).</p>
-        </div>
-
-        <h3>Part E: Negative coefficient conversion</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Conversion</th><th>Standard residue</th></tr></thead>
-          <tbody>
-            <tr><td>E1</td><td>\(-6+151=145\)</td><td>145</td></tr>
-            <tr><td>E2</td><td>\(-7+26=19\)</td><td>19</td></tr>
-            <tr><td>E3</td><td>\(-5+12=7\)</td><td>7</td></tr>
-            <tr><td>E4</td><td>\(-17+64=47\)</td><td>47</td></tr>
-            <tr><td>E5</td><td>\(-1+26=25\)</td><td>25</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part F: Read the inverse from Bézout form</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Inverse</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>F1</td><td>7</td><td>The coefficient of 15 is 7.</td></tr>
-            <tr><td>F2</td><td>145</td><td>The coefficient of 25 is \(-6\), and \(-6\equiv145\pmod{151}\).</td></tr>
-            <tr><td>F3</td><td>11</td><td>The coefficient of 35 is 11.</td></tr>
-            <tr><td>F4</td><td>19</td><td>The coefficient of 11 is \(-7\), and \(-7\equiv19\pmod{26}\).</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part G: Non-invertible cases</h3>
-        <div class="answer-step">
-          <p><strong>G1 sample answer.</strong> \(13^{-1}\pmod{26}\) does not exist because \(\gcd(13,26)=13\), not 1. Since 13 and 26 are not coprime, 13 has no modular inverse modulo 26.</p>
-          <p><strong>G2 sample answer.</strong> To find an inverse, we need to rewrite 1 as \(sa+tn\). If the greatest common divisor is not 1, the extended Euclidean algorithm rewrites that larger greatest common divisor instead, so it cannot produce an inverse.</p>
-        </div>
-
-        <h3>Part H: Affine cipher decryption</h3>
-        <div class="answer-step">
-          <p><strong>H1.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv7(13-8)=7\cdot5=35\equiv9\pmod{26}
-            \]
-          </div>
-          <p><strong>H2.</strong></p>
-          <div class="math-display">
-            \[
-              P\equiv19(20-2)=19\cdot18=342\equiv4\pmod{26}
-            \]
-          </div>
-        </div>
-
-        <h3>Part I: Challenge problem</h3>
-        <div class="answer-step">
-          <p><strong>I1.</strong></p>
-          <div class="math-display">
-            \[
-              3120=183\cdot17+9
-            \]
-            \[
-              17=1\cdot9+8
-            \]
-            \[
-              9=1\cdot8+1
-            \]
-          </div>
-          <p>Back-substitute:</p>
-          <div class="math-display">
-            \[
-              1=9-8
-            \]
-            \[
-              1=9-(17-9)=2\cdot9-17
-            \]
-            \[
-              1=2(3120-183\cdot17)-17
-            \]
-            \[
-              1=2\cdot3120-367\cdot17
-            \]
-          </div>
-          <p>The coefficient of 17 is \(-367\). Convert it modulo 3120:</p>
-          <div class="math-display">
-            \[
-              -367+3120=2753
-            \]
-          </div>
-          <p>So \(17^{-1}\equiv2753\pmod{3120}\).</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>The extended Euclidean algorithm finds Bézout coefficients.</td><td>True</td><td>That is its main purpose.</td></tr>
-            <tr><td>If \(1=sa+tn\), then \(s\) is an inverse of \(a\) modulo \(n\).</td><td>True</td><td>Modulo \(n\), the \(tn\) term vanishes.</td></tr>
-            <tr><td>The coefficient of \(n\) gives \(a^{-1}\pmod n\).</td><td>False</td><td>Use the coefficient of \(a\).</td></tr>
-            <tr><td>Negative inverse coefficients can be converted by adding the modulus.</td><td>True</td><td>This gives an equivalent standard residue.</td></tr>
-            <tr><td>If \(\gcd(a,n)\neq1\), then \(a^{-1}\pmod n\) does not exist.</td><td>True</td><td>Only coprime values are invertible modulo \(n\).</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 7: The Extended Euclidean Algorithm.
-      </p>
-
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_08_bytes_as_polynomials_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_06_euclidean_algorithm_workbook_html.html" class="nav-item">← Practice 6</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_08_bytes_as_polynomials_workbook_html.html" class="nav-item">Practice 8 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_07_extended_euclidean_algorithm_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_07_extended_euclidean_algorithm_html.html" class="nav-item nav-secondary">Tutorial 7</a>
+          <a href="worksheet_07_extended_euclidean_algorithm_html.html" class="nav-item nav-secondary">Worksheet</a>
         </div>
-    </nav>
+      </nav>
+
     </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    /* ── Data pools ───────────────────────────────────────────────── */
+
+    /* Drill 1: Read Bézout form — identify a⁻¹ mod n */
+    var BEZOUT_POOL = [
+      { eq: '1 = 7\\cdot15 - 4\\cdot26',    a:15,  n:26,  s:7,   inv:7,   neg:false },
+      { eq: '1 = -6\\cdot25 + 1\\cdot151',   a:25,  n:151, s:-6,  inv:145, neg:true  },
+      { eq: '1 = 11\\cdot35 - 6\\cdot64',    a:35,  n:64,  s:11,  inv:11,  neg:false },
+      { eq: '1 = -7\\cdot11 + 3\\cdot26',    a:11,  n:26,  s:-7,  inv:19,  neg:true  },
+      { eq: '1 = -5\\cdot7 + 3\\cdot12',     a:7,   n:12,  s:-5,  inv:7,   neg:true  },
+      { eq: '1 = -2\\cdot3 + 1\\cdot7',      a:3,   n:7,   s:-2,  inv:5,   neg:true  },
+      { eq: '1 = 3\\cdot5 - 2\\cdot7',       a:5,   n:7,   s:3,   inv:3,   neg:false },
+      { eq: '1 = 2\\cdot5 - 1\\cdot9',       a:5,   n:9,   s:2,   inv:2,   neg:false },
+      { eq: '1 = 4\\cdot7 - 3\\cdot9',       a:7,   n:9,   s:4,   inv:4,   neg:false },
+      { eq: '1 = -3\\cdot3 + 1\\cdot10',     a:3,   n:10,  s:-3,  inv:7,   neg:true  },
+      { eq: '1 = 3\\cdot7 - 2\\cdot10',      a:7,   n:10,  s:3,   inv:3,   neg:false },
+      { eq: '1 = 5\\cdot21 - 4\\cdot26',     a:21,  n:26,  s:5,   inv:5,   neg:false },
+    ];
+
+    /* Drill 2: Negative coefficient conversion */
+    var NEG_POOL = [
+      { s:-6,  n:151, ans:145 },
+      { s:-7,  n:26,  ans:19  },
+      { s:-5,  n:12,  ans:7   },
+      { s:-17, n:64,  ans:47  },
+      { s:-1,  n:26,  ans:25  },
+      { s:-2,  n:7,   ans:5   },
+      { s:-3,  n:10,  ans:7   },
+      { s:-4,  n:9,   ans:5   },
+      { s:-11, n:26,  ans:15  },
+      { s:-3,  n:7,   ans:4   },
+      { s:-8,  n:151, ans:143 },
+      { s:-2,  n:9,   ans:7   },
+      { s:-6,  n:64,  ans:58  },
+      { s:-13, n:64,  ans:51  },
+    ];
+
+    /* Drill 3: Verify the inverse */
+    var VERIFY_POOL = [
+      { a:15,  n:26,  x:7,   ok:true  },
+      { a:25,  n:151, x:145, ok:true  },
+      { a:35,  n:64,  x:11,  ok:true  },
+      { a:11,  n:26,  x:19,  ok:true  },
+      { a:7,   n:12,  x:7,   ok:true  },
+      { a:7,   n:12,  x:5,   ok:false },
+      { a:15,  n:26,  x:4,   ok:false },
+      { a:5,   n:7,   x:3,   ok:true  },
+      { a:3,   n:7,   x:5,   ok:true  },
+      { a:7,   n:9,   x:4,   ok:true  },
+      { a:5,   n:9,   x:2,   ok:true  },
+      { a:3,   n:10,  x:7,   ok:true  },
+      { a:11,  n:26,  x:7,   ok:false },
+      { a:21,  n:26,  x:5,   ok:true  },
+      { a:7,   n:10,  x:3,   ok:true  },
+    ];
+
+    /* Drill 4: Find the inverse */
+    var FIND_POOL = [
+      { a:25,  n:151, inv:145, hint:'\\(151=6\\cdot25+1\\Rightarrow1=151-6\\cdot25\\). Coeff of 25 is \\(-6\\equiv145\\pmod{151}\\).' },
+      { a:3,   n:7,   inv:5,   hint:'\\(7=2\\cdot3+1\\Rightarrow1=7-2\\cdot3\\). Coeff of 3 is \\(-2\\equiv5\\pmod{7}\\).' },
+      { a:4,   n:7,   inv:2,   hint:'\\(7=1\\cdot4+3\\), \\(4=1\\cdot3+1\\Rightarrow1=4-3=4-(7-4)=2\\cdot4-7\\). So \\(4^{-1}\\equiv2\\).' },
+      { a:2,   n:7,   inv:4,   hint:'\\(7=3\\cdot2+1\\Rightarrow1=7-3\\cdot2\\). Coeff of 2 is \\(-3\\equiv4\\pmod{7}\\).' },
+      { a:5,   n:9,   inv:2,   hint:'\\(9=1\\cdot5+4\\), \\(5=1\\cdot4+1\\Rightarrow1=5-4=5-(9-5)=2\\cdot5-9\\). So \\(5^{-1}\\equiv2\\).' },
+      { a:7,   n:9,   inv:4,   hint:'\\(9=1\\cdot7+2\\), \\(7=3\\cdot2+1\\Rightarrow1=7-3\\cdot2=7-3(9-7)=4\\cdot7-3\\cdot9\\). So \\(7^{-1}\\equiv4\\).' },
+      { a:3,   n:10,  inv:7,   hint:'\\(10=3\\cdot3+1\\Rightarrow1=10-3\\cdot3\\). Coeff of 3 is \\(-3\\equiv7\\pmod{10}\\).' },
+      { a:7,   n:10,  inv:3,   hint:'\\(10=1\\cdot7+3\\), \\(7=2\\cdot3+1\\Rightarrow1=7-2\\cdot3=7-2(10-7)=3\\cdot7-2\\cdot10\\). So \\(7^{-1}\\equiv3\\).' },
+      { a:5,   n:7,   inv:3,   hint:'\\(7=1\\cdot5+2\\), \\(5=2\\cdot2+1\\Rightarrow1=5-2\\cdot2=5-2(7-5)=3\\cdot5-2\\cdot7\\). So \\(5^{-1}\\equiv3\\).' },
+      { a:5,   n:26,  inv:21,  hint:'\\(26=5\\cdot5+1\\Rightarrow1=26-5\\cdot5\\). Coeff of 5 is \\(-5\\equiv21\\pmod{26}\\).' },
+      { a:7,   n:12,  inv:7,   hint:'\\(12=1\\cdot7+5\\), \\(7=1\\cdot5+2\\), \\(5=2\\cdot2+1\\Rightarrow1=5-2\\cdot2=3\\cdot5-2\\cdot7=3\\cdot12-5\\cdot7\\). Coeff \\(-5\\equiv7\\pmod{12}\\).' },
+      { a:11,  n:26,  inv:19,  hint:'\\(26=2\\cdot11+4\\), \\(11=2\\cdot4+3\\), \\(4=1\\cdot3+1\\Rightarrow1=3\\cdot26-7\\cdot11\\). Coeff \\(-7\\equiv19\\pmod{26}\\).' },
+      { a:21,  n:26,  inv:5,   hint:'\\(26=1\\cdot21+5\\), \\(21=4\\cdot5+1\\Rightarrow1=21-4\\cdot5=21-4(26-21)=5\\cdot21-4\\cdot26\\). So \\(21^{-1}\\equiv5\\).' },
+      { a:15,  n:26,  inv:7,   hint:'Back-sub gives \\(1=7\\cdot15-4\\cdot26\\). So \\(15^{-1}\\equiv7\\pmod{26}\\).' },
+      { a:35,  n:64,  inv:11,  hint:'Back-sub gives \\(1=11\\cdot35-6\\cdot64\\). So \\(35^{-1}\\equiv11\\pmod{64}\\).' },
+    ];
+
+    /* ── makeDrill ─────────────────────────────────────────────────── */
+    function makeDrill(cfg) {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl    = document.getElementById(cfg.id + '-q');
+      var fb     = document.getElementById(cfg.id + '-fb');
+      var strk   = document.getElementById(cfg.id + '-streak');
+      var btnNxt = document.getElementById(cfg.id + '-next');
+
+      /* Text-input drills have inp + check button */
+      var inp    = document.getElementById(cfg.id + '-inp');
+      var btnChk = document.getElementById(cfg.id + '-check');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+
+      function load() {
+        state   = cfg.gen();
+        checked = false;
+        if (inp) {
+          inp.value = '';
+          inp.className = 'drill-input';
+        }
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = state.q;
+        typeset(qEl);
+        if (inp) inp.focus({ preventScroll: true });
+        if (cfg.onLoad) cfg.onLoad(state);
+      }
+
+      function check(userAns) {
+        var ok = cfg.check(userAns, state);
+        checked = true;
+        total++;
+        if (ok) {
+          correct++;
+          if (inp) inp.className = 'drill-input correct';
+          fb.innerHTML = '&#10003; ' + state.ok;
+          fb.className = 'drill-fb ok';
+        } else {
+          if (inp) inp.className = 'drill-input wrong';
+          fb.innerHTML = '&#10007; ' + state.err;
+          fb.className = 'drill-fb err';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      if (btnChk) {
+        btnChk.addEventListener('click', function () { if (checked) load(); else check(inp.value.trim()); });
+      }
+      btnNxt.addEventListener('click', load);
+      if (inp) {
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { if (checked) load(); else check(inp.value.trim()); }
+        });
+      }
+
+      load();
+      return { load: load, check: check };
+    }
+
+    /* ── Drill 1: Read Bézout Form ─────────────────────────────────── */
+    makeDrill({
+      id: 'd1',
+      gen: function () {
+        var p = pick(BEZOUT_POOL);
+        var negHint = p.neg
+          ? ' The coefficient of \\(' + p.a + '\\) is \\(' + p.s + '\\). Since it is negative, add \\(' + p.n + '\\): \\(' + p.s + '+' + p.n + '=' + p.inv + '\\).'
+          : ' The coefficient of \\(' + p.a + '\\) is \\(' + p.s + '\\), already positive.';
+        return {
+          q:   'Given: \\[' + p.eq + '\\] Find \\(' + p.a + '^{-1}\\pmod{' + p.n + '}\\).',
+          ans: String(p.inv),
+          ok:  '\\(' + p.a + '^{-1}\\equiv' + p.inv + '\\pmod{' + p.n + '}\\).' + negHint,
+          err: 'Read the coefficient of \\(' + p.a + '\\) in the equation.' + negHint + ' Answer: \\(' + p.inv + '\\).'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+    /* ── Drill 2: Negative Coefficient Conversion ──────────────────── */
+    makeDrill({
+      id: 'd2',
+      gen: function () {
+        var p = pick(NEG_POOL);
+        return {
+          q:   'Convert: \\(s = ' + p.s + '\\) modulo \\(n = ' + p.n + '\\). What is the standard positive residue?',
+          ans: String(p.ans),
+          ok:  '\\(' + p.s + ' + ' + p.n + ' = ' + p.ans + '\\). That is the standard positive residue mod \\(' + p.n + '\\).',
+          err: 'Add the modulus: \\(' + p.s + ' + ' + p.n + ' = ' + p.ans + '\\).'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+    /* ── Drill 3: Verify the Inverse (YES/NO buttons) ──────────────── */
+    (function () {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+      var chosen  = null; /* 'YES' or 'NO' */
+
+      var qEl   = document.getElementById('d3-q');
+      var fb    = document.getElementById('d3-fb');
+      var strk  = document.getElementById('d3-streak');
+      var yesBtn = document.getElementById('d3-yes');
+      var noBtn  = document.getElementById('d3-no');
+      var nxtBtn = document.getElementById('d3-next');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+
+      function load() {
+        var p = pick(VERIFY_POOL);
+        state = p;
+        checked = false;
+        chosen = null;
+        yesBtn.className = 'drill-yn-btn';
+        noBtn.className  = 'drill-yn-btn';
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = 'Is \\(' + p.x + '\\) the inverse of \\(' + p.a + '\\) modulo \\(' + p.n + '\\)?';
+        typeset(qEl);
+      }
+
+      function check(answer) {
+        if (checked) return;
+        chosen = answer;
+        var product = state.a * state.x;
+        var residue = product % state.n;
+        var correct_ans = state.ok ? 'YES' : 'NO';
+        var isRight = answer === correct_ans;
+        checked = true;
+        total++;
+        if (isRight) correct++;
+
+        var verdict = residue === 1
+          ? '&#10003; equals 1 — valid inverse'
+          : '&#10007; not 1 — not the inverse';
+        var msg = 'Compute \\(' + state.a + '\\times' + state.x + '=' + product + '\\). \\('
+          + product + '\\bmod' + state.n + '=' + residue + '\\). ' + verdict + '.';
+
+        if (isRight) {
+          fb.innerHTML = '&#10003; Correct! ' + msg;
+          fb.className = 'drill-fb ok';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-yes';
+        } else {
+          fb.innerHTML = '&#10007; ' + msg;
+          fb.className = 'drill-fb err';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-no';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      yesBtn.addEventListener('click', function () { if (!checked) check('YES'); else load(); });
+      noBtn.addEventListener('click',  function () { if (!checked) check('NO');  else load(); });
+      nxtBtn.addEventListener('click', load);
+
+      load();
+    })();
+
+    /* ── Drill 4: Find the Inverse ─────────────────────────────────── */
+    makeDrill({
+      id: 'd4',
+      gen: function () {
+        var p = pick(FIND_POOL);
+        return {
+          q:   'Find \\(' + p.a + '^{-1}\\pmod{' + p.n + '}\\).',
+          ans: String(p.inv),
+          ok:  '\\(' + p.a + '^{-1}\\equiv' + p.inv + '\\pmod{' + p.n + '}\\). ' + p.hint,
+          err: 'The answer is \\(' + p.inv + '\\). ' + p.hint
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+  })();
+  </script>
 </body>
 </html>

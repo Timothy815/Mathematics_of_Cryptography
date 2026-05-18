@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 7: The Extended Euclidean Algorithm | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #eef3ff;
+      border: 1px solid var(--border);
+      color: #1f3763;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #dce6ff; }
+
+    .directions-box  { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box  { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box   { background: #f7f8fb; border-color: #ccd4e2; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .field-label { font-weight: 750; color: #333333; }
+    .field-input {
+      width: 100%; border: none; border-bottom: 1.5px solid #333;
+      background: transparent; font-size: 1rem; padding: 4px 2px;
+      color: #16243d; font-family: inherit;
+    }
+    .field-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .division-table,
+    .back-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .division-table th, .division-table td,
+    .back-table th, .back-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+    .data-table th, .work-table th, .answer-table th,
+    .division-table th, .back-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+    .division-table th, .division-table td { text-align: center; vertical-align: middle; }
+
+    /* Written-response textarea */
+    .written-area {
+      width: 100%; padding: 8px 12px; margin-top: 6px;
+      border: 2px solid #c7d2ea; border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f4fb; box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
+
+    /* Ans-input for short answers */
+    .ans-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1rem; font-weight: 700;
+      padding: 6px 10px; border: 2px solid #c7d2ea; border-radius: 8px;
+      background: #f0f4fb; color: #16243d; min-width: 80px;
+    }
+    .ans-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 110px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+    .large-work-space { min-height: 160px; }
+    .extra-large-work-space { min-height: 220px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+    .problem-title { font-weight: 900; color: #2a3a6b; margin-bottom: 8px; }
+
+    .answer-key { border-top: 4px double #334e7d; padding-top: 20px; }
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #eef3ff; border-color: var(--border); color: #1f3763; }
+    .nav-secondary:hover { background: #dce6ff; }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @page { margin: 0.75in; }
+    @media print {
+      body { background: #ffffff; color: #000000; font-size: 10.5pt; line-height: 1.35; }
+      .page { max-width: none; padding: 0; }
+      header.workbook-header, main {
+        box-shadow: none; border: none; border-radius: 0;
+        padding: 0; background: #ffffff;
+      }
+      .workbook-nav, .no-print { display: none !important; }
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+      .box, .problem, table, .work-space { break-inside: avoid; }
+      .box, .problem, .work-space { background: #ffffff !important; border-color: #999999; }
+      .data-table th, .work-table th, .answer-table th,
+      .division-table th, .back-table th {
+        background: #eeeeee !important;
+      }
+      a { color: #000000; text-decoration: none; }
+      .ans-input {
+        border: none !important; border-bottom: 1.5px solid #444 !important;
+        border-radius: 0 !important; background: transparent !important;
+        color: #000 !important;
+      }
+      .field-input { border-bottom: 1.5px solid #444 !important; }
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
+      .bottom-nav { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 7</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>The Extended Euclidean Algorithm</h1>
+      <p class="subtitle">
+        Printable practice for Bézout coefficients, back-substitution, modular inverses, negative residue conversion, and affine decryption.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a class="nav-link" href="#student-info">Name/Date</a>
+        <a class="nav-link" href="#warm-up">Part A</a>
+        <a class="nav-link" href="#forward-steps">Part B</a>
+        <a class="nav-link" href="#back-substitution">Part C</a>
+        <a class="nav-link" href="#full-inverses">Part D</a>
+        <a class="nav-link" href="#negative-residues">Part E</a>
+        <a class="nav-link" href="#read-coefficients">Part F</a>
+        <a class="nav-link" href="#affine-decryption">Part G</a>
+        <a class="nav-link" href="#challenge">Part H</a>
+        <a class="nav-link" href="#answer-key">Answers</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <input class="field-input" type="text" placeholder="Your name" autocomplete="off" />
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <input class="field-input" type="text" placeholder="Date" autocomplete="off" />
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this worksheet</div>
+          <p>
+            Work in two phases. First, run the Euclidean algorithm forward to find the greatest common divisor. Second, walk backward through the remainder equations, substituting one equation into the next, until only the original two numbers remain. The coefficient of the number you are inverting is the modular inverse — adjust it to a positive residue if it is negative by adding the modulus.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Core ideas</div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Idea</th><th>Meaning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Bézout coefficients</td><td>Integers \(s,t\) such that \(\gcd(a,b)=sa+tb\).</td></tr>
+                <tr><td>Back-substitution</td><td>Rewrite each remainder in terms of earlier ones, working upward.</td></tr>
+                <tr><td>Inverse coefficient</td><td>In \(1=sa+tn\), the coefficient \(s\) satisfies \(1\equiv sa\pmod n\).</td></tr>
+                <tr><td>Negative coefficient</td><td>If \(s\) is negative, add the modulus until it is in \([0,n)\).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="box quick-reference-box">
+            <div class="box-title">Core formulas</div>
+            <div class="math-display">
+              \[
+                \gcd(a,b)=sa+tb
+              \]
+              \[
+                1=sa+tn\implies a^{-1}\equiv s\pmod n
+              \]
+              \[
+                \text{If }s<0:\;s+n\equiv s\pmod n
+              \]
+              \[
+                P\equiv a^{-1}(C-b)\pmod{26}
+              \]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART A -->
+      <section id="warm-up">
+        <h2>Part A: Warm-up vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. What does Bézout's identity say?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What are Bézout coefficients?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. Why does \(1=sa+tn\) help us find \(a^{-1}\pmod n\)?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. If an inverse coefficient is negative, what should you do to convert it?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART B -->
+      <section id="forward-steps">
+        <h2>Part B: Forward Euclidean steps</h2>
+        <p>Run the Euclidean algorithm to find the greatest common divisor. Do not back-substitute yet.</p>
+
+        <div class="problem">
+          <div class="problem-title">B1. Run the Euclidean algorithm for \(26\) and \(15\).</div>
+          <table class="division-table">
+            <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
+            <tbody>
+              <tr><td>1</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>2</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>3</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>4</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>5</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            </tbody>
+          </table>
+          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B2. Run the Euclidean algorithm for \(151\) and \(25\).</div>
+          <table class="division-table">
+            <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
+            <tbody>
+              <tr><td>1</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>2</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            </tbody>
+          </table>
+          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">B3. Run the Euclidean algorithm for \(64\) and \(35\).</div>
+          <table class="division-table">
+            <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
+            <tbody>
+              <tr><td>1</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>2</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>3</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <tr><td>4</td>
+                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+            </tbody>
+          </table>
+          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- PART C -->
+      <section id="back-substitution">
+        <h2>Part C: Guided back-substitution</h2>
+
+        <div class="problem">
+          <div class="problem-title">C1. Complete the back-substitution for \(15^{-1}\pmod{26}\).</div>
+          <p>Useful remainder equations (from Part B1):</p>
+          <div class="math-display">
+            \[11=26-15\quad 4=15-11\quad 3=11-2\cdot4\quad 1=4-3\]
+          </div>
+          <p>Start with \(1=4-3\). Complete each row.</p>
+          <table class="back-table">
+            <thead><tr><th>Step</th><th>Expression</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>\(1=4-3\)</td></tr>
+              <tr><td>2</td><td>Substitute \(3=11-2\cdot4\):</td></tr>
+              <tr><td>3</td><td>Substitute \(4=15-11\):</td></tr>
+              <tr><td>4</td><td>Substitute \(11=26-15\):</td></tr>
+              <tr><td>5</td><td>Final form \(1=s\cdot15+t\cdot26\):</td></tr>
+            </tbody>
+          </table>
+          <p>Inverse of 15 modulo 26: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Complete the one-step back-substitution for \(25^{-1}\pmod{151}\).</div>
+          <p>Euclidean step: \(151=6\cdot25+1\). Rearrange to isolate the 1:</p>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="1 = …"></textarea>
+            <div class="write-lines"></div>
+          </div>
+          <p>Coefficient of 25: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Is it negative? If so, convert: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Standard positive inverse modulo 151: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- PART D -->
+      <section id="full-inverses">
+        <h2>Part D: Find modular inverses</h2>
+        <p>Use the full extended Euclidean algorithm. Show forward steps and back-substitution.</p>
+
+        <div class="problem">
+          <div class="problem-title">D1. Find \(7^{-1}\pmod{12}\).</div>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. Find \(11^{-1}\pmod{26}\).</div>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. Find \(35^{-1}\pmod{64}\).</div>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- PART E -->
+      <section id="negative-residues">
+        <h2>Part E: Negative coefficient conversion</h2>
+        <p>Convert each negative coefficient to its standard positive residue by adding the modulus.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Negative coefficient \(s\)</th>
+              <th>Modulus \(n\)</th>
+              <th>Conversion \(s+n\)</th>
+              <th>Standard positive residue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>E1</td><td>\(-6\)</td><td>151</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E2</td><td>\(-7\)</td><td>26</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E3</td><td>\(-5\)</td><td>12</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E4</td><td>\(-17\)</td><td>64</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E5</td><td>\(-1\)</td><td>26</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART F -->
+      <section id="read-coefficients">
+        <h2>Part F: Read the inverse from Bézout form</h2>
+        <p>For each equation, identify which coefficient gives the modular inverse. Convert to a positive residue if needed.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Bézout equation</th>
+              <th>Question</th>
+              <th>Raw coefficient</th>
+              <th>Positive inverse</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>F1</td><td>\(1=7\cdot15-4\cdot26\)</td>
+              <td>Find \(15^{-1}\pmod{26}\)</td>
+              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>F2</td><td>\(1=-6\cdot25+1\cdot151\)</td>
+              <td>Find \(25^{-1}\pmod{151}\)</td>
+              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>F3</td><td>\(1=11\cdot35-6\cdot64\)</td>
+              <td>Find \(35^{-1}\pmod{64}\)</td>
+              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>F4</td><td>\(1=3\cdot26-7\cdot11\)</td>
+              <td>Find \(11^{-1}\pmod{26}\)</td>
+              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>F5</td><td>\(1=5\cdot21-4\cdot26\)</td>
+              <td>Find \(21^{-1}\pmod{26}\)</td>
+              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART G -->
+      <section id="affine-decryption">
+        <h2>Part G: Affine cipher decryption</h2>
+        <p>Use the decryption formula:</p>
+        <div class="math-display">
+          \[
+            P\equiv a^{-1}(C-b)\pmod{26}
+          \]
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G1. Decrypt \(C=13\) from \(C\equiv15P+8\pmod{26}\). Use \(15^{-1}\equiv7\pmod{26}\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Plaintext number \(P\): <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Decrypt \(C=20\) from \(C\equiv11P+2\pmod{26}\). Use \(11^{-1}\equiv19\pmod{26}\).</div>
+          <div class="work-space large-work-space"></div>
+          <p>Plaintext number \(P\): <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. Explain why \(13^{-1}\pmod{26}\) does not exist, and what happens if you try to use \(a=13\) in an affine cipher.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART H -->
+      <section id="challenge">
+        <h2>Part H: Challenge problem</h2>
+        <div class="box challenge-box">
+          <div class="box-title">Stretch the concept</div>
+          <p>This problem connects the method to RSA-style inverse finding, using manageable numbers.</p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H1. Find \(17^{-1}\pmod{3120}\).</div>
+          <p>This is a classic small RSA-style inverse example. Show your Euclidean steps and full back-substitution.</p>
+          <div class="work-space extra-large-work-space"></div>
+          <p>Answer: <input class="ans-input" type="text" style="width:100px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- ANSWER KEY -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer key with work steps</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Note for self-study</div>
+          <p>
+            Always read the coefficient of the number you are inverting — not the coefficient of the modulus. If that coefficient is negative, add the modulus once. Check your answer: multiply \(a\) by the inverse and confirm the product is \(\equiv1\pmod n\).
+          </p>
+        </div>
+
+        <h3>Part A: Warm-up vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> Bézout's identity says that for any integers \(a\) and \(b\), there exist integers \(s\) and \(t\) such that \(\gcd(a,b)=sa+tb\). The greatest common divisor is always expressible as an integer combination of the two numbers.</p>
+          <p><strong>A2.</strong> Bézout coefficients are the integers \(s\) and \(t\) that satisfy \(\gcd(a,b)=sa+tb\).</p>
+          <p><strong>A3.</strong> If \(1=sa+tn\), then reducing modulo \(n\) makes the \(tn\) term vanish (since \(n\equiv0\pmod n\)), leaving \(1\equiv sa\pmod n\). So \(s\) is the inverse of \(a\) modulo \(n\).</p>
+          <p><strong>A4.</strong> Add the modulus \(n\) to the negative coefficient until the result falls in \([0,n)\). One addition is usually enough.</p>
+        </div>
+
+        <h3>Part B: Forward Euclidean steps</h3>
+        <div class="answer-step">
+          <p><strong>B1.</strong> \(\gcd(26,15)\):</p>
+          <div class="math-display">
+            \[26=1\cdot15+11\quad 15=1\cdot11+4\quad 11=2\cdot4+3\quad 4=1\cdot3+1\quad 3=3\cdot1+0\]
+          </div>
+          <p>\(\gcd(26,15)=1\).</p>
+
+          <p><strong>B2.</strong> \(\gcd(151,25)\):</p>
+          <div class="math-display">
+            \[151=6\cdot25+1\quad 25=25\cdot1+0\]
+          </div>
+          <p>\(\gcd(151,25)=1\).</p>
+
+          <p><strong>B3.</strong> \(\gcd(64,35)\):</p>
+          <div class="math-display">
+            \[64=1\cdot35+29\quad 35=1\cdot29+6\quad 29=4\cdot6+5\quad 6=1\cdot5+1\quad 5=5\cdot1+0\]
+          </div>
+          <p>\(\gcd(64,35)=1\).</p>
+        </div>
+
+        <h3>Part C: Guided back-substitution</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong></p>
+          <div class="math-display">
+            \[1=4-3\]
+            \[1=4-(11-2\cdot4)=3\cdot4-11\]
+            \[1=3(15-11)-11=3\cdot15-4\cdot11\]
+            \[1=3\cdot15-4(26-15)=7\cdot15-4\cdot26\]
+          </div>
+          <p>So \(15^{-1}\equiv7\pmod{26}\).</p>
+
+          <p><strong>C2.</strong> Rearranging \(151=6\cdot25+1\): \(1=151-6\cdot25\). Coefficient of 25 is \(-6\). Since \(-6+151=145\), we get \(25^{-1}\equiv145\pmod{151}\).</p>
+        </div>
+
+        <h3>Part D: Find modular inverses</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> \(12=1\cdot7+5\), \(7=1\cdot5+2\), \(5=2\cdot2+1\).</p>
+          <div class="math-display">
+            \[1=5-2\cdot2=5-2(7-5)=3\cdot5-2\cdot7=3(12-7)-2\cdot7=3\cdot12-5\cdot7\]
+          </div>
+          <p>Coefficient of 7 is \(-5\). \(-5+12=7\). So \(7^{-1}\equiv7\pmod{12}\).</p>
+
+          <p><strong>D2.</strong> \(26=2\cdot11+4\), \(11=2\cdot4+3\), \(4=1\cdot3+1\).</p>
+          <div class="math-display">
+            \[1=4-3=4-(11-2\cdot4)=3\cdot4-11=3(26-2\cdot11)-11=3\cdot26-7\cdot11\]
+          </div>
+          <p>Coefficient of 11 is \(-7\). \(-7+26=19\). So \(11^{-1}\equiv19\pmod{26}\).</p>
+
+          <p><strong>D3.</strong> \(64=1\cdot35+29\), \(35=1\cdot29+6\), \(29=4\cdot6+5\), \(6=1\cdot5+1\).</p>
+          <div class="math-display">
+            \[1=6-5=6-(29-4\cdot6)=5\cdot6-29=5(35-29)-29=5\cdot35-6\cdot29\]
+            \[1=5\cdot35-6(64-35)=11\cdot35-6\cdot64\]
+          </div>
+          <p>Coefficient of 35 is \(11\). So \(35^{-1}\equiv11\pmod{64}\).</p>
+        </div>
+
+        <h3>Part E: Negative coefficient conversion</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Conversion</th><th>Standard residue</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td>\(-6+151=145\)</td><td>145</td></tr>
+            <tr><td>E2</td><td>\(-7+26=19\)</td><td>19</td></tr>
+            <tr><td>E3</td><td>\(-5+12=7\)</td><td>7</td></tr>
+            <tr><td>E4</td><td>\(-17+64=47\)</td><td>47</td></tr>
+            <tr><td>E5</td><td>\(-1+26=25\)</td><td>25</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Read the inverse from Bézout form</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Raw coefficient</th><th>Positive inverse</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr><td>F1</td><td>7</td><td>7</td><td>Coefficient of 15 is 7. Already positive.</td></tr>
+            <tr><td>F2</td><td>\(-6\)</td><td>145</td><td>Coefficient of 25 is \(-6\). \(-6+151=145\).</td></tr>
+            <tr><td>F3</td><td>11</td><td>11</td><td>Coefficient of 35 is 11. Already positive.</td></tr>
+            <tr><td>F4</td><td>\(-7\)</td><td>19</td><td>Coefficient of 11 is \(-7\). \(-7+26=19\).</td></tr>
+            <tr><td>F5</td><td>5</td><td>5</td><td>Coefficient of 21 is 5. Already positive.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part G: Affine cipher decryption</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> \(P\equiv7(13-8)=7\cdot5=35\equiv9\pmod{26}\).</p>
+          <p><strong>G2.</strong> \(P\equiv19(20-2)=19\cdot18=342\equiv4\pmod{26}\). (342 = 13·26 + 4.)</p>
+          <p><strong>G3 sample answer.</strong> \(\gcd(13,26)=13\neq1\), so 13 has no inverse modulo 26. Every output of \(13P\bmod26\) is a multiple of 13, so only 0 and 13 can appear — the cipher cannot encrypt all 26 letters, making it impossible to recover a unique plaintext from a ciphertext.</p>
+        </div>
+
+        <h3>Part H: Challenge problem</h3>
+        <div class="answer-step">
+          <p><strong>H1.</strong> Forward steps: \(3120=183\cdot17+9\), \(17=1\cdot9+8\), \(9=1\cdot8+1\).</p>
+          <p>Back-substitution:</p>
+          <div class="math-display">
+            \[1=9-8=9-(17-9)=2\cdot9-17=2(3120-183\cdot17)-17=2\cdot3120-367\cdot17\]
+          </div>
+          <p>Coefficient of 17 is \(-367\). \(-367+3120=2753\). So \(17^{-1}\equiv2753\pmod{3120}\).</p>
+          <p>Check: \(17\times2753=46801=15\times3120+1\). \(\checkmark\)</p>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography worksheet page. Paired with Tutorial 7: The Extended Euclidean Algorithm.
+      </p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_06_euclidean_algorithm_html.html" class="nav-item">← Practice 6</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="worksheet_08_bytes_as_polynomials_html.html" class="nav-item">Practice 8 →</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_07_extended_euclidean_algorithm_html.html" class="nav-item nav-secondary">Tutorial 7</a>
+          <a href="tutorial_07_extended_euclidean_algorithm_workbook_html.html" class="nav-item nav-secondary">Practice 7</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <script>
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 3;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
+  </script>
+</body>
+</html>
