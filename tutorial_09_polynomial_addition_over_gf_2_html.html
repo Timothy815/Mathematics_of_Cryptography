@@ -106,6 +106,151 @@
       font-weight: 800;
     }
 
+    /* ── Polynomial Addition Explorer ─────────────────────────────── */
+    .pa-widget {
+      background: #ffffff;
+      border: 1px solid #c7d2ea;
+      border-radius: var(--radius);
+      padding: 24px 26px 20px;
+      margin: 22px 0;
+    }
+    .pa-widget-title {
+      font-weight: 800;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #334e7d;
+      margin-bottom: 18px;
+    }
+    .pa-grid {
+      display: grid;
+      grid-template-columns: 90px repeat(8, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
+    .pa-col-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #334e7d;
+      text-align: center;
+      padding: 4px 0 2px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+    }
+    .pa-row-label {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #334e7d;
+      display: flex;
+      align-items: center;
+      padding-right: 8px;
+    }
+    .pa-cell {
+      border: 2px solid #c7d2ea;
+      border-radius: 10px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 900;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.12s, border-color 0.12s;
+      background: #f5f7fb;
+      color: #334e7d;
+    }
+    .pa-cell:hover { background: #e4eaf7; border-color: #8fa3d4; }
+    .pa-cell.on { background: #334e7d; border-color: #1f3763; color: #ffffff; }
+    .pa-result-cell {
+      border: 2px solid transparent;
+      border-radius: 10px;
+      min-height: 52px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      transition: background 0.15s;
+    }
+    .pa-result-cell.cancel  { background: #fde8e8; border-color: #e8a0a0; color: #9b1c1c; }
+    .pa-result-cell.survive { background: #e8f5ec; border-color: #a0d4b0; color: #1b5e20; }
+    .pa-result-cell.absent  { background: #f5f7fb; border-color: #d8dde8; color: #8894aa; }
+    .pa-result-cell .pa-sum-bits {
+      font-size: 0.72rem;
+      font-weight: 700;
+      opacity: 0.7;
+      margin-top: 2px;
+    }
+    .pa-poly-display {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 6px 10px;
+      margin-top: 14px;
+      font-size: 0.9rem;
+    }
+    .pa-poly-label { font-weight: 800; color: #334e7d; padding-top: 2px; }
+    .pa-poly-val   { font-family: "Cascadia Code", "Consolas", monospace; color: #16243d; padding-top: 2px; }
+    .pa-poly-val.result-row { font-weight: 800; color: #1b5e20; }
+    .pa-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .pa-btn {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid #c7d2ea;
+      background: #eef3ff;
+      color: #334e7d;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .pa-btn:hover { background: #d4e0f7; }
+    .pa-btn.reset { background: #fff3e0; border-color: #e8c97a; color: #7d5a00; }
+    .pa-btn.reset:hover { background: #ffe0a0; }
+    .pa-hex-row {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .pa-hex-label { font-size: 0.82rem; font-weight: 700; color: #334e7d; }
+    .pa-hex-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border: 2px solid #c7d2ea;
+      border-radius: 8px;
+      background: #f5f7fb;
+      color: #16243d;
+      width: 72px;
+    }
+    .pa-hex-input:focus { outline: none; border-color: #334e7d; background: #fff; }
+    .pa-legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+    .pa-legend-item { display: flex; align-items: center; gap: 5px; }
+    .pa-legend-dot {
+      width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;
+    }
+    .pa-legend-dot.cancel  { background: #fde8e8; border: 1.5px solid #e8a0a0; }
+    .pa-legend-dot.survive { background: #e8f5ec; border: 1.5px solid #a0d4b0; }
+    .pa-legend-dot.absent  { background: #f5f7fb; border: 1.5px solid #d8dde8; }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -280,6 +425,54 @@
           <p>
             Addition over \(\mathrm{GF}(2)\) means add the coefficients and reduce the result modulo 2. For bits, this is exactly XOR.
           </p>
+        </div>
+      </section>
+
+      <!-- ── Interactive Explorer ──────────────────────────────────── -->
+      <section id="explorer" class="no-print">
+        <h2>Explorer: watch terms cancel live</h2>
+        <p>
+          Click any bit cell in row A or row B to toggle it. The result row updates instantly, showing which terms <span style="color:#9b1c1c;font-weight:800;">cancel</span> (both rows have a 1 — they add to 0) and which <span style="color:#1b5e20;font-weight:800;">survive</span> (only one row has a 1). Try setting the same byte in both rows to see everything cancel.
+        </p>
+
+        <div class="pa-widget" id="pa-widget">
+          <div class="pa-widget-title">Polynomial Addition over GF(2) — Interactive Visualiser</div>
+
+          <!-- Hex inputs -->
+          <div class="pa-hex-row">
+            <span class="pa-hex-label">A =</span>
+            <input class="pa-hex-input" id="pa-hex-a" maxlength="4" placeholder="0x57" />
+            <span class="pa-hex-label">B =</span>
+            <input class="pa-hex-input" id="pa-hex-b" maxlength="4" placeholder="0x83" />
+            <span style="font-size:0.8rem;color:#7d5a00;">← type hex or click bits below</span>
+          </div>
+
+          <!-- Bit grid -->
+          <div class="pa-grid" id="pa-grid">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Legend -->
+          <div class="pa-legend">
+            <div class="pa-legend-item"><div class="pa-legend-dot cancel"></div> <span style="color:#9b1c1c;">1+1=0 cancel</span></div>
+            <div class="pa-legend-item"><div class="pa-legend-dot survive"></div> <span style="color:#1b5e20;">1+0=1 survive</span></div>
+            <div class="pa-legend-item"><div class="pa-legend-dot absent"></div> <span style="color:#8894aa;">0+0=0 absent</span></div>
+          </div>
+
+          <!-- Polynomial display -->
+          <div class="pa-poly-display" id="pa-poly-display">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Preset buttons -->
+          <div class="pa-controls">
+            <span style="font-size:0.8rem;font-weight:700;color:#334e7d;align-self:center;">Presets:</span>
+            <button class="pa-btn" onclick="paSetPreset(0x57,0x83)">0x57 + 0x83</button>
+            <button class="pa-btn" onclick="paSetPreset(0x1B,0x03)">0x1B + 0x03</button>
+            <button class="pa-btn" onclick="paSetPreset(0xFF,0x0F)">0xFF + 0x0F</button>
+            <button class="pa-btn" onclick="paSetPreset(0x57,0x57)">0x57 + 0x57 (self)</button>
+            <button class="pa-btn reset" onclick="paSetPreset(0,0)">Reset</button>
+          </div>
         </div>
       </section>
 
@@ -663,5 +856,132 @@
     </nav>
     </main>
   </div>
+  <script>
+  (function () {
+    'use strict';
+
+    var paA = 0x57;
+    var paB = 0x83;
+
+    function polyStr(b) {
+      if (b === 0) return '0  (zero polynomial)';
+      var terms = [];
+      for (var k = 7; k >= 0; k--) {
+        if (b & (1 << k)) {
+          terms.push(k === 0 ? '1' : k === 1 ? 'x' : 'x\u207F'.replace('\u207F', supScript(k)));
+        }
+      }
+      return terms.join(' + ');
+    }
+
+    function supScript(k) {
+      var map = { 0:'\u2070',1:'\u00B9',2:'\u00B2',3:'\u00B3',4:'\u2074',5:'\u2075',6:'\u2076',7:'\u2077',8:'\u2078',9:'\u2079' };
+      return String(k).split('').map(function(c){ return map[c] || c; }).join('');
+    }
+
+    function hexStr(n) {
+      return '0x' + n.toString(16).toUpperCase().padStart(2,'0');
+    }
+
+    function buildGrid() {
+      var grid = document.getElementById('pa-grid');
+      grid.innerHTML = '';
+
+      var POWERS = [7,6,5,4,3,2,1,0];
+
+      /* Column header row */
+      grid.appendChild(makeEl('div', 'pa-row-label', ''));
+      POWERS.forEach(function(k) {
+        grid.appendChild(makeEl('div', 'pa-col-label', k === 0 ? 'x\u2070' : k === 1 ? 'x' : 'x' + supScript(k)));
+      });
+
+      /* Row A */
+      grid.appendChild(makeEl('div', 'pa-row-label', 'A = ' + hexStr(paA)));
+      POWERS.forEach(function(k) {
+        var cell = makeEl('div', 'pa-cell' + ((paA >> k & 1) ? ' on' : ''), (paA >> k & 1) ? '1' : '0');
+        cell.id = 'pa-a-' + k;
+        cell.addEventListener('click', function() { paA ^= (1 << k); paRefresh(); });
+        grid.appendChild(cell);
+      });
+
+      /* Result row */
+      grid.appendChild(makeEl('div', 'pa-row-label', 'A+B = ' + hexStr(paA ^ paB)));
+      POWERS.forEach(function(k) {
+        var ca = (paA >> k) & 1;
+        var cb = (paB >> k) & 1;
+        var s  = ca ^ cb;
+        var cls, icon, bits;
+        if (ca === 1 && cb === 1) { cls = 'cancel';  icon = '↯'; bits = '1+1=0'; }
+        else if (s === 1)          { cls = 'survive'; icon = '✓'; bits = ca + '+' + cb + '=1'; }
+        else                       { cls = 'absent';  icon = '—'; bits = '0+0=0'; }
+        var cell = document.createElement('div');
+        cell.className = 'pa-result-cell ' + cls;
+        cell.id = 'pa-r-' + k;
+        cell.innerHTML = '<span>' + icon + '</span><span class="pa-sum-bits">' + bits + '</span>';
+        grid.appendChild(cell);
+      });
+
+      /* Row B */
+      grid.appendChild(makeEl('div', 'pa-row-label', 'B = ' + hexStr(paB)));
+      POWERS.forEach(function(k) {
+        var cell = makeEl('div', 'pa-cell' + ((paB >> k & 1) ? ' on' : ''), (paB >> k & 1) ? '1' : '0');
+        cell.id = 'pa-b-' + k;
+        cell.addEventListener('click', function() { paB ^= (1 << k); paRefresh(); });
+        grid.appendChild(cell);
+      });
+    }
+
+    function buildPolyDisplay() {
+      var el = document.getElementById('pa-poly-display');
+      var sum = paA ^ paB;
+      el.innerHTML =
+        '<div class="pa-poly-label">A</div><div class="pa-poly-val">' + hexStr(paA) + ' = ' + polyStr(paA) + '</div>' +
+        '<div class="pa-poly-label">B</div><div class="pa-poly-val">' + hexStr(paB) + ' = ' + polyStr(paB) + '</div>' +
+        '<div class="pa-poly-label">A + B</div><div class="pa-poly-val result-row">' + hexStr(sum) + ' = ' + polyStr(sum) + '</div>';
+    }
+
+    function syncHexInputs() {
+      document.getElementById('pa-hex-a').value = hexStr(paA);
+      document.getElementById('pa-hex-b').value = hexStr(paB);
+    }
+
+    function paRefresh() {
+      buildGrid();
+      buildPolyDisplay();
+      syncHexInputs();
+    }
+
+    function paSetPreset(a, b) {
+      paA = a; paB = b;
+      paRefresh();
+    }
+    window.paSetPreset = paSetPreset;
+
+    function makeEl(tag, cls, text) {
+      var el = document.createElement(tag);
+      el.className = cls;
+      el.textContent = text;
+      return el;
+    }
+
+    function onHexInput(which) {
+      return function() {
+        var raw = this.value.replace(/^0[xX]/, '');
+        var n = parseInt(raw, 16);
+        if (!isNaN(n) && n >= 0 && n <= 255) {
+          if (which === 'a') paA = n; else paB = n;
+          buildGrid();
+          buildPolyDisplay();
+        }
+      };
+    }
+
+    /* Init */
+    paRefresh();
+    document.getElementById('pa-hex-a').addEventListener('input', onHexInput('a'));
+    document.getElementById('pa-hex-b').addEventListener('input', onHexInput('b'));
+
+  })();
+  </script>
 </body>
 </html>
