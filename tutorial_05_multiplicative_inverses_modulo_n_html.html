@@ -592,8 +592,66 @@
 
       <section id="gcd-rule">
         <h2>The greatest common divisor rule</h2>
+
+        <h3>What is a greatest common divisor?</h3>
         <p>
-          There is a clean test for whether an inverse exists.
+          Before stating the rule, we need one concept: the <strong>greatest common divisor</strong> of two numbers.
+        </p>
+
+        <div class="box definition-box">
+          <div class="box-title">Definition: greatest common divisor</div>
+          <p>
+            The greatest common divisor of \(a\) and \(n\), written \(\gcd(a,n)\), is the largest positive integer
+            that divides both \(a\) and \(n\) evenly (with no remainder).
+          </p>
+        </div>
+
+        <h3>Worked examples</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Numbers</th>
+              <th>Common divisors</th>
+              <th>\(\gcd\)</th>
+              <th>Plain-English reason</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(\gcd(6,\,4)\)</td>
+              <td>1, 2</td>
+              <td>2</td>
+              <td>Both 6 and 4 are divisible by 1 and 2. The largest is 2.</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(5,\,26)\)</td>
+              <td>1</td>
+              <td>1</td>
+              <td>5 is prime; 26 = 2 × 13. They share no factor except 1.</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(4,\,10)\)</td>
+              <td>1, 2</td>
+              <td>2</td>
+              <td>Both 4 and 10 are even, so 2 divides both. 4 doesn't divide 10, so the gcd is 2.</td>
+            </tr>
+            <tr>
+              <td>\(\gcd(7,\,12)\)</td>
+              <td>1</td>
+              <td>1</td>
+              <td>7 is prime; 12 = 2² × 3. They share no factor except 1.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          When \(\gcd(a,n)=1\) — meaning the only shared factor is 1 — we call \(a\) and \(n\) <strong>coprime</strong> (or <em>relatively prime</em>).
+          The next tutorial introduces the Euclidean algorithm, which computes gcd efficiently for large numbers.
+        </p>
+
+        <h3>The rule</h3>
+        <p>
+          There is a clean test for whether an inverse exists, and gcd is the key to it.
         </p>
 
         <div class="box definition-box">
@@ -622,13 +680,52 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td>5</td><td>26</td><td>1</td><td>Yes</td></tr>
-            <tr><td>2</td><td>6</td><td>2</td><td>No</td></tr>
-            <tr><td>3</td><td>10</td><td>1</td><td>Yes</td></tr>
-            <tr><td>4</td><td>10</td><td>2</td><td>No</td></tr>
-            <tr><td>7</td><td>12</td><td>1</td><td>Yes</td></tr>
+            <tr><td>5</td><td>26</td><td>1</td><td>Yes — 5 and 26 are coprime</td></tr>
+            <tr><td>2</td><td>6</td><td>2</td><td>No — both are even</td></tr>
+            <tr><td>3</td><td>10</td><td>1</td><td>Yes — 3 and 10 share no factor &gt; 1</td></tr>
+            <tr><td>4</td><td>10</td><td>2</td><td>No — both are even</td></tr>
+            <tr><td>7</td><td>12</td><td>1</td><td>Yes — 7 is prime and doesn't divide 12</td></tr>
           </tbody>
         </table>
+
+        <h3>Why does a shared factor prevent an inverse?</h3>
+        <p>
+          This is the key question. Here is the intuition.
+        </p>
+
+        <div class="box intuition-box">
+          <div class="box-title">The shared-factor argument</div>
+          <p>
+            Suppose \(\gcd(a,n) = d\) where \(d > 1\). That means \(d\) divides both \(a\) and \(n\).
+          </p>
+          <p>
+            Now consider any product \(a \cdot x\). Since \(d\) divides \(a\), the product \(a \cdot x\) is also divisible by \(d\).
+            After reducing modulo \(n\), the result is still a multiple of \(d\) — because both \(a \cdot x\) and \(n\) are multiples of \(d\), so their difference is too.
+          </p>
+          <p>
+            But \(1\) is <em>not</em> a multiple of \(d\) (since \(d > 1\)). So \(a \cdot x\) can never land on 1 modulo \(n\).
+            No inverse exists.
+          </p>
+        </div>
+
+        <h3>Concrete version of the argument</h3>
+        <p>
+          Take \(a = 2\), \(n = 6\). Here \(\gcd(2, 6) = 2\).
+        </p>
+        <p>
+          Every product \(2 \cdot x\) is even. After reducing modulo 6, the result must also be even
+          (because 6 itself is even, so subtracting multiples of 6 preserves parity).
+          The only even residues modulo 6 are 0, 2, and 4. The number 1 is odd — it is permanently out of reach.
+        </p>
+        <div class="math-display">
+          \[
+            2 \cdot x \bmod 6 \;\in\; \{0,\,2,\,4\} \quad \text{for every integer } x
+          \]
+        </div>
+        <p>
+          This is exactly the collision pattern we saw in the coverage map. Shared factors force the orbit of \(a\) to
+          skip entire residues — including 1.
+        </p>
       </section>
 
       <section id="finding-by-search">
