@@ -688,47 +688,130 @@
       </section>
 
       <section id="table-method">
-        <h2>A table method for coefficients</h2>
+        <h2>The standard table method</h2>
         <p>
-          Back-substitution is conceptually clear, but it can get messy. A table can track coefficients more mechanically.
-          The goal is still the same: express each remainder as a combination of the two original numbers.
+          Back-substitution is conceptually clear but can get messy with many steps. The standard table method eliminates the algebra by tracking everything mechanically. It has seven columns.
         </p>
 
-        <h3>Example: \(\gcd(26,15)\)</h3>
-        <table class="back-table">
+        <table class="symbol-table">
           <thead>
             <tr>
-              <th>Remainder</th>
-              <th>As a combination of 26 and 15</th>
+              <th>Column</th>
+              <th>What it holds</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td>26</td><td>\(1\cdot26+0\cdot15\)</td></tr>
-            <tr><td>15</td><td>\(0\cdot26+1\cdot15\)</td></tr>
-            <tr><td>11</td><td>\(1\cdot26-1\cdot15\)</td></tr>
-            <tr><td>4</td><td>\(-1\cdot26+2\cdot15\)</td></tr>
-            <tr><td>3</td><td>\(3\cdot26-5\cdot15\)</td></tr>
-            <tr><td>1</td><td>\(-4\cdot26+7\cdot15\)</td></tr>
+            <tr><td>\(n\)</td><td>The current larger number — starts as the modulus, shifts down each row.</td></tr>
+            <tr><td>\(b\)</td><td>The current smaller number — starts as the value to invert, shifts down each row.</td></tr>
+            <tr><td>\(q\)</td><td>The quotient: \(q = \lfloor n \div b \rfloor\).</td></tr>
+            <tr><td>\(r\)</td><td>The remainder: \(r = n - q \cdot b\).</td></tr>
+            <tr><td>\(t_1\)</td><td>The coefficient from two rows back (first row: 0).</td></tr>
+            <tr><td>\(t_2\)</td><td>The coefficient from one row back (first row: 1).</td></tr>
+            <tr><td>\(t_3\)</td><td>The new coefficient: \(t_3 = t_1 - q \cdot t_2\).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="box definition-box">
+          <div class="box-title">Initialization and the recurrence</div>
+          <p>
+            Start with \(t_1 = 0\) and \(t_2 = 1\). At every row, compute \(t_3 = t_1 - q \cdot t_2\). Then shift: \(n \leftarrow b\), \(b \leftarrow r\), \(t_1 \leftarrow t_2\), \(t_2 \leftarrow t_3\). Stop when \(r = 1\). The value of \(t_3\) in that row is the modular inverse.
+          </p>
+        </div>
+
+        <h3>Example: find \(15^{-1}\pmod{26}\)</h3>
+
+        <table class="division-table">
+          <thead>
+            <tr>
+              <th>\(n\)</th>
+              <th>\(b\)</th>
+              <th>\(q\)</th>
+              <th>\(r = n - q \cdot b\)</th>
+              <th>\(t_1\)</th>
+              <th>\(t_2\)</th>
+              <th>\(t_3 = t_1 - q \cdot t_2\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>26</td><td>15</td><td>1</td><td>11</td>
+              <td>0</td><td>1</td><td>\(0 - 1\cdot1 = -1\)</td>
+            </tr>
+            <tr>
+              <td>15</td><td>11</td><td>1</td><td>4</td>
+              <td>1</td><td>−1</td><td>\(1 - 1\cdot(-1) = 2\)</td>
+            </tr>
+            <tr>
+              <td>11</td><td>4</td><td>2</td><td>3</td>
+              <td>−1</td><td>2</td><td>\(-1 - 2\cdot2 = -5\)</td>
+            </tr>
+            <tr style="background:#eaf7ef; font-weight:700;">
+              <td>4</td><td>3</td><td>1</td><td><strong>1</strong></td>
+              <td>2</td><td>−5</td><td>\(2 - 1\cdot(-5) = \mathbf{7}\)</td>
+            </tr>
           </tbody>
         </table>
 
         <p>
-          The final row says:
+          The remainder reached 1 in row 4. The value of \(t_3\) in that row is 7, so:
         </p>
         <div class="math-display">
           \[
-            1=-4\cdot26+7\cdot15
+            15^{-1}\equiv7\pmod{26}
           \]
         </div>
+
+        <h3>Example: find \(25^{-1}\pmod{151}\)</h3>
         <p>
-          Again, the coefficient of 15 is 7, so \(15^{-1}\equiv7\pmod{26}\).
+          This one finishes in a single step.
         </p>
+
+        <table class="division-table">
+          <thead>
+            <tr>
+              <th>\(n\)</th>
+              <th>\(b\)</th>
+              <th>\(q\)</th>
+              <th>\(r = n - q \cdot b\)</th>
+              <th>\(t_1\)</th>
+              <th>\(t_2\)</th>
+              <th>\(t_3 = t_1 - q \cdot t_2\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background:#eaf7ef; font-weight:700;">
+              <td>151</td><td>25</td><td>6</td><td><strong>1</strong></td>
+              <td>0</td><td>1</td><td>\(0 - 6\cdot1 = \mathbf{-6}\)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>
+          The remainder hit 1 immediately, but \(t_3 = -6\). Since the answer must be a positive residue, add the modulus:
+        </p>
+        <div class="math-display">
+          \[
+            -6 + 151 = 145
+          \]
+        </div>
+        <div class="math-display">
+          \[
+            25^{-1}\equiv145\pmod{151}
+          \]
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">Why the t column works</div>
+          <p>
+            At every row, \(t_3\) is secretly the coefficient of \(b\) when the remainder is written as a linear combination of the two original numbers. The recurrence \(t_3 = t_1 - q \cdot t_2\) mirrors exactly the arithmetic of back-substitution, but computes it forward row by row instead of walking backward at the end. When the remainder equals 1, the coefficient of \(b\) in that combination is the modular inverse.
+          </p>
+        </div>
       </section>
 
       <section id="interactive-explorer">
-        <h2>Interactive: EEA Table Tracer</h2>
+        <h2>Interactive: t-column Table Tracer</h2>
         <p class="lead">
-          Every row of the EEA table carries the same invariant: the remainder equals a linear combination of the two starting numbers, <em>r = s·a + t·n</em>. Step through the algorithm one row at a time and watch those coefficients evolve. When the remainder hits 1, you have found the modular inverse.
+          Step through the same table you just read. Each row computes the quotient and remainder, then applies the recurrence <em>t₃ = t₁ − q·t₂</em>. When the remainder hits 1, t₃ is the modular inverse. When gcd ≠ 1, no inverse exists.
         </p>
 
         <div class="eea-widget no-print" id="eea-widget">
@@ -752,11 +835,13 @@
             <table class="eea-table" id="eea-table">
               <thead>
                 <tr>
-                  <th>Division</th>
+                  <th>n</th>
+                  <th>b</th>
+                  <th>q</th>
                   <th>r</th>
-                  <th class="eea-th-a">s<br><span class="eea-col-sub">coeff of a</span></th>
-                  <th class="eea-th-n">t<br><span class="eea-col-sub">coeff of n</span></th>
-                  <th>s·a + t·n</th>
+                  <th class="eea-th-a">t₁</th>
+                  <th class="eea-th-a">t₂</th>
+                  <th class="eea-th-a">t₃ = t₁ − q·t₂</th>
                 </tr>
               </thead>
               <tbody id="eea-tbody"></tbody>
@@ -1085,11 +1170,11 @@
     'use strict';
 
     var EXAMPLES = [
-      { label: '15\u207b\u00b9 mod 26  (4 steps)',       a: 15,  n: 26  },
-      { label: '25\u207b\u00b9 mod 151 (1 step)',         a: 25,  n: 151 },
-      { label: '7\u207b\u00b9 mod 12   (3 steps)',        a: 7,   n: 12  },
-      { label: '11\u207b\u00b9 mod 26  (3 steps)',        a: 11,  n: 26  },
-      { label: '35\u207b\u00b9 mod 64  (4 steps)',        a: 35,  n: 64  },
+      { label: '15\u207b\u00b9 mod 26  (4 rows)',        a: 15,  n: 26  },
+      { label: '25\u207b\u00b9 mod 151 (1 row)',          a: 25,  n: 151 },
+      { label: '7\u207b\u00b9 mod 12   (3 rows)',         a: 7,   n: 12  },
+      { label: '11\u207b\u00b9 mod 26  (3 rows)',         a: 11,  n: 26  },
+      { label: '35\u207b\u00b9 mod 64  (4 rows)',         a: 35,  n: 64  },
       { label: '13 mod 26 \u2014 no inverse',             a: 13,  n: 26  },
       { label: 'gcd(252, 105) \u2014 gcd\u2009=\u200921', a: 105, n: 252 },
     ];
@@ -1109,7 +1194,6 @@
 
     if (!selEl) return;
 
-    /* Build example dropdown */
     EXAMPLES.forEach(function (ex, i) {
       var opt = document.createElement('option');
       opt.value = i;
@@ -1117,157 +1201,147 @@
       selEl.appendChild(opt);
     });
 
+    /* state.rows: internal algorithm rows (seed0, seed1, comp1, comp2, ..., compK, zero)
+       state.cursor: index of next *display* row to reveal (display row i uses
+       rows[i], rows[i+1], rows[i+2] for n, b, and the new remainder) */
     var state = { rows: [], cursor: 0, a: 15, n: 26 };
 
     /* ── Core algorithm ──────────────────────────────────────── */
     function computeRows(a, n) {
-      /* Convention: n is modulus (larger), a is the value we invert.
-         Seed rows encode the invariant r = s·a + t·n from the start. */
+      /* rows[0] = {r:n, s:0}  →  0·a + 1·n = n (t₁ seed)
+         rows[1] = {r:a, s:1}  →  1·a + 0·n = a (t₂ seed)
+         rows[k] = computed by the recurrence; s tracks only the
+         coefficient of a (the t-column in the standard table).       */
       var rows = [
-        { r: n, s: 0, t: 1, div: 'seed' },  /* n = 0·a + 1·n */
-        { r: a, s: 1, t: 0, div: 'seed' },  /* a = 1·a + 0·n */
+        { r: n, s: 0 },
+        { r: a, s: 1 },
       ];
       while (rows[rows.length - 1].r !== 0) {
         var p2 = rows[rows.length - 2];
         var p1 = rows[rows.length - 1];
         var q  = Math.floor(p2.r / p1.r);
-        var rn = p2.r - q * p1.r;
-        rows.push({
-          r:    rn,
-          s:    p2.s - q * p1.s,
-          t:    p2.t - q * p1.t,
-          div:  p2.r + ' = ' + q + '\u00b7' + p1.r + ' + ' + rn,
-          par2: rows.length - 2,
-          par1: rows.length - 1,
-        });
+        rows.push({ r: p2.r - q * p1.r, s: p2.s - q * p1.s, q: q });
       }
       return rows;
     }
 
     /* ── Row rendering ───────────────────────────────────────── */
-    function fmtCoeff(v) { return v < 0 ? '(' + v + ')' : '' + v; }
+    function fmtT(v) { return v < 0 ? '(' + v + ')' : '' + v; }
 
-    function rowClass(row, idx) {
-      if (row.div === 'seed') return 'eea-row-seed';
-      if (row.r   === 0)     return 'eea-row-zero';
-      /* gcd row = last row with r > 0 */
-      var rows = state.rows;
-      if (idx + 1 < rows.length && rows[idx + 1].r === 0) return 'eea-row-gcd';
-      return 'eea-row-new';
-    }
+    /* Display row i uses internal rows[i], rows[i+1], rows[i+2].
+       rows[i] supplies n-value and t₁;
+       rows[i+1] supplies b-value and t₂;
+       rows[i+2] supplies r and t₃ (= rows[i+2].s).                  */
+    function addDisplayRow(i) {
+      var rN  = state.rows[i];       /* the "n" row  */
+      var rB  = state.rows[i + 1];   /* the "b" row  */
+      var rNw = state.rows[i + 2];   /* new computed row */
 
-    function addRow(idx) {
-      var row  = state.rows[idx];
-      var a    = state.a;
-      var n    = state.n;
-      var tr   = document.createElement('tr');
-      tr.className = rowClass(row, idx);
-      tr.id = 'eea-tr-' + idx;
+      var nVal = rN.r;
+      var bVal = rB.r;
+      var q    = rNw.q;              /* quotient stored when computed */
+      var r    = rNw.r;
+      var t1   = rN.s;
+      var t2   = rB.s;
+      var t3   = rNw.s;
 
-      /* Division column */
-      var tdDiv = document.createElement('td');
-      if (row.div === 'seed') {
-        tdDiv.innerHTML = '<em style="color:#bbb">seed</em>';
-      } else {
-        tdDiv.textContent = row.div;
+      var isGcd = (r !== 0 &&
+                   (i + 3 >= state.rows.length || state.rows[i + 3].r === 0));
+      var isZero = (r === 0);
+
+      var tr = document.createElement('tr');
+      tr.id = 'eea-tr-' + i;
+      tr.className = isZero ? 'eea-row-zero' : (isGcd ? 'eea-row-gcd' : 'eea-row-new');
+
+      function td(content, cls) {
+        var el = document.createElement('td');
+        if (cls) el.className = cls;
+        el.innerHTML = content;
+        return el;
       }
-      tr.appendChild(tdDiv);
 
-      /* r column */
-      var tdR = document.createElement('td');
-      tdR.textContent = row.r;
-      if (row.r === 0) tdR.style.color = '#ccc';
-      tr.appendChild(tdR);
+      tr.appendChild(td(nVal));
+      tr.appendChild(td(bVal));
+      tr.appendChild(td(isZero ? '<span style="color:#ccc">\u2014</span>' : q));
+      tr.appendChild(td(isZero ? '<span style="color:#ccc">0</span>' : '<strong>' + r + '</strong>'));
+      tr.appendChild(td(fmtT(t1), 'eea-td-a'));
+      tr.appendChild(td(fmtT(t2), 'eea-td-a'));
 
-      /* s column */
-      var tdS = document.createElement('td');
-      tdS.className = 'eea-td-a';
-      tdS.textContent = fmtCoeff(row.s);
-      tr.appendChild(tdS);
-
-      /* t column */
-      var tdT = document.createElement('td');
-      tdT.className = 'eea-td-n';
-      tdT.textContent = fmtCoeff(row.t);
-      tr.appendChild(tdT);
-
-      /* s·a + t·n check column */
-      var tdChk = document.createElement('td');
-      if (row.r === 0) {
-        tdChk.innerHTML = '<span style="color:#ccc">\u2014</span>';
+      /* t₃ cell: show the full arithmetic when this is the gcd row */
+      var t3cell;
+      if (isZero) {
+        t3cell = td('<span style="color:#ccc">\u2014</span>');
+      } else if (isGcd) {
+        t3cell = td(
+          fmtT(t1) + ' \u2212 ' + q + '\u00b7' + fmtT(t2) +
+          ' = <strong>' + fmtT(t3) + '</strong>'
+        );
+        t3cell.className = 'eea-td-a';
       } else {
-        var computed = row.s * a + row.t * n;
-        tdChk.innerHTML =
-          '<span class="eea-td-a">' + fmtCoeff(row.s) + '</span>\u00b7' + a +
-          ' + <span class="eea-td-n">' + fmtCoeff(row.t) + '</span>\u00b7' + n +
-          ' = <strong>' + computed + '</strong>';
+        t3cell = td(fmtT(t3), 'eea-td-a');
       }
-      tr.appendChild(tdChk);
+      tr.appendChild(t3cell);
 
       tbodyEl.appendChild(tr);
+
+      /* Flash the previous row to show where t₁ and t₂ came from */
+      if (i > 0) {
+        var prev = document.getElementById('eea-tr-' + (i - 1));
+        if (prev) {
+          prev.classList.remove('eea-row-flash');
+          void prev.offsetWidth;
+          prev.classList.add('eea-row-flash');
+          setTimeout(function () { prev.classList.remove('eea-row-flash'); }, 600);
+        }
+      }
     }
 
-    /* Flash parent rows to show how the new row was derived */
-    function flashParents(row) {
-      if (row.par2 === undefined) return;
-      [row.par2, row.par1].forEach(function (i) {
-        var el = document.getElementById('eea-tr-' + i);
-        if (!el) return;
-        el.classList.remove('eea-row-flash');
-        void el.offsetWidth; /* trigger reflow */
-        el.classList.add('eea-row-flash');
-        setTimeout(function () { el.classList.remove('eea-row-flash'); }, 650);
-      });
-    }
-
-    /* ── Bézout balance display ──────────────────────────────── */
+    /* ── Result panel ────────────────────────────────────────── */
     function showBalance() {
       var rows = state.rows;
-      var gcdRow = null;
-      for (var i = rows.length - 1; i >= 0; i--) {
-        if (rows[i].r !== 0) { gcdRow = rows[i]; break; }
-      }
-      if (!gcdRow) return;
-
-      var g = gcdRow.r;
-      var s = gcdRow.s;
-      var t = gcdRow.t;
-      var a = state.a;
-      var n = state.n;
+      /* Last non-zero row = rows[rows.length - 2] */
+      var gcdRow = rows[rows.length - 2];
+      var g  = gcdRow.r;
+      var t3 = gcdRow.s;
+      var a  = state.a;
+      var n  = state.n;
 
       balEl.className = 'bezout-balance' + (g === 1 ? '' : ' bezout-no-inverse');
       balEl.style.display = '';
 
       if (g === 1) {
-        balTitleEl.textContent = 'B\u00e9zout\'s Identity \u2014 inverse found!';
+        balTitleEl.textContent = 'Inverse found \u2014 t\u2083 when r\u2009=\u20091';
         balEqEl.innerHTML =
-          '<span class="bezout-chip bezout-chip-a">' + fmtCoeff(s) + '\u00b7' + a + '</span>' +
-          '<span class="bezout-op"> + </span>' +
-          '<span class="bezout-chip bezout-chip-n">' + fmtCoeff(t) + '\u00b7' + n + '</span>' +
-          '<span class="bezout-op"> = </span>' +
-          '<span class="bezout-chip bezout-chip-eq">1</span>';
-        var inv = ((s % n) + n) % n;
+          '<span class="bezout-chip bezout-chip-a">t\u2083\u2009=\u2009' + t3 + '</span>' +
+          '<span class="bezout-op"> \u27f9 </span>' +
+          '<span class="bezout-chip bezout-chip-a">' + a + '\u207b\u00b9\u2009\u2261\u2009' + t3 +
+          '\u2009(mod\u2009' + n + ')</span>';
+        var inv = ((t3 % n) + n) % n;
         balResEl.innerHTML =
-          'Coefficient of <em>a</em>\u2009=\u2009' + a + ' is <strong>' + s + '</strong>.' +
-          (s < 0 ? '&ensp;Convert: ' + s + ' + ' + n + ' = <strong>' + inv + '</strong>.' : '') +
-          '<br><strong>' + a + '\u207b\u00b9 \u2261 ' + inv + '\u2009(mod\u2009' + n + ')</strong>' +
+          (t3 < 0
+            ? 'Negative result: ' + t3 + ' + ' + n + ' = <strong>' + inv + '</strong>.<br>'
+            : '') +
+          '<strong>' + a + '\u207b\u00b9 \u2261 ' + inv + '\u2009(mod\u2009' + n + ')</strong>' +
           '&emsp;\u2713\u2009Check:\u2009' + a + '\u00b7' + inv + '\u2009=\u2009' + (a * inv) +
           '\u2009\u2261\u2009' + ((a * inv) % n) + '\u2009(mod\u2009' + n + ')';
       } else {
-        balTitleEl.textContent = 'No modular inverse \u2014 gcd \u2260 1';
+        balTitleEl.textContent = 'No modular inverse \u2014 gcd\u2009=\u2009' + g + '\u2009\u2260\u20091';
         balEqEl.innerHTML =
-          '<span class="bezout-chip bezout-chip-a">' + fmtCoeff(s) + '\u00b7' + a + '</span>' +
-          '<span class="bezout-op"> + </span>' +
-          '<span class="bezout-chip bezout-chip-n">' + fmtCoeff(t) + '\u00b7' + n + '</span>' +
-          '<span class="bezout-op"> = </span>' +
-          '<span class="bezout-chip bezout-chip-no">' + g + '</span>';
+          '<span class="bezout-chip bezout-chip-no">gcd(' + a + ',\u2009' + n + ')\u2009=\u2009' + g + '</span>';
         balResEl.textContent =
-          'gcd(' + a + ', ' + n + ') = ' + g + ' \u2260 1, so ' +
-          a + '\u207b\u00b9 mod ' + n + ' does not exist.';
+          'Since gcd \u2260 1, ' + a + '\u207b\u00b9 mod ' + n + ' does not exist.';
       }
     }
 
     /* ── State management ────────────────────────────────────── */
+    function totalDisplayRows() {
+      /* Normal case: show rows up to and including the gcd row (r > 0).
+         Internal: seed0, seed1, comp1..compK, zero  →  K = rows.length-3.
+         Edge case: if a|n, there are no non-zero computation rows (K=0).
+         We still show the single zero-remainder step so the table isn't blank. */
+      return Math.max(1, state.rows.length - 3);
+    }
+
     function resetState() {
       var a = parseInt(aEl.value, 10);
       var n = parseInt(nEl.value, 10);
@@ -1276,7 +1350,7 @@
         return;
       }
       if (a >= n) {
-        statusEl.textContent = 'a must be less than n for modular inverse. Values swapped.';
+        statusEl.textContent = 'a must be less than n. Values swapped.';
         aEl.value = n; nEl.value = a;
         var tmp = a; a = n; n = tmp;
       }
@@ -1288,29 +1362,29 @@
       balEl.style.display = 'none';
       stepBtn.disabled = false;
       runBtn.disabled  = false;
-      var compRows = state.rows.length - 3; /* subtract 2 seeds + 1 zero row */
+      var k = totalDisplayRows();
       statusEl.textContent =
-        'Ready. ' + (compRows > 0 ? compRows : 1) + ' computation step' +
-        (compRows !== 1 ? 's' : '') + '. Press \u25b6 Step to begin.';
+        'Ready \u2014 ' + k + ' row' + (k !== 1 ? 's' : '') +
+        '. Press \u25b6\u2009Step to begin.';
     }
 
     /* ── Step logic ──────────────────────────────────────────── */
     function doStep() {
-      if (state.cursor >= state.rows.length) return;
-      var row = state.rows[state.cursor];
-      flashParents(row);
-      addRow(state.cursor);
+      var maxIdx = totalDisplayRows() - 1; /* last valid display index */
+      if (state.cursor > maxIdx) return;
+
+      addDisplayRow(state.cursor);
       state.cursor++;
 
-      if (state.cursor >= state.rows.length) {
+      if (state.cursor > maxIdx) {
         stepBtn.disabled = true;
         runBtn.disabled  = true;
         statusEl.textContent = 'Algorithm complete.';
         showBalance();
       } else {
         statusEl.textContent =
-          'Row ' + state.cursor + ' of ' + state.rows.length + ' shown. ' +
-          (state.rows.length - state.cursor) + ' remaining.';
+          'Row ' + state.cursor + ' of ' + totalDisplayRows() + ' shown. ' +
+          (totalDisplayRows() - state.cursor) + ' remaining.';
       }
     }
 
@@ -1319,11 +1393,9 @@
 
     runBtn.addEventListener('click', function () {
       runBtn.disabled = true;
-      var remaining = state.rows.length - state.cursor;
+      var remaining = totalDisplayRows() - state.cursor;
       for (var i = 0; i < remaining; i++) {
-        (function (delay) {
-          setTimeout(doStep, delay);
-        })(i * 380);
+        (function (delay) { setTimeout(doStep, delay); })(i * 400);
       }
     });
 
@@ -1345,7 +1417,6 @@
     aEl.addEventListener('change', resetState);
     nEl.addEventListener('change', resetState);
 
-    /* Initial render */
     resetState();
 
   })();
