@@ -100,6 +100,103 @@
       font-weight: 800;
     }
 
+    /* ── Byte Explorer interactive ── */
+    .bx-widget {
+      background: #f8f9ff;
+      border: 1.5px solid #c7d2ea;
+      border-radius: 18px;
+      padding: 24px;
+      margin: 18px 0;
+    }
+    .bx-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .bx-hex-label { font-size: 0.9rem; font-weight: 700; color: #1f3763; }
+    .bx-hex-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      width: 80px;
+      border: 1.5px solid #b0bed8;
+      border-radius: 8px;
+      padding: 5px 10px;
+      color: #1f3763;
+      background: #fff;
+    }
+    .bx-hex-input:focus { outline: none; border-color: #334e7d; }
+    .bx-reset-btn {
+      padding: 6px 16px;
+      border-radius: 8px;
+      border: 1.5px solid #c7d2ea;
+      background: #fff;
+      color: #334e7d;
+      font-weight: 700;
+      font-size: 0.86rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .bx-reset-btn:hover { background: #eef3ff; }
+    .bx-strip {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(52px, 1fr));
+      gap: 6px;
+      margin: 0 0 18px;
+    }
+    .bx-cell {
+      border: 1.5px solid #c7d2ea;
+      border-radius: 12px;
+      background: #f6f7fb;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .bx-cell:hover { border-color: #334e7d; background: #eef3ff; }
+    .bx-cell.on { background: #eaf7ef; border-color: #4caf50; }
+    .bx-cell .bx-pow { font-size: 0.72rem; font-weight: 900; color: #1f3763; margin-bottom: 2px; }
+    .bx-cell .bx-bit {
+      font-size: 1.3rem;
+      font-weight: 900;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      color: #334e7d;
+    }
+    .bx-cell.on .bx-bit { color: #2e7d32; }
+    .bx-poly-display {
+      background: #fff;
+      border: 1.5px solid #c7d2ea;
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-size: 1rem;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .bx-poly-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #667; white-space: nowrap; }
+    .bx-poly-value { font-family: "Cascadia Code","Consolas",monospace; color: #1a3a6e; font-weight: 700; }
+    .bx-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .bx-summary-chip {
+      background: #f0f4ff;
+      border: 1px solid #c7d2ea;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      color: #334e7d;
+    }
+    .bx-summary-chip span { font-weight: 700; }
+    .bx-hint { font-size: 0.82rem; color: #667; margin-top: 10px; }
+
+    @media (max-width: 780px) {
+      .bx-strip { grid-template-columns: repeat(4, minmax(52px, 1fr)); }
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -141,7 +238,9 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_07_extended_euclidean_algorithm_html.html">← Module 7</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_09_polynomial_addition_over_gf_2_html.html">Module 9 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
@@ -164,8 +263,23 @@
       <section id="what-you-should-know-first">
         <h2>What you should know first</h2>
         <p>
-          You should understand binary place values, hexadecimal bytes, bit positions, and basic polynomial notation such as \(x^2+x+1\). You do not need polynomial long division yet.
+          You should understand binary place values, hexadecimal bytes, and bit positions (Modules 01–02).
+          Basic polynomial notation such as \(x^2+x+1\) will appear, but you do not need polynomial long division yet.
         </p>
+      </section>
+
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box purpose-box">
+          <div class="box-title">After completing this module you will be able to</div>
+          <ul>
+            <li>Convert any 8-bit byte (in binary or hex) into its polynomial representation over \(\mathrm{GF}(2)\).</li>
+            <li>Convert a polynomial of degree at most 7 with binary coefficients back to a byte in binary and hex.</li>
+            <li>Explain why \(x\) in a byte-polynomial is a formal placeholder, not a variable to evaluate.</li>
+            <li>Identify the bit position that corresponds to each power of \(x\) (and vice versa).</li>
+            <li>Explain why polynomial coefficient addition over \(\mathrm{GF}(2)\) will turn out to be the same operation as XOR.</li>
+          </ul>
+        </div>
       </section>
 
       <section id="symbols-used">
@@ -449,6 +563,37 @@
         </div>
       </section>
 
+      <section id="byte-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Byte ↔ Polynomial Explorer</h2>
+          <p>
+            Click any bit cell to toggle it on or off, or type a hex value into the input box.
+            The polynomial updates in real time.
+          </p>
+
+          <div class="bx-widget">
+            <div class="bx-controls">
+              <span class="bx-hex-label">Hex byte:</span>
+              <input class="bx-hex-input" id="bx-hex" type="text" value="57" maxlength="2" spellcheck="false" autocomplete="off" />
+              <button class="bx-reset-btn" id="bx-reset">Reset to 0x57</button>
+            </div>
+
+            <div class="bx-strip" id="bx-strip">
+              <!-- 8 cells injected by JS, index 7..0 left-to-right -->
+            </div>
+
+            <div class="bx-poly-display" id="bx-poly-display">
+              <span class="bx-poly-label">Polynomial:</span>
+              <span class="bx-poly-value" id="bx-poly-value"></span>
+            </div>
+
+            <div class="bx-summary" id="bx-summary"></div>
+            <p class="bx-hint" id="bx-hint"></p>
+          </div>
+        </div>
+      </section>
+
       <section id="why-coefficients-are-bits">
         <h2>Why the coefficients are only 0 and 1</h2>
         <p>
@@ -649,6 +794,24 @@
               </div>
             </details>
           </li>
+          <li>
+            Without converting, determine the polynomial form of <code>0x00</code> and <code>0xFF</code>.
+            What is special about each?
+            <details class="solution">
+              <summary>Show solution</summary>
+              <p>
+                <strong><code>0x00</code></strong> = <code>00000000</code>. Every bit is 0, so every coefficient is 0.
+                The polynomial is the <em>zero polynomial</em> — no terms at all, written as \(0\).
+              </p>
+              <p>
+                <strong><code>0xFF</code></strong> = <code>11111111</code>. Every bit is 1, so every coefficient is 1.
+                The polynomial is \(x^7+x^6+x^5+x^4+x^3+x^2+x+1\) — the highest-degree byte-polynomial possible.
+              </p>
+              <p>
+                These are the additive identity (zero) and the "all terms present" polynomial — useful boundary cases to recognize quickly.
+              </p>
+            </details>
+          </li>
         </ol>
       </section>
 
@@ -738,5 +901,129 @@
     </nav>
     </main>
   </div>
+  <script>
+    (function () {
+      var bits = [0,1,0,1,0,1,1,1]; // 0x57, index 0 = bit7 (leftmost)
+
+      function byteVal() {
+        var v = 0;
+        for (var i = 0; i < 8; i++) v = (v << 1) | bits[i];
+        return v;
+      }
+
+      function bitAt(position) {
+        // position 7..0, bits[0]=position7
+        return bits[7 - position];
+      }
+
+      function buildPoly() {
+        var terms = [];
+        for (var k = 7; k >= 0; k--) {
+          if (bitAt(k)) {
+            if (k === 0) terms.push('1');
+            else if (k === 1) terms.push('x');
+            else terms.push('x\u207F'.replace('\u207F', supScript(k)));
+          }
+        }
+        return terms.length === 0 ? '0' : terms.join(' + ');
+      }
+
+      var supMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+      function supScript(n) {
+        return String(n).split('').map(function(c){ return supMap[c] || c; }).join('');
+      }
+
+      function toHex2(v) {
+        return v.toString(16).toUpperCase().padStart(2,'0');
+      }
+
+      function toBin8(v) {
+        return v.toString(2).padStart(8,'0');
+      }
+
+      function render() {
+        // cells
+        var strip = document.getElementById('bx-strip');
+        if (!strip) return;
+        strip.innerHTML = '';
+        for (var i = 0; i < 8; i++) {
+          var k = 7 - i; // bit position
+          var cell = document.createElement('div');
+          cell.className = 'bx-cell' + (bits[i] ? ' on' : '');
+          cell.dataset.idx = i;
+          var powLabel = k === 0 ? '1' : k === 1 ? 'x' : 'x' + supScript(k);
+          cell.innerHTML = '<div class="bx-pow">' + powLabel + '</div>' +
+                           '<div class="bx-bit">' + bits[i] + '</div>';
+          cell.addEventListener('click', function(e) {
+            var idx = parseInt(this.dataset.idx);
+            bits[idx] ^= 1;
+            syncHexInput();
+            render();
+          });
+          strip.appendChild(cell);
+        }
+
+        // polynomial
+        var poly = buildPoly();
+        document.getElementById('bx-poly-value').textContent = poly;
+
+        // summary chips
+        var v = byteVal();
+        var summary = document.getElementById('bx-summary');
+        summary.innerHTML =
+          '<div class="bx-summary-chip">Hex: <span>0x' + toHex2(v) + '</span></div>' +
+          '<div class="bx-summary-chip">Binary: <span>' + toBin8(v) + '</span></div>' +
+          '<div class="bx-summary-chip">Decimal: <span>' + v + '</span></div>';
+
+        // hint
+        var hint = document.getElementById('bx-hint');
+        var onCount = bits.reduce(function(s,b){ return s+b; }, 0);
+        if (v === 0) {
+          hint.textContent = 'Every bit is 0 — this is the zero polynomial.';
+        } else if (v === 255) {
+          hint.textContent = 'Every bit is 1 — all 8 terms are present, giving the highest-degree byte-polynomial.';
+        } else {
+          hint.textContent = onCount + ' bit' + (onCount === 1 ? '' : 's') + ' set → ' + onCount + ' term' + (onCount === 1 ? '' : 's') + ' in the polynomial.';
+        }
+      }
+
+      function syncHexInput() {
+        var inp = document.getElementById('bx-hex');
+        if (inp) inp.value = toHex2(byteVal());
+      }
+
+      function applyHex(hexStr) {
+        var v = parseInt(hexStr, 16);
+        if (isNaN(v) || v < 0 || v > 255) return;
+        for (var i = 0; i < 8; i++) bits[i] = (v >> (7 - i)) & 1;
+      }
+
+      // hex input handler
+      document.addEventListener('DOMContentLoaded', function() {
+        render();
+        var hexInp = document.getElementById('bx-hex');
+        if (hexInp) {
+          hexInp.addEventListener('input', function() {
+            if (this.value.length === 2) {
+              applyHex(this.value);
+              render();
+            }
+          });
+          hexInp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { applyHex(this.value.padStart(2,'0')); render(); }
+          });
+        }
+        var resetBtn = document.getElementById('bx-reset');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            applyHex('57');
+            var inp = document.getElementById('bx-hex');
+            if (inp) inp.value = '57';
+            render();
+          });
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
