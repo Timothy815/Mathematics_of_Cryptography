@@ -176,6 +176,22 @@
     .nav-secondary { background: #e8f4ef; border-color: var(--border); color: #2a6049; }
     .nav-secondary:hover { background: #c5e0d4; }
 
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s; }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check { background: #334e7d; color: #fff; }
+    .ws-btn-regen { background: #2a6049; color: #fff; }
+    .ws-btn-reset { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -241,6 +257,14 @@
     </header>
 
     <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new computation problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">✓ Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">⟳ Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">↺ Reset</button>
+      </div>
+
       <section id="student-info">
         <div class="student-info">
           <div>
@@ -349,23 +373,23 @@
             <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
             <tbody>
               <tr><td>1</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="26=1·15+11|26=1*15+11" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="11" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>2</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="15=1·11+4|15=1*11+4" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="4" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>3</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="11=2·4+3|11=2*4+3" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="3" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>4</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="4=1·3+1|4=1*3+1" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>5</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="3=3·1+0|3=3*1+0" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:60px" autocomplete="off" /></td></tr>
             </tbody>
           </table>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" data-answer="1" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -374,14 +398,14 @@
             <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
             <tbody>
               <tr><td>1</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="151=6·25+1|151=6*25+1" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>2</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="25=25·1+0|25=25*1+0" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:60px" autocomplete="off" /></td></tr>
             </tbody>
           </table>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" data-answer="1" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -390,20 +414,20 @@
             <thead><tr><th>Step</th><th>Division</th><th>Remainder</th></tr></thead>
             <tbody>
               <tr><td>1</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="64=1·35+29|64=1*35+29" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="29" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>2</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="35=1·29+6|35=1*29+6" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="6" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>3</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="29=4·6+5|29=4*6+5" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="5" type="text" style="width:60px" autocomplete="off" /></td></tr>
               <tr><td>4</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="6=1·5+1|6=1*5+1" type="text" style="width:100%" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:60px" autocomplete="off" /></td></tr>
             </tbody>
           </table>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" data-answer="1" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -428,7 +452,7 @@
               <tr><td>5</td><td>Final form \(1=s\cdot15+t\cdot26\):</td></tr>
             </tbody>
           </table>
-          <p>Inverse of 15 modulo 26: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Inverse of 15 modulo 26: <input class="ans-input" data-answer="7" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -438,9 +462,9 @@
             <textarea class="written-area" rows="2" placeholder="1 = …"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Coefficient of 25: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-          <p>Is it negative? If so, convert: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-          <p>Standard positive inverse modulo 151: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Coefficient of 25: <input class="ans-input" data-answer="-6" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Is it negative? If so, convert: <input class="ans-input" data-answer="-6+151=145|-6 + 151 = 145" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Standard positive inverse modulo 151: <input class="ans-input" data-answer="145" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -452,19 +476,19 @@
         <div class="problem">
           <div class="problem-title">D1. Find \(7^{-1}\pmod{12}\).</div>
           <div class="work-space extra-large-work-space"></div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="7" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">D2. Find \(11^{-1}\pmod{26}\).</div>
           <div class="work-space extra-large-work-space"></div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="19" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">D3. Find \(35^{-1}\pmod{64}\).</div>
           <div class="work-space extra-large-work-space"></div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="11" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -486,28 +510,28 @@
           <tbody>
             <tr>
               <td>E1</td><td>\(-6\)</td><td>151</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="145" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="145" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>E2</td><td>\(-7\)</td><td>26</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="19" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="19" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>E3</td><td>\(-5\)</td><td>12</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="7" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="7" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>E4</td><td>\(-17\)</td><td>64</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="47" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="47" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>E5</td><td>\(-1\)</td><td>26</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="25" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="25" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -518,7 +542,7 @@
         <h2>Part F: Read the inverse from Bézout form</h2>
         <p>For each equation, identify which coefficient gives the modular inverse. Convert to a positive residue if needed.</p>
 
-        <table class="work-table">
+        <table class="work-table" id="part-f-table">
           <thead>
             <tr>
               <th>Problem</th>
@@ -532,32 +556,32 @@
             <tr>
               <td>F1</td><td>\(1=7\cdot15-4\cdot26\)</td>
               <td>Find \(15^{-1}\pmod{26}\)</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="7" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="7" type="text" style="width:60px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>F2</td><td>\(1=-6\cdot25+1\cdot151\)</td>
               <td>Find \(25^{-1}\pmod{151}\)</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="-6" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="145" type="text" style="width:60px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>F3</td><td>\(1=11\cdot35-6\cdot64\)</td>
               <td>Find \(35^{-1}\pmod{64}\)</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="11" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="11" type="text" style="width:60px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>F4</td><td>\(1=3\cdot26-7\cdot11\)</td>
-              <td>Find \(11^{-1}\pmod{26}\)</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+              <td>F4</td><td id="f4-bezout">\(1=3\cdot26-7\cdot11\)</td>
+              <td id="f4-question">Find \(11^{-1}\pmod{26}\)</td>
+              <td><input class="ans-input" id="f4-raw" data-answer="-7" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="f4-pos" data-answer="19" type="text" style="width:60px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>F5</td><td>\(1=5\cdot21-4\cdot26\)</td>
-              <td>Find \(21^{-1}\pmod{26}\)</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td>
+              <td>F5</td><td id="f5-bezout">\(1=5\cdot21-4\cdot26\)</td>
+              <td id="f5-question">Find \(21^{-1}\pmod{26}\)</td>
+              <td><input class="ans-input" id="f5-raw" data-answer="5" type="text" style="width:50px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="f5-pos" data-answer="5" type="text" style="width:60px" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -576,13 +600,13 @@
         <div class="problem">
           <div class="problem-title">G1. Decrypt \(C=13\) from \(C\equiv15P+8\pmod{26}\). Use \(15^{-1}\equiv7\pmod{26}\).</div>
           <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\): <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Plaintext number \(P\): <input class="ans-input" data-answer="9" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">G2. Decrypt \(C=20\) from \(C\equiv11P+2\pmod{26}\). Use \(11^{-1}\equiv19\pmod{26}\).</div>
           <div class="work-space large-work-space"></div>
-          <p>Plaintext number \(P\): <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Plaintext number \(P\): <input class="ans-input" data-answer="4" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -606,7 +630,7 @@
           <div class="problem-title">H1. Find \(17^{-1}\pmod{3120}\).</div>
           <p>This is a classic small RSA-style inverse example. Show your Euclidean steps and full back-substitution.</p>
           <div class="work-space extra-large-work-space"></div>
-          <p>Answer: <input class="ans-input" type="text" style="width:100px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="2753" type="text" style="width:100px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -758,6 +782,105 @@
       ld.appendChild(d);
     }
   });
+  </script>
+
+  <script>
+(function() {
+  window.wsCheckAll = function() {
+    var inputs = document.querySelectorAll('.ans-input[data-answer]');
+    var correct = 0, total = 0;
+    inputs.forEach(function(inp) {
+      var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+      var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
+      total++;
+      if (answers.indexOf(user) !== -1) {
+        inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+      } else {
+        inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+      }
+    });
+    var disp = document.getElementById('ws-score-display');
+    if (total === 0) { disp.textContent = ''; return; }
+    var pct = Math.round(100*correct/total);
+    disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+    disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+  };
+  window.wsReset = function() {
+    document.querySelectorAll('.ans-input').forEach(function(inp){ inp.value=''; inp.classList.remove('ws-correct','ws-wrong'); });
+    document.querySelectorAll('.written-area').forEach(function(ta){ ta.value=''; });
+    var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
+  };
+  window.wsRegenerate = function() { wsRegenerateImpl(); };
+  function rnd(lo,hi){ return lo+Math.floor(Math.random()*(hi-lo+1)); }
+  function gcd(a,b){ return b===0?a:gcd(b,a%b); }
+
+  function extgcd(a, b) {
+    if (b === 0) return { g: a, s: 1, t: 0 };
+    var r = extgcd(b, a % b);
+    return { g: r.g, s: r.t, t: r.s - Math.floor(a/b)*r.t };
+  }
+  function modInv(a, n) {
+    var r = extgcd(a, n);
+    if (r.g !== 1) return -1;
+    return ((r.s % n) + n) % n;
+  }
+  function coprimePair() {
+    var a, n;
+    do { n = rnd(7,30); a = rnd(2,n-1); } while (gcd(a,n) !== 1);
+    return {a:a, n:n};
+  }
+
+  function wsRegenerateImpl() {
+    // Regenerate F4
+    var p4 = coprimePair();
+    var inv4 = modInv(p4.a, p4.n);
+    var r4 = extgcd(p4.a, p4.n);
+    var s4 = r4.s; // raw Bezout coefficient for a
+    var t4 = r4.t; // coefficient for n
+    // Bézout form: 1 = s4·a + t4·n
+    // Display as: 1 = s4·a + t4·n (if s4 positive) or rearranged nicely
+    var bez4 = buildBezout(s4, p4.a, t4, p4.n);
+    document.getElementById('f4-bezout').innerHTML = '\\(' + bez4 + '\\)';
+    document.getElementById('f4-question').innerHTML = 'Find \\(' + p4.a + '^{-1}\\pmod{' + p4.n + '}\\)';
+    document.getElementById('f4-raw').dataset.answer = String(s4);
+    document.getElementById('f4-pos').dataset.answer = String(inv4);
+
+    // Regenerate F5
+    var p5 = coprimePair();
+    var inv5 = modInv(p5.a, p5.n);
+    var r5 = extgcd(p5.a, p5.n);
+    var s5 = r5.s;
+    var t5 = r5.t;
+    var bez5 = buildBezout(s5, p5.a, t5, p5.n);
+    document.getElementById('f5-bezout').innerHTML = '\\(' + bez5 + '\\)';
+    document.getElementById('f5-question').innerHTML = 'Find \\(' + p5.a + '^{-1}\\pmod{' + p5.n + '}\\)';
+    document.getElementById('f5-raw').dataset.answer = String(s5);
+    document.getElementById('f5-pos').dataset.answer = String(inv5);
+
+    // Re-render MathJax if available
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([document.getElementById('f4-bezout'), document.getElementById('f4-question'),
+                               document.getElementById('f5-bezout'), document.getElementById('f5-question')]);
+    }
+  }
+
+  function buildBezout(s, a, t, n) {
+    // Returns LaTeX string for 1 = s·a + t·n
+    var parts = [];
+    if (s === 1) parts.push(String(a));
+    else if (s === -1) parts.push('-' + a);
+    else parts.push(s + '\\cdot' + a);
+
+    if (t >= 0) {
+      if (t === 1) parts.push('+' + n);
+      else parts.push('+' + t + '\\cdot' + n);
+    } else {
+      if (t === -1) parts.push('-' + n);
+      else parts.push(t + '\\cdot' + n);
+    }
+    return '1=' + parts.join('');
+  }
+})();
   </script>
 </body>
 </html>

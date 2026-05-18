@@ -172,6 +172,26 @@
     .nav-secondary { background: #e8f4ef; border-color: var(--border); color: #2a6049; }
     .nav-secondary:hover { background: #c5e0d4; }
 
+    /* Check/score system */
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn {
+      padding: 9px 20px; border-radius: 8px; border: none;
+      font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s;
+    }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check  { background: #334e7d; color: #fff; }
+    .ws-btn-regen  { background: #2a6049; color: #fff; }
+    .ws-btn-reset  { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -235,6 +255,15 @@
     </header>
 
     <main>
+      <!-- Score bar -->
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new GCD problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">&#10003; Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">&#8987; Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">&#8635; Reset</button>
+      </div>
+
       <section id="student-info">
         <div class="student-info">
           <div>
@@ -344,20 +373,20 @@
           </thead>
           <tbody>
             <tr><td>B1</td><td>84 ÷ 30</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="b1-div" type="text" style="width:100%" autocomplete="off" data-answer="84=2·30+24|84=2*30+24|84 = 2·30 + 24|84 = 2*30 + 24" /></td>
+              <td><input class="ans-input" id="b1-r" type="text" style="width:60px" autocomplete="off" data-answer="24" /></td></tr>
             <tr><td>B2</td><td>99 ÷ 78</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="b2-div" type="text" style="width:100%" autocomplete="off" data-answer="99=1·78+21|99=1*78+21|99 = 1·78 + 21|99 = 1*78 + 21" /></td>
+              <td><input class="ans-input" id="b2-r" type="text" style="width:60px" autocomplete="off" data-answer="21" /></td></tr>
             <tr><td>B3</td><td>252 ÷ 105</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="b3-div" type="text" style="width:100%" autocomplete="off" data-answer="252=2·105+42|252=2*105+42|252 = 2·105 + 42|252 = 2*105 + 42" /></td>
+              <td><input class="ans-input" id="b3-r" type="text" style="width:60px" autocomplete="off" data-answer="42" /></td></tr>
             <tr><td>B4</td><td>151 ÷ 25</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="b4-div" type="text" style="width:100%" autocomplete="off" data-answer="151=6·25+1|151=6*25+1|151 = 6·25 + 1|151 = 6*25 + 1" /></td>
+              <td><input class="ans-input" id="b4-r" type="text" style="width:60px" autocomplete="off" data-answer="1" /></td></tr>
             <tr><td>B5</td><td>391 ÷ 299</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="b5-div" type="text" style="width:100%" autocomplete="off" data-answer="391=1·299+92|391=1*299+92|391 = 1·299 + 92|391 = 1*299 + 92" /></td>
+              <td><input class="ans-input" id="b5-r" type="text" style="width:60px" autocomplete="off" data-answer="92" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -372,7 +401,7 @@
             <textarea class="written-area" rows="5" placeholder="Show your steps…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" id="c1-ans" type="text" style="width:80px" autocomplete="off" data-answer="6" /></p>
         </div>
 
         <div class="problem">
@@ -381,7 +410,7 @@
             <textarea class="written-area" rows="5" placeholder="Show your steps…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" id="c2-ans" type="text" style="width:80px" autocomplete="off" data-answer="21" /></p>
         </div>
 
         <div class="problem">
@@ -390,7 +419,7 @@
             <textarea class="written-area" rows="4" placeholder="Show your steps…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" id="c3-ans" type="text" style="width:80px" autocomplete="off" data-answer="1" /></p>
         </div>
       </section>
 
@@ -399,51 +428,51 @@
         <p>Complete each table, then identify the greatest common divisor.</p>
 
         <div class="problem">
-          <div class="problem-title">D1. Find \(\gcd(391,299)\).</div>
-          <table class="division-table">
+          <div class="problem-title" id="d1-title">D1. Find \(\gcd(391,299)\).</div>
+          <table class="division-table" id="d1-table">
             <thead>
               <tr><th>Step</th><th>Division</th><th>Remainder</th></tr>
             </thead>
             <tbody>
               <tr><td>1</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d1-s1-div" type="text" style="width:100%" autocomplete="off" data-answer="391=1·299+92|391=1*299+92|391 = 1·299 + 92|391 = 1*299 + 92" /></td>
+                <td><input class="ans-input" id="d1-s1-r" type="text" style="width:60px" autocomplete="off" data-answer="92" /></td></tr>
               <tr><td>2</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d1-s2-div" type="text" style="width:100%" autocomplete="off" data-answer="299=3·92+23|299=3*92+23|299 = 3·92 + 23|299 = 3*92 + 23" /></td>
+                <td><input class="ans-input" id="d1-s2-r" type="text" style="width:60px" autocomplete="off" data-answer="23" /></td></tr>
               <tr><td>3</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d1-s3-div" type="text" style="width:100%" autocomplete="off" data-answer="92=4·23+0|92=4*23+0|92 = 4·23 + 0|92 = 4*23 + 0" /></td>
+                <td><input class="ans-input" id="d1-s3-r" type="text" style="width:60px" autocomplete="off" data-answer="0" /></td></tr>
             </tbody>
           </table>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" id="d1-gcd" type="text" style="width:80px" autocomplete="off" data-answer="23" /></p>
         </div>
 
         <div class="problem">
-          <div class="problem-title">D2. Find \(\gcd(99,78)\).</div>
-          <table class="division-table">
+          <div class="problem-title" id="d2-title">D2. Find \(\gcd(99,78)\).</div>
+          <table class="division-table" id="d2-table">
             <thead>
               <tr><th>Step</th><th>Division</th><th>Remainder</th></tr>
             </thead>
             <tbody>
               <tr><td>1</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d2-s1-div" type="text" style="width:100%" autocomplete="off" data-answer="99=1·78+21|99=1*78+21|99 = 1·78 + 21|99 = 1*78 + 21" /></td>
+                <td><input class="ans-input" id="d2-s1-r" type="text" style="width:60px" autocomplete="off" data-answer="21" /></td></tr>
               <tr><td>2</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d2-s2-div" type="text" style="width:100%" autocomplete="off" data-answer="78=3·21+15|78=3*21+15|78 = 3·21 + 15|78 = 3*21 + 15" /></td>
+                <td><input class="ans-input" id="d2-s2-r" type="text" style="width:60px" autocomplete="off" data-answer="15" /></td></tr>
               <tr><td>3</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d2-s3-div" type="text" style="width:100%" autocomplete="off" data-answer="21=1·15+6|21=1*15+6|21 = 1·15 + 6|21 = 1*15 + 6" /></td>
+                <td><input class="ans-input" id="d2-s3-r" type="text" style="width:60px" autocomplete="off" data-answer="6" /></td></tr>
               <tr><td>4</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d2-s4-div" type="text" style="width:100%" autocomplete="off" data-answer="15=2·6+3|15=2*6+3|15 = 2·6 + 3|15 = 2*6 + 3" /></td>
+                <td><input class="ans-input" id="d2-s4-r" type="text" style="width:60px" autocomplete="off" data-answer="3" /></td></tr>
               <tr><td>5</td>
-                <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:60px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" id="d2-s5-div" type="text" style="width:100%" autocomplete="off" data-answer="6=2·3+0|6=2*3+0|6 = 2·3 + 0|6 = 2*3 + 0" /></td>
+                <td><input class="ans-input" id="d2-s5-r" type="text" style="width:60px" autocomplete="off" data-answer="0" /></td></tr>
             </tbody>
           </table>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" id="d2-gcd" type="text" style="width:80px" autocomplete="off" data-answer="3" /></p>
         </div>
       </section>
 
@@ -463,21 +492,21 @@
           </thead>
           <tbody>
             <tr><td>E1</td><td>35 and 64</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="e1-gcd" type="text" style="width:50px" autocomplete="off" data-answer="1" /></td>
+              <td><input class="ans-input" id="e1-cop" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td>
+              <td><input class="ans-input" id="e1-work" type="text" style="width:100%" autocomplete="off" /></td></tr>
             <tr><td>E2</td><td>26 and 15</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="e2-gcd" type="text" style="width:50px" autocomplete="off" data-answer="1" /></td>
+              <td><input class="ans-input" id="e2-cop" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td>
+              <td><input class="ans-input" id="e2-work" type="text" style="width:100%" autocomplete="off" /></td></tr>
             <tr><td>E3</td><td>26 and 13</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="e3-gcd" type="text" style="width:50px" autocomplete="off" data-answer="13" /></td>
+              <td><input class="ans-input" id="e3-cop" type="text" style="width:50px" autocomplete="off" data-answer="no|n" /></td>
+              <td><input class="ans-input" id="e3-work" type="text" style="width:100%" autocomplete="off" /></td></tr>
             <tr><td>E4</td><td>144 and 89</td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="e4-gcd" type="text" style="width:50px" autocomplete="off" data-answer="1" /></td>
+              <td><input class="ans-input" id="e4-cop" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td>
+              <td><input class="ans-input" id="e4-work" type="text" style="width:100%" autocomplete="off" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -497,20 +526,20 @@
           </thead>
           <tbody>
             <tr><td>F1</td><td>Does 35 have an inverse mod 64?</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="f1-gcd" type="text" style="width:100%" autocomplete="off" data-answer="gcd(35,64)=1|1" /></td>
+              <td><input class="ans-input" id="f1-ex" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td></tr>
             <tr><td>F2</td><td>Does 15 have an inverse mod 26?</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="f2-gcd" type="text" style="width:100%" autocomplete="off" data-answer="gcd(15,26)=1|1" /></td>
+              <td><input class="ans-input" id="f2-ex" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td></tr>
             <tr><td>F3</td><td>Does 13 have an inverse mod 26?</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="f3-gcd" type="text" style="width:100%" autocomplete="off" data-answer="gcd(13,26)=13|13" /></td>
+              <td><input class="ans-input" id="f3-ex" type="text" style="width:50px" autocomplete="off" data-answer="no|n" /></td></tr>
             <tr><td>F4</td><td>Does 25 have an inverse mod 151?</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="f4-gcd" type="text" style="width:100%" autocomplete="off" data-answer="gcd(25,151)=1|1" /></td>
+              <td><input class="ans-input" id="f4-ex" type="text" style="width:50px" autocomplete="off" data-answer="yes|y" /></td></tr>
             <tr><td>F5</td><td>Does 299 have an inverse mod 391?</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="f5-gcd" type="text" style="width:100%" autocomplete="off" data-answer="gcd(299,391)=23|23" /></td>
+              <td><input class="ans-input" id="f5-ex" type="text" style="width:50px" autocomplete="off" data-answer="no|n" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -556,7 +585,7 @@
             <textarea class="written-area" rows="6" placeholder="Show your steps…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Answer: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" id="h1-ans" type="text" style="width:80px" autocomplete="off" data-answer="1" /></p>
         </div>
 
         <div class="problem">
@@ -565,8 +594,8 @@
             <textarea class="written-area" rows="5" placeholder="Show your steps…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p>Greatest common divisor: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
-          <p>Inverse exists? <input class="ans-input" type="text" style="width:60px" autocomplete="off" /></p>
+          <p>Greatest common divisor: <input class="ans-input" id="h2-gcd" type="text" style="width:80px" autocomplete="off" data-answer="1" /></p>
+          <p>Inverse exists? <input class="ans-input" id="h2-ex" type="text" style="width:60px" autocomplete="off" data-answer="yes|y" /></p>
         </div>
       </section>
 
@@ -578,15 +607,15 @@
           </thead>
           <tbody>
             <tr><td>The Euclidean algorithm repeatedly uses division with remainder.</td>
-              <td><input class="ans-input" type="text" style="width:50px" placeholder="T / F" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="sc1" type="text" style="width:50px" placeholder="T / F" autocomplete="off" data-answer="t|true" /></td></tr>
             <tr><td>When the remainder becomes 0, the greatest common divisor is 0.</td>
-              <td><input class="ans-input" type="text" style="width:50px" placeholder="T / F" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="sc2" type="text" style="width:50px" placeholder="T / F" autocomplete="off" data-answer="f|false" /></td></tr>
             <tr><td>After \(a=qb+r\), the next pair is \((b,r)\).</td>
-              <td><input class="ans-input" type="text" style="width:50px" placeholder="T / F" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="sc3" type="text" style="width:50px" placeholder="T / F" autocomplete="off" data-answer="t|true" /></td></tr>
             <tr><td>If \(\gcd(a,n)=1\), then \(a\) has an inverse modulo \(n\).</td>
-              <td><input class="ans-input" type="text" style="width:50px" placeholder="T / F" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="sc4" type="text" style="width:50px" placeholder="T / F" autocomplete="off" data-answer="t|true" /></td></tr>
             <tr><td>The Euclidean algorithm directly gives the modular inverse.</td>
-              <td><input class="ans-input" type="text" style="width:50px" placeholder="T / F" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" id="sc5" type="text" style="width:50px" placeholder="T / F" autocomplete="off" data-answer="f|false" /></td></tr>
           </tbody>
         </table>
       </section>
@@ -699,6 +728,149 @@
   </div>
 
   <script>
+  (function() {
+    'use strict';
+
+    function rnd(lo, hi) { return lo + Math.floor(Math.random()*(hi-lo+1)); }
+
+    function gcdVal(a, b) { return b===0?a:gcdVal(b,a%b); }
+
+    function euclidSteps(a, b) {
+      var steps = [];
+      while (b !== 0) {
+        var q = Math.floor(a/b), r = a%b;
+        steps.push({a:a, b:b, q:q, r:r});
+        a = b; b = r;
+      }
+      return { steps: steps, gcd: a };
+    }
+
+    /* Format a division step as e.g. "391=1·299+92" */
+    function fmtStep(s) {
+      return s.a + '=' + s.q + '·' + s.b + '+' + s.r;
+    }
+
+    /* Build pipe-separated alternatives for a division form answer */
+    function divAlts(s) {
+      var dot = s.a+'='+s.q+'·'+s.b+'+'+s.r;
+      var star = s.a+'='+s.q+'*'+s.b+'+'+s.r;
+      var dotSp = s.a+' = '+s.q+'·'+s.b+' + '+s.r;
+      var starSp = s.a+' = '+s.q+'*'+s.b+' + '+s.r;
+      return dot+'|'+star+'|'+dotSp+'|'+starSp;
+    }
+
+    /* ─── D1 regeneration ──────────────────────────────────────── */
+    var D1 = { a: 391, b: 299 };
+    var D2 = { a: 99,  b: 78  };
+
+    function pickD1Pair() {
+      /* Pick a pair with exactly 3 Euclidean steps for the 3-row table */
+      var tries = 0;
+      while (tries++ < 500) {
+        var a = rnd(200, 600), b = rnd(50, a-1);
+        var res = euclidSteps(a, b);
+        if (res.steps.length === 3 && res.gcd > 1) {
+          return { a:a, b:b, result: res };
+        }
+      }
+      /* fallback */
+      return { a:391, b:299, result: euclidSteps(391,299) };
+    }
+
+    function pickD2Pair() {
+      /* Pick a pair with exactly 5 Euclidean steps for the 5-row table */
+      var tries = 0;
+      while (tries++ < 500) {
+        var a = rnd(60, 200), b = rnd(20, a-1);
+        var res = euclidSteps(a, b);
+        if (res.steps.length === 5) {
+          return { a:a, b:b, result: res };
+        }
+      }
+      /* fallback */
+      return { a:99, b:78, result: euclidSteps(99,78) };
+    }
+
+    function updateD1(d) {
+      var title = document.getElementById('d1-title');
+      if (title) title.innerHTML = 'D1. Find \\(\\gcd(' + d.a + ',' + d.b + ')\\).';
+      var steps = d.result.steps;
+      for (var i = 0; i < 3; i++) {
+        var s = steps[i] || {a:0,b:0,q:0,r:0};
+        var divEl = document.getElementById('d1-s'+(i+1)+'-div');
+        var rEl   = document.getElementById('d1-s'+(i+1)+'-r');
+        if (divEl) { divEl.dataset.answer = divAlts(s); divEl.value = ''; divEl.className = 'ans-input'; }
+        if (rEl)   { rEl.dataset.answer   = String(s.r); rEl.value = ''; rEl.className = 'ans-input'; }
+      }
+      var gcdEl = document.getElementById('d1-gcd');
+      if (gcdEl) { gcdEl.dataset.answer = String(d.result.gcd); gcdEl.value = ''; gcdEl.className = 'ans-input'; }
+      /* re-typeset title */
+      if (window.MathJax && MathJax.typesetPromise && title) MathJax.typesetPromise([title]);
+    }
+
+    function updateD2(d) {
+      var title = document.getElementById('d2-title');
+      if (title) title.innerHTML = 'D2. Find \\(\\gcd(' + d.a + ',' + d.b + ')\\).';
+      var steps = d.result.steps;
+      for (var i = 0; i < 5; i++) {
+        var s = steps[i] || {a:0,b:0,q:0,r:0};
+        var divEl = document.getElementById('d2-s'+(i+1)+'-div');
+        var rEl   = document.getElementById('d2-s'+(i+1)+'-r');
+        if (divEl) { divEl.dataset.answer = divAlts(s); divEl.value = ''; divEl.className = 'ans-input'; }
+        if (rEl)   { rEl.dataset.answer   = String(s.r); rEl.value = ''; rEl.className = 'ans-input'; }
+      }
+      var gcdEl = document.getElementById('d2-gcd');
+      if (gcdEl) { gcdEl.dataset.answer = String(d.result.gcd); gcdEl.value = ''; gcdEl.className = 'ans-input'; }
+      if (window.MathJax && MathJax.typesetPromise && title) MathJax.typesetPromise([title]);
+    }
+
+    window.wsCheckAll = function() {
+      var inputs = document.querySelectorAll('.ans-input[data-answer]');
+      var correct = 0, total = 0;
+      inputs.forEach(function(inp) {
+        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
+        var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
+        var nUser = parseFloat(user);
+        total++;
+        var ok = false;
+        answers.forEach(function(ans) {
+          if (user === ans) { ok = true; return; }
+          var nAns = parseFloat(ans);
+          if (!isNaN(nUser) && !isNaN(nAns) && nUser === nAns) { ok = true; }
+        });
+        if (ok) {
+          inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+        } else if (user !== '') {
+          inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+        }
+      });
+      var disp = document.getElementById('ws-score-display');
+      if (total === 0) { disp.textContent = ''; return; }
+      var pct = Math.round(100*correct/total);
+      disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+      disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+    };
+
+    window.wsReset = function() {
+      document.querySelectorAll('.ans-input').forEach(function(inp) {
+        inp.value = '';
+        inp.className = 'ans-input';
+      });
+      document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
+      var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
+    };
+
+    window.wsRegenerate = function() {
+      /* Regenerate D1 (3-step) and D2 (5-step) only; static problems keep their fixed answers */
+      var d1 = pickD1Pair();
+      var d2 = pickD2Pair();
+      updateD1(d1);
+      updateD2(d2);
+      var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
+    };
+
+  })();
+
   document.querySelectorAll('.write-wrap').forEach(function(wrap) {
     var ta = wrap.querySelector('textarea');
     var ld = wrap.querySelector('.write-lines');

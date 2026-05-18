@@ -154,6 +154,20 @@
     .score-panel.visible { display: block; }
     .score-num { font-size: 1.5rem; font-weight: 900; color: var(--ws); }
 
+    /* Check/score system */
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn-check2  { background: #334e7d; color: #fff; }
+    .ws-btn-regen2  { background: #2a6049; color: #fff; }
+    .ws-btn-reset2  { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; border-radius: 4px; padding: 4px 6px; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; border-radius: 4px; padding: 4px 6px; }
+
     /* ─── Print: blank ─── */
     @page { margin: 0.75in; }
     @media print {
@@ -162,7 +176,7 @@
       header.worksheet-header, main {
         box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff;
       }
-      .no-print { display: none !important; }
+      .no-print, .ws-score-bar { display: none !important; }
       h1 { font-size: 22pt; -webkit-print-color-adjust: exact; }
       h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
       h3 { font-size: 11pt; break-after: avoid; }
@@ -238,6 +252,14 @@
     </header>
 
     <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> to get new computation problems for more practice.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check2" onclick="wsCheckAll()" style="padding:9px 20px;border-radius:8px;border:none;font-size:0.88rem;font-weight:800;cursor:pointer;transition:opacity 0.15s;">&#10003; Check Answers</button>
+        <button class="ws-btn ws-btn-regen2" onclick="wsRegenerate()" style="padding:9px 20px;border-radius:8px;border:none;font-size:0.88rem;font-weight:800;cursor:pointer;transition:opacity 0.15s;">&#8635; Regenerate</button>
+        <button class="ws-btn ws-btn-reset2" onclick="wsReset()" style="padding:9px 20px;border-radius:8px;border:none;font-size:0.88rem;font-weight:800;cursor:pointer;transition:opacity 0.15s;">&#8634; Reset</button>
+      </div>
+
       <div class="student-info">
         <div><span class="field-label">Name:</span><div class="field-line"></div></div>
         <div><span class="field-label">Date:</span><div class="field-line"></div></div>
@@ -817,6 +839,51 @@
       applyVersion();
       wireAnswers();
       attachLiveChecking();
+    }());
+
+    // ── Universal check/score/regen engine ────────────────────────────────
+    (function() {
+      window.wsCheckAll = function() {
+        var inputs = document.querySelectorAll('.ans-input[data-answer]');
+        var correct = 0, total = 0;
+        inputs.forEach(function(inp) {
+          var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
+          var answers = inp.dataset.answer.split('|').map(function(a){
+            return a.trim().toLowerCase().replace(/\s+/g,'');
+          });
+          total++;
+          // Accept with or without 0x prefix for hex answers
+          var ok = answers.some(function(a) {
+            return user === a || user === '0x' + a || user.replace(/^0x/,'') === a.replace(/^0x/,'');
+          });
+          if (ok) {
+            inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+          } else {
+            inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+          }
+        });
+        var disp = document.getElementById('ws-score-display');
+        if (total === 0) { disp.textContent = ''; return; }
+        var pct = Math.round(100*correct/total);
+        disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+        disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+      };
+
+      window.wsReset = function() {
+        document.querySelectorAll('.ans-input').forEach(function(inp) {
+          inp.value = '';
+          inp.classList.remove('ws-correct', 'ws-wrong', 'correct', 'wrong');
+        });
+        document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
+        var disp = document.getElementById('ws-score-display');
+        if (disp) disp.textContent = '';
+        var panel = document.getElementById('score-panel');
+        if (panel) panel.classList.remove('visible');
+      };
+
+      window.wsRegenerate = function() {
+        if (typeof newVersion === 'function') newVersion();
+      };
     }());
 
     // Generate ruled print lines for each write-wrap

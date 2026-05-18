@@ -270,6 +270,26 @@
       transition: background .2s, color .2s;
     }
 
+    /* Check/score system */
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn {
+      padding: 9px 20px; border-radius: 8px; border: none;
+      font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s;
+    }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check  { background: #334e7d; color: #fff; }
+    .ws-btn-regen  { background: #2a6049; color: #fff; }
+    .ws-btn-reset  { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
     @media (max-width: 700px) {
       header.worksheet-header, main { padding: 20px; }
       .student-info { grid-template-columns: 1fr; }
@@ -348,6 +368,15 @@
     </header>
 
     <main>
+
+      <!-- Score bar -->
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new computation problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">&#10003; Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">&#8987; Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">&#8635; Reset</button>
+      </div>
 
       <!-- Student Info -->
       <section>
@@ -1035,6 +1064,67 @@
     };
 
     window.addEventListener('load',function(){ tafPopA(); tafReset(); });
+  })();
+
+  /* ── ws-score-bar wrappers ─────────────────────────────────── */
+  (function() {
+    function gcd(a,b) { return b===0?a:gcd(b,a%b); }
+
+    function modInverse(a, n) {
+      for (var x = 1; x < n; x++) { if ((a * x) % n === 1) return x; }
+      return -1;
+    }
+
+    function coprimePair() {
+      var n, a;
+      var tries = 0;
+      do { n = rndW(7,30); a = rndW(2,n-1); tries++; } while (gcd(a,n) !== 1 && tries < 200);
+      return {a:a, n:n};
+    }
+
+    function rndW(lo, hi) { return lo + Math.floor(Math.random()*(hi-lo+1)); }
+
+    window.wsCheckAll = function() {
+      var inputs = document.querySelectorAll('.ans-input[data-answer]');
+      var correct = 0, total = 0;
+      inputs.forEach(function(inp) {
+        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
+        var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
+        var nUser = parseFloat(user);
+        total++;
+        var ok = false;
+        answers.forEach(function(ans) {
+          if (user === ans) { ok = true; return; }
+          var nAns = parseFloat(ans);
+          if (!isNaN(nUser) && !isNaN(nAns) && nUser === nAns) { ok = true; }
+        });
+        if (ok) {
+          inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+        } else if (user !== '') {
+          inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+        }
+      });
+      var disp = document.getElementById('ws-score-display');
+      if (total === 0) { disp.textContent = ''; return; }
+      var pct = Math.round(100*correct/total);
+      disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+      disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+    };
+
+    window.wsReset = function() {
+      document.querySelectorAll('.ans-input').forEach(function(inp) {
+        inp.value = '';
+        inp.className = 'ans-input';
+      });
+      document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
+      var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
+    };
+
+    window.wsRegenerate = function() {
+      /* Delegate to the existing newVersion which regenerates and rebuilds */
+      if (window.newVersion) { window.newVersion(); }
+      var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
+    };
   })();
 
   /* Generate ruled print lines for each write-wrap */

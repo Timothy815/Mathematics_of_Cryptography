@@ -196,6 +196,22 @@
     .nav-secondary { background: #e8f4ef; border-color: var(--border); color: #2a6049; }
     .nav-secondary:hover { background: #c5e0d4; }
 
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s; }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check { background: #334e7d; color: #fff; }
+    .ws-btn-regen { background: #2a6049; color: #fff; }
+    .ws-btn-reset { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -260,6 +276,14 @@
     </header>
 
     <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new computation problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">✓ Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">⟳ Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">↺ Reset</button>
+      </div>
+
       <section id="student-info">
         <div class="student-info">
           <div>
@@ -316,23 +340,23 @@
         <p>Fill in each blank with the correct word or phrase.</p>
 
         <div class="problem">
-          <div class="problem-title">A1. In GF(2), the only possible coefficient values are <input class="ans-input" type="text" style="width:60px" autocomplete="off" /> and <input class="ans-input" type="text" style="width:60px" autocomplete="off" />.</div>
+          <div class="problem-title">A1. In GF(2), the only possible coefficient values are <input class="ans-input" data-answer="0" type="text" style="width:60px" autocomplete="off" /> and <input class="ans-input" data-answer="1" type="text" style="width:60px" autocomplete="off" />.</div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">A2. When the same term appears in both polynomials, the coefficients add to <input class="ans-input" type="text" style="width:60px" autocomplete="off" />, so the term <input class="ans-input" type="text" style="width:120px" autocomplete="off" />.</div>
+          <div class="problem-title">A2. When the same term appears in both polynomials, the coefficients add to <input class="ans-input" data-answer="0" type="text" style="width:60px" autocomplete="off" />, so the term <input class="ans-input" data-answer="cancels" type="text" style="width:120px" autocomplete="off" />.</div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">A3. Polynomial addition over GF(2) is identical to the bitwise <input class="ans-input" type="text" style="width:100px" autocomplete="off" /> operation on bytes.</div>
+          <div class="problem-title">A3. Polynomial addition over GF(2) is identical to the bitwise <input class="ans-input" data-answer="xor" type="text" style="width:100px" autocomplete="off" /> operation on bytes.</div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">A4. There is no <input class="ans-input" type="text" style="width:110px" autocomplete="off" /> in GF(2) polynomial addition — each position is independent.</div>
+          <div class="problem-title">A4. There is no <input class="ans-input" data-answer="carrying|carry" type="text" style="width:110px" autocomplete="off" /> in GF(2) polynomial addition — each position is independent.</div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">A5. Subtracting a polynomial over GF(2) gives the <input class="ans-input" type="text" style="width:110px" autocomplete="off" /> result as adding it.</div>
+          <div class="problem-title">A5. Subtracting a polynomial over GF(2) gives the <input class="ans-input" data-answer="same" type="text" style="width:110px" autocomplete="off" /> result as adding it.</div>
         </div>
       </section>
 
@@ -354,23 +378,23 @@
           <tbody>
             <tr>
               <td>0</td><td>0</td><td>0</td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0" type="text" style="width:70px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>0</td><td>1</td><td>1</td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:70px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>1</td><td>0</td><td>1</td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:70px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>1</td><td>1</td><td>2</td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0" type="text" style="width:70px" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -388,7 +412,7 @@
             <textarea class="written-area" rows="3" placeholder="List the terms that appear in both polynomials…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" /></p>
+          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" data-answer="x^5+x^2" type="text" style="width:260px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -398,7 +422,7 @@
             <textarea class="written-area" rows="3" placeholder="List the terms that appear in both polynomials…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" /></p>
+          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" data-answer="x^7+x^2" type="text" style="width:260px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -408,7 +432,7 @@
             <textarea class="written-area" rows="3" placeholder="List the terms that appear in both polynomials…"></textarea>
             <div class="write-lines"></div>
           </div>
-          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" /></p>
+          <p style="margin:8px 0 4px;">(b) Result: <input class="ans-input" data-answer="x^5+x^2+x+1" type="text" style="width:260px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -420,31 +444,31 @@
         <div class="problem">
           <div class="problem-title">D1. \((x^4 + x + 1) + (x^3 + x + 1)\)</div>
           <div class="work-space"></div>
-          Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" />
+          Result: <input class="ans-input" data-answer="x^4+x^3" type="text" style="width:260px" autocomplete="off" />
         </div>
 
         <div class="problem">
           <div class="problem-title">D2. \((x^7 + x^2 + 1) + (x^7 + x^5 + x^2)\)</div>
           <div class="work-space"></div>
-          Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" />
+          Result: <input class="ans-input" data-answer="x^5+1" type="text" style="width:260px" autocomplete="off" />
         </div>
 
         <div class="problem">
           <div class="problem-title">D3. \((x^6 + x^4 + x^2 + x + 1) + (x^7 + x + 1)\)</div>
           <div class="work-space"></div>
-          Result: <input class="ans-input" type="text" style="width:280px" autocomplete="off" />
+          Result: <input class="ans-input" data-answer="x^7+x^6+x^4+x^2" type="text" style="width:280px" autocomplete="off" />
         </div>
 
         <div class="problem">
           <div class="problem-title">D4. \((x^3 + x^2 + x + 1) + (x^3 + x^2)\)</div>
           <div class="work-space"></div>
-          Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" />
+          Result: <input class="ans-input" data-answer="x+1" type="text" style="width:260px" autocomplete="off" />
         </div>
 
         <div class="problem">
           <div class="problem-title">D5. \((x^5 + x^3 + x) + (x^5 + x^3 + x)\)</div>
           <div class="work-space"></div>
-          Result: <input class="ans-input" type="text" style="width:260px" autocomplete="off" />
+          Result: <input class="ans-input" data-answer="0" type="text" style="width:260px" autocomplete="off" />
         </div>
       </section>
 
@@ -453,7 +477,7 @@
         <h2>Part E: Byte XOR</h2>
         <p>For each row, convert both hex bytes to binary, compute the XOR bit by bit, then write the result in hex and polynomial form. Hex values A and B are given.</p>
 
-        <table class="work-table">
+        <table class="work-table" id="xor-table">
           <thead>
             <tr>
               <th style="width:8%">#</th>
@@ -466,56 +490,56 @@
               <th>Polynomial form</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
+          <tbody id="xor-table-body">
+            <tr id="xe1-row">
               <td>E1</td>
-              <td><code>0x57</code></td>
-              <td><code>0x83</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><span id="xe1-a"><code>0x57</code></span></td>
+              <td><span id="xe1-b"><code>0x83</code></span></td>
+              <td><input class="ans-input" id="xe1-bina" data-answer="01010111" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe1-binb" data-answer="10000011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe1-xorbin" data-answer="11010100" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe1-hex" data-answer="0xd4|d4" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe1-poly" data-answer="x^7+x^6+x^4+x^2" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
-            <tr>
+            <tr id="xe2-row">
               <td>E2</td>
-              <td><code>0x1B</code></td>
-              <td><code>0x03</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><span id="xe2-a"><code>0x1B</code></span></td>
+              <td><span id="xe2-b"><code>0x03</code></span></td>
+              <td><input class="ans-input" id="xe2-bina" data-answer="00011011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe2-binb" data-answer="00000011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe2-xorbin" data-answer="00011000" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe2-hex" data-answer="0x18|18" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe2-poly" data-answer="x^4+x^3" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
-            <tr>
+            <tr id="xe3-row">
               <td>E3</td>
-              <td><code>0xFF</code></td>
-              <td><code>0x0F</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><span id="xe3-a"><code>0xFF</code></span></td>
+              <td><span id="xe3-b"><code>0x0F</code></span></td>
+              <td><input class="ans-input" id="xe3-bina" data-answer="11111111" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe3-binb" data-answer="00001111" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe3-xorbin" data-answer="11110000" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe3-hex" data-answer="0xf0|f0" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe3-poly" data-answer="x^7+x^6+x^5+x^4" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
-            <tr>
+            <tr id="xe4-row">
               <td>E4</td>
-              <td><code>0xAA</code></td>
-              <td><code>0x55</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><span id="xe4-a"><code>0xAA</code></span></td>
+              <td><span id="xe4-b"><code>0x55</code></span></td>
+              <td><input class="ans-input" id="xe4-bina" data-answer="10101010" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe4-binb" data-answer="01010101" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe4-xorbin" data-answer="11111111" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe4-hex" data-answer="0xff|ff" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe4-poly" data-answer="x^7+x^6+x^5+x^4+x^3+x^2+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
-            <tr>
+            <tr id="xe5-row">
               <td>E5</td>
-              <td><code>0x63</code></td>
-              <td><code>0x63</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:70px" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><span id="xe5-a"><code>0x63</code></span></td>
+              <td><span id="xe5-b"><code>0x63</code></span></td>
+              <td><input class="ans-input" id="xe5-bina" data-answer="01100011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe5-binb" data-answer="01100011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe5-xorbin" data-answer="00000000" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe5-hex" data-answer="0x00|00" type="text" style="width:70px" autocomplete="off" /></td>
+              <td><input class="ans-input" id="xe5-poly" data-answer="0" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -530,15 +554,15 @@
         </div>
 
         <div class="problem">
-          <div class="problem-title">F1. \((x^3 + x + 1) + (x^3 + x + 1)\) = <input class="ans-input" type="text" style="width:120px" autocomplete="off" /></div>
+          <div class="problem-title">F1. \((x^3 + x + 1) + (x^3 + x + 1)\) = <input class="ans-input" data-answer="0" type="text" style="width:120px" autocomplete="off" /></div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">F2. \(0\mathtt{x4F} \oplus 0\mathtt{x4F}\) = <input class="ans-input" type="text" style="width:120px" autocomplete="off" /></div>
+          <div class="problem-title">F2. \(0\mathtt{x4F} \oplus 0\mathtt{x4F}\) = <input class="ans-input" data-answer="0x00|00" type="text" style="width:120px" autocomplete="off" /></div>
         </div>
 
         <div class="problem">
-          <div class="problem-title">F3. If \(A\) is any byte, then \(A \oplus A\) = <input class="ans-input" type="text" style="width:120px" autocomplete="off" /></div>
+          <div class="problem-title">F3. If \(A\) is any byte, then \(A \oplus A\) = <input class="ans-input" data-answer="0" type="text" style="width:120px" autocomplete="off" /></div>
         </div>
       </section>
 
@@ -548,18 +572,18 @@
 
         <div class="problem">
           <div class="problem-title">G1. True or False: In ordinary arithmetic, addition and subtraction are different operations.</div>
-          <p>Answer: <input class="ans-input" type="text" style="width:100px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="true" type="text" style="width:100px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">G2. True or False: In GF(2), subtraction and addition are the same operation.</div>
-          <p>Answer: <input class="ans-input" type="text" style="width:100px" autocomplete="off" /></p>
+          <p>Answer: <input class="ans-input" data-answer="true" type="text" style="width:100px" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
           <div class="problem-title">G3. Show that \((x^4 + x + 1) - (x + 1)\) gives the same result as \((x^4 + x + 1) + (x + 1)\) over GF(2).</div>
           <div class="work-space large-work-space"></div>
-          Result of both operations: <input class="ans-input" type="text" style="width:180px" autocomplete="off" />
+          Result of both operations: <input class="ans-input" data-answer="x^4" type="text" style="width:180px" autocomplete="off" />
         </div>
       </section>
 
@@ -756,6 +780,95 @@
       ld.appendChild(d);
     }
   });
+  </script>
+
+  <script>
+(function() {
+  window.wsCheckAll = function() {
+    var inputs = document.querySelectorAll('.ans-input[data-answer]');
+    var correct = 0, total = 0;
+    inputs.forEach(function(inp) {
+      var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+      var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
+      total++;
+      if (answers.indexOf(user) !== -1) {
+        inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+      } else {
+        inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+      }
+    });
+    var disp = document.getElementById('ws-score-display');
+    if (total === 0) { disp.textContent = ''; return; }
+    var pct = Math.round(100*correct/total);
+    disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+    disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+  };
+  window.wsReset = function() {
+    document.querySelectorAll('.ans-input').forEach(function(inp){ inp.value=''; inp.classList.remove('ws-correct','ws-wrong'); });
+    document.querySelectorAll('.written-area').forEach(function(ta){ ta.value=''; });
+    var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
+  };
+  window.wsRegenerate = function() { wsRegenerateImpl(); };
+  function rnd(lo,hi){ return lo+Math.floor(Math.random()*(hi-lo+1)); }
+
+  function hexToPolyStr(b) {
+    if (b === 0) return '0';
+    var terms = [];
+    for (var k=7; k>=0; k--) {
+      if (b & (1<<k)) terms.push(k===0?'1':k===1?'x':'x^'+k);
+    }
+    return terms.join('+');
+  }
+  function hexToBin(b) { return b.toString(2).padStart(8,'0'); }
+  function toHex(b) { return '0x' + b.toString(16).padStart(2,'0').toUpperCase(); }
+  function rndByte() { return rnd(0,255); }
+
+  // Current Part E row pairs
+  var eRows = [
+    {a:0x57, b:0x83},
+    {a:0x1B, b:0x03},
+    {a:0xFF, b:0x0F},
+    {a:0xAA, b:0x55},
+    {a:0x63, b:0x63}
+  ];
+
+  function updateXorRow(i, a, b) {
+    var n = i + 1;
+    var pfx = 'xe' + n;
+    var xorVal = a ^ b;
+    var binA = hexToBin(a);
+    var binB = hexToBin(b);
+    var binXor = hexToBin(xorVal);
+    var hexXor = toHex(xorVal).toLowerCase().replace('0x','');
+    var polyXor = hexToPolyStr(xorVal);
+
+    var elA = document.getElementById(pfx + '-a');
+    var elB = document.getElementById(pfx + '-b');
+    if (elA) elA.innerHTML = '<code>' + toHex(a) + '</code>';
+    if (elB) elB.innerHTML = '<code>' + toHex(b) + '</code>';
+
+    function setInp(id, ans, clear) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.dataset.answer = ans;
+      if (clear) { el.value = ''; el.classList.remove('ws-correct','ws-wrong'); }
+    }
+    setInp(pfx+'-bina', binA, true);
+    setInp(pfx+'-binb', binB, true);
+    setInp(pfx+'-xorbin', binXor, true);
+    setInp(pfx+'-hex', '0x'+hexXor+'|'+hexXor, true);
+    setInp(pfx+'-poly', polyXor, true);
+  }
+
+  function wsRegenerateImpl() {
+    // Regenerate all 5 Part E rows
+    for (var i = 0; i < 5; i++) {
+      eRows[i].a = rndByte();
+      eRows[i].b = rndByte();
+      updateXorRow(i, eRows[i].a, eRows[i].b);
+    }
+  }
+})();
   </script>
 </body>
 </html>

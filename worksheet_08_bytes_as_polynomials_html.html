@@ -196,6 +196,22 @@
     .nav-secondary { background: #e8f4ef; border-color: var(--border); color: #2a6049; }
     .nav-secondary:hover { background: #c5e0d4; }
 
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s; }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check { background: #334e7d; color: #fff; }
+    .ws-btn-regen { background: #2a6049; color: #fff; }
+    .ws-btn-reset { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -260,6 +276,14 @@
     </header>
 
     <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new computation problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">✓ Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">⟳ Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">↺ Reset</button>
+      </div>
+
       <section id="student-info">
         <div class="student-info">
           <div>
@@ -338,13 +362,13 @@
 
         <div class="problem">
           <div class="problem-title">A3. Which bit position corresponds to the constant term \(1\) in the polynomial?</div>
-          Bit position: <input class="ans-input" type="text" style="width:80px" autocomplete="off" />
+          Bit position: <input class="ans-input" data-answer="0" type="text" style="width:80px" autocomplete="off" />
         </div>
 
         <div class="problem">
           <div class="problem-title">A4. What is the highest-degree term possible in a byte-polynomial? Which bit position controls it?</div>
-          Highest-degree term: <input class="ans-input" type="text" style="width:120px" autocomplete="off" />
-          &nbsp; Bit position: <input class="ans-input" type="text" style="width:80px" autocomplete="off" />
+          Highest-degree term: <input class="ans-input" data-answer="x^7" type="text" style="width:120px" autocomplete="off" />
+          &nbsp; Bit position: <input class="ans-input" data-answer="7" type="text" style="width:80px" autocomplete="off" />
         </div>
       </section>
 
@@ -359,21 +383,21 @@
           </thead>
           <tbody>
             <tr><td>B1</td><td>7</td>
-              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" data-answer="x^7" type="text" style="width:120px" autocomplete="off" /></td></tr>
             <tr><td>B2</td><td>5</td>
-              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" data-answer="x^5" type="text" style="width:120px" autocomplete="off" /></td></tr>
             <tr><td>B3</td><td>1</td>
-              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" data-answer="x" type="text" style="width:120px" autocomplete="off" /></td></tr>
             <tr><td>B4</td><td>0</td>
-              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:120px" autocomplete="off" /></td></tr>
             <tr><td>B5</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="6" type="text" style="width:80px" autocomplete="off" /></td>
               <td>\(x^6\)</td></tr>
             <tr><td>B6</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="3" type="text" style="width:80px" autocomplete="off" /></td>
               <td>\(x^3\)</td></tr>
             <tr><td>B7</td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="2" type="text" style="width:80px" autocomplete="off" /></td>
               <td>\(x^2\)</td></tr>
           </tbody>
         </table>
@@ -414,7 +438,7 @@
             <div class="byte-cell"><span class="label">\(x\)</span><span class="given">1</span></div>
             <div class="byte-cell"><span class="label">\(1\)</span><span class="given">1</span></div>
           </div>
-          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+          <p>Polynomial: <input class="ans-input" data-answer="x^7+x+1" type="text" style="width:100%" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -429,7 +453,7 @@
             <div class="byte-cell"><span class="label">\(x\)</span><span class="given">1</span></div>
             <div class="byte-cell"><span class="label">\(1\)</span><span class="given">1</span></div>
           </div>
-          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+          <p>Polynomial: <input class="ans-input" data-answer="x^4+x^3+x+1" type="text" style="width:100%" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -444,7 +468,7 @@
             <div class="byte-cell"><span class="label">\(x\)</span><span class="blank"></span></div>
             <div class="byte-cell"><span class="label">\(1\)</span><span class="blank"></span></div>
           </div>
-          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+          <p>Polynomial: <input class="ans-input" data-answer="x^7+x^5+x^2+1" type="text" style="width:100%" autocomplete="off" /></p>
         </div>
 
         <div class="problem">
@@ -459,8 +483,8 @@
             <div class="byte-cell"><span class="label">\(x\)</span><span class="blank"></span></div>
             <div class="byte-cell"><span class="label">\(1\)</span><span class="blank"></span></div>
           </div>
-          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
-          <p>Number of terms: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+          <p>Polynomial: <input class="ans-input" data-answer="x^7+x^6+x^5+x^4+x^3+x^2+x+1" type="text" style="width:100%" autocomplete="off" /></p>
+          <p>Number of terms: <input class="ans-input" data-answer="8" type="text" style="width:80px" autocomplete="off" /></p>
         </div>
       </section>
 
@@ -469,7 +493,7 @@
         <h2>Part D: Hex byte → polynomial</h2>
         <p>First convert hex to binary, then convert binary to polynomial form.</p>
 
-        <table class="work-table">
+        <table class="work-table" id="part-d-table">
           <thead>
             <tr>
               <th style="width:8%">Problem</th>
@@ -478,36 +502,36 @@
               <th>Polynomial form</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="part-d-tbody">
             <tr>
-              <td>D1</td><td><code>0x57</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D1</td><td id="d1-hex"><code>0x57</code></td>
+              <td><input class="ans-input" id="d1-bin" data-answer="01010111" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d1-poly" data-answer="x^6+x^4+x^2+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>D2</td><td><code>0x83</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D2</td><td id="d2-hex"><code>0x83</code></td>
+              <td><input class="ans-input" id="d2-bin" data-answer="10000011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d2-poly" data-answer="x^7+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>D3</td><td><code>0x1B</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D3</td><td id="d3-hex"><code>0x1B</code></td>
+              <td><input class="ans-input" id="d3-bin" data-answer="00011011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d3-poly" data-answer="x^4+x^3+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>D4</td><td><code>0x63</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D4</td><td id="d4-hex"><code>0x63</code></td>
+              <td><input class="ans-input" id="d4-bin" data-answer="01100011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d4-poly" data-answer="x^6+x^5+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>D5</td><td><code>0x02</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D5</td><td id="d5-hex"><code>0x02</code></td>
+              <td><input class="ans-input" id="d5-bin" data-answer="00000010" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d5-poly" data-answer="x" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>D6</td><td><code>0x00</code></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td>D6</td><td id="d6-hex"><code>0x00</code></td>
+              <td><input class="ans-input" id="d6-bin" data-answer="00000000" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="d6-poly" data-answer="0" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -518,7 +542,7 @@
         <h2>Part E: Polynomial → binary and hex</h2>
         <p>Mark 1 for each power that appears and 0 for each power that does not appear, then write the hex byte.</p>
 
-        <table class="work-table">
+        <table class="work-table" id="part-e-table">
           <thead>
             <tr>
               <th style="width:8%">Problem</th>
@@ -527,36 +551,36 @@
               <th>Hex byte</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="part-e-tbody">
             <tr>
-              <td>E1</td><td>\(x^7+x^3+x^2+1\)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E1</td><td id="e1-poly">\(x^7+x^3+x^2+1\)</td>
+              <td><input class="ans-input" id="e1-bin" data-answer="10001101" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e1-hex" data-answer="0x8d|8d" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>E2</td><td>\(x^7+x^5+x^2+1\)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E2</td><td id="e2-poly">\(x^7+x^5+x^2+1\)</td>
+              <td><input class="ans-input" id="e2-bin" data-answer="10100101" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e2-hex" data-answer="0xa5|a5" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>E3</td><td>\(x^6+x^5+x+1\)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E3</td><td id="e3-poly">\(x^6+x^5+x+1\)</td>
+              <td><input class="ans-input" id="e3-bin" data-answer="01100011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e3-hex" data-answer="0x63|63" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>E4</td><td>\(x^4+x^3+x+1\)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E4</td><td id="e4-poly">\(x^4+x^3+x+1\)</td>
+              <td><input class="ans-input" id="e4-bin" data-answer="00011011" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e4-hex" data-answer="0x1b|1b" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>E5</td><td>\(x\)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E5</td><td id="e5-poly">\(x\)</td>
+              <td><input class="ans-input" id="e5-bin" data-answer="00000010" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e5-hex" data-answer="0x02|02" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
             <tr>
-              <td>E6</td><td>\(0\) (zero polynomial)</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
-              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>E6</td><td id="e6-poly">\(0\) (zero polynomial)</td>
+              <td><input class="ans-input" id="e6-bin" data-answer="00000000" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" id="e6-hex" data-answer="0x00|00" type="text" style="width:80px" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -567,64 +591,64 @@
         <h2>Part F: Coefficient tables</h2>
         <p>Fill in all eight coefficient cells (0 or 1) for each polynomial.</p>
 
-        <div class="problem">
-          <div class="problem-title">F1. Polynomial: \(x^6+x^4+x^2+x+1\)</div>
+        <div class="problem" id="f1-problem">
+          <div class="problem-title" id="f1-title">F1. Polynomial: \(x^6+x^4+x^2+x+1\)</div>
           <table class="poly-table">
             <thead>
               <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              <tr id="f1-row">
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div class="problem">
-          <div class="problem-title">F2. Polynomial: \(x^7+x+1\)</div>
+        <div class="problem" id="f2-problem">
+          <div class="problem-title" id="f2-title">F2. Polynomial: \(x^7+x+1\)</div>
           <table class="poly-table">
             <thead>
               <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              <tr id="f2-row">
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <div class="problem">
-          <div class="problem-title">F3. Polynomial: \(x^4+x^3+x+1\)</div>
+        <div class="problem" id="f3-problem">
+          <div class="problem-title" id="f3-title">F3. Polynomial: \(x^4+x^3+x+1\)</div>
           <table class="poly-table">
             <thead>
               <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
             </thead>
             <tbody>
-              <tr>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              <tr id="f3-row">
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:38px" autocomplete="off" /></td>
               </tr>
             </tbody>
           </table>
@@ -653,7 +677,7 @@
 
         <div class="problem">
           <div class="problem-title">G3. What is the polynomial form of <code>0x00</code>? Why is it special?</div>
-          Polynomial: <input class="ans-input" type="text" style="width:200px" autocomplete="off" />
+          Polynomial: <input class="ans-input" data-answer="0" type="text" style="width:200px" autocomplete="off" />
           <div class="write-wrap" style="margin-top:10px;">
             <textarea class="written-area" rows="2" placeholder="Why is it special?"></textarea>
             <div class="write-lines"></div>
@@ -666,17 +690,17 @@
             <thead><tr><th>\(a\)</th><th>\(b\)</th><th>\(a+b \pmod 2\)</th><th>XOR result</th></tr></thead>
             <tbody>
               <tr><td>0</td><td>0</td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:50px" autocomplete="off" /></td></tr>
               <tr><td>0</td><td>1</td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:50px" autocomplete="off" /></td></tr>
               <tr><td>1</td><td>0</td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="1" type="text" style="width:50px" autocomplete="off" /></td></tr>
               <tr><td>1</td><td>1</td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
-                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" data-answer="0" type="text" style="width:50px" autocomplete="off" /></td></tr>
             </tbody>
           </table>
           <div class="write-wrap" style="margin-top:8px;">
@@ -709,27 +733,27 @@
           <tbody>
             <tr>
               <td>H1</td><td><code>0x02</code></td><td>Polynomial</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>H2</td><td><code>0x03</code></td><td>Polynomial</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>H3</td><td><code>0x1B</code></td><td>Polynomial</td>
-              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^4+x^3+x+1" type="text" style="width:100%" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>H4</td><td>\(x\)</td><td>Hex byte</td>
-              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0x02|02" type="text" style="width:100px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>H5</td><td>\(x+1\)</td><td>Hex byte</td>
-              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0x03|03" type="text" style="width:100px" autocomplete="off" /></td>
             </tr>
             <tr>
               <td>H6</td><td>\(x^4+x^3+x+1\)</td><td>Hex byte</td>
-              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="0x1b|1b" type="text" style="width:100px" autocomplete="off" /></td>
             </tr>
           </tbody>
         </table>
@@ -737,7 +761,7 @@
         <div class="problem">
           <div class="problem-title">H7. The AES irreducible polynomial is \(x^8+x^4+x^3+x+1\). The constant <code>0x1B</code> contains
           the lower 8 bits of this polynomial. Which term is missing from <code>0x1B</code>'s polynomial that appears in the full irreducible polynomial?</div>
-          Missing term: <input class="ans-input" type="text" style="width:120px" autocomplete="off" />
+          Missing term: <input class="ans-input" data-answer="x^8" type="text" style="width:120px" autocomplete="off" />
           <div class="write-wrap" style="margin-top:8px;">
             <textarea class="written-area" rows="2" placeholder="Explain why a byte cannot represent the x^8 term…"></textarea>
             <div class="write-lines"></div>
@@ -875,6 +899,145 @@
       ld.appendChild(d);
     }
   });
+  </script>
+
+  <script>
+(function() {
+  window.wsCheckAll = function() {
+    var inputs = document.querySelectorAll('.ans-input[data-answer]');
+    var correct = 0, total = 0;
+    inputs.forEach(function(inp) {
+      var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+      var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
+      total++;
+      if (answers.indexOf(user) !== -1) {
+        inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+      } else {
+        inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+      }
+    });
+    var disp = document.getElementById('ws-score-display');
+    if (total === 0) { disp.textContent = ''; return; }
+    var pct = Math.round(100*correct/total);
+    disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+    disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+  };
+  window.wsReset = function() {
+    document.querySelectorAll('.ans-input').forEach(function(inp){ inp.value=''; inp.classList.remove('ws-correct','ws-wrong'); });
+    document.querySelectorAll('.written-area').forEach(function(ta){ ta.value=''; });
+    var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
+  };
+  window.wsRegenerate = function() { wsRegenerateImpl(); };
+  function rnd(lo,hi){ return lo+Math.floor(Math.random()*(hi-lo+1)); }
+
+  function hexToPolyStr(b) {
+    if (b === 0) return '0';
+    var terms = [];
+    for (var k=7; k>=0; k--) {
+      if (b & (1<<k)) terms.push(k===0?'1':k===1?'x':'x^'+k);
+    }
+    return terms.join('+');
+  }
+  function hexToBin(b) { return b.toString(2).padStart(8,'0'); }
+  function rndByte() { var b; do { b=rnd(1,255); } while(b===0); return b; }
+  function toHex(b) { return '0x' + b.toString(16).padStart(2,'0').toUpperCase(); }
+
+  // Store current D-row values for regen
+  var dRows = [
+    {val:0x57, id:'d1'}, {val:0x83, id:'d2'}, {val:0x1B, id:'d3'},
+    {val:0x63, id:'d4'}, {val:0x02, id:'d5'}, {val:0x00, id:'d6'}
+  ];
+
+  // Store current E-row values for regen (polynomial → byte direction)
+  var eRowBytes = [0x8D, 0xA5, 0x63, 0x1B, 0x02, 0x00];
+
+  // Store current F-row bytes for regen
+  var fRowBytes = [0x57, 0x83, 0x1B];
+
+  function updateDRow(i, b) {
+    var id = 'd' + (i+1);
+    var binStr = hexToBin(b);
+    var polyStr = hexToPolyStr(b);
+    var hexEl = document.getElementById(id + '-hex');
+    if (hexEl) hexEl.innerHTML = '<code>' + toHex(b) + '</code>';
+    var binInp = document.getElementById(id + '-bin');
+    if (binInp) { binInp.dataset.answer = binStr; binInp.value = ''; binInp.classList.remove('ws-correct','ws-wrong'); }
+    var polyInp = document.getElementById(id + '-poly');
+    if (polyInp) { polyInp.dataset.answer = polyStr; polyInp.value = ''; polyInp.classList.remove('ws-correct','ws-wrong'); }
+  }
+
+  function updateERow(i, b) {
+    var id = 'e' + (i+1);
+    var binStr = hexToBin(b);
+    var polyStr = hexToPolyStr(b);
+    var hexStr = toHex(b).toLowerCase().replace('0x','');
+    var polyEl = document.getElementById(id + '-poly');
+    // Build LaTeX-style display for polynomial
+    if (polyEl) {
+      var display = b === 0 ? '\\(0\\) (zero polynomial)' : '\\(' + polyStr.replace(/x\^(\d+)/g,'x^{$1}') + '\\)';
+      polyEl.innerHTML = display;
+    }
+    var binInp = document.getElementById(id + '-bin');
+    if (binInp) { binInp.dataset.answer = binStr; binInp.value = ''; binInp.classList.remove('ws-correct','ws-wrong'); }
+    var hexInp = document.getElementById(id + '-hex');
+    if (hexInp) { hexInp.dataset.answer = '0x' + hexStr + '|' + hexStr; hexInp.value = ''; hexInp.classList.remove('ws-correct','ws-wrong'); }
+  }
+
+  function updateFRow(rowNum, b) {
+    var titleId = 'f' + rowNum + '-title';
+    var rowId = 'f' + rowNum + '-row';
+    var polyStr = hexToPolyStr(b);
+    var titleEl = document.getElementById(titleId);
+    if (titleEl) {
+      var display = polyStr.replace(/x\^(\d+)/g,'x^{$1}');
+      titleEl.innerHTML = 'F' + rowNum + '. Polynomial: \\(' + display + '\\)';
+    }
+    var rowEl = document.getElementById(rowId);
+    if (rowEl) {
+      var cells = rowEl.querySelectorAll('input.ans-input');
+      for (var k=7; k>=0; k--) {
+        var bit = (b & (1<<k)) ? '1' : '0';
+        var cellIdx = 7 - k;
+        if (cells[cellIdx]) {
+          cells[cellIdx].dataset.answer = bit;
+          cells[cellIdx].value = '';
+          cells[cellIdx].classList.remove('ws-correct','ws-wrong');
+        }
+      }
+    }
+  }
+
+  function wsRegenerateImpl() {
+    // Regenerate Part D (rows D1-D6, keeping D6 as 0x00)
+    for (var i = 0; i < 5; i++) {
+      dRows[i].val = rndByte();
+      updateDRow(i, dRows[i].val);
+    }
+    // D6 stays 0x00
+    updateDRow(5, 0x00);
+
+    // Regenerate Part E (rows E1-E5, keep E6 as zero)
+    for (var j = 0; j < 5; j++) {
+      eRowBytes[j] = rndByte();
+      updateERow(j, eRowBytes[j]);
+    }
+    updateERow(5, 0x00);
+
+    // Regenerate Part F (F1, F2, F3)
+    for (var m = 1; m <= 3; m++) {
+      fRowBytes[m-1] = rndByte();
+      updateFRow(m, fRowBytes[m-1]);
+    }
+
+    // Re-render MathJax
+    if (window.MathJax && MathJax.typesetPromise) {
+      var els = [];
+      for (var n=1; n<=6; n++) { var el = document.getElementById('e'+n+'-poly'); if(el) els.push(el); }
+      for (var p=1; p<=3; p++) { var tEl = document.getElementById('f'+p+'-title'); if(tEl) els.push(tEl); }
+      if (els.length) MathJax.typesetPromise(els);
+    }
+  }
+})();
   </script>
 </body>
 </html>
