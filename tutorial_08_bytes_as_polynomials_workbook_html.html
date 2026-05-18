@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 8: Bytes as Polynomials | Mathematics of Cryptography</title>
+  <title>Practice 8: Bytes as Polynomials | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,636 +35,638 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      color: #7d5a00;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #f5e8b0; }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      background: #fffcf2;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+    details.quick-ref summary {
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.quick-ref summary::before { content: '▶'; font-size: 0.75rem; transition: transform 0.15s; }
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      padding: 6px 22px 22px;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .bit-table,
-    .poly-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .bit-table th, .bit-table td,
-    .poly-table th, .poly-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .bit-table th,
-    .poly-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .bit-table th,
-    .bit-table td,
-    .poly-table th,
-    .poly-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
+    .qr-card {
+      border: 1px solid #e8dbbf;
+      border-radius: 12px;
       background: #ffffff;
-      break-inside: avoid;
+      padding: 14px 16px;
     }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .byte-row {
-      display: grid;
-      grid-template-columns: repeat(8, minmax(54px, 1fr));
-      gap: 7px;
-      margin: 14px 0;
-      min-width: 520px;
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #7d5a00;
     }
+    .qr-card p, .qr-card li { font-size: 0.88rem; margin: 4px 0; }
+    .qr-card ol, .qr-card ul { padding-left: 1.2em; }
+    .qr-card table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .qr-card td, .qr-card th { border: 1px solid #e8dbbf; padding: 5px 8px; text-align: center; }
+    .qr-card th { background: #fff8e6; color: #7d5a00; font-weight: 700; }
 
-    .byte-cell {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      min-height: 58px;
-      padding: 8px 4px;
-      text-align: center;
+    /* Drill cards */
+    .drill-section { margin: 0 0 40px; }
+    .drill-section h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #334e7d;
+      border-bottom: 2px solid #e8dbbf;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .drill-card {
+      background: #fffcf2;
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .drill-q {
+      font-size: 1.1rem;
+      min-height: 2.4em;
+      margin-bottom: 6px;
+      line-height: 1.6;
+    }
+    .drill-hint {
+      font-size: 0.86rem;
+      color: #7d5a00;
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+    .drill-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .drill-input {
+      padding: 9px 14px;
+      border: 2px solid #c9b97a;
+      border-radius: 8px;
+      font-size: 1rem;
       font-family: "Cascadia Code", "Consolas", monospace;
       background: #ffffff;
+      color: #16243d;
+      width: 140px;
+      transition: border-color 0.15s;
+    }
+    .drill-input:focus { outline: none; border-color: #7d5a00; }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+
+    /* YES/NO buttons for Drill 3 */
+    .drill-yn-btn {
+      padding: 9px 22px;
+      border-radius: 8px;
+      border: 2px solid #c9b97a;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: #ffffff;
+      color: #334e7d;
+      transition: all 0.15s;
+    }
+    .drill-yn-btn:hover { background: #fff8e6; border-color: #7d5a00; }
+    .drill-yn-btn.selected-yes { background: #edf7ed; border-color: #2e7d32; color: #1b5e20; }
+    .drill-yn-btn.selected-no  { background: #fdeaea; border-color: #c62828; color: #7f0000; }
+
+    .drill-btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .drill-btn:hover { opacity: 0.85; }
+    .drill-btn-check { background: #334e7d; color: #ffffff; }
+    .drill-btn-next  { background: #e8dbbf; color: #7d5a00; }
+    .drill-fb {
+      min-height: 2em;
+      margin-top: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .drill-fb.ok  { color: #2e7d32; }
+    .drill-fb.err { color: #c62828; }
+    .drill-streak { font-size: 0.8rem; color: #7d5a00; margin-top: 10px; font-weight: 600; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #fff8e6; border-color: #e8dbbf; color: #7d5a00; }
+    .nav-secondary:hover { background: #f5e8b0; }
+
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .drill-card { padding: 18px; }
     }
 
-    .byte-cell .label { font-size: 0.85rem; color: #1f3763; font-weight: 800; }
-
-    .byte-cell .blank { border-bottom: 1.3px solid #333333; display: block; min-height: 22px; margin-top: 7px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-      .byte-row { grid-template-columns: repeat(4, minmax(54px, 1fr)); min-width: 0; }
-    }
-
+    @page { margin: 0.75in; }
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space, .byte-cell {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .bit-table th,
-      .poly-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .workbook-nav, .no-print, .drill-section { display: none !important; }
+      .quick-ref { display: block !important; border: 1px solid #ccc; }
+      .quick-ref summary { display: none; }
+      .qr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+      h1 { font-size: 20pt; }
+      h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
+      a { color: #000; text-decoration: none; }
+      .bottom-nav { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 8</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 8</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Bytes as Polynomials</h1>
       <p class="subtitle">
-        Printable practice for reading bytes as polynomial coefficients and converting between hex, binary, and polynomial form.
+        Four interactive drills: reading polynomial degree, counting terms, verifying XOR results, and recovering a byte from its polynomial description.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
-        <a class="nav-link" href="tutorial_07_extended_euclidean_algorithm_workbook_html.html">← Workbook 7</a>
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <a class="nav-link" href="tutorial_08_bytes_as_polynomials_html.html">Tutorial</a>
-        <a class="nav-link" href="tutorial_09_polynomial_addition_over_gf_2_workbook_html.html">Workbook 9 →</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Drill navigation">
+        <a class="nav-link" href="#d1-sec">Drill 1 — Degree</a>
+        <a class="nav-link" href="#d2-sec">Drill 2 — Term Count</a>
+        <a class="nav-link" href="#d3-sec">Drill 3 — Verify XOR</a>
+        <a class="nav-link" href="#d4-sec">Drill 4 — Poly → Hex</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">&#127968; Dashboard</a>
+        <button class="nav-link" style="cursor:pointer;border:none;" onclick="window.print()">&#128424;&#65039; Print Reference Card</button>
       </nav>
     </header>
 
     <main>
-      <nav class="workbook-nav no-print" aria-label="Section navigation">
-        <a class="nav-link" href="#warm-up">A: Vocabulary</a>
-        <a class="nav-link" href="#mapping-practice">B: Bit positions</a>
-        <a class="nav-link" href="#binary-to-poly">C: Binary → poly</a>
-        <a class="nav-link" href="#hex-to-poly">D: Hex → poly</a>
-        <a class="nav-link" href="#poly-to-byte">E: Poly → byte</a>
-        <a class="nav-link" href="#coefficient-table">F: Coeff tables</a>
-        <a class="nav-link" href="#concept-checks">G: Concepts</a>
-        <a class="nav-link" href="#aes-recognition">H: AES constants</a>
-        <a class="nav-link" href="#self-check">Self-check</a>
-        <a class="nav-link" href="#answer-key">Answer key</a>
-      </nav>
 
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
+      <!-- ── Quick Reference ── -->
+      <details class="quick-ref no-print">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <h4>Byte ↔ Polynomial</h4>
+            <p>Each byte is 8 bits. Bit \(k\) (counting from 0 at the right) corresponds to the term \(x^k\).</p>
+            <p>If bit \(k\) is 1, the term \(x^k\) is present; if 0, it is absent.</p>
+            <p>Example: <code>0x57</code> = <code>0101 0111</code><br>
+              \(x^6+x^4+x^2+x+1\)</p>
           </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            This workbook is about representation, not multiplication. Your main job is to read each bit as a coefficient. A 1 bit includes the matching power of \(x\); a 0 bit leaves it out.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Bit position map</div>
-            <table class="bit-table">
-              <thead>
-                <tr><th>Position</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Term</td><td>\(x^7\)</td><td>\(x^6\)</td><td>\(x^5\)</td><td>\(x^4\)</td><td>\(x^3\)</td><td>\(x^2\)</td><td>\(x\)</td><td>\(1\)</td></tr>
-              </tbody>
+          <div class="qr-card">
+            <h4>Polynomial Degree</h4>
+            <p>The <strong>degree</strong> is the position of the highest set bit (leftmost 1).</p>
+            <table>
+              <tr><th>Hex</th><th>Binary</th><th>Degree</th></tr>
+              <tr><td>0x80</td><td>1000 0000</td><td>7</td></tr>
+              <tr><td>0x57</td><td>0101 0111</td><td>6</td></tr>
+              <tr><td>0x0F</td><td>0000 1111</td><td>3</td></tr>
+              <tr><td>0x01</td><td>0000 0001</td><td>0</td></tr>
             </table>
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Core representation</div>
-            <div class="math-display">
-              \[
-                a_7a_6a_5a_4a_3a_2a_1a_0
-                \longleftrightarrow
-                a_7x^7+a_6x^6+a_5x^5+a_4x^4+a_3x^3+a_2x^2+a_1x+a_0
-              \]
-            </div>
-            <p>
-              A coefficient \(a_k\) is either 0 or 1. If it is 1, include \(x^k\). If it is 0, omit \(x^k\).
-            </p>
+          <div class="qr-card">
+            <h4>Term Count = Popcount</h4>
+            <p>The number of terms equals the number of 1-bits in the byte.</p>
+            <table>
+              <tr><th>Hex</th><th>Binary</th><th>Terms</th></tr>
+              <tr><td>0xFF</td><td>1111 1111</td><td>8</td></tr>
+              <tr><td>0x57</td><td>0101 0111</td><td>5</td></tr>
+              <tr><td>0x80</td><td>1000 0000</td><td>1</td></tr>
+            </table>
+          </div>
+          <div class="qr-card">
+            <h4>XOR = Polynomial Addition mod 2</h4>
+            <p>Adding two byte-polynomials in \(\text{GF}(2)[x]\) is the same as XOR.</p>
+            <p>Each coefficient is added mod 2: \(1+1=0\), \(1+0=1\), \(0+0=0\).</p>
+            <p>Example: <code>0x57 XOR 0x83</code></p>
+            <p><code>0101 0111 XOR 1000 0011 = 1101 0100 = 0xD4</code></p>
           </div>
         </div>
-      </section>
+      </details>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What is a byte?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. In byte-polynomial form, what does a 1 bit mean?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. In byte-polynomial form, what does a 0 bit mean?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why should we avoid “solving for \(x\)” in this lesson?</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="mapping-practice">
-        <h2>Part B: Bit positions and polynomial terms</h2>
-        <p>Fill in the missing polynomial term or bit position.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Bit position</th>
-              <th>Polynomial term</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>7</td><td></td></tr>
-            <tr><td>B2</td><td>4</td><td></td></tr>
-            <tr><td>B3</td><td>1</td><td></td></tr>
-            <tr><td>B4</td><td>0</td><td></td></tr>
-            <tr><td>B5</td><td></td><td>\(x^6\)</td></tr>
-            <tr><td>B6</td><td></td><td>\(x^2\)</td></tr>
-            <tr><td>B7</td><td></td><td>\(1\)</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="binary-to-poly">
-        <h2>Part C: Binary byte to polynomial</h2>
-        <p>Convert each binary byte into polynomial form.</p>
-
-        <div class="problem">
-          <div class="problem-title">C1. Convert <code>01010111</code>.</div>
-          <div class="byte-row">
-            <div class="byte-cell"><div class="label">\(x^7\)</div>0</div>
-            <div class="byte-cell"><div class="label">\(x^6\)</div>1</div>
-            <div class="byte-cell"><div class="label">\(x^5\)</div>0</div>
-            <div class="byte-cell"><div class="label">\(x^4\)</div>1</div>
-            <div class="byte-cell"><div class="label">\(x^3\)</div>0</div>
-            <div class="byte-cell"><div class="label">\(x^2\)</div>1</div>
-            <div class="byte-cell"><div class="label">\(x\)</div>1</div>
-            <div class="byte-cell"><div class="label">\(1\)</div>1</div>
+      <!-- ── Drill 1: Polynomial Degree ── -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Polynomial Degree</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint">Find the position of the highest set bit (leftmost 1). That position is the degree.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-inp" type="text" placeholder="Degree" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d1-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d1-next">Next →</button>
           </div>
-          <p>Polynomial:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Convert <code>10000011</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. Convert <code>00011011</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C4. Convert <code>10100101</code>.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C5. Convert <code>01100011</code>.</div>
-          <span class="blank-line"></span>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
       </section>
 
-      <section id="hex-to-poly">
-        <h2>Part D: Hex byte to polynomial</h2>
-        <p>Convert hex to binary first, then convert binary to polynomial form.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Hex byte</th>
-              <th>Binary</th>
-              <th>Polynomial form</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>D1</td><td><code>0x57</code></td><td></td><td></td></tr>
-            <tr><td>D2</td><td><code>0x83</code></td><td></td><td></td></tr>
-            <tr><td>D3</td><td><code>0x1B</code></td><td></td><td></td></tr>
-            <tr><td>D4</td><td><code>0xA5</code></td><td></td><td></td></tr>
-            <tr><td>D5</td><td><code>0x63</code></td><td></td><td></td></tr>
-            <tr><td>D6</td><td><code>0xFF</code></td><td></td><td></td></tr>
-            <tr><td>D7</td><td><code>0x00</code></td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="poly-to-byte">
-        <h2>Part E: Polynomial to binary and hex</h2>
-        <p>Mark 1 for terms that appear and 0 for terms that do not appear.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Polynomial</th>
-              <th>Binary byte</th>
-              <th>Hex byte</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>E1</td><td>\(x^7+x^3+x^2+1\)</td><td></td><td></td></tr>
-            <tr><td>E2</td><td>\(x^7+x^5+x^2+1\)</td><td></td><td></td></tr>
-            <tr><td>E3</td><td>\(x^6+x^5+x+1\)</td><td></td><td></td></tr>
-            <tr><td>E4</td><td>\(x^4+x^3+x+1\)</td><td></td><td></td></tr>
-            <tr><td>E5</td><td>\(x^7+x^6+x^5+x^4+x^3+x^2+x+1\)</td><td></td><td></td></tr>
-            <tr><td>E6</td><td>\(0\)</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="coefficient-table">
-        <h2>Part F: Coefficient table practice</h2>
-        <p>Fill in the coefficient row for each polynomial.</p>
-
-        <div class="problem">
-          <div class="problem-title">F1. Polynomial: \(x^6+x^4+x^2+x+1\)</div>
-          <table class="poly-table">
-            <thead>
-              <tr><th>Power</th><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Coefficient</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F2. Polynomial: \(x^7+x+1\)</div>
-          <table class="poly-table">
-            <thead>
-              <tr><th>Power</th><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Coefficient</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="concept-checks">
-        <h2>Part G: Concept checks</h2>
-
-        <div class="problem">
-          <div class="problem-title">G1. Explain the difference between reading <code>01010111</code> as an integer and reading it as a polynomial.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Why is bit position 0 represented by \(1\) instead of \(x^0\) in the final simplified polynomial?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G3. Why should this tutorial not jump directly into \(\mathrm{GF}(2^8)\) multiplication?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="aes-recognition">
-        <h2>Part H: AES-flavored recognition</h2>
-        <div class="box challenge-box">
-          <div class="box-title">No multiplication yet</div>
-          <p>
-            These are recognition problems only. They prepare your eye for constants and byte-polynomials that appear in AES discussions.
-          </p>
-        </div>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Byte or polynomial</th>
-              <th>Requested form</th>
-              <th>Answer</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>H1</td><td><code>0x1B</code></td><td>Polynomial</td><td></td></tr>
-            <tr><td>H2</td><td>\(x^4+x^3+x+1\)</td><td>Hex byte</td><td></td></tr>
-            <tr><td>H3</td><td><code>0x02</code></td><td>Polynomial</td><td></td></tr>
-            <tr><td>H4</td><td>\(x\)</td><td>Hex byte</td><td></td></tr>
-            <tr><td>H5</td><td><code>0x03</code></td><td>Polynomial</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>In byte-polynomial form, bit position 7 corresponds to \(x^7\).</td><td></td></tr>
-            <tr><td>A 0 bit means the matching polynomial term is included.</td><td></td></tr>
-            <tr><td>In this tutorial, \(x\) is a formal placeholder, not a value to solve for.</td><td></td></tr>
-            <tr><td>The byte <code>0x57</code> can be viewed as hex, binary, an integer, or a polynomial.</td><td></td></tr>
-            <tr><td>This tutorial fully explains multiplication in \(\mathrm{GF}(2^8)\).</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            For byte-to-polynomial conversion, start at bit position 7 and move right. Include only the terms whose bits are 1.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> A byte is a group of 8 bits.</p>
-          <p><strong>A2.</strong> A 1 bit means the matching polynomial term is included.</p>
-          <p><strong>A3.</strong> A 0 bit means the matching polynomial term is left out.</p>
-          <p><strong>A4.</strong> In this lesson, \(x\) is a formal placeholder for position. We are not treating it as an unknown number to solve for.</p>
-        </div>
-
-        <h3>Part B: Bit positions and polynomial terms</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>\(x^7\)</td></tr>
-            <tr><td>B2</td><td>\(x^4\)</td></tr>
-            <tr><td>B3</td><td>\(x\)</td></tr>
-            <tr><td>B4</td><td>\(1\)</td></tr>
-            <tr><td>B5</td><td>6</td></tr>
-            <tr><td>B6</td><td>2</td></tr>
-            <tr><td>B7</td><td>0</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Binary byte to polynomial</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Binary</th><th>Polynomial</th></tr></thead>
-          <tbody>
-            <tr><td>C1</td><td><code>01010111</code></td><td>\(x^6+x^4+x^2+x+1\)</td></tr>
-            <tr><td>C2</td><td><code>10000011</code></td><td>\(x^7+x+1\)</td></tr>
-            <tr><td>C3</td><td><code>00011011</code></td><td>\(x^4+x^3+x+1\)</td></tr>
-            <tr><td>C4</td><td><code>10100101</code></td><td>\(x^7+x^5+x^2+1\)</td></tr>
-            <tr><td>C5</td><td><code>01100011</code></td><td>\(x^6+x^5+x+1\)</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part D: Hex byte to polynomial</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Hex</th><th>Binary</th><th>Polynomial</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td><code>0x57</code></td><td><code>01010111</code></td><td>\(x^6+x^4+x^2+x+1\)</td></tr>
-            <tr><td>D2</td><td><code>0x83</code></td><td><code>10000011</code></td><td>\(x^7+x+1\)</td></tr>
-            <tr><td>D3</td><td><code>0x1B</code></td><td><code>00011011</code></td><td>\(x^4+x^3+x+1\)</td></tr>
-            <tr><td>D4</td><td><code>0xA5</code></td><td><code>10100101</code></td><td>\(x^7+x^5+x^2+1\)</td></tr>
-            <tr><td>D5</td><td><code>0x63</code></td><td><code>01100011</code></td><td>\(x^6+x^5+x+1\)</td></tr>
-            <tr><td>D6</td><td><code>0xFF</code></td><td><code>11111111</code></td><td>\(x^7+x^6+x^5+x^4+x^3+x^2+x+1\)</td></tr>
-            <tr><td>D7</td><td><code>0x00</code></td><td><code>00000000</code></td><td>\(0\)</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part E: Polynomial to binary and hex</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Polynomial</th><th>Binary</th><th>Hex</th></tr></thead>
-          <tbody>
-            <tr><td>E1</td><td>\(x^7+x^3+x^2+1\)</td><td><code>10001101</code></td><td><code>0x8D</code></td></tr>
-            <tr><td>E2</td><td>\(x^7+x^5+x^2+1\)</td><td><code>10100101</code></td><td><code>0xA5</code></td></tr>
-            <tr><td>E3</td><td>\(x^6+x^5+x+1\)</td><td><code>01100011</code></td><td><code>0x63</code></td></tr>
-            <tr><td>E4</td><td>\(x^4+x^3+x+1\)</td><td><code>00011011</code></td><td><code>0x1B</code></td></tr>
-            <tr><td>E5</td><td>\(x^7+x^6+x^5+x^4+x^3+x^2+x+1\)</td><td><code>11111111</code></td><td><code>0xFF</code></td></tr>
-            <tr><td>E6</td><td>\(0\)</td><td><code>00000000</code></td><td><code>0x00</code></td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part F: Coefficient table practice</h3>
-        <div class="answer-step">
-          <p><strong>F1.</strong> For \(x^6+x^4+x^2+x+1\), the coefficients from \(x^7\) through \(1\) are:</p>
-          <div class="math-display">
-            \[
-              0,1,0,1,0,1,1,1
-            \]
+      <!-- ── Drill 2: Term Count ── -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Term Count</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint">Count the number of 1-bits in the binary representation. Each 1-bit is one polynomial term.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-inp" type="text" placeholder="# terms" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d2-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d2-next">Next →</button>
           </div>
-          <p><strong>F2.</strong> For \(x^7+x+1\), the coefficients from \(x^7\) through \(1\) are:</p>
-          <div class="math-display">
-            \[
-              1,0,0,0,0,0,1,1
-            \]
-          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
         </div>
-
-        <h3>Part G: Concept checks</h3>
-        <div class="answer-step">
-          <p><strong>G1 sample answer.</strong> As an integer, <code>01010111</code> uses powers of 2 and equals 87. As a polynomial, the same bits are treated as coefficients of powers of \(x\), giving \(x^6+x^4+x^2+x+1\).</p>
-          <p><strong>G2 sample answer.</strong> Bit position 0 corresponds to \(x^0\), and \(x^0=1\), so we write the constant term as 1.</p>
-          <p><strong>G3 sample answer.</strong> Multiplication in \(\mathrm{GF}(2^8)\) requires more ideas: polynomial multiplication, coefficient arithmetic modulo 2, and polynomial reduction. This lesson only builds the representation bridge.</p>
-        </div>
-
-        <h3>Part H: AES-flavored recognition</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>H1</td><td>\(\texttt{0x1B}=x^4+x^3+x+1\)</td></tr>
-            <tr><td>H2</td><td>\(x^4+x^3+x+1=\texttt{0x1B}\)</td></tr>
-            <tr><td>H3</td><td>\(\texttt{0x02}=x\)</td></tr>
-            <tr><td>H4</td><td>\(x=\texttt{0x02}\)</td></tr>
-            <tr><td>H5</td><td>\(\texttt{0x03}=x+1\)</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>In byte-polynomial form, bit position 7 corresponds to \(x^7\).</td><td>True</td><td>Position \(k\) maps to \(x^k\).</td></tr>
-            <tr><td>A 0 bit means the matching polynomial term is included.</td><td>False</td><td>A 0 bit means the term is omitted.</td></tr>
-            <tr><td>In this tutorial, \(x\) is a formal placeholder, not a value to solve for.</td><td>True</td><td>It labels polynomial position.</td></tr>
-            <tr><td>The byte <code>0x57</code> can be viewed as hex, binary, an integer, or a polynomial.</td><td>True</td><td>These are different lenses on the same bit pattern.</td></tr>
-            <tr><td>This tutorial fully explains multiplication in \(\mathrm{GF}(2^8)\).</td><td>False</td><td>It only prepares the representation.</td></tr>
-          </tbody>
-        </table>
       </section>
 
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 8: Bytes as Polynomials.
-      </p>
+      <!-- ── Drill 3: Verify XOR Result ── -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Verify XOR Result</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint">XOR each bit position independently. If the stated result matches, answer YES.</div>
+          <div class="drill-row" id="d3-yn-row">
+            <button class="drill-yn-btn" id="d3-yes">YES</button>
+            <button class="drill-yn-btn" id="d3-no">NO</button>
+            <button class="drill-btn drill-btn-next" id="d3-next" style="margin-left:10px;">Next →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
+        </div>
+      </section>
 
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <!-- ── Drill 4: Polynomial → Hex ── -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Polynomial to Hex</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint">Set the bit at each named position to 1, all others to 0. Convert the 8-bit result to hex.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-inp" type="text" placeholder="0x??" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d4-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d4-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
+        </div>
+      </section>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_07_extended_euclidean_algorithm_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_09_polynomial_addition_over_gf_2_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_07_extended_euclidean_algorithm_workbook_html.html" class="nav-item">&#8592; Practice 7</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="tutorial_09_polynomial_addition_over_gf_2_workbook_html.html" class="nav-item">Practice 9 &#8594;</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_08_bytes_as_polynomials_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_08_bytes_as_polynomials_html.html" class="nav-item nav-secondary">Tutorial 8</a>
+          <a href="worksheet_08_bytes_as_polynomials_html.html" class="nav-item nav-secondary">Worksheet</a>
         </div>
-    </nav>
+      </nav>
+
     </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function hexStr(n) {
+      return '0x' + n.toString(16).toUpperCase().padStart(2, '0');
+    }
+
+    function binStr(n) {
+      return n.toString(2).padStart(8, '0').replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function degree(n) {
+      for (var k = 7; k >= 0; k--) { if (n & (1 << k)) return k; }
+      return -1; /* zero byte — excluded from pool */
+    }
+
+    function popcount(n) {
+      var c = 0;
+      for (var k = 0; k < 8; k++) { if (n & (1 << k)) c++; }
+      return c;
+    }
+
+    /* ── Data pools ───────────────────────────────────────────────── */
+
+    /* Drill 1: Polynomial degree */
+    var DEGREE_POOL = [
+      { hex: 0x80, deg: 7 },
+      { hex: 0x57, deg: 6 },
+      { hex: 0x63, deg: 6 },
+      { hex: 0x55, deg: 6 },
+      { hex: 0x7F, deg: 6 },
+      { hex: 0x40, deg: 6 },
+      { hex: 0x20, deg: 5 },
+      { hex: 0x3C, deg: 5 },
+      { hex: 0x1B, deg: 4 },
+      { hex: 0x10, deg: 4 },
+      { hex: 0x0F, deg: 3 },
+      { hex: 0x0E, deg: 3 },
+      { hex: 0x03, deg: 1 },
+      { hex: 0x01, deg: 0 },
+      { hex: 0xFE, deg: 7 },
+      { hex: 0xAA, deg: 7 },
+      { hex: 0xFF, deg: 7 },
+    ];
+
+    /* Drill 2: Term count (popcount) */
+    var TERMS_POOL = [
+      { hex: 0xFF, terms: 8 },
+      { hex: 0x57, terms: 5 },
+      { hex: 0x1B, terms: 4 },
+      { hex: 0x63, terms: 4 },
+      { hex: 0xAA, terms: 4 },
+      { hex: 0x55, terms: 4 },
+      { hex: 0x0F, terms: 4 },
+      { hex: 0xF0, terms: 4 },
+      { hex: 0x3C, terms: 4 },
+      { hex: 0x07, terms: 3 },
+      { hex: 0x70, terms: 3 },
+      { hex: 0xE0, terms: 3 },
+      { hex: 0x03, terms: 2 },
+      { hex: 0x21, terms: 2 },
+      { hex: 0x80, terms: 1 },
+      { hex: 0x01, terms: 1 },
+      { hex: 0x10, terms: 1 },
+    ];
+
+    /* Drill 3: Verify XOR result (YES/NO) */
+    var XOR_POOL = [
+      { a: 0x57, b: 0x83, c: 0xD4, ok: true  },
+      { a: 0x1B, b: 0x63, c: 0x78, ok: true  },
+      { a: 0xFF, b: 0x0F, c: 0xF0, ok: true  },
+      { a: 0xAA, b: 0x55, c: 0xFF, ok: true  },
+      { a: 0x3C, b: 0xC3, c: 0xFF, ok: true  },
+      { a: 0xA0, b: 0x0A, c: 0xAA, ok: true  },
+      { a: 0x4F, b: 0xF4, c: 0xBB, ok: true  },
+      { a: 0x12, b: 0x34, c: 0x26, ok: true  },
+      { a: 0x57, b: 0x83, c: 0xD3, ok: false },
+      { a: 0xAA, b: 0x55, c: 0xAA, ok: false },
+      { a: 0x1B, b: 0x63, c: 0x68, ok: false },
+      { a: 0xFF, b: 0x0F, c: 0xFF, ok: false },
+      { a: 0x3C, b: 0xC3, c: 0x3C, ok: false },
+      { a: 0x12, b: 0x34, c: 0x46, ok: false },
+    ];
+
+    /* Drill 4: Polynomial description → hex byte */
+    var POLY_POOL = [
+      { desc: 'x^6 + x^4 + x^2 + x + 1',            bits: [6,4,2,1,0], hex: 0x57 },
+      { desc: 'x^4 + x^3 + x + 1',                   bits: [4,3,1,0],   hex: 0x1B },
+      { desc: 'x^6 + x^5 + x + 1',                   bits: [6,5,1,0],   hex: 0x63 },
+      { desc: 'x^7 + x^5 + x^3 + x',                 bits: [7,5,3,1],   hex: 0xAA },
+      { desc: 'x^6 + x^4 + x^2 + 1',                 bits: [6,4,2,0],   hex: 0x55 },
+      { desc: 'x^3 + x^2 + x + 1',                   bits: [3,2,1,0],   hex: 0x0F },
+      { desc: 'x^7',                                  bits: [7],         hex: 0x80 },
+      { desc: 'x + 1',                                bits: [1,0],       hex: 0x03 },
+      { desc: 'x^4',                                  bits: [4],         hex: 0x10 },
+      { desc: 'x^2 + x + 1',                          bits: [2,1,0],     hex: 0x07 },
+      { desc: 'x^5 + x^4 + x^3 + x^2 + x + 1',       bits: [5,4,3,2,1,0], hex: 0x3F },
+      { desc: 'x^7 + x^6 + x^5 + x^4 + x^3 + x^2 + x + 1', bits: [7,6,5,4,3,2,1,0], hex: 0xFF },
+      { desc: 'x^6 + x^5 + x^4',                     bits: [6,5,4],     hex: 0x70 },
+      { desc: 'x^5 + x^4 + x^3',                     bits: [5,4,3],     hex: 0x38 },
+    ];
+
+    /* ── makeDrill ─────────────────────────────────────────────────── */
+    function makeDrill(cfg) {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl    = document.getElementById(cfg.id + '-q');
+      var fb     = document.getElementById(cfg.id + '-fb');
+      var strk   = document.getElementById(cfg.id + '-streak');
+      var btnNxt = document.getElementById(cfg.id + '-next');
+      var inp    = document.getElementById(cfg.id + '-inp');
+      var btnChk = document.getElementById(cfg.id + '-check');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+
+      function load() {
+        state   = cfg.gen();
+        checked = false;
+        if (inp) {
+          inp.value = '';
+          inp.className = 'drill-input';
+        }
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = state.q;
+        typeset(qEl);
+        if (inp) inp.focus({ preventScroll: true });
+        if (cfg.onLoad) cfg.onLoad(state);
+      }
+
+      function check(userAns) {
+        var ok = cfg.check(userAns, state);
+        checked = true;
+        total++;
+        if (ok) {
+          correct++;
+          if (inp) inp.className = 'drill-input correct';
+          fb.innerHTML = '&#10003; ' + state.ok;
+          fb.className = 'drill-fb ok';
+        } else {
+          if (inp) inp.className = 'drill-input wrong';
+          fb.innerHTML = '&#10007; ' + state.err;
+          fb.className = 'drill-fb err';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      if (btnChk) {
+        btnChk.addEventListener('click', function () { if (checked) load(); else check(inp.value.trim()); });
+      }
+      btnNxt.addEventListener('click', load);
+      if (inp) {
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { if (checked) load(); else check(inp.value.trim()); }
+        });
+      }
+
+      load();
+      return { load: load, check: check };
+    }
+
+    /* ── Drill 1: Polynomial Degree ────────────────────────────────── */
+    makeDrill({
+      id: 'd1',
+      gen: function () {
+        var p = pick(DEGREE_POOL);
+        var bin = binStr(p.hex);
+        return {
+          q:   'What is the degree of the polynomial for <code>' + hexStr(p.hex) + '</code> = <code>' + bin + '</code>?',
+          ans: String(p.deg),
+          ok:  'Degree = ' + p.deg + '. The highest set bit is position ' + p.deg + ' (bit positions count from 0 at the right), giving the term \\(x^{' + p.deg + '}\\).',
+          err: 'The highest set bit is at position ' + p.deg + ', so the degree is ' + p.deg + '. Remember: count bit positions from 0 at the rightmost bit.'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+    /* ── Drill 2: Term Count ────────────────────────────────────────── */
+    makeDrill({
+      id: 'd2',
+      gen: function () {
+        var p = pick(TERMS_POOL);
+        var bin = binStr(p.hex);
+        return {
+          q:   'How many terms does the polynomial for <code>' + hexStr(p.hex) + '</code> = <code>' + bin + '</code> have?',
+          ans: String(p.terms),
+          ok:  p.terms + ' term' + (p.terms === 1 ? '' : 's') + '. There are ' + p.terms + ' one-bit' + (p.terms === 1 ? '' : 's') + ' in <code>' + bin + '</code>, each contributing one polynomial term.',
+          err: 'Count the 1-bits in <code>' + bin + '</code>. There are ' + p.terms + ' of them, so the polynomial has ' + p.terms + ' term' + (p.terms === 1 ? '' : 's') + '.'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+    /* ── Drill 3: Verify XOR Result (YES/NO) ───────────────────────── */
+    (function () {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl    = document.getElementById('d3-q');
+      var fb     = document.getElementById('d3-fb');
+      var strk   = document.getElementById('d3-streak');
+      var yesBtn = document.getElementById('d3-yes');
+      var noBtn  = document.getElementById('d3-no');
+      var nxtBtn = document.getElementById('d3-next');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+
+      function load() {
+        var p = pick(XOR_POOL);
+        state = p;
+        checked = false;
+        yesBtn.className = 'drill-yn-btn';
+        noBtn.className  = 'drill-yn-btn';
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = 'Is <code>' + hexStr(p.a) + '</code> XOR <code>' + hexStr(p.b) + '</code> = <code>' + hexStr(p.c) + '</code>?';
+        typeset(qEl);
+      }
+
+      function check(answer) {
+        if (checked) return;
+        var realXor = state.a ^ state.b;
+        var correct_ans = state.ok ? 'YES' : 'NO';
+        var isRight = answer === correct_ans;
+        checked = true;
+        total++;
+        if (isRight) correct++;
+
+        var verdict = state.ok
+          ? '&#10003; correct — <code>' + hexStr(state.a) + '</code> XOR <code>' + hexStr(state.b) + '</code> = <code>' + hexStr(realXor) + '</code>.'
+          : '&#10007; wrong — <code>' + hexStr(state.a) + '</code> XOR <code>' + hexStr(state.b) + '</code> = <code>' + hexStr(realXor) + '</code>, not <code>' + hexStr(state.c) + '</code>.';
+
+        if (isRight) {
+          fb.innerHTML = '&#10003; Correct! ' + verdict;
+          fb.className = 'drill-fb ok';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-yes';
+        } else {
+          fb.innerHTML = '&#10007; ' + verdict;
+          fb.className = 'drill-fb err';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-no';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      yesBtn.addEventListener('click', function () { if (!checked) check('YES'); else load(); });
+      noBtn.addEventListener('click',  function () { if (!checked) check('NO');  else load(); });
+      nxtBtn.addEventListener('click', load);
+
+      load();
+    })();
+
+    /* ── Drill 4: Polynomial Description → Hex ─────────────────────── */
+    makeDrill({
+      id: 'd4',
+      gen: function () {
+        var p = pick(POLY_POOL);
+        var positions = p.bits.map(function (k) { return 'position ' + k; }).join(', ');
+        return {
+          q:   'The polynomial \\(' + p.desc.replace(/\^(\d+)/g, '^{$1}') + '\\) has set bits at ' + positions + '. What is the hex value of this byte?',
+          ans: hexStr(p.hex).toLowerCase().replace('0x', ''),
+          ok:  hexStr(p.hex) + '. Bits ' + p.bits.join(', ') + ' set gives binary <code>' + binStr(p.hex) + '</code> = ' + hexStr(p.hex) + '.',
+          err: 'The answer is ' + hexStr(p.hex) + '. Set bits ' + p.bits.join(', ') + ' → binary <code>' + binStr(p.hex) + '</code> → ' + hexStr(p.hex) + '.'
+        };
+      },
+      check: function (raw, s) {
+        /* Accept: 57, 0x57, 0X57, all case-insensitive */
+        var cleaned = raw.toLowerCase().replace(/^0x/, '');
+        return cleaned === s.ans;
+      }
+    });
+
+  })();
+  </script>
 </body>
 </html>
