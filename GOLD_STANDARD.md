@@ -126,6 +126,17 @@ Each drill section must have:
 - [ ] Working space uses `<div class="work-space">`
 - [ ] Written responses use `<div class="write-wrap"><textarea class="written-area"></textarea><span class="write-lines">…</span></div>`
 
+### Check / Score / Regenerate (browser mode)
+- [ ] CSS block includes `.ws-score-bar`, `.ws-btn-check/regen/reset`, `.ans-input.ws-correct/wrong` rules
+- [ ] Score bar `<div class="ws-score-bar no-print" id="ws-score-bar">` inserted before first `<section>` in `<main>`
+- [ ] Score bar contains: descriptive `<p>`, `<span id="ws-score-display">`, Check / Regenerate / Reset `<button>` elements
+- [ ] Every fill-in `<input class="ans-input">` carries `data-answer="val1|val2"` (pipe-separated for alternate formats)
+- [ ] `wsCheckAll()` function: reads all `[data-answer]` inputs, normalizes, marks `.ws-correct` / `.ws-wrong`, updates score display
+- [ ] `wsRegenerate()` function: generates new random values, updates question HTML, updates `data-answer` attributes
+- [ ] `wsReset()` function: clears inputs, removes `.ws-correct`/`.ws-wrong`, clears score display
+- [ ] Open-ended `<textarea class="written-area">` elements are NOT scored (excluded from `wsCheckAll`)
+- [ ] `.ws-score-bar` hidden on print via `@media print`
+
 ### Answer Key
 - [ ] `<section id="answer-key" class="answer-key">` at the bottom
 - [ ] Complete answers for every question using `.answer-step` divs
