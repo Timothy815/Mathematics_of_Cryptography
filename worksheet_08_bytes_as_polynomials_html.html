@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 8: Bytes as Polynomials | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    header.workbook-header {
+      background: linear-gradient(135deg, #ffffff, #eef3ff);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #eef3ff;
+      border: 1px solid var(--border);
+      color: #1f3763;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #dce6ff; }
+
+    .directions-box  { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box  { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box   { background: #f7f8fb; border-color: #ccd4e2; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .field-label { font-weight: 750; color: #333333; }
+    .field-input {
+      width: 100%; border: none; border-bottom: 1.5px solid #333;
+      background: transparent; font-size: 1rem; padding: 4px 2px;
+      color: #16243d; font-family: inherit;
+    }
+    .field-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .bit-table,
+    .poly-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .bit-table th, .bit-table td,
+    .poly-table th, .poly-table td {
+      border: 1px solid var(--border);
+      padding: 9px 10px;
+      vertical-align: top;
+    }
+    .data-table th, .work-table th, .answer-table th,
+    .bit-table th, .poly-table th {
+      background: #eef3ff;
+      color: #1f3763;
+      text-align: left;
+    }
+    .bit-table th, .bit-table td,
+    .poly-table th, .poly-table td { text-align: center; vertical-align: middle; }
+
+    /* Written-response textarea */
+    .written-area {
+      width: 100%; padding: 8px 12px; margin-top: 6px;
+      border: 2px solid #c7d2ea; border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f4fb; box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
+
+    /* Short-answer input */
+    .ans-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1rem; font-weight: 700;
+      padding: 6px 10px; border: 2px solid #c7d2ea; border-radius: 8px;
+      background: #f0f4fb; color: #16243d; min-width: 80px;
+    }
+    .ans-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 110px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+    .large-work-space  { min-height: 160px; }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+    .problem-title { font-weight: 900; color: #2a3a6b; margin-bottom: 8px; }
+
+    /* Byte-cell strip for writing in coefficients */
+    .byte-row {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(52px, 1fr));
+      gap: 7px;
+      margin: 14px 0;
+      overflow-x: auto;
+    }
+    .byte-cell {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-height: 60px;
+      padding: 8px 4px;
+      text-align: center;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #ffffff;
+    }
+    .byte-cell .label { font-size: 0.82rem; color: #1f3763; font-weight: 800; display: block; margin-bottom: 4px; }
+    .byte-cell .given { font-size: 1.15rem; font-weight: 900; color: #334e7d; }
+    .byte-cell .blank { border-bottom: 1.3px solid #333; display: block; min-height: 22px; margin-top: 4px; }
+
+    .answer-key { border-top: 4px double #334e7d; padding-top: 20px; }
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #eef3ff; border-color: var(--border); color: #1f3763; }
+    .nav-secondary:hover { background: #dce6ff; }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.workbook-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+      .byte-row { grid-template-columns: repeat(4, minmax(52px, 1fr)); }
+    }
+
+    @page { margin: 0.75in; }
+    @media print {
+      body { background: #ffffff; color: #000000; font-size: 10.5pt; line-height: 1.35; }
+      .page { max-width: none; padding: 0; }
+      header.workbook-header, main {
+        box-shadow: none; border: none; border-radius: 0;
+        padding: 0; background: #ffffff;
+      }
+      .workbook-nav, .no-print { display: none !important; }
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+      .box, .problem, table, .work-space { break-inside: avoid; }
+      .box, .problem, .work-space { background: #ffffff !important; border-color: #999999; }
+      .data-table th, .work-table th, .answer-table th,
+      .bit-table th, .poly-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+      .ans-input {
+        border: none !important; border-bottom: 1.5px solid #444 !important;
+        border-radius: 0 !important; background: transparent !important;
+        color: #000 !important;
+      }
+      .field-input { border-bottom: 1.5px solid #444 !important; }
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
+      .bottom-nav { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="workbook-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 8</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Bytes as Polynomials</h1>
+      <p class="subtitle">
+        Guided practice for reading bytes as polynomial coefficients and converting between binary, hex, and polynomial form.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a class="nav-link" href="#student-info">Name/Date</a>
+        <a class="nav-link" href="#warm-up">Part A</a>
+        <a class="nav-link" href="#bit-positions">Part B</a>
+        <a class="nav-link" href="#binary-to-poly">Part C</a>
+        <a class="nav-link" href="#hex-to-poly">Part D</a>
+        <a class="nav-link" href="#poly-to-byte">Part E</a>
+        <a class="nav-link" href="#coefficient-tables">Part F</a>
+        <a class="nav-link" href="#concept-questions">Part G</a>
+        <a class="nav-link" href="#aes-constants">Part H</a>
+        <a class="nav-link" href="#answer-key">Answers</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <input class="field-input" type="text" placeholder="Your name" autocomplete="off" />
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <input class="field-input" type="text" placeholder="Date" autocomplete="off" />
+          </div>
+        </div>
+      </section>
+
+      <section id="directions">
+        <h2>Directions</h2>
+        <div class="box directions-box">
+          <div class="box-title">How to use this worksheet</div>
+          <p>
+            Each bit of a byte is a coefficient — either 0 or 1. A 1 bit means include the matching power of \(x\);
+            a 0 bit means leave it out. Work left to right from bit position 7 (highest) to position 0 (constant term).
+            The variable \(x\) is a formal placeholder, not a number to evaluate.
+          </p>
+        </div>
+      </section>
+
+      <section id="quick-reference">
+        <h2>Quick reference</h2>
+        <div class="reference-grid">
+          <div class="box quick-reference-box">
+            <div class="box-title">Bit position map</div>
+            <table class="bit-table">
+              <thead>
+                <tr><th>Position</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Term</td>
+                  <td>\(x^7\)</td><td>\(x^6\)</td><td>\(x^5\)</td><td>\(x^4\)</td>
+                  <td>\(x^3\)</td><td>\(x^2\)</td><td>\(x\)</td><td>\(1\)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="box quick-reference-box">
+            <div class="box-title">Core representation</div>
+            <div class="math-display">
+              \[
+                \underbrace{a_7a_6a_5a_4a_3a_2a_1a_0}_{\text{byte bits}}
+                \;\longleftrightarrow\;
+                a_7x^7+\cdots+a_1x+a_0
+              \]
+            </div>
+            <p style="margin:0;font-size:0.88rem;">Include \(x^k\) when \(a_k=1\); omit it when \(a_k=0\).</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART A -->
+      <section id="warm-up">
+        <h2>Part A: Vocabulary</h2>
+
+        <div class="problem">
+          <div class="problem-title">A1. In byte-polynomial form, what does a 1 bit represent? What does a 0 bit represent?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. What is \(x\) in a byte-polynomial? Is it a number to solve for?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. Which bit position corresponds to the constant term \(1\) in the polynomial?</div>
+          Bit position: <input class="ans-input" type="text" style="width:80px" autocomplete="off" />
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. What is the highest-degree term possible in a byte-polynomial? Which bit position controls it?</div>
+          Highest-degree term: <input class="ans-input" type="text" style="width:120px" autocomplete="off" />
+          &nbsp; Bit position: <input class="ans-input" type="text" style="width:80px" autocomplete="off" />
+        </div>
+      </section>
+
+      <!-- PART B -->
+      <section id="bit-positions">
+        <h2>Part B: Bit position ↔ polynomial term</h2>
+        <p>Fill in the missing entry in each row.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr><th style="width:10%">Problem</th><th style="width:30%">Bit position</th><th>Polynomial term</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>B1</td><td>7</td>
+              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+            <tr><td>B2</td><td>5</td>
+              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+            <tr><td>B3</td><td>1</td>
+              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+            <tr><td>B4</td><td>0</td>
+              <td><input class="ans-input" type="text" style="width:120px" autocomplete="off" /></td></tr>
+            <tr><td>B5</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>\(x^6\)</td></tr>
+            <tr><td>B6</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>\(x^3\)</td></tr>
+            <tr><td>B7</td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+              <td>\(x^2\)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART C -->
+      <section id="binary-to-poly">
+        <h2>Part C: Binary byte → polynomial</h2>
+        <p>
+          For each binary byte, shade or circle the bit cells where the bit is 1, then write the polynomial below.
+          The first one shows the method.
+        </p>
+
+        <div class="problem">
+          <div class="problem-title">C1 (worked example). Convert <code>01010111</code>.</div>
+          <div class="byte-row">
+            <div class="byte-cell"><span class="label">\(x^7\)</span><span class="given">0</span></div>
+            <div class="byte-cell" style="background:#eaf7ef;border-color:#4caf50;"><span class="label">\(x^6\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(x^5\)</span><span class="given">0</span></div>
+            <div class="byte-cell" style="background:#eaf7ef;border-color:#4caf50;"><span class="label">\(x^4\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(x^3\)</span><span class="given">0</span></div>
+            <div class="byte-cell" style="background:#eaf7ef;border-color:#4caf50;"><span class="label">\(x^2\)</span><span class="given">1</span></div>
+            <div class="byte-cell" style="background:#eaf7ef;border-color:#4caf50;"><span class="label">\(x\)</span><span class="given">1</span></div>
+            <div class="byte-cell" style="background:#eaf7ef;border-color:#4caf50;"><span class="label">\(1\)</span><span class="given">1</span></div>
+          </div>
+          <p>Polynomial: \(x^6+x^4+x^2+x+1\)</p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Convert <code>10000011</code>.</div>
+          <div class="byte-row">
+            <div class="byte-cell"><span class="label">\(x^7\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(x^6\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^5\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^4\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^3\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^2\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(1\)</span><span class="given">1</span></div>
+          </div>
+          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. Convert <code>00011011</code>.</div>
+          <div class="byte-row">
+            <div class="byte-cell"><span class="label">\(x^7\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^6\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^5\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x^4\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(x^3\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(x^2\)</span><span class="given">0</span></div>
+            <div class="byte-cell"><span class="label">\(x\)</span><span class="given">1</span></div>
+            <div class="byte-cell"><span class="label">\(1\)</span><span class="given">1</span></div>
+          </div>
+          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C4. Convert <code>10100101</code>.</div>
+          <div class="byte-row">
+            <div class="byte-cell"><span class="label">\(x^7\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^6\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^5\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^4\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^3\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^2\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(1\)</span><span class="blank"></span></div>
+          </div>
+          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C5. Convert <code>11111111</code>. How many terms does the polynomial have?</div>
+          <div class="byte-row">
+            <div class="byte-cell"><span class="label">\(x^7\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^6\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^5\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^4\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^3\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x^2\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(x\)</span><span class="blank"></span></div>
+            <div class="byte-cell"><span class="label">\(1\)</span><span class="blank"></span></div>
+          </div>
+          <p>Polynomial: <input class="ans-input" type="text" style="width:100%" autocomplete="off" /></p>
+          <p>Number of terms: <input class="ans-input" type="text" style="width:80px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- PART D -->
+      <section id="hex-to-poly">
+        <h2>Part D: Hex byte → polynomial</h2>
+        <p>First convert hex to binary, then convert binary to polynomial form.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th style="width:8%">Problem</th>
+              <th style="width:14%">Hex</th>
+              <th style="width:28%">Binary</th>
+              <th>Polynomial form</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>D1</td><td><code>0x57</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>D2</td><td><code>0x83</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>D3</td><td><code>0x1B</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>D4</td><td><code>0x63</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>D5</td><td><code>0x02</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>D6</td><td><code>0x00</code></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART E -->
+      <section id="poly-to-byte">
+        <h2>Part E: Polynomial → binary and hex</h2>
+        <p>Mark 1 for each power that appears and 0 for each power that does not appear, then write the hex byte.</p>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th style="width:8%">Problem</th>
+              <th style="width:34%">Polynomial</th>
+              <th style="width:28%">Binary byte</th>
+              <th>Hex byte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>E1</td><td>\(x^7+x^3+x^2+1\)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E2</td><td>\(x^7+x^5+x^2+1\)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E3</td><td>\(x^6+x^5+x+1\)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E4</td><td>\(x^4+x^3+x+1\)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E5</td><td>\(x\)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>E6</td><td>\(0\) (zero polynomial)</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+              <td><input class="ans-input" type="text" style="width:80px" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART F -->
+      <section id="coefficient-tables">
+        <h2>Part F: Coefficient tables</h2>
+        <p>Fill in all eight coefficient cells (0 or 1) for each polynomial.</p>
+
+        <div class="problem">
+          <div class="problem-title">F1. Polynomial: \(x^6+x^4+x^2+x+1\)</div>
+          <table class="poly-table">
+            <thead>
+              <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F2. Polynomial: \(x^7+x+1\)</div>
+          <table class="poly-table">
+            <thead>
+              <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">F3. Polynomial: \(x^4+x^3+x+1\)</div>
+          <table class="poly-table">
+            <thead>
+              <tr><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:38px" autocomplete="off" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- PART G -->
+      <section id="concept-questions">
+        <h2>Part G: Concept questions</h2>
+
+        <div class="problem">
+          <div class="problem-title">G1. Explain the difference between reading <code>01010111</code> as an integer (decimal value) and reading it as a polynomial.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="3" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Why does bit position 0 correspond to the constant term \(1\) rather than to \(x^0\)?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="2" placeholder="Write your answer…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. What is the polynomial form of <code>0x00</code>? Why is it special?</div>
+          Polynomial: <input class="ans-input" type="text" style="width:200px" autocomplete="off" />
+          <div class="write-wrap" style="margin-top:10px;">
+            <textarea class="written-area" rows="2" placeholder="Why is it special?"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G4. The table below shows coefficient addition modulo 2. Complete it and explain why this matches XOR.</div>
+          <table class="work-table" style="max-width:320px;">
+            <thead><tr><th>\(a\)</th><th>\(b\)</th><th>\(a+b \pmod 2\)</th><th>XOR result</th></tr></thead>
+            <tbody>
+              <tr><td>0</td><td>0</td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <tr><td>0</td><td>1</td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <tr><td>1</td><td>0</td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+              <tr><td>1</td><td>1</td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td>
+                <td><input class="ans-input" type="text" style="width:50px" autocomplete="off" /></td></tr>
+            </tbody>
+          </table>
+          <div class="write-wrap" style="margin-top:8px;">
+            <textarea class="written-area" rows="2" placeholder="Why does this match XOR?"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PART H -->
+      <section id="aes-constants">
+        <h2>Part H: AES constant recognition</h2>
+        <div class="box challenge-box">
+          <div class="box-title">No multiplication yet</div>
+          <p>
+            These constants appear in AES arithmetic. Practice recognizing them in polynomial form.
+            You will see them again in Modules 09–12.
+          </p>
+        </div>
+
+        <table class="work-table">
+          <thead>
+            <tr>
+              <th style="width:8%">Problem</th>
+              <th style="width:20%">Byte or polynomial</th>
+              <th style="width:22%">Requested form</th>
+              <th>Answer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>H1</td><td><code>0x02</code></td><td>Polynomial</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>H2</td><td><code>0x03</code></td><td>Polynomial</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>H3</td><td><code>0x1B</code></td><td>Polynomial</td>
+              <td><input class="ans-input" type="text" style="width:100%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>H4</td><td>\(x\)</td><td>Hex byte</td>
+              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>H5</td><td>\(x+1\)</td><td>Hex byte</td>
+              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>H6</td><td>\(x^4+x^3+x+1\)</td><td>Hex byte</td>
+              <td><input class="ans-input" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="problem">
+          <div class="problem-title">H7. The AES irreducible polynomial is \(x^8+x^4+x^3+x+1\). The constant <code>0x1B</code> contains
+          the lower 8 bits of this polynomial. Which term is missing from <code>0x1B</code>'s polynomial that appears in the full irreducible polynomial?</div>
+          Missing term: <input class="ans-input" type="text" style="width:120px" autocomplete="off" />
+          <div class="write-wrap" style="margin-top:8px;">
+            <textarea class="written-area" rows="2" placeholder="Explain why a byte cannot represent the x^8 term…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANSWER KEY -->
+      <section id="answer-key" class="answer-key page-break">
+        <h2>Answer key</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Self-study note</div>
+          <p>
+            For every conversion, work bit by bit from position 7 down to 0. Include the term \(x^k\) when bit \(k\) is 1;
+            omit it when bit \(k\) is 0. The constant term is \(x^0 = 1\), so write \(1\) not \(x^0\).
+          </p>
+        </div>
+
+        <h3>Part A: Vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> A 1 bit means include the matching power of \(x\) in the polynomial. A 0 bit means leave that term out.</p>
+          <p><strong>A2.</strong> \(x\) is a formal placeholder (an indeterminate) that labels bit positions. It is not a number to solve for or to substitute.</p>
+          <p><strong>A3.</strong> Bit position 0.</p>
+          <p><strong>A4.</strong> \(x^7\); bit position 7.</p>
+        </div>
+
+        <h3>Part B: Bit position ↔ polynomial term</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>B1</td><td>\(x^7\)</td></tr>
+            <tr><td>B2</td><td>\(x^5\)</td></tr>
+            <tr><td>B3</td><td>\(x\)</td></tr>
+            <tr><td>B4</td><td>\(1\)</td></tr>
+            <tr><td>B5</td><td>6</td></tr>
+            <tr><td>B6</td><td>3</td></tr>
+            <tr><td>B7</td><td>2</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Binary byte → polynomial</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td>C2</td><td>\(x^7+x+1\)</td></tr>
+            <tr><td>C3</td><td>\(x^4+x^3+x+1\)</td></tr>
+            <tr><td>C4</td><td>\(x^7+x^5+x^2+1\)</td></tr>
+            <tr><td>C5</td><td>\(x^7+x^6+x^5+x^4+x^3+x^2+x+1\) — 8 terms (all possible terms)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part D: Hex byte → polynomial</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Binary</th><th>Polynomial</th></tr></thead>
+          <tbody>
+            <tr><td>D1</td><td><code>01010111</code></td><td>\(x^6+x^4+x^2+x+1\)</td></tr>
+            <tr><td>D2</td><td><code>10000011</code></td><td>\(x^7+x+1\)</td></tr>
+            <tr><td>D3</td><td><code>00011011</code></td><td>\(x^4+x^3+x+1\)</td></tr>
+            <tr><td>D4</td><td><code>01100011</code></td><td>\(x^6+x^5+x+1\)</td></tr>
+            <tr><td>D5</td><td><code>00000010</code></td><td>\(x\)</td></tr>
+            <tr><td>D6</td><td><code>00000000</code></td><td>\(0\) (zero polynomial)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part E: Polynomial → binary and hex</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Binary</th><th>Hex</th></tr></thead>
+          <tbody>
+            <tr><td>E1</td><td><code>10001101</code></td><td><code>0x8D</code></td></tr>
+            <tr><td>E2</td><td><code>10100101</code></td><td><code>0xA5</code></td></tr>
+            <tr><td>E3</td><td><code>01100011</code></td><td><code>0x63</code></td></tr>
+            <tr><td>E4</td><td><code>00011011</code></td><td><code>0x1B</code></td></tr>
+            <tr><td>E5</td><td><code>00000010</code></td><td><code>0x02</code></td></tr>
+            <tr><td>E6</td><td><code>00000000</code></td><td><code>0x00</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part F: Coefficient tables</h3>
+        <div class="answer-step">
+          <p><strong>F1.</strong> \(x^6+x^4+x^2+x+1\): coefficients \(0,1,0,1,0,1,1,1\)</p>
+          <p><strong>F2.</strong> \(x^7+x+1\): coefficients \(1,0,0,0,0,0,1,1\)</p>
+          <p><strong>F3.</strong> \(x^4+x^3+x+1\): coefficients \(0,0,0,1,1,0,1,1\)</p>
+        </div>
+
+        <h3>Part G: Concept questions</h3>
+        <div class="answer-step">
+          <p><strong>G1 sample.</strong> As an integer, <code>01010111</code> uses powers of 2: \(64+16+4+2+1=87\). As a polynomial, the same bits are coefficients of powers of \(x\): \(x^6+x^4+x^2+x+1\). Same pattern, different interpretation — the integer counts value; the polynomial labels structure.</p>
+          <p><strong>G2.</strong> Bit position 0 corresponds to \(x^0\), and \(x^0=1\) by definition. So the constant term is written as \(1\), not \(x^0\).</p>
+          <p><strong>G3.</strong> The polynomial for <code>0x00</code> is \(0\) (the zero polynomial) — every bit is 0, so no terms are included. It is special because it is the additive identity: adding any polynomial to the zero polynomial leaves it unchanged.</p>
+          <p><strong>G4.</strong> Completed table: \(0+0=0\), \(0+1=1\), \(1+0=1\), \(1+1=0\). The columns are identical because mod-2 addition and XOR use the same rule: the result is 1 when exactly one input is 1, and 0 when both are the same.</p>
+        </div>
+
+        <h3>Part H: AES constant recognition</h3>
+        <table class="answer-table">
+          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>H1</td><td>\(x\)</td></tr>
+            <tr><td>H2</td><td>\(x+1\)</td></tr>
+            <tr><td>H3</td><td>\(x^4+x^3+x+1\)</td></tr>
+            <tr><td>H4</td><td><code>0x02</code></td></tr>
+            <tr><td>H5</td><td><code>0x03</code></td></tr>
+            <tr><td>H6</td><td><code>0x1B</code></td></tr>
+            <tr><td>H7</td><td>Missing term: \(x^8\). A byte has only 8 bit positions (0 through 7), so it can hold terms up to \(x^7\). The \(x^8\) term requires a 9th bit, which a single byte does not have. In AES, this term is handled implicitly when the reduction step is applied.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography worksheet page. Paired with Tutorial 8: Bytes as Polynomials.
+      </p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_07_extended_euclidean_algorithm_html.html" class="nav-item">← Worksheet 7</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="worksheet_09_polynomial_addition_over_gf_2_html.html" class="nav-item">Worksheet 9 →</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_08_bytes_as_polynomials_html.html" class="nav-item nav-secondary">Tutorial 8</a>
+          <a href="tutorial_08_bytes_as_polynomials_workbook_html.html" class="nav-item nav-secondary">Practice 8</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <script>
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 3;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
+  </script>
+</body>
+</html>
