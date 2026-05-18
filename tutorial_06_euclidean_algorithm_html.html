@@ -155,15 +155,18 @@
       display: none;
     }
 
-    /* ── Bar visualization ── */
-    .ea-bars { margin-bottom: 14px; display: grid; gap: 7px; }
-    .ea-bar-row { display: flex; align-items: center; gap: 10px; height: 26px; }
-    .ea-bar-label { font-weight: 800; font-size: 0.82rem; color: #334e7d; width: 14px; flex-shrink: 0; }
-    .ea-bar-track { flex: 1; height: 100%; background: #e4e9f5; border-radius: 6px; position: relative; overflow: hidden; }
-    .ea-bar-fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 6px; transition: width 0.55s cubic-bezier(.4,0,.2,1), background 0.4s; }
-    .ea-bar-a { background: #334e7d; }
-    .ea-bar-b { background: #c9973a; }
-    .ea-bar-val { font-size: 0.82rem; font-weight: 700; color: #444; min-width: 34px; text-align: right; flex-shrink: 0; }
+    /* ── Block visualization ── */
+    .ea-blocks { margin-bottom: 14px; display: grid; gap: 8px; }
+    .ea-block-row-wrap { display: flex; align-items: flex-start; gap: 10px; min-height: 18px; }
+    .ea-block-label { font-weight: 800; font-size: 0.82rem; color: #334e7d; width: 14px; flex-shrink: 0; padding-top: 2px; }
+    .ea-block-row { display: flex; flex-wrap: wrap; gap: 2px; flex: 1; }
+    .ea-block { width: 14px; height: 14px; border-radius: 3px; transition: opacity 0.25s; }
+    .ea-block-decade { margin-left: 6px !important; }
+    .ea-block-a { background: #334e7d; }
+    .ea-block-b { background: #c9973a; }
+    .ea-block-gcd { background: #2e7d32; }
+    .ea-block-val { font-size: 0.82rem; font-weight: 700; color: #444; min-width: 34px; text-align: right; flex-shrink: 0; padding-top: 2px; }
+    .ea-scale-note { font-size: 0.75rem; color: #888; margin-top: 1px; }
     .ea-rem-note { font-size: 0.8rem; color: #2e7d32; font-weight: 700; min-height: 1.3em; margin-top: 2px; }
 
     /* ── Inverse existence explorer ── */
@@ -479,17 +482,18 @@
             <button class="ea-btn ea-btn-auto"  id="ea-auto">Auto</button>
             <button class="ea-btn ea-btn-reset" id="ea-reset">Reset</button>
           </div>
-          <div class="ea-bars" id="ea-bars">
-            <div class="ea-bar-row">
-              <span class="ea-bar-label">a</span>
-              <div class="ea-bar-track"><div class="ea-bar-fill ea-bar-a" id="ea-fill-a" style="width:100%"></div></div>
-              <span class="ea-bar-val" id="ea-val-a"></span>
+          <div class="ea-blocks" id="ea-blocks">
+            <div class="ea-block-row-wrap">
+              <span class="ea-block-label">a</span>
+              <div class="ea-block-row" id="ea-blocks-a"></div>
+              <span class="ea-block-val" id="ea-val-a"></span>
             </div>
-            <div class="ea-bar-row">
-              <span class="ea-bar-label">b</span>
-              <div class="ea-bar-track"><div class="ea-bar-fill ea-bar-b" id="ea-fill-b" style="width:50%"></div></div>
-              <span class="ea-bar-val" id="ea-val-b"></span>
+            <div class="ea-block-row-wrap">
+              <span class="ea-block-label">b</span>
+              <div class="ea-block-row" id="ea-blocks-b"></div>
+              <span class="ea-block-val" id="ea-val-b"></span>
             </div>
+            <div class="ea-scale-note" id="ea-scale"></div>
             <div class="ea-rem-note" id="ea-rem-note"></div>
           </div>
           <div class="ea-pair" id="ea-pair"></div>
@@ -944,13 +948,14 @@
     /* ── Algorithm Explorer ───────────────────────────────── */
     (function () {
       var EXAMPLES = [
+        { label: 'gcd(18, 12)',   a: 18,  b: 12  },
         { label: 'gcd(48, 18)',   a: 48,  b: 18  },
+        { label: 'gcd(64, 35)',   a: 64,  b: 35  },
+        { label: 'gcd(99, 78)',   a: 99,  b: 78  },
+        { label: 'gcd(144, 89)',  a: 144, b: 89  },
         { label: 'gcd(252, 105)', a: 252, b: 105 },
         { label: 'gcd(151, 25)',  a: 151, b: 25  },
-        { label: 'gcd(391, 299)', a: 391, b: 299 },
-        { label: 'gcd(99, 78)',   a: 99,  b: 78  },
-        { label: 'gcd(64, 35)',   a: 64,  b: 35  },
-        { label: 'gcd(144, 89)',  a: 144, b: 89  }
+        { label: 'gcd(391, 299)', a: 391, b: 299 }
       ];
 
       var selEl    = document.getElementById('ea-sel');
@@ -962,13 +967,14 @@
       var stepBtn  = document.getElementById('ea-step');
       var autoBtn  = document.getElementById('ea-auto');
       var resetBtn = document.getElementById('ea-reset');
-      var fillA    = document.getElementById('ea-fill-a');
-      var fillB    = document.getElementById('ea-fill-b');
+      var blocksA  = document.getElementById('ea-blocks-a');
+      var blocksB  = document.getElementById('ea-blocks-b');
       var valA     = document.getElementById('ea-val-a');
       var valB     = document.getElementById('ea-val-b');
+      var scaleEl  = document.getElementById('ea-scale');
       var remNote  = document.getElementById('ea-rem-note');
 
-      var ea = { a: 0, b: 0, done: false, timer: null, maxVal: 0 };
+      var ea = { a: 0, b: 0, done: false, timer: null, unit: 1 };
 
       EXAMPLES.forEach(function (ex, i) {
         var opt = document.createElement('option');
@@ -976,10 +982,34 @@
         selEl.appendChild(opt);
       });
 
-      function updateBars(a, b) {
-        if (!fillA) return;
-        fillA.style.width = (a / ea.maxVal * 100).toFixed(1) + '%';
-        fillB.style.width = (b / ea.maxVal * 100).toFixed(1) + '%';
+      /* Unit scale: keep block count ≤ ~80 so they stay countable */
+      function getUnit(maxVal) {
+        if (maxVal <= 80)  return 1;
+        if (maxVal <= 160) return 2;
+        if (maxVal <= 240) return 3;
+        return Math.ceil(maxVal / 80);
+      }
+
+      /* Render individual unit blocks, with a gap every 10th block */
+      function renderBlocks(rowEl, val, cls) {
+        rowEl.innerHTML = '';
+        var count = Math.round(val / ea.unit);
+        for (var i = 0; i < count; i++) {
+          var blk = document.createElement('span');
+          blk.className = 'ea-block ' + cls + (i > 0 && i % 10 === 0 ? ' ea-block-decade' : '');
+          blk.style.opacity = '0';
+          /* stagger fade-in left-to-right */
+          (function (el, delay) {
+            setTimeout(function () { el.style.opacity = '1'; }, delay);
+          })(blk, i * 12);
+          rowEl.appendChild(blk);
+        }
+      }
+
+      function updateBlocks(a, b, useGcd) {
+        if (!blocksA) return;
+        renderBlocks(blocksA, a, useGcd ? 'ea-block-gcd' : 'ea-block-a');
+        renderBlocks(blocksB, b, 'ea-block-b');
         valA.textContent = a;
         valB.textContent = b;
       }
@@ -989,20 +1019,18 @@
         autoBtn.disabled = done; autoBtn.style.opacity = done ? '0.4' : '1';
       }
 
-      function resetBarColor() {
-        if (fillA) fillA.style.background = '#334e7d';
-      }
-
       function loadExample(idx) {
         if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
         var ex = EXAMPLES[idx];
         ea.a = ex.a; ea.b = ex.b; ea.done = false;
-        ea.maxVal = Math.max(ex.a, ex.b);
+        ea.unit = getUnit(Math.max(ex.a, ex.b));
         stepsEl.innerHTML = '';
         resEl.style.display = 'none';
         if (remNote) remNote.textContent = '';
-        resetBarColor();
-        updateBars(ea.a, ea.b);
+        if (scaleEl) scaleEl.textContent = ea.unit > 1
+          ? '1 block = ' + ea.unit + ' units'
+          : '1 block = 1 unit — count them!';
+        updateBlocks(ea.a, ea.b, false);
         pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
         typeset(pairEl);
         setBtns(false);
@@ -1035,21 +1063,15 @@
           ea.done = true;
           setBtns(true);
           if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
-          /* bars: a = gcd (green), b = 0 */
-          if (fillA) {
-            fillA.style.width = (b / ea.maxVal * 100).toFixed(1) + '%';
-            fillA.style.background = '#2e7d32';
-            fillB.style.width = '0%';
-            valA.textContent = b; valB.textContent = 0;
-            if (remNote) remNote.textContent = 'GCD = ' + b;
-          }
+          updateBlocks(b, 0, true);   /* GCD in green, b-row clears */
+          if (remNote) remNote.textContent = 'GCD = ' + b + ' — green blocks above';
           resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
             (b === 1 ? ' — the numbers are <strong>coprime</strong>.' : '.');
           resEl.style.display = 'block';
           typeset(resEl);
         } else {
           ea.a = b; ea.b = r;
-          updateBars(ea.a, ea.b);
+          updateBlocks(ea.a, ea.b, false);
           if (remNote) remNote.textContent = 'Remainder ' + r + ' → becomes new b';
           pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
           typeset(pairEl);
@@ -1064,7 +1086,7 @@
         ea.timer = setInterval(function () {
           doStep();
           if (ea.done) { clearInterval(ea.timer); ea.timer = null; }
-        }, 950);
+        }, 1100);
       });
       resetBtn.addEventListener('click', function () { loadExample(parseInt(selEl.value)); });
       selEl.addEventListener('change',   function () { loadExample(parseInt(selEl.value)); });
