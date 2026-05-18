@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 9: Polynomial Addition over GF(2) | Mathematics of Cryptography</title>
+  <title>Practice 9: Polynomial Addition over GF(2) | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,590 +35,560 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      color: #7d5a00;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #f5e8b0; }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
-
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
-
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
-
-    .student-info {
+    /* Quick reference */
+    details.quick-ref {
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      background: #fffcf2;
+      padding: 0;
+      margin: 0 0 32px;
+    }
+    details.quick-ref summary {
+      padding: 16px 22px;
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      color: #7d5a00;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    details.quick-ref summary::before { content: '▶'; font-size: 0.75rem; transition: transform 0.15s; }
+    details.quick-ref[open] summary::before { transform: rotate(90deg); }
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      padding: 6px 22px 22px;
     }
-
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .bit-table,
-    .poly-table,
-    .xor-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .bit-table th, .bit-table td,
-    .poly-table th, .poly-table td,
-    .xor-table th, .xor-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .bit-table th,
-    .poly-table th,
-    .xor-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .bit-table th,
-    .bit-table td,
-    .poly-table th,
-    .poly-table td,
-    .xor-table th,
-    .xor-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
-      border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
-    }
-
-    .large-work-space { min-height: 150px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
+    .qr-card {
+      border: 1px solid #e8dbbf;
+      border-radius: 12px;
       background: #ffffff;
-      break-inside: avoid;
+      padding: 14px 16px;
+    }
+    .qr-card h4 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #7d5a00;
+    }
+    .qr-card p, .qr-card li { font-size: 0.88rem; margin: 4px 0; }
+    .qr-card ol, .qr-card ul { padding-left: 1.2em; }
+    .qr-card table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .qr-card td, .qr-card th { border: 1px solid #e8dbbf; padding: 5px 8px; text-align: center; }
+    .qr-card th { background: #fff8e6; color: #7d5a00; font-weight: 700; }
+
+    /* Drill cards */
+    .drill-section { margin: 0 0 40px; }
+    .drill-section h2 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #334e7d;
+      border-bottom: 2px solid #e8dbbf;
+      padding-bottom: 8px;
+      margin-bottom: 18px;
+    }
+    .drill-card {
+      background: #fffcf2;
+      border: 1px solid #e8dbbf;
+      border-radius: var(--radius);
+      padding: 24px 28px;
+    }
+    .drill-q {
+      font-size: 1.1rem;
+      min-height: 2.4em;
+      margin-bottom: 6px;
+      line-height: 1.6;
+    }
+    .drill-hint {
+      font-size: 0.86rem;
+      color: #7d5a00;
+      font-style: italic;
+      margin-bottom: 14px;
+    }
+    .drill-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .drill-input {
+      padding: 9px 14px;
+      border: 2px solid #c9b97a;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #ffffff;
+      color: #16243d;
+      width: 140px;
+      transition: border-color 0.15s;
+    }
+    .drill-input:focus { outline: none; border-color: #7d5a00; }
+    .drill-input.correct { border-color: #2e7d32; background: #edf7ed; color: #1b5e20; }
+    .drill-input.wrong   { border-color: #c62828; background: #fdeaea; color: #7f0000; }
+
+    /* YES/NO buttons */
+    .drill-yn-btn {
+      padding: 9px 22px;
+      border-radius: 8px;
+      border: 2px solid #c9b97a;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      background: #ffffff;
+      color: #334e7d;
+      transition: all 0.15s;
+    }
+    .drill-yn-btn:hover { background: #fff8e6; border-color: #7d5a00; }
+    .drill-yn-btn.selected-yes { background: #edf7ed; border-color: #2e7d32; color: #1b5e20; }
+    .drill-yn-btn.selected-no  { background: #fdeaea; border-color: #c62828; color: #7f0000; }
+
+    .drill-btn {
+      padding: 9px 20px;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .drill-btn:hover { opacity: 0.85; }
+    .drill-btn-check { background: #334e7d; color: #ffffff; }
+    .drill-btn-next  { background: #e8dbbf; color: #7d5a00; }
+    .drill-fb {
+      min-height: 2em;
+      margin-top: 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      line-height: 1.5;
+    }
+    .drill-fb.ok  { color: #2e7d32; }
+    .drill-fb.err { color: #c62828; }
+    .drill-streak { font-size: 0.8rem; color: #7d5a00; margin-top: 10px; font-weight: 600; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #fff8e6; border-color: #e8dbbf; color: #7d5a00; }
+    .nav-secondary:hover { background: #f5e8b0; }
+
+    @media (max-width: 700px) {
+      header.workbook-header, main { padding: 22px; }
+      .drill-card { padding: 18px; }
     }
 
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
-
+    @page { margin: 0.75in; }
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
+      body { background: #fff; color: #000; font-size: 11pt; line-height: 1.45; }
       .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .bit-table th,
-      .poly-table th,
-      .xor-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      header.workbook-header, main { box-shadow: none; border: none; border-radius: 0; padding: 0; background: #fff; }
+      .workbook-nav, .no-print, .drill-section { display: none !important; }
+      .quick-ref { display: block !important; border: 1px solid #ccc; }
+      .quick-ref summary { display: none; }
+      .qr-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 10px; }
+      h1 { font-size: 20pt; }
+      h2 { font-size: 14pt; border-bottom: 1px solid #999; break-after: avoid; }
+      a { color: #000; text-decoration: none; }
+      .bottom-nav { display: none !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 9</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 9</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Polynomial Addition over \(\mathrm{GF}(2)\)</h1>
       <p class="subtitle">
-        Printable practice for coefficient addition, term cancellation, XOR equivalence, and byte-polynomial sums.
+        Four interactive drills: reading a single coefficient in a sum, computing the full polynomial sum, checking whether two polynomials cancel, and finding the degree of a sum.
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Drill navigation">
+        <a class="nav-link" href="#d1-sec">Drill 1 — Single Coefficient</a>
+        <a class="nav-link" href="#d2-sec">Drill 2 — Sum in Hex</a>
+        <a class="nav-link" href="#d3-sec">Drill 3 — Zero Sum?</a>
+        <a class="nav-link" href="#d4-sec">Drill 4 — Degree of Sum</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">&#127968; Dashboard</a>
+        <button class="nav-link" style="cursor:pointer;border:none;" onclick="window.print()">&#128424;&#65039; Print Reference Card</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
-          </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
-          </div>
-        </div>
-      </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Add coefficients one position at a time using modulo 2. Matching 1s cancel. Different bits produce 1. There is no carrying. When working with bytes, this is the same as XOR.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Addition over \(\mathrm{GF}(2)\)</div>
-            <table class="xor-table">
-              <thead>
-                <tr><th>A</th><th>B</th><th>\(A+B\pmod2\)</th><th>\(A\oplus B\)</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
-                <tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
-                <tr><td>1</td><td>0</td><td>1</td><td>1</td></tr>
-                <tr><td>1</td><td>1</td><td>0</td><td>0</td></tr>
-              </tbody>
+      <!-- ── Quick Reference ── -->
+      <details class="quick-ref no-print">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <h4>GF(2) Addition Table</h4>
+            <table>
+              <tr><th>A</th><th>B</th><th>A + B mod 2</th><th>A ⊕ B</th></tr>
+              <tr><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+              <tr><td>0</td><td>1</td><td>1</td><td>1</td></tr>
+              <tr><td>1</td><td>0</td><td>1</td><td>1</td></tr>
+              <tr><td>1</td><td>1</td><td>0</td><td>0</td></tr>
             </table>
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Term map</div>
-            <table class="bit-table">
-              <thead>
-                <tr><th>Position</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
-              </thead>
-              <tbody>
-                <tr><td>Term</td><td>\(x^7\)</td><td>\(x^6\)</td><td>\(x^5\)</td><td>\(x^4\)</td><td>\(x^3\)</td><td>\(x^2\)</td><td>\(x\)</td><td>\(1\)</td></tr>
-              </tbody>
-            </table>
+          <div class="qr-card">
+            <h4>Term Cancellation Rule</h4>
+            <p>If a term appears in <strong>both</strong> polynomials → coefficient 1+1 = 0 → <strong>cancels</strong>.</p>
+            <p>If a term appears in <strong>one</strong> polynomial → coefficient 1+0 = 1 → <strong>survives</strong>.</p>
+            <p>No carrying between bit positions.</p>
+          </div>
+          <div class="qr-card">
+            <h4>Worked Example</h4>
+            <p><code>0x57</code> = <code>0101 0111</code> = \(x^6+x^4+x^2+x+1\)</p>
+            <p><code>0x83</code> = <code>1000 0011</code> = \(x^7+x+1\)</p>
+            <p><code>0x57 ⊕ 0x83</code> = <code>1101 0100</code> = <code>0xD4</code></p>
+            <p>The \(x\) and constant terms cancel; the rest survive.</p>
+          </div>
+          <div class="qr-card">
+            <h4>Key Properties</h4>
+            <ul>
+              <li>\(A + A = 0\) for every byte — self-inverse</li>
+              <li>\(A + 0 = A\) — zero is the identity</li>
+              <li>Subtraction = addition in GF(2)</li>
+              <li>Degree = position of the highest 1-bit in the XOR result</li>
+            </ul>
           </div>
         </div>
-      </section>
+      </details>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What does it mean to add coefficients modulo 2?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. Why does \(x+x=0\) over \(\mathrm{GF}(2)\)?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What bitwise operation matches polynomial addition over \(\mathrm{GF}(2)\)?</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why is there no carrying in polynomial addition over \(\mathrm{GF}(2)\)?</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="coefficient-practice">
-        <h2>Part B: Coefficient addition</h2>
-        <p>Fill in each result using addition modulo 2.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Expression</th><th>Result</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>\(0+0\pmod2\)</td><td></td></tr>
-            <tr><td>B2</td><td>\(0+1\pmod2\)</td><td></td></tr>
-            <tr><td>B3</td><td>\(1+0\pmod2\)</td><td></td></tr>
-            <tr><td>B4</td><td>\(1+1\pmod2\)</td><td></td></tr>
-            <tr><td>B5</td><td>\(1+1+1\pmod2\)</td><td></td></tr>
-            <tr><td>B6</td><td>\(1+1+1+1\pmod2\)</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="term-cancellation">
-        <h2>Part C: Term cancellation</h2>
-        <p>Simplify each expression over \(\mathrm{GF}(2)\).</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Expression</th><th>Simplified result</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>C1</td><td>\(x+x\)</td><td></td></tr>
-            <tr><td>C2</td><td>\(x^4+x^4\)</td><td></td></tr>
-            <tr><td>C3</td><td>\(x^7+x^3+x^7\)</td><td></td></tr>
-            <tr><td>C4</td><td>\(x^5+x^2+x^2+1\)</td><td></td></tr>
-            <tr><td>C5</td><td>\(x^6+x^6+x^4+x+1+x\)</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="polynomial-sums">
-        <h2>Part D: Polynomial addition</h2>
-        <p>Add the polynomials over \(\mathrm{GF}(2)\). Cancel matching terms.</p>
-
-        <div class="problem">
-          <div class="problem-title">D1. Add \((x^4+x+1)+(x^3+x+1)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D2. Add \((x^7+x^2+1)+(x^7+x^5+x^2)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D3. Add \((x^6+x^4+x^2+x+1)+(x^7+x+1)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D4. Add \((x^6+x^4+x^2+x+1)+(x^6+x^4+x^2+x+1)\).</div>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="coefficient-tables">
-        <h2>Part E: Coefficient table addition</h2>
-        <p>Complete the table, then write the polynomial result.</p>
-
-        <div class="problem">
-          <div class="problem-title">E1. Add two byte-polynomials by coefficients.</div>
-          <table class="poly-table">
-            <thead>
-              <tr><th>Power</th><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>First</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
-              <tr><td>Second</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
-              <tr><td>Sum mod 2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <p>Polynomial result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E2. Add two byte-polynomials by coefficients.</div>
-          <table class="poly-table">
-            <thead>
-              <tr><th>Power</th><th>\(x^7\)</th><th>\(x^6\)</th><th>\(x^5\)</th><th>\(x^4\)</th><th>\(x^3\)</th><th>\(x^2\)</th><th>\(x\)</th><th>\(1\)</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>First</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td></tr>
-              <tr><td>Second</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td></tr>
-              <tr><td>Sum mod 2</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-          <p>Polynomial result:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="byte-xor">
-        <h2>Part F: Byte XOR and polynomial result</h2>
-        <p>Compute the XOR, then convert the result to polynomial form.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Byte XOR</th>
-              <th>Hex result</th>
-              <th>Binary result</th>
-              <th>Polynomial result</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>F1</td><td><code>0x57 XOR 0x83</code></td><td></td><td></td><td></td></tr>
-            <tr><td>F2</td><td><code>0x1B XOR 0x03</code></td><td></td><td></td><td></td></tr>
-            <tr><td>F3</td><td><code>0xA5 XOR 0x63</code></td><td></td><td></td><td></td></tr>
-            <tr><td>F4</td><td><code>0xFF XOR 0x57</code></td><td></td><td></td><td></td></tr>
-            <tr><td>F5</td><td><code>0x57 XOR 0x57</code></td><td></td><td></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="subtraction-same">
-        <h2>Part G: Addition and subtraction</h2>
-        <div class="problem">
-          <div class="problem-title">G1. Explain why subtraction is the same as addition over \(\mathrm{GF}(2)\).</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Simplify \((x^5+x^3+1)-(x^3+1)\) over \(\mathrm{GF}(2)\).</div>
-          <p>Hint: subtraction works like addition here.</p>
-          <div class="work-space"></div>
-          <p>Answer:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="concept-checks">
-        <h2>Part H: Concept checks</h2>
-
-        <div class="problem">
-          <div class="problem-title">H1. Why should you not carry when adding byte-polynomials over \(\mathrm{GF}(2)\)?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Explain why <code>0x57 XOR 0x57 = 0x00</code> using polynomial language.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H3. Explain why polynomial addition over \(\mathrm{GF}(2)\) is an important bridge toward AES arithmetic.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Polynomial addition over \(\mathrm{GF}(2)\) adds coefficients modulo 2.</td><td></td></tr>
-            <tr><td>Over \(\mathrm{GF}(2)\), \(x+x=2x\).</td><td></td></tr>
-            <tr><td>Byte XOR matches polynomial addition when bytes are read as polynomials.</td><td></td></tr>
-            <tr><td>Polynomial addition over \(\mathrm{GF}(2)\) uses ordinary binary carrying.</td><td></td></tr>
-            <tr><td>A polynomial added to itself over \(\mathrm{GF}(2)\) becomes 0.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            When adding over \(\mathrm{GF}(2)\), look for matching terms. If a term appears twice, it disappears. If it appears once, it stays.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> It means add the coefficients and reduce the result to either 0 or 1. In practice, \(1+1\) becomes 0.</p>
-          <p><strong>A2.</strong> Because the coefficients add as \(1+1=2\), and \(2\equiv0\pmod2\). So the two matching \(x\) terms cancel.</p>
-          <p><strong>A3.</strong> XOR.</p>
-          <p><strong>A4.</strong> Each coefficient position is handled independently modulo 2. There is no place-value carrying into the next term.</p>
-        </div>
-
-        <h3>Part B: Coefficient addition</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Result</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>0</td></tr>
-            <tr><td>B2</td><td>1</td></tr>
-            <tr><td>B3</td><td>1</td></tr>
-            <tr><td>B4</td><td>0</td></tr>
-            <tr><td>B5</td><td>1</td></tr>
-            <tr><td>B6</td><td>0</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Term cancellation</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Simplified result</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>C1</td><td>0</td><td>\(x+x=0\)</td></tr>
-            <tr><td>C2</td><td>0</td><td>\(x^4+x^4=0\)</td></tr>
-            <tr><td>C3</td><td>\(x^3\)</td><td>The \(x^7\) terms cancel.</td></tr>
-            <tr><td>C4</td><td>\(x^5+1\)</td><td>The \(x^2\) terms cancel.</td></tr>
-            <tr><td>C5</td><td>\(x^4+1\)</td><td>The \(x^6\) terms cancel and the \(x\) terms cancel.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part D: Polynomial addition</h3>
-        <div class="answer-step">
-          <p><strong>D1.</strong></p>
-          <div class="math-display">
-            \[
-              (x^4+x+1)+(x^3+x+1)=x^4+x^3
-            \]
+      <!-- ── Drill 1: Single Coefficient ── -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Single Coefficient</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint">XOR the two bytes, then check whether bit k is 1 (coefficient present) or 0 (absent). Answer is always 0 or 1.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-inp" type="text" placeholder="0 or 1" autocomplete="off" style="width:100px;" />
+            <button class="drill-btn drill-btn-check" id="d1-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d1-next">Next →</button>
           </div>
-          <p><strong>D2.</strong></p>
-          <div class="math-display">
-            \[
-              (x^7+x^2+1)+(x^7+x^5+x^2)=x^5+1
-            \]
-          </div>
-          <p><strong>D3.</strong></p>
-          <div class="math-display">
-            \[
-              (x^6+x^4+x^2+x+1)+(x^7+x+1)=x^7+x^6+x^4+x^2
-            \]
-          </div>
-          <p><strong>D4.</strong></p>
-          <div class="math-display">
-            \[
-              (x^6+x^4+x^2+x+1)+(x^6+x^4+x^2+x+1)=0
-            \]
-          </div>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
-
-        <h3>Part E: Coefficient table addition</h3>
-        <div class="answer-step">
-          <p><strong>E1.</strong> Sum row: \(1,1,0,1,0,1,0,0\). Polynomial result:</p>
-          <div class="math-display">
-            \[
-              x^7+x^6+x^4+x^2
-            \]
-          </div>
-          <p><strong>E2.</strong> Sum row: \(0,0,0,1,1,0,0,0\). Polynomial result:</p>
-          <div class="math-display">
-            \[
-              x^4+x^3
-            \]
-          </div>
-        </div>
-
-        <h3>Part F: Byte XOR and polynomial result</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Hex result</th><th>Binary result</th><th>Polynomial result</th></tr></thead>
-          <tbody>
-            <tr><td>F1</td><td><code>0xD4</code></td><td><code>11010100</code></td><td>\(x^7+x^6+x^4+x^2\)</td></tr>
-            <tr><td>F2</td><td><code>0x18</code></td><td><code>00011000</code></td><td>\(x^4+x^3\)</td></tr>
-            <tr><td>F3</td><td><code>0xC6</code></td><td><code>11000110</code></td><td>\(x^7+x^6+x^2+x\)</td></tr>
-            <tr><td>F4</td><td><code>0xA8</code></td><td><code>10101000</code></td><td>\(x^7+x^5+x^3\)</td></tr>
-            <tr><td>F5</td><td><code>0x00</code></td><td><code>00000000</code></td><td>\(0\)</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part G: Addition and subtraction</h3>
-        <div class="answer-step">
-          <p><strong>G1 sample answer.</strong> In \(\mathrm{GF}(2)\), every element is its own additive inverse. Since \(1+1=0\), adding 1 undoes adding 1. So subtraction and addition behave the same.</p>
-          <p><strong>G2.</strong></p>
-          <div class="math-display">
-            \[
-              (x^5+x^3+1)-(x^3+1)=(x^5+x^3+1)+(x^3+1)=x^5
-            \]
-          </div>
-        </div>
-
-        <h3>Part H: Concept checks</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> There is no carrying because coefficients are not place-value digits in ordinary binary addition. Each coefficient is added separately modulo 2.</p>
-          <p><strong>H2 sample answer.</strong> The polynomial for <code>0x57</code> is \(x^6+x^4+x^2+x+1\). Adding it to itself makes every term appear twice, and every duplicate term cancels, leaving 0.</p>
-          <p><strong>H3 sample answer.</strong> AES uses byte-polynomials over \(\mathrm{GF}(2)\). Understanding that polynomial addition is XOR prepares us for polynomial multiplication and reduction, which are needed for \(\mathrm{GF}(2^8)\) arithmetic.</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>Polynomial addition over \(\mathrm{GF}(2)\) adds coefficients modulo 2.</td><td>True</td><td>That is the core rule.</td></tr>
-            <tr><td>Over \(\mathrm{GF}(2)\), \(x+x=2x\).</td><td>False</td><td>\(1+1=0\), so \(x+x=0\).</td></tr>
-            <tr><td>Byte XOR matches polynomial addition when bytes are read as polynomials.</td><td>True</td><td>Both use coefficient-wise addition modulo 2.</td></tr>
-            <tr><td>Polynomial addition over \(\mathrm{GF}(2)\) uses ordinary binary carrying.</td><td>False</td><td>There is no carrying.</td></tr>
-            <tr><td>A polynomial added to itself over \(\mathrm{GF}(2)\) becomes 0.</td><td>True</td><td>Every term cancels with itself.</td></tr>
-          </tbody>
-        </table>
       </section>
 
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 9: Polynomial Addition over GF(2).
-      </p>
+      <!-- ── Drill 2: Sum in Hex ── -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Full Polynomial Sum</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint">Add the two byte-polynomials over GF(2) — that is XOR. Give your answer as a two-digit hex value (e.g. D4 or 0xD4).</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-inp" type="text" placeholder="0x??" autocomplete="off" />
+            <button class="drill-btn drill-btn-check" id="d2-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d2-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
+        </div>
+      </section>
 
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <!-- ── Drill 3: Zero Sum? YES/NO ── -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Zero Sum?</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint">Adding two polynomials gives zero only when they are identical — every term cancels.</div>
+          <div class="drill-row" id="d3-yn-row">
+            <button class="drill-yn-btn" id="d3-yes">YES — zero</button>
+            <button class="drill-yn-btn" id="d3-no">NO — nonzero</button>
+            <button class="drill-btn drill-btn-next" id="d3-next" style="margin-left:10px;">Next →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
+        </div>
+      </section>
+
+      <!-- ── Drill 4: Degree of Sum ── -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Degree of Sum</h2>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint">Compute the XOR, then find the position of the highest 1-bit. That position is the degree of the sum polynomial.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-inp" type="text" placeholder="Degree" autocomplete="off" style="width:100px;" />
+            <button class="drill-btn drill-btn-check" id="d4-check">Check</button>
+            <button class="drill-btn drill-btn-next"  id="d4-next">Next →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
+        </div>
+      </section>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_08_bytes_as_polynomials_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_10_polynomial_multiplication_over_gf_2_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_08_bytes_as_polynomials_workbook_html.html" class="nav-item">&#8592; Practice 8</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="tutorial_10_polynomial_multiplication_over_gf_2_workbook_html.html" class="nav-item">Practice 10 &#8594;</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_09_polynomial_addition_over_gf_2_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_09_polynomial_addition_over_gf_2_html.html" class="nav-item nav-secondary">Tutorial 9</a>
+          <a href="worksheet_09_polynomial_addition_over_gf_2_html.html" class="nav-item nav-secondary">Worksheet</a>
         </div>
-    </nav>
+      </nav>
+
     </main>
   </div>
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── helpers ──────────────────────────────────────────────────── */
+    function rnd(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+    function rndByte()   { return rnd(0, 255); }
+
+    function hexStr(n) {
+      return '0x' + n.toString(16).toUpperCase().padStart(2, '0');
+    }
+    function binStr(n) {
+      return n.toString(2).padStart(8, '0').replace(/(.{4})/g, '$1 ').trim();
+    }
+    function degree(n) {
+      for (var k = 7; k >= 0; k--) { if (n & (1 << k)) return k; }
+      return -1;
+    }
+    function byteToPolyStr(b) {
+      if (b === 0) return '0';
+      var terms = [];
+      for (var k = 7; k >= 0; k--) {
+        if (b & (1 << k)) {
+          terms.push(k === 0 ? '1' : k === 1 ? 'x' : 'x^{' + k + '}');
+        }
+      }
+      return terms.join(' + ');
+    }
+
+    /* ── makeDrill ─────────────────────────────────────────────────── */
+    function makeDrill(cfg) {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl    = document.getElementById(cfg.id + '-q');
+      var fb     = document.getElementById(cfg.id + '-fb');
+      var strk   = document.getElementById(cfg.id + '-streak');
+      var btnNxt = document.getElementById(cfg.id + '-next');
+      var inp    = document.getElementById(cfg.id + '-inp');
+      var btnChk = document.getElementById(cfg.id + '-check');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+      function load() {
+        state   = cfg.gen();
+        checked = false;
+        if (inp) { inp.value = ''; inp.className = 'drill-input'; }
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = state.q;
+        typeset(qEl);
+        if (inp) inp.focus({ preventScroll: true });
+        if (cfg.onLoad) cfg.onLoad(state);
+      }
+      function check(userAns) {
+        var ok = cfg.check(userAns, state);
+        checked = true;
+        total++;
+        if (ok) {
+          correct++;
+          if (inp) inp.className = 'drill-input correct';
+          fb.innerHTML = '&#10003; ' + state.ok;
+          fb.className = 'drill-fb ok';
+        } else {
+          if (inp) inp.className = 'drill-input wrong';
+          fb.innerHTML = '&#10007; ' + state.err;
+          fb.className = 'drill-fb err';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+      if (btnChk) {
+        btnChk.addEventListener('click', function () { if (checked) load(); else check(inp.value.trim()); });
+      }
+      btnNxt.addEventListener('click', load);
+      if (inp) {
+        inp.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { if (checked) load(); else check(inp.value.trim()); }
+        });
+      }
+      load();
+    }
+
+    /* ── Drill 1: Single Coefficient ───────────────────────────────── */
+    makeDrill({
+      id: 'd1',
+      gen: function () {
+        var a = rndByte();
+        var b = rndByte();
+        var k = rnd(0, 7);
+        var sum = a ^ b;
+        var coeff = (sum >> k) & 1;
+        var ca = (a >> k) & 1;
+        var cb = (b >> k) & 1;
+        var termName = k === 0 ? '\\(1\\)' : k === 1 ? '\\(x\\)' : '\\(x^{' + k + '}\\)';
+        return {
+          q: 'Compute \\(' + byteToPolyStr(a) + '\\) + \\(' + byteToPolyStr(b) + '\\) over \\(\\mathrm{GF}(2)\\). What is the coefficient of ' + termName + ' in the result?',
+          ans: String(coeff),
+          ok: 'Coefficient of ' + termName + ' is \\(' + coeff + '\\). The two bytes contribute \\(' + ca + '\\) and \\(' + cb + '\\) at position ' + k + '; \\(' + ca + '+' + cb + '=' + coeff + '\\pmod2\\).',
+          err: 'The coefficient is \\(' + coeff + '\\). At bit position ' + k + ', byte A has \\(' + ca + '\\) and byte B has \\(' + cb + '\\). Adding mod 2: \\(' + ca + '+' + cb + '=' + coeff + '\\).'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+    /* ── Drill 2: Full Sum in Hex ───────────────────────────────────── */
+    makeDrill({
+      id: 'd2',
+      gen: function () {
+        var a = rndByte();
+        var b = rndByte();
+        var sum = a ^ b;
+        return {
+          q: 'Add \\(' + byteToPolyStr(a) + '\\) and \\(' + byteToPolyStr(b) + '\\) over \\(\\mathrm{GF}(2)\\). Give the result as a hex byte.',
+          ans: sum.toString(16).toUpperCase().padStart(2, '0'),
+          ok: hexStr(a) + ' &#8853; ' + hexStr(b) + ' = ' + hexStr(sum) + ' = \\(' + byteToPolyStr(sum) + '\\).',
+          err: 'The answer is ' + hexStr(sum) + '. (' + hexStr(a) + ' XOR ' + hexStr(b) + ' = ' + hexStr(sum) + ' = \\(' + byteToPolyStr(sum) + '\\).)'
+        };
+      },
+      check: function (raw, s) {
+        return raw.toLowerCase().replace(/^0x/, '') === s.ans.toLowerCase();
+      }
+    });
+
+    /* ── Drill 3: Zero Sum? YES/NO ──────────────────────────────────── */
+    (function () {
+      var state;
+      var checked = false;
+      var correct = 0;
+      var total   = 0;
+
+      var qEl    = document.getElementById('d3-q');
+      var fb     = document.getElementById('d3-fb');
+      var strk   = document.getElementById('d3-streak');
+      var yesBtn = document.getElementById('d3-yes');
+      var noBtn  = document.getElementById('d3-no');
+      var nxtBtn = document.getElementById('d3-next');
+
+      function typeset(el) {
+        if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+      }
+      function updateStreak() {
+        if (total === 0) { strk.textContent = ''; return; }
+        strk.textContent = correct + ' / ' + total + ' correct';
+      }
+      function load() {
+        /* 50 % chance the two bytes are equal (sum = 0) */
+        var a = rndByte();
+        var b = (Math.random() < 0.5) ? a : rndByte();
+        var sum = a ^ b;
+        state = { a: a, b: b, sum: sum, isZero: sum === 0 };
+        checked = false;
+        yesBtn.className = 'drill-yn-btn';
+        noBtn.className  = 'drill-yn-btn';
+        fb.textContent = '';
+        fb.className = 'drill-fb';
+        qEl.innerHTML = 'Does \\(' + byteToPolyStr(a) + '\\) + \\(' + byteToPolyStr(b) + '\\) equal the zero polynomial over \\(\\mathrm{GF}(2)\\)?';
+        typeset(qEl);
+      }
+      function check(answer) {
+        if (checked) return;
+        var correct_ans = state.isZero ? 'YES' : 'NO';
+        var isRight = answer === correct_ans;
+        checked = true;
+        total++;
+        if (isRight) correct++;
+
+        var explain;
+        if (state.isZero) {
+          explain = '&#10003; ' + hexStr(state.a) + ' &#8853; ' + hexStr(state.b) + ' = 0x00. The two polynomials are identical, so every term cancels.';
+        } else {
+          explain = '&#10007; ' + hexStr(state.a) + ' &#8853; ' + hexStr(state.b) + ' = ' + hexStr(state.sum) + ' &#8800; 0. The polynomials differ, so some terms survive.';
+        }
+
+        if (isRight) {
+          fb.innerHTML = '&#10003; Correct! ' + explain;
+          fb.className = 'drill-fb ok';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-yes';
+        } else {
+          fb.innerHTML = '&#10007; ' + explain;
+          fb.className = 'drill-fb err';
+          (answer === 'YES' ? yesBtn : noBtn).className = 'drill-yn-btn selected-no';
+        }
+        updateStreak();
+        typeset(fb);
+      }
+
+      yesBtn.addEventListener('click', function () { if (!checked) check('YES'); else load(); });
+      noBtn.addEventListener('click',  function () { if (!checked) check('NO');  else load(); });
+      nxtBtn.addEventListener('click', load);
+      load();
+    })();
+
+    /* ── Drill 4: Degree of Sum ─────────────────────────────────────── */
+    makeDrill({
+      id: 'd4',
+      gen: function () {
+        var a, b, sum;
+        /* Ensure sum != 0 so degree is defined */
+        do { a = rndByte(); b = rndByte(); sum = a ^ b; } while (sum === 0);
+        var deg = degree(sum);
+        var termName = deg === 1 ? 'x' : 'x^{' + deg + '}';
+        return {
+          q: 'Add \\(' + byteToPolyStr(a) + '\\) and \\(' + byteToPolyStr(b) + '\\) over \\(\\mathrm{GF}(2)\\). What is the degree of the resulting polynomial?',
+          ans: String(deg),
+          ok: 'Degree \\(' + deg + '\\). The sum is ' + hexStr(sum) + ' = \\(' + byteToPolyStr(sum) + '\\). The highest term is \\(' + termName + '\\).',
+          err: 'The sum is ' + hexStr(sum) + ' = \\(' + byteToPolyStr(sum) + '\\), which has degree \\(' + deg + '\\).'
+        };
+      },
+      check: function (raw, s) { return raw === s.ans; }
+    });
+
+  })();
+  </script>
 </body>
 </html>
