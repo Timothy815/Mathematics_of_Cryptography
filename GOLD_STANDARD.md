@@ -92,6 +92,7 @@ Each drill section must have:
 - [ ] Wrong answers show ✗ feedback with explanation + `.drill-fb.err` (red)
 - [ ] Input turns green/red via `.correct` / `.wrong` class
 - [ ] Enter key triggers check
+- [ ] MathJax call uses `typeof` guard: `if (window.MathJax && typeof MathJax.typesetPromise === 'function')` — the config object is set before the library loads, so a bare `if (window.MathJax)` check will be truthy but `typesetPromise` won't exist, throwing a TypeError that stops all subsequent drill initialization
 
 ### Bottom Nav
 - [ ] Left bundle: `← Practice ##`, `🏠 Dashboard`, `Practice ## →`
