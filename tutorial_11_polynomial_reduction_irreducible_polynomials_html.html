@@ -1363,18 +1363,26 @@
                     <div class="rw-deriv-step">
                       <span class="rw-deriv-num">2</span>
                       <div>
-                        <strong>Apply the AES modulus rule.</strong>
-                        The AES modulus polynomial is defined as equal to zero in this field:
+                        <strong>Read the folding rule from the modulus polynomial.</strong><br>
+                        The chosen modulus polynomial has <strong>five terms</strong> — including a
+                        constant term of <strong>1</strong> (a degree-0 term):
                         <div class="rw-algebra">
-                          <span class="rw-eq-line">m(x) = x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + 1 ≡ 0</span>
+                          <span class="rw-eq-line">m(x) = x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + <strong>1</strong></span>
                         </div>
-                        Rearrange by adding x<sup>4</sup>+x<sup>3</sup>+x+1 to both sides.<br>
-                        In GF(2) subtraction and addition are the same operation (XOR), so:
+                        Because we work modulo m(x), this whole polynomial is treated as zero:
                         <div class="rw-algebra">
                           <span class="rw-eq-line">x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + 1 ≡ 0</span>
-                          <span class="rw-eq-line">x<sup>8</sup> ≡ 0 + x<sup>4</sup> + x<sup>3</sup> + x + 1</span>
+                        </div>
+                        That says: x<sup>8</sup> together with those other four terms equals zero.
+                        So x<sup>8</sup> must equal those other four terms on its own.
+                        In GF(2), moving any term across an equals sign leaves it unchanged
+                        (because adding it to both sides cancels it on the left: a + a = 0):
+                        <div class="rw-algebra">
                           <span class="rw-eq-line hl">x<sup>8</sup> ≡ x<sup>4</sup> + x<sup>3</sup> + x + 1 &emsp;(hex: 0x1B)</span>
                         </div>
+                        <strong>Why is the 1 there?</strong> Because 1 is one of the terms in m(x).
+                        The right-hand side is simply <em>all the terms of m(x) except x<sup>8</sup></em>.
+                        If the modulus had no constant term, there would be no 1 on the right.
                       </div>
                     </div>
                     <div class="rw-deriv-step rw-deriv-final">
@@ -1424,30 +1432,38 @@
                   <div class="rw-deriv-step">
                     <span class="rw-deriv-num">3</span>
                     <div>
-                      <strong>Where does the replacement for x<sup>8</sup> come from?</strong><br>
-                      AES works in a field where all arithmetic is done modulo the polynomial
-                      <strong>m(x) = x<sup>8</sup>+x<sup>4</sup>+x<sup>3</sup>+x+1</strong>.
-                      Working "modulo m(x)" means we treat m(x) as equal to zero — just as working modulo 7
-                      means we treat 7 as zero (so 8 becomes 1). Therefore:
+                      <strong>Where does x<sup>8</sup> ≡ x<sup>4</sup>+x<sup>3</sup>+x+1 come from?</strong><br>
+                      The answer is simply: <em>it comes directly from the modulus polynomial</em>.<br><br>
+                      The chosen modulus polynomial has <strong>five terms</strong>:
                       <div class="rw-algebra">
-                        <span class="rw-eq-line">m(x) ≡ 0</span>
+                        <span class="rw-eq-line">m(x) = x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + <strong>1</strong></span>
+                        <span class="rw-eq-line" style="font-size:0.82rem;color:#555;">
+                          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                          deg 8 &nbsp;+ deg 4 + deg 3 + deg 1 + <strong>deg 0</strong> (the constant term)
+                        </span>
+                      </div>
+                      Working modulo m(x) means treating this whole polynomial as zero — just as
+                      clock arithmetic treats 12 as zero (so 13 wraps to 1):
+                      <div class="rw-algebra">
                         <span class="rw-eq-line">x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + 1 ≡ 0</span>
                       </div>
-                      In GF(2), adding a term to both sides is the same as subtracting it
-                      (because −1 = 1 mod 2). Add x<sup>4</sup>+x<sup>3</sup>+x+1 to both sides:
+                      This says x<sup>8</sup> <em>together with the other four terms</em> equals zero.
+                      Rearrange so x<sup>8</sup> stands alone — in GF(2), moving a term across the
+                      equals sign is done by adding it to both sides, and a + a = 0, so it cancels
+                      on the left:
                       <div class="rw-algebra">
-                        <span class="rw-eq-line">x<sup>8</sup> ≡ 0 + x<sup>4</sup> + x<sup>3</sup> + x + 1</span>
-                        <span class="rw-eq-line hl">x<sup>8</sup> ≡ x<sup>4</sup> + x<sup>3</sup> + x + 1 &emsp;(= 0x1B)</span>
+                        <span class="rw-eq-line hl">x<sup>8</sup> ≡ x<sup>4</sup> + x<sup>3</sup> + x + 1</span>
                       </div>
-                      This is <strong>the folding rule for this modulus</strong>: any time x<sup>8</sup> appears
-                      we may swap it for x<sup>4</sup>+x<sup>3</sup>+x+1 — they are the same element in this field.
-                      <br><span style="font-size:0.85rem;color:#555;">
-                      (This technique — polynomial reduction modulo an irreducible polynomial — comes from
-                      Galois field theory, developed in the 1800s, long before AES existed.
-                      AES simply <em>chose</em> x<sup>8</sup>+x<sup>4</sup>+x<sup>3</sup>+x+1 as its modulus;
-                      a different choice would give a different folding rule but the same principle.)
+                      <strong>The right-hand side is exactly the other four terms of m(x).</strong>
+                      The <strong>1</strong> is there because the modulus polynomial itself has a
+                      constant term of 1. It is not added artificially — it was already sitting in m(x)
+                      all along. If the modulus had no constant term, no 1 would appear on the right.
+                      <span style="font-size:0.83rem;color:#666;display:block;margin-top:5px;">
+                        (This rearrangement — not AES — is what gives us the folding rule.
+                        Any modulus polynomial produces a folding rule for its leading term by the same logic.
+                        This field's modulus happens to include a constant 1, so the folding rule does too.)
                       </span>
-                      Substituting into our expression:
+                      Now substitute x<sup>8</sup> ≡ x<sup>4</sup>+x<sup>3</sup>+x+1 into our factored expression:
                       <div class="rw-algebra">
                         <span class="rw-eq-line">x<sup>${d}</sup> = x<sup>${s}</sup> · x<sup>8</sup></span>
                         <span class="rw-eq-line hl">&emsp;&emsp;≡ x<sup>${s}</sup> · (x<sup>4</sup> + x<sup>3</sup> + x + 1)</span>
