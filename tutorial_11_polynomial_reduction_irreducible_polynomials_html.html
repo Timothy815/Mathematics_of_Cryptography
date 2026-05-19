@@ -138,7 +138,9 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_10_polynomial_multiplication_over_gf_2_html.html">← Module 10</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_12_multiplication_in_gf_2_8_html.html">Module 12 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
@@ -163,6 +165,20 @@
         <p>
           You should know how to read bytes as polynomials, how addition over \(\mathrm{GF}(2)\) works, and how to multiply polynomials over \(\mathrm{GF}(2)\) before reduction. You should also remember the idea of a remainder from modular arithmetic.
         </p>
+      </section>
+
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box purpose-box">
+          <div class="box-title">After completing this module you will be able to</div>
+          <ul>
+            <li>Explain why polynomial products must be reduced and what "degree" means in this context.</li>
+            <li>Derive a folding rule from any modulus polynomial by rearranging the congruence \(m(x)\equiv0\).</li>
+            <li>Perform polynomial reduction step-by-step with both a toy modulus and the AES modulus.</li>
+            <li>Identify the AES modulus \(x^8+x^4+x^3+x+1\) and explain why \(\texttt{0x1B}\) appears when folding \(x^8\).</li>
+            <li>Explain what "irreducible" means and why it matters for building a finite field.</li>
+          </ul>
+        </div>
       </section>
 
       <section id="symbols-used">
@@ -735,6 +751,116 @@
         </div>
       </section>
 
+      <section id="reduction-explorer" class="no-print">
+        <h2>Interactive: polynomial reduction explorer</h2>
+        <p>Enter a polynomial as a hex byte (the unreduced product) or type the degree bits manually. The widget applies the AES folding rule and shows each step.</p>
+        <div class="pm-widget" style="background:#f7f5ef;border:1px solid #c7d2ea;border-radius:16px;padding:24px;margin:18px 0;">
+          <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;margin-bottom:18px;">
+            <div>
+              <label style="display:block;font-weight:700;margin-bottom:6px;">Unreduced polynomial (bits 14 → 0)</label>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;" id="bit-inputs">
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+            <button onclick="runReduction()" style="background:#334e7d;color:#fff;border:none;border-radius:8px;padding:9px 22px;font-size:1rem;cursor:pointer;font-weight:700;">Reduce →</button>
+            <button onclick="resetWidget()" style="background:#e5e9f2;color:#334e7d;border:1px solid #c7d2ea;border-radius:8px;padding:9px 18px;font-size:1rem;cursor:pointer;">Reset</button>
+            <button onclick="loadPreset(0b110100110101110)" style="background:#e5e9f2;color:#334e7d;border:1px solid #c7d2ea;border-radius:8px;padding:9px 18px;font-size:1rem;cursor:pointer;">Preset: \(x^{14}+x^{13}+x^{11}+x^8+x^5+x^3+x^2+x\)</button>
+          </div>
+          <div id="reduction-steps" style="font-family:'Cascadia Code',monospace;font-size:0.93rem;line-height:1.7;background:#fff;border:1px solid #dde3ee;border-radius:10px;padding:16px;min-height:80px;"></div>
+        </div>
+        <script>
+        (function(){
+          const container = document.getElementById('bit-inputs');
+          const AES_MOD = 0x11B; // x^8+x^4+x^3+x+1
+          const FOLD    = 0x1B;  // x^4+x^3+x+1 (x^8 folded)
+
+          // Create bit toggles for degrees 14 down to 0
+          for(let d=14;d>=0;d--){
+            const wrap=document.createElement('div');
+            wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:3px;';
+            const btn=document.createElement('button');
+            btn.id='bit'+d;
+            btn.textContent='0';
+            btn.dataset.deg=d;
+            btn.style.cssText='width:36px;height:36px;border-radius:7px;border:1px solid #c7d2ea;background:#fff;font-weight:700;font-size:0.9rem;cursor:pointer;';
+            btn.onclick=()=>{
+              btn.textContent=btn.textContent==='0'?'1':'0';
+              btn.style.background=btn.textContent==='1'?'#334e7d':'#fff';
+              btn.style.color=btn.textContent==='1'?'#fff':'#222';
+            };
+            const lbl=document.createElement('span');
+            lbl.style.cssText='font-size:0.7rem;color:#666;';
+            lbl.textContent='x'+d;
+            wrap.appendChild(btn);wrap.appendChild(lbl);
+            container.appendChild(wrap);
+          }
+
+          window.resetWidget=function(){
+            for(let d=14;d>=0;d--){
+              const b=document.getElementById('bit'+d);
+              b.textContent='0';b.style.background='#fff';b.style.color='#222';
+            }
+            document.getElementById('reduction-steps').innerHTML='';
+          };
+
+          window.loadPreset=function(val){
+            resetWidget();
+            for(let d=14;d>=0;d--){
+              if((val>>d)&1){
+                const b=document.getElementById('bit'+d);
+                b.textContent='1';b.style.background='#334e7d';b.style.color='#fff';
+              }
+            }
+          };
+
+          function polyStr(v){
+            if(v===0) return '0';
+            const terms=[];
+            for(let d=14;d>=0;d--){
+              if((v>>d)&1){
+                if(d===0) terms.push('1');
+                else if(d===1) terms.push('x');
+                else terms.push('x^'+d);
+              }
+            }
+            return terms.join(' + ');
+          }
+
+          window.runReduction=function(){
+            let val=0;
+            for(let d=14;d>=0;d--){
+              if(document.getElementById('bit'+d).textContent==='1') val|=(1<<d);
+            }
+            const steps=[];
+            steps.push('Start:  '+polyStr(val)+'  (0x'+val.toString(16).toUpperCase()+')');
+            let cur=val;
+            for(let d=14;d>=8;d--){
+              if((cur>>d)&1){
+                const shifted=FOLD<<(d-8);
+                steps.push('x^'+d+' → fold:  XOR with 0x'+shifted.toString(16).toUpperCase()+' ('+polyStr(shifted)+')');
+                cur^=(1<<d);  // clear the high bit
+                cur^=shifted; // XOR in the folded bits
+                steps.push('  after fold:  '+polyStr(cur)+'  (0x'+cur.toString(16).toUpperCase()+')');
+              }
+            }
+            if(cur===val) steps.push('Already fully reduced — no high-degree terms.');
+            steps.push('');
+            steps.push('Final result:  '+polyStr(cur)+'  (0x'+cur.toString(16).toUpperCase().padStart(2,'0')+')');
+            document.getElementById('reduction-steps').innerHTML=steps.map(s=>'<div>'+s+'</div>').join('');
+          };
+        })();
+        </script>
+      </section>
+
+      <section id="infographic">
+        <h2>Module Infographic</h2>
+        <p>This visual overview captures the key ideas from this module. Save it or print it as a reference sheet.</p>
+        <div style="text-align:center;margin:1.5rem 0;">
+          <img src="tutorial11.png" alt="Module 11 infographic" style="max-width:100%;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.12);">
+        </div>
+      </section>
+
       <section id="next">
         <h2>What comes next</h2>
         <p>
@@ -747,9 +873,9 @@
 
     <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_10_polynomial_multiplication_over_gf_2_html.html" class="nav-item" id="prevLink">← Previous</a>
+            <a href="tutorial_10_polynomial_multiplication_over_gf_2_html.html" class="nav-item" id="prevLink">← Module 10</a>
             <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_12_multiplication_in_gf_2_8_html.html" class="nav-item" id="nextLink">Next →</a>
+            <a href="tutorial_12_multiplication_in_gf_2_8_html.html" class="nav-item" id="nextLink">Module 12 →</a>
         </div>
         <div class="nav-bundle">
             <a href="tutorial_11_polynomial_reduction_irreducible_polynomials_workbook_html.html" class="nav-item nav-secondary">Switch to Workbook</a>

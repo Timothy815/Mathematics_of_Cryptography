@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 11: Polynomial Reduction and Irreducible Polynomials | Mathematics of Cryptography</title>
+  <title>Practice 11: Polynomial Reduction and Irreducible Polynomials | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #ffffff, #fff8e6);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,671 +35,519 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .drill-section {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .drill-section h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
 
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .drill-card {
+      background: #f7f5ef;
+      border: 1px solid #dde3ee;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
 
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .drill-q {
+      font-size: 1.07rem;
+      min-height: 2.4em;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
 
-    .student-info {
+    .drill-hint {
+      font-size: 0.88rem;
+      color: #5a6a8a;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+
+    .drill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .drill-input {
+      font-size: 1rem;
+      padding: 7px 12px;
+      border: 1.5px solid #b0bcd4;
+      border-radius: 8px;
+      width: 200px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .drill-input.correct { border-color: #2a8a4a; background: #eafaf0; }
+    .drill-input.wrong   { border-color: #c0392b; background: #fdeaea; }
+
+    .drill-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-check { background: #334e7d; color: #fff; }
+    .btn-next  { background: #e5e9f2; color: #334e7d; border: 1px solid #c7d2ea; }
+
+    .btn-yn {
+      padding: 8px 24px;
+      border: 1.5px solid #c7d2ea;
+      border-radius: 8px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: #334e7d;
+    }
+    .btn-yn.selected-yes { background: #334e7d; color: #fff; border-color: #334e7d; }
+    .btn-yn.selected-no  { background: #334e7d; color: #fff; border-color: #334e7d; }
+
+    .drill-fb {
+      min-height: 1.4em;
+      font-weight: 700;
+      font-size: 0.97rem;
+      margin-top: 8px;
+    }
+    .drill-fb.ok  { color: #1a7a3a; }
+    .drill-fb.err { color: #b0192a; font-weight: 400; }
+
+    .drill-streak {
+      font-size: 0.82rem;
+      color: #7a8aaa;
+      margin-top: 4px;
+    }
+
+    .quick-ref summary {
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 10px 0;
+      color: var(--accent);
+    }
+
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      margin-top: 12px;
     }
 
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .poly-table,
-    .compare-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .poly-table th, .poly-table td,
-    .compare-table th, .compare-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .poly-table th,
-    .compare-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .poly-table th,
-    .poly-table td,
-    .compare-table th,
-    .compare-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
+    .qr-card {
+      background: #f0f4fb;
+      border: 1px solid #c7d2ea;
       border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
+      padding: 12px 14px;
+      font-size: 0.93rem;
     }
 
-    .large-work-space { min-height: 150px; }
-
-    .extra-large-work-space { min-height: 230px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
-    }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
+    .qr-card strong { display: block; margin-bottom: 5px; color: #1f3763; }
 
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
-      .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .poly-table th,
-      .compare-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      @page { margin: 0.75in; }
+      .no-print, .workbook-nav { display: none !important; }
+      .drill-section { display: none !important; }
+      .quick-ref { display: block !important; }
+      details.quick-ref[open] summary::after { content: ''; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 11</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 11</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Polynomial Reduction and Irreducible Polynomials</h1>
       <p class="subtitle">
-        Printable practice for folding high powers, using toy modulus rules, recognizing the AES modulus, and understanding irreducibility.
+        Four drills: toy-modulus folding rules · toy reductions · AES modulus recognition · AES reductions
       </p>
 
-      <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
-        <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Practice navigation">
+        <a href="#d1-sec" class="nav-link">Drill 1</a>
+        <a href="#d2-sec" class="nav-link">Drill 2</a>
+        <a href="#d3-sec" class="nav-link">Drill 3</a>
+        <a href="#d4-sec" class="nav-link">Drill 4</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
+      <details class="quick-ref no-print" style="background:#f0f4fb;border:1px solid #c7d2ea;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <strong>Toy modulus \(m(x)=x^3+x+1\)</strong>
+            \(x^3\equiv x+1\)<br>
+            \(x^4\equiv x^2+x\)<br>
+            \(x^5\equiv x^2+x+1\)
           </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
+          <div class="qr-card">
+            <strong>AES modulus</strong>
+            \(m(x)=x^8+x^4+x^3+x+1\)<br>
+            Hex: <code>0x11B</code><br>
+            Folding rule: \(x^8\equiv x^4+x^3+x+1\)<br>
+            Folded part: <code>0x1B</code>
           </div>
-        </div>
-      </section>
-
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Polynomial reduction is a folding process. Use the modulus polynomial to replace high powers of \(x\) with lower-degree expressions. Then combine like terms over \(\mathrm{GF}(2)\), remembering that duplicate terms cancel.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Toy modulus rule</div>
-            <p>For the toy modulus:</p>
-            <div class="math-display">
-              \[
-                m(x)=x^3+x+1
-              \]
-              \[
-                x^3\equiv x+1
-              \]
-              \[
-                x^4\equiv x^2+x
-              \]
-            </div>
+          <div class="qr-card">
+            <strong>GF(2) arithmetic</strong>
+            Addition = XOR (mod 2)<br>
+            Duplicate terms cancel: \(x+x=0\)<br>
+            \(-1=1\) in GF(2)
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">AES modulus rule</div>
-            <p>For AES:</p>
-            <div class="math-display">
-              \[
-                m(x)=x^8+x^4+x^3+x+1
-              \]
-              \[
-                \texttt{0x11B}\longleftrightarrow x^8+x^4+x^3+x+1
-              \]
-              \[
-                x^8\equiv x^4+x^3+x+1
-              \]
-              \[
-                x^4+x^3+x+1\longleftrightarrow\texttt{0x1B}
-              \]
-            </div>
+          <div class="qr-card">
+            <strong>Irreducibility</strong>
+            Cannot factor into lower-degree pieces<br>
+            Plays role of prime number<br>
+            Needed so every nonzero byte has inverse
           </div>
         </div>
-      </section>
+      </details>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What does polynomial reduction mean in friendly language?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What is a modulus polynomial?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What does it mean for a polynomial to be irreducible?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why do we need reduction after polynomial multiplication?</div>
-          <div class="work-space"></div>
+      <!-- Drill 1 -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Deriving folding rules</h2>
+        <p>Given the toy modulus \(m(x)=x^3+x+1\), you'll derive what each higher power of \(x\) equals.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint">Rearrange \(m(x)\equiv0\) over GF(2), then multiply both sides by \(x\) for higher powers.</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-in" type="text" placeholder="e.g. x^2 + x + 1" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d1.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d1.next()">Next →</button>
+          </div>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
       </section>
 
-      <section id="integer-analogy">
-        <h2>Part B: Integer modulus analogy</h2>
-        <p>Complete the analogy between integer modular arithmetic and polynomial modular arithmetic.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Prompt</th><th>Answer</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>In \(29\bmod12=5\), what is 12?</td><td></td></tr>
-            <tr><td>B2</td><td>In \(p(x)\bmod m(x)\), what is \(m(x)\)?</td><td></td></tr>
-            <tr><td>B3</td><td>In integer modular arithmetic, the result is an integer remainder. In polynomial reduction, the result is a...</td><td></td></tr>
-            <tr><td>B4</td><td>For a degree-8 modulus, the reduced polynomial must have degree less than...</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="toy-rule">
-        <h2>Part C: Toy folding rule</h2>
-        <p>Use the toy modulus \(m(x)=x^3+x+1\).</p>
-
-        <div class="problem">
-          <div class="problem-title">C1. Starting from \(x^3+x+1\equiv0\), derive the folding rule for \(x^3\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Rule:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Use \(x^3\equiv x+1\) to derive a rule for \(x^4\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Rule:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. Use your rule for \(x^4\) to derive a rule for \(x^5\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Rule:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="toy-reductions">
-        <h2>Part D: Toy polynomial reductions</h2>
+      <!-- Drill 2 -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Toy polynomial reductions</h2>
         <p>Reduce each polynomial modulo \(x^3+x+1\). Your answer should have degree less than 3.</p>
-
-        <div class="problem">
-          <div class="problem-title">D1. Reduce \(x^3+x^2+1\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D2. Reduce \(x^4+x^2\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D3. Reduce \(x^5+x^2+x\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D4. Reduce \(x^4+x^3+1\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint">Substitute the folding rule for each high-degree term, then cancel duplicates over GF(2).</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-in" type="text" placeholder="e.g. x^2 + 1" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d2.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d2.next()">Next →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
         </div>
       </section>
 
-      <section id="aes-recognition">
-        <h2>Part E: AES modulus recognition</h2>
-        <p>Answer each recognition question.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Question</th><th>Answer</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>E1</td><td>What polynomial does <code>0x11B</code> represent?</td><td></td></tr>
-            <tr><td>E2</td><td>What polynomial does <code>0x1B</code> represent?</td><td></td></tr>
-            <tr><td>E3</td><td>Which one is the full AES modulus, <code>0x11B</code> or <code>0x1B</code>?</td><td></td></tr>
-            <tr><td>E4</td><td>Which one is the lower folded part that replaces \(x^8\)?</td><td></td></tr>
-            <tr><td>E5</td><td>Why does <code>0x11B</code> need 9 bits?</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="aes-folding-rule">
-        <h2>Part F: AES folding rule</h2>
-        <p>Use the AES modulus:</p>
-        <div class="math-display">
-          \[
-            m(x)=x^8+x^4+x^3+x+1
-          \]
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F1. Starting from \(x^8+x^4+x^3+x+1\equiv0\), derive the folding rule for \(x^8\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Rule:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F2. Convert the folded form of \(x^8\) to binary and hex.</div>
-          <p>Folded polynomial:</p>
-          <span class="blank-line"></span>
-          <p>Binary:</p>
-          <span class="blank-line"></span>
-          <p>Hex:</p>
-          <span class="blank-line"></span>
+      <!-- Drill 3 -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — AES modulus recognition</h2>
+        <p>Quick-fire questions about the AES modulus polynomial and the <code>0x1B</code>/<code>0x11B</code> relationship.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint">Remember: the full AES modulus is 0x11B; the folded form of x⁸ is 0x1B.</div>
+          <div class="drill-row" id="d3-row">
+            <input class="drill-input" id="d3-in" type="text" placeholder="answer" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d3.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d3.next()">Next →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
         </div>
       </section>
 
-      <section id="aes-reductions">
-        <h2>Part G: AES-style reductions</h2>
-        <p>Use \(x^8\equiv x^4+x^3+x+1\). Reduce each expression so it has degree at most 7.</p>
-
-        <div class="problem">
-          <div class="problem-title">G1. Reduce \(x^8\).</div>
-          <div class="work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Reduce \(x^8+x^4+x^2\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G3. Reduce \(x^8+x^7+x^4+x+1\).</div>
-          <div class="work-space large-work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G4. Reduce \(x^8+x^4+x^3+x+1\).</div>
-          <p>This is the AES modulus itself.</p>
-          <div class="work-space"></div>
-          <p>Reduced result:</p>
-          <span class="blank-line"></span>
+      <!-- Drill 4 -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — AES reductions</h2>
+        <p>Use the AES folding rule \(x^8\equiv x^4+x^3+x+1\) to reduce each polynomial to degree ≤ 7.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint">Replace x⁸, then XOR the remaining terms and cancel duplicates over GF(2).</div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-in" type="text" placeholder="e.g. x^3 + x^2 + x + 1" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d4.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d4.next()">Next →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
         </div>
       </section>
 
-      <section id="irreducible-concepts">
-        <h2>Part H: Irreducible polynomial concepts</h2>
+      <p class="footer-note">Mathematics of Cryptography · Practice 11 · Polynomial Reduction and Irreducible Polynomials</p>
 
-        <div class="problem">
-          <div class="problem-title">H1. Explain the analogy between prime numbers and irreducible polynomials.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Why does AES use an irreducible polynomial instead of just any degree-8 polynomial?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H3. Why does having multiplicative inverses matter for the AES S-box?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="concept-checks">
-        <h2>Part I: Concept checks</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Question</th><th>Answer</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>I1</td><td>Can you reduce a polynomial without knowing the modulus polynomial?</td><td></td></tr>
-            <tr><td>I2</td><td>For AES, should a reduced byte-polynomial contain \(x^8\)?</td><td></td></tr>
-            <tr><td>I3</td><td>What happens to duplicate terms during reduction?</td><td></td></tr>
-            <tr><td>I4</td><td>Is polynomial reduction the same as decimal integer remainder?</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Polynomial reduction means finding a polynomial remainder.</td><td></td></tr>
-            <tr><td>The full AES modulus is <code>0x1B</code>.</td><td></td></tr>
-            <tr><td>For AES, \(x^8\equiv x^4+x^3+x+1\).</td><td></td></tr>
-            <tr><td>An irreducible polynomial plays a role similar to a prime number.</td><td></td></tr>
-            <tr><td>Reduction by the AES modulus prepares us for \(\mathrm{GF}(2^8)\) multiplication.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            Reduction is always tied to a modulus polynomial. Once the folding rule is chosen, substitute high powers and cancel duplicates over \(\mathrm{GF}(2)\).
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> Polynomial reduction means folding high powers of \(x\) back into a lower-degree polynomial using a chosen modulus polynomial.</p>
-          <p><strong>A2.</strong> A modulus polynomial is the polynomial used as the reduction rule, similar to how an integer modulus controls wraparound in modular arithmetic.</p>
-          <p><strong>A3.</strong> An irreducible polynomial cannot be factored into lower-degree nonconstant polynomials over the coefficient field being used.</p>
-          <p><strong>A4.</strong> Polynomial multiplication can create powers higher than \(x^7\), so reduction is needed to bring the result back into byte-sized form.</p>
-        </div>
-
-        <h3>Part B: Integer modulus analogy</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>12 is the modulus.</td></tr>
-            <tr><td>B2</td><td>\(m(x)\) is the modulus polynomial.</td></tr>
-            <tr><td>B3</td><td>A polynomial remainder.</td></tr>
-            <tr><td>B4</td><td>8.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Toy folding rule</h3>
-        <div class="answer-step">
-          <p><strong>C1.</strong></p>
-          <div class="math-display">
-            \[
-              x^3+x+1\equiv0
-            \]
-            \[
-              x^3\equiv x+1
-            \]
-          </div>
-          <p><strong>C2.</strong></p>
-          <div class="math-display">
-            \[
-              x^4=x\cdot x^3\equiv x(x+1)=x^2+x
-            \]
-          </div>
-          <p><strong>C3.</strong></p>
-          <div class="math-display">
-            \[
-              x^5=x^2\cdot x^3\equiv x^2(x+1)=x^3+x^2
-            \]
-            \[
-              x^3+x^2\equiv(x+1)+x^2=x^2+x+1
-            \]
-          </div>
-        </div>
-
-        <h3>Part D: Toy polynomial reductions</h3>
-        <div class="answer-step">
-          <p><strong>D1.</strong></p>
-          <div class="math-display">
-            \[
-              x^3+x^2+1\equiv(x+1)+x^2+1=x^2+x
-            \]
-          </div>
-          <p><strong>D2.</strong></p>
-          <div class="math-display">
-            \[
-              x^4+x^2\equiv(x^2+x)+x^2=x
-            \]
-          </div>
-          <p><strong>D3.</strong></p>
-          <div class="math-display">
-            \[
-              x^5+x^2+x\equiv(x^2+x+1)+x^2+x=1
-            \]
-          </div>
-          <p><strong>D4.</strong></p>
-          <div class="math-display">
-            \[
-              x^4+x^3+1\equiv(x^2+x)+(x+1)+1
-            \]
-            \[
-              =x^2+(x+x)+(1+1)=x^2
-            \]
-          </div>
-        </div>
-
-        <h3>Part E: AES modulus recognition</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>E1</td><td>\(x^8+x^4+x^3+x+1\)</td></tr>
-            <tr><td>E2</td><td>\(x^4+x^3+x+1\)</td></tr>
-            <tr><td>E3</td><td><code>0x11B</code></td></tr>
-            <tr><td>E4</td><td><code>0x1B</code></td></tr>
-            <tr><td>E5</td><td>Because the full AES modulus includes the \(x^8\) term, which is the ninth bit position.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part F: AES folding rule</h3>
-        <div class="answer-step">
-          <p><strong>F1.</strong></p>
-          <div class="math-display">
-            \[
-              x^8+x^4+x^3+x+1\equiv0
-            \]
-            \[
-              x^8\equiv x^4+x^3+x+1
-            \]
-          </div>
-          <p><strong>F2.</strong></p>
-          <div class="math-display">
-            \[
-              x^4+x^3+x+1=00011011_2=\texttt{0x1B}
-            \]
-          </div>
-        </div>
-
-        <h3>Part G: AES-style reductions</h3>
-        <div class="answer-step">
-          <p><strong>G1.</strong></p>
-          <div class="math-display">
-            \[
-              x^8\equiv x^4+x^3+x+1
-            \]
-          </div>
-          <p><strong>G2.</strong></p>
-          <div class="math-display">
-            \[
-              x^8+x^4+x^2\equiv(x^4+x^3+x+1)+x^4+x^2
-            \]
-            \[
-              =x^3+x^2+x+1
-            \]
-          </div>
-          <p><strong>G3.</strong></p>
-          <div class="math-display">
-            \[
-              x^8+x^7+x^4+x+1\equiv(x^4+x^3+x+1)+x^7+x^4+x+1
-            \]
-            \[
-              =x^7+x^3
-            \]
-          </div>
-          <p><strong>G4.</strong></p>
-          <div class="math-display">
-            \[
-              x^8+x^4+x^3+x+1\equiv0
-            \]
-          </div>
-        </div>
-
-        <h3>Part H: Irreducible polynomial concepts</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> Prime numbers cannot be factored into smaller positive integer factors other than 1 and themselves. Irreducible polynomials similarly cannot be factored into lower-degree nonconstant polynomials in the field being used.</p>
-          <p><strong>H2 sample answer.</strong> AES uses an irreducible polynomial so the byte-polynomials form a field. In a field, every nonzero element has a multiplicative inverse.</p>
-          <p><strong>H3 sample answer.</strong> The AES S-box uses multiplicative inverses in \(\mathrm{GF}(2^8)\). Without reliable inverses for nonzero bytes, that construction would not work properly.</p>
-        </div>
-
-        <h3>Part I: Concept checks</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>I1</td><td>No. Reduction requires a chosen modulus polynomial.</td></tr>
-            <tr><td>I2</td><td>No. A reduced AES byte-polynomial must have degree at most 7.</td></tr>
-            <tr><td>I3</td><td>Duplicate terms cancel because addition is modulo 2.</td></tr>
-            <tr><td>I4</td><td>No. It is a polynomial remainder, not a decimal integer remainder.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>Polynomial reduction means finding a polynomial remainder.</td><td>True</td><td>It is remainder arithmetic for polynomials.</td></tr>
-            <tr><td>The full AES modulus is <code>0x1B</code>.</td><td>False</td><td>The full AES modulus is <code>0x11B</code>.</td></tr>
-            <tr><td>For AES, \(x^8\equiv x^4+x^3+x+1\).</td><td>True</td><td>This comes from the AES modulus polynomial.</td></tr>
-            <tr><td>An irreducible polynomial plays a role similar to a prime number.</td><td>True</td><td>It cannot be factored inside the polynomial world being used.</td></tr>
-            <tr><td>Reduction by the AES modulus prepares us for \(\mathrm{GF}(2^8)\) multiplication.</td><td>True</td><td>It keeps products byte-sized.</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 11: Polynomial Reduction and Irreducible Polynomials.
-      </p>
-
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_10_polynomial_multiplication_over_gf_2_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_12_multiplication_in_gf_2_8_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_10_polynomial_multiplication_over_gf_2_workbook_html.html" class="nav-item">← Practice 10</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_12_multiplication_in_gf_2_8_workbook_html.html" class="nav-item">Practice 12 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_11_polynomial_reduction_irreducible_polynomials_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_11_polynomial_reduction_irreducible_polynomials_html.html" class="nav-item nav-secondary">Tutorial 11</a>
+          <a href="worksheet_11_polynomial_reduction_irreducible_polynomials_html.html" class="nav-item nav-secondary">Worksheet 11</a>
         </div>
-    </nav>
+      </nav>
     </main>
   </div>
+
+<script>
+// ── helpers ────────────────────────────────────────────────────────────────
+// Represent a polynomial over GF(2) as an integer bitmask.
+// Bit d = coefficient of x^d.
+
+function polyStr(v) {
+  if (v === 0) return '0';
+  const terms = [];
+  for (let d = 14; d >= 0; d--) {
+    if ((v >> d) & 1) {
+      if      (d === 0) terms.push('1');
+      else if (d === 1) terms.push('x');
+      else              terms.push('x^' + d);
+    }
+  }
+  return terms.join(' + ');
+}
+
+// Normalise a student answer string to a bitmask for comparison
+function parseAnswer(s) {
+  if (!s) return null;
+  s = s.trim().toLowerCase().replace(/\s+/g, '');
+  if (s === '0') return 0;
+  let v = 0;
+  // Match x^n, x, 1
+  const re = /x\^(\d+)|x(?!\^)(?=\+|$|1)|(?:^|\+)(1)(?:\+|$)/g;
+  // simpler: split on '+' and parse each term
+  const parts = s.split('+');
+  for (const p of parts) {
+    const t = p.trim();
+    if (t === '1') { v ^= 1; }
+    else if (t === 'x') { v ^= 2; }
+    else {
+      const m = t.match(/^x\^(\d+)$/);
+      if (m) v ^= (1 << parseInt(m[1]));
+      else return null; // unrecognised token
+    }
+  }
+  return v;
+}
+
+// Reduce val modulo AES poly 0x11B
+function aesReduce(val) {
+  const FOLD = 0x1B;
+  let cur = val;
+  for (let d = 14; d >= 8; d--) {
+    if ((cur >> d) & 1) {
+      cur ^= (1 << d);
+      cur ^= (FOLD << (d - 8));
+    }
+  }
+  return cur & 0xFF;
+}
+
+// Reduce val modulo toy poly x^3+x+1 (bitmask 0b1011 = 0xB)
+function toyReduce(val) {
+  // x^3 = x+1 => fold rule: whenever bit 3 is set, XOR with 0b011 (x+1) and clear bit 3
+  let cur = val;
+  for (let d = 14; d >= 3; d--) {
+    if ((cur >> d) & 1) {
+      cur ^= (1 << d);
+      cur ^= (0b011 << (d - 3)); // (x+1) shifted up by (d-3)
+    }
+  }
+  return cur & 0b111;
+}
+
+// ── makeDrill engine ───────────────────────────────────────────────────────
+function makeDrill(cfg) {
+  let streak = 0, total = 0;
+  const qEl  = document.getElementById(cfg.qId);
+  const inEl = document.getElementById(cfg.inId);
+  const fbEl = document.getElementById(cfg.fbId);
+  const stEl = document.getElementById(cfg.stId);
+
+  function render(q) {
+    qEl.innerHTML = q;
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([qEl]).catch(() => {});
+    fbEl.textContent = '';
+    fbEl.className = 'drill-fb';
+    if (inEl) { inEl.value = ''; inEl.className = 'drill-input'; }
+    updateStreak();
+  }
+
+  function updateStreak() {
+    stEl.textContent = total ? `Streak: ${streak} / ${total}` : '';
+  }
+
+  function next() { render(cfg.gen()); }
+
+  function check() {
+    const raw = inEl ? inEl.value : null;
+    const result = cfg.check(raw, currentData);
+    total++;
+    if (result.correct) {
+      streak++;
+      fbEl.textContent = '✓ ' + (result.msg || 'Correct!');
+      fbEl.className = 'drill-fb ok';
+      if (inEl) inEl.className = 'drill-input correct';
+    } else {
+      streak = 0;
+      fbEl.innerHTML = '✗ ' + (result.msg || 'Not quite.');
+      fbEl.className = 'drill-fb err';
+      if (inEl) inEl.className = 'drill-input wrong';
+    }
+    updateStreak();
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([fbEl]).catch(() => {});
+  }
+
+  if (inEl) inEl.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+  let currentData = {};
+  const origGen = cfg.gen;
+  cfg.gen = function() {
+    const q = origGen();
+    return q;
+  };
+
+  // wrap gen to capture data
+  const rawGen = cfg.gen;
+  cfg.gen = function() {
+    const html = rawGen();
+    return html;
+  };
+
+  next();
+  return { check, next };
+}
+
+// ── Drill 1: folding rules from toy modulus ────────────────────────────────
+// Questions: "What does x^N equal modulo x^3+x+1?"  N in {3,4,5,6}
+// Answers in bitmask form (degree < 3)
+const D1_TABLE = {
+  3: { mask: 0b011, label: 'x + 1' },   // x^3 ≡ x+1
+  4: { mask: 0b110, label: 'x^2 + x' }, // x^4 ≡ x^2+x
+  5: { mask: 0b111, label: 'x^2 + x + 1' }, // x^5 ≡ x^2+x+1
+  6: { mask: 0b101, label: 'x^2 + 1' }, // x^6 ≡ x^2+1  (x^5*x = (x^2+x+1)*x = x^3+x^2+x = (x+1)+x^2+x = x^2+1)
+};
+let d1Deg = 3;
+
+const d1 = makeDrill({
+  qId: 'd1-q', inId: 'd1-in', fbId: 'd1-fb', stId: 'd1-streak',
+  gen() {
+    const degs = [3, 4, 5, 6];
+    d1Deg = degs[Math.floor(Math.random() * degs.length)];
+    return `Using the toy modulus \\(m(x)=x^3+x+1\\), what does \\(x^{${d1Deg}}\\) reduce to?`;
+  },
+  check(raw) {
+    const ans = parseAnswer(raw);
+    const expected = D1_TABLE[d1Deg].mask;
+    if (ans === null) return { correct: false, msg: 'Could not parse. Use notation like <code>x^2 + x</code>.' };
+    if (ans === expected) return { correct: true, msg: `\\(x^{${d1Deg}}\\equiv ${D1_TABLE[d1Deg].label}\\pmod{x^3+x+1}\\)` };
+    return { correct: false, msg: `Not quite. \\(x^{${d1Deg}}\\equiv ${D1_TABLE[d1Deg].label}\\pmod{x^3+x+1}\\)` };
+  }
+});
+
+// ── Drill 2: toy reductions ────────────────────────────────────────────────
+// Generate a random polynomial with some high-degree terms, reduce with toy modulus
+let d2Problem = 0;
+
+const d2 = makeDrill({
+  qId: 'd2-q', inId: 'd2-in', fbId: 'd2-fb', stId: 'd2-streak',
+  gen() {
+    // random polynomial degree 3–6, at least one term >= degree 3
+    let v = 0;
+    const maxDeg = 3 + Math.floor(Math.random() * 4); // 3..6
+    // guarantee the leading term
+    v |= (1 << maxDeg);
+    // random lower terms
+    for (let d = maxDeg - 1; d >= 0; d--) {
+      if (Math.random() < 0.45) v |= (1 << d);
+    }
+    d2Problem = v;
+    return `Reduce \\(${polyStr(v)}\\) modulo \\(x^3+x+1\\).`;
+  },
+  check(raw) {
+    const ans = parseAnswer(raw);
+    const expected = toyReduce(d2Problem);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Use notation like <code>x^2 + x</code>.' };
+    if (ans === expected) return { correct: true, msg: `Correct! Reduced: \\(${polyStr(expected)}\\)` };
+    return { correct: false, msg: `Not quite. Result is \\(${polyStr(expected)}\\). Substitute the folding rules and cancel duplicates.` };
+  }
+});
+
+// ── Drill 3: AES modulus recognition ──────────────────────────────────────
+const D3_QS = [
+  { q: 'What hex value represents the full AES modulus \\(x^8+x^4+x^3+x+1\\)?',
+    accepts: ['0x11b','11b','0x011b','283'], msg: 'The AES modulus is <code>0x11B</code> (decimal 283).' },
+  { q: 'What polynomial does <code>0x1B</code> represent?',
+    accepts: ['x^4+x^3+x+1','x^4 + x^3 + x + 1'], msg: '\\(x^4+x^3+x+1\\) — the lower part after folding \\(x^8\\).' },
+  { q: 'After folding, \\(x^8\\) is replaced by which polynomial?',
+    accepts: ['x^4+x^3+x+1','x^4 + x^3 + x + 1'], msg: '\\(x^4+x^3+x+1\\) (i.e., <code>0x1B</code>).' },
+  { q: 'Why does <code>0x11B</code> require 9 bits rather than 8?',
+    accepts: ['x^8','degree 8','it has an x^8 term','degree8','nine'], msg: 'The \\(x^8\\) term is a 9th bit, so the full modulus cannot fit in a single byte.' },
+  { q: 'True or False: the full AES modulus is <code>0x1B</code>.',
+    accepts: ['false','f'], msg: 'False. The full AES modulus is <code>0x11B</code>. The <code>0x1B</code> is only the lower folded part.' },
+  { q: 'True or False: an irreducible polynomial plays a role similar to a prime number.',
+    accepts: ['true','t'], msg: 'True. Both cannot be factored into smaller nontrivial pieces in their respective arithmetic worlds.' },
+  { q: 'In GF(2), if two equal terms are added, what is the result?',
+    accepts: ['0','zero'], msg: '0 — duplicates cancel because \\(1+1=0\\) over GF(2).' },
+];
+let d3Idx = -1;
+
+const d3 = makeDrill({
+  qId: 'd3-q', inId: 'd3-in', fbId: 'd3-fb', stId: 'd3-streak',
+  gen() {
+    let idx;
+    do { idx = Math.floor(Math.random() * D3_QS.length); } while (idx === d3Idx && D3_QS.length > 1);
+    d3Idx = idx;
+    return D3_QS[idx].q;
+  },
+  check(raw) {
+    if (!raw) return { correct: false, msg: 'Please enter an answer.' };
+    const norm = raw.trim().toLowerCase().replace(/\s+/g,'');
+    const q = D3_QS[d3Idx];
+    for (const a of q.accepts) {
+      if (norm === a.toLowerCase().replace(/\s+/g,'')) return { correct: true, msg: q.msg };
+    }
+    return { correct: false, msg: q.msg };
+  }
+});
+
+// ── Drill 4: AES reductions ────────────────────────────────────────────────
+let d4Problem = 0;
+
+const d4 = makeDrill({
+  qId: 'd4-q', inId: 'd4-in', fbId: 'd4-fb', stId: 'd4-streak',
+  gen() {
+    // random polynomial degree 8–10 with guaranteed x^8 term
+    let v = 0;
+    const maxDeg = 8 + Math.floor(Math.random() * 3); // 8,9,10
+    v |= (1 << maxDeg);
+    for (let d = maxDeg - 1; d >= 0; d--) {
+      if (Math.random() < 0.4) v |= (1 << d);
+    }
+    d4Problem = v;
+    return `Reduce \\(${polyStr(v)}\\) using the AES modulus. Give the result with degree ≤ 7.`;
+  },
+  check(raw) {
+    const ans = parseAnswer(raw);
+    const expected = aesReduce(d4Problem);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Use notation like <code>x^3 + x^2 + x + 1</code>.' };
+    if (ans === expected) return { correct: true, msg: `Correct! \\(${polyStr(expected)}\\) (0x${expected.toString(16).toUpperCase().padStart(2,'0')})` };
+    return { correct: false, msg: `Not quite. Apply \\(x^8\\equiv x^4+x^3+x+1\\) for each high-degree term. Answer: \\(${polyStr(expected)}\\)` };
+  }
+});
+</script>
 </body>
 </html>
