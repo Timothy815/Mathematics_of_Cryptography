@@ -424,6 +424,59 @@
         </div>
       </section>
 
+      <section id="how-modulus-chosen">
+        <h2>How was this modulus chosen?</h2>
+        <p>
+          The AES modulus is not arbitrary. Two hard requirements narrow the candidates down, and then an engineering preference makes the final pick.
+        </p>
+
+        <h3>Requirement 1 — degree must be exactly 8</h3>
+        <p>
+          AES operates on bytes. A byte is 8 bits, which maps to a polynomial of degree at most 7. The modulus must be degree 8 so that after every reduction the result fits in one byte — degree 7 or below. A degree-7 modulus would only give 128 elements; a degree-9 modulus would produce 512. Only degree 8 gives exactly 256 elements, one per byte.
+        </p>
+
+        <h3>Requirement 2 — it must be irreducible</h3>
+        <p>
+          A polynomial is irreducible if it cannot be factored into smaller nonconstant polynomials over \(\mathrm{GF}(2)\). This is the polynomial equivalent of a prime number.
+        </p>
+        <p>
+          The reason matters for the same reason primes matter in integer clocks. In arithmetic mod 12, the number 4 has no multiplicative inverse — there is no \(k\) such that \(4k\equiv1\pmod{12}\). That is because \(12=4\times3\) factors. In arithmetic mod 7 (a prime), every nonzero number has an inverse. The same rule applies to polynomials: if the modulus is reducible, some byte-polynomials end up with no multiplicative inverse. The AES S-box requires every nonzero byte to have one, so a reducible modulus would break AES.
+        </p>
+
+        <div class="box intuition-box">
+          <div class="box-title">A concrete example of why reducible fails</div>
+          <p>
+            Consider \(x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1\). This looks complete — every term is present. But it factors:
+          </p>
+          <div class="math-display">
+            \[
+              x^8+x^7+x^6+x^5+x^4+x^3+x^2+x+1 = (x^2+x+1)(x^6+x^3+1)
+            \]
+          </div>
+          <p>
+            Because it splits into two pieces, it is reducible and cannot serve as the AES modulus.
+          </p>
+        </div>
+
+        <h3>How many valid candidates are there?</h3>
+        <p>
+          There are exactly <strong>30 irreducible degree-8 polynomials over \(\mathrm{GF}(2)\)</strong>. Any one of them would produce a valid field with 256 elements where every nonzero byte has a multiplicative inverse. The Module 11 notebook finds all 30.
+        </p>
+
+        <h3>So why \(x^8+x^4+x^3+x+1\) specifically?</h3>
+        <p>
+          The Rijndael designers (Joan Daemen and Vincent Rijmen) chose it from those 30 candidates for practical engineering reasons:
+        </p>
+        <ul>
+          <li>It has only <strong>5 terms</strong>, keeping hardware circuits small.</li>
+          <li>The fold value is <code>0x1B</code> — a small number — making the XOR operation cheap on 1990s hardware.</li>
+          <li>It produces efficient implementations in both software and silicon.</li>
+        </ul>
+        <p>
+          The mathematics of any of the other 29 polynomials would be equally valid. <code>0x11B</code> was an engineering choice, not a mathematical requirement.
+        </p>
+      </section>
+
       <section id="aes-folding-rule">
         <h2>The folding rule for \(x^8\)</h2>
         <p>
