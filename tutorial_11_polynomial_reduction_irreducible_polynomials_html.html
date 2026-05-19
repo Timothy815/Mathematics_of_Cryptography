@@ -1045,6 +1045,67 @@
             font-weight: 800;
             margin-top: 4px;
           }
+
+          /* ── derivation box ── */
+          .rw-derivation {
+            background: #f8f9fb;
+            border: 1px solid #c7d2ea;
+            border-left: 4px solid #334e7d;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+          }
+          .rw-deriv-step {
+            display: flex;
+            gap: 12px;
+            margin: 10px 0;
+            align-items: flex-start;
+            line-height: 1.65;
+            font-size: 0.93rem;
+          }
+          .rw-deriv-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            background: #334e7d;
+            color: #fff;
+            border-radius: 50%;
+            font-size: 0.72rem;
+            font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 2px;
+          }
+          .rw-deriv-final .rw-deriv-num { background: #2a8a4a; }
+          .rw-algebra {
+            background: #fff;
+            border-left: 3px solid #c7d2ea;
+            padding: 7px 14px;
+            margin: 7px 0 4px;
+            font-size: 0.93rem;
+            line-height: 2;
+          }
+          .rw-eq-line { display: block; }
+          .rw-eq-line.hl { color: #1a3d7a; font-weight: 700; }
+          .rw-dist-table {
+            border-collapse: collapse;
+            margin: 8px 0 4px;
+            font-size: 0.91rem;
+          }
+          .rw-dist-table td { padding: 2px 8px; vertical-align: middle; }
+          .rw-dist-table .dc { color: #888; text-align: center; padding: 2px 5px; }
+          .rw-dist-table .rw-still-hi  { color: #c04000; font-weight: 700; }
+          .rw-dist-table .rw-result-lo { color: #1a3d7a; font-weight: 700; }
+          .rw-high-note {
+            background: #fff8e0;
+            border: 1px solid #e0d080;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 0.85rem;
+            color: #6a4800;
+            margin-top: 6px;
+          }
         </style>
 
         <div class="rw-shell">
@@ -1283,19 +1344,116 @@
               const foldHtml = polyHtml(FOLD);
               const shiftedHtml = polyHtml(foldShifted);
 
-              // Plain-language explanation
-              let narr = '';
-              if (deg === 8) {
-                narr = `<strong>x<sup>8</sup></strong> is in the forbidden zone. The AES modulus says `
-                  + `x<sup>8</sup>&nbsp;≡&nbsp;${foldHtml}&nbsp;(<code>0x1B</code>). `
-                  + `We remove x<sup>8</sup> and XOR in ${foldHtml} — same thing in this arithmetic world:`;
-              } else {
-                narr = `<strong>x<sup>${deg}</sup></strong> is in the forbidden zone. `
-                  + `Since x<sup>8</sup>&nbsp;≡&nbsp;${foldHtml}, we have `
-                  + `x<sup>${deg}</sup>&nbsp;=&nbsp;x<sup>${shift}</sup>&nbsp;·&nbsp;x<sup>8</sup>`
-                  + `&nbsp;≡&nbsp;x<sup>${shift}</sup>&nbsp;·&nbsp;(${foldHtml})&nbsp;=&nbsp;${shiftedHtml}. `
-                  + `We remove x<sup>${deg}</sup> and XOR in ${shiftedHtml}:`;
+              // Build step-by-step derivation
+              function buildDerivation(d, s) {
+                // d = degree being folded, s = d-8
+                // FOLD = 0x1B = x^4+x^3+x+1, terms at exponents [4,3,1,0]
+                const FOLD_TERMS = [4, 3, 1, 0];
+
+                function el(exp) { // explicit-exponent label (never abbreviates to "x" or "1")
+                  return 'x<sup>' + exp + '</sup>';
+                }
+
+                if (d === 8) {
+                  return `<div class="rw-derivation">
+                    <div class="rw-deriv-step">
+                      <span class="rw-deriv-num">1</span>
+                      <div><strong>x<sup>8</sup> is in the forbidden zone</strong> — degree 8 is above the byte boundary (maximum allowed degree is 7).</div>
+                    </div>
+                    <div class="rw-deriv-step">
+                      <span class="rw-deriv-num">2</span>
+                      <div>
+                        <strong>Apply the AES modulus rule.</strong>
+                        The AES modulus polynomial is defined as equal to zero in this field:
+                        <div class="rw-algebra">
+                          <span class="rw-eq-line">m(x) = x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + 1 ≡ 0</span>
+                        </div>
+                        Rearrange by adding x<sup>4</sup>+x<sup>3</sup>+x+1 to both sides.<br>
+                        In GF(2) subtraction and addition are the same operation (XOR), so:
+                        <div class="rw-algebra">
+                          <span class="rw-eq-line">x<sup>8</sup> + x<sup>4</sup> + x<sup>3</sup> + x + 1 ≡ 0</span>
+                          <span class="rw-eq-line">x<sup>8</sup> ≡ 0 + x<sup>4</sup> + x<sup>3</sup> + x + 1</span>
+                          <span class="rw-eq-line hl">x<sup>8</sup> ≡ x<sup>4</sup> + x<sup>3</sup> + x + 1 &emsp;(hex: 0x1B)</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="rw-deriv-step rw-deriv-final">
+                      <span class="rw-deriv-num">✓</span>
+                      <div>x<sup>8</sup> and x<sup>4</sup>+x<sup>3</sup>+x+1 are <em>the same element</em> in GF(2<sup>8</sup>). We remove x<sup>8</sup> and XOR in x<sup>4</sup>+x<sup>3</sup>+x+1:</div>
+                    </div>
+                  </div>`;
+                }
+
+                // Build the distribute table rows
+                let rows = '';
+                const highResults = [];
+                for (const b of FOLD_TERMS) {
+                  const res = s + b;
+                  const isHigh = res >= 8;
+                  if (isHigh) highResults.push(res);
+                  rows += `<tr>
+                    <td>${el(s)} · ${el(b)}</td>
+                    <td class="dc">=</td>
+                    <td>x<sup>${s}+${b}</sup></td>
+                    <td class="dc">=</td>
+                    <td class="${isHigh ? 'rw-still-hi' : 'rw-result-lo'}">${degLabel(res)}</td>
+                  </tr>`;
+                }
+
+                const highNote = highResults.length > 0
+                  ? `<div class="rw-high-note">⚠ ${highResults.map(r => degLabel(r)).join(', ')}
+                      ${highResults.length === 1 ? 'is' : 'are'} still above degree 7 and will be folded in the next step${highResults.length > 1 ? 's' : ''}.
+                    </div>`
+                  : '';
+
+                return `<div class="rw-derivation">
+                  <div class="rw-deriv-step">
+                    <span class="rw-deriv-num">1</span>
+                    <div><strong>x<sup>${d}</sup> is in the forbidden zone</strong> — degree ${d} is above the byte boundary (maximum allowed degree is 7).</div>
+                  </div>
+                  <div class="rw-deriv-step">
+                    <span class="rw-deriv-num">2</span>
+                    <div>
+                      <strong>Factor out an x<sup>8</sup>.</strong>
+                      We can split any high power as x<sup>lower</sup> · x<sup>8</sup>:
+                      <div class="rw-algebra">
+                        <span class="rw-eq-line">x<sup>${d}</sup> = x<sup>${s}</sup> · x<sup>8</sup> &emsp;(because ${s} + 8 = ${d})</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rw-deriv-step">
+                    <span class="rw-deriv-num">3</span>
+                    <div>
+                      <strong>Substitute the AES rule</strong> x<sup>8</sup> ≡ x<sup>4</sup>+x<sup>3</sup>+x+1:
+                      <div class="rw-algebra">
+                        <span class="rw-eq-line">x<sup>${d}</sup> = x<sup>${s}</sup> · x<sup>8</sup></span>
+                        <span class="rw-eq-line hl">&emsp;&emsp;≡ x<sup>${s}</sup> · (x<sup>4</sup> + x<sup>3</sup> + x + 1)</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="rw-deriv-step">
+                    <span class="rw-deriv-num">4</span>
+                    <div>
+                      <strong>Distribute</strong> — multiply x<sup>${s}</sup> through each term in the bracket.<br>
+                      Multiplying powers of x means <em>adding their exponents</em>: x<sup>a</sup> · x<sup>b</sup> = x<sup>a+b</sup>
+                      <table class="rw-dist-table">
+                        <tr><th style="text-align:left;padding:2px 8px;font-size:0.8rem;color:#666;" colspan="5">× each term of (x<sup>4</sup>+x<sup>3</sup>+x+1):</th></tr>
+                        ${rows}
+                      </table>
+                      Collect the results:
+                      <div class="rw-algebra">
+                        <span class="rw-eq-line hl">x<sup>${d}</sup> ≡ ${shiftedHtml}</span>
+                      </div>
+                      ${highNote}
+                    </div>
+                  </div>
+                  <div class="rw-deriv-step rw-deriv-final">
+                    <span class="rw-deriv-num">✓</span>
+                    <div>Remove x<sup>${d}</sup> and XOR in <strong>${shiftedHtml}</strong>:</div>
+                  </div>
+                </div>`;
               }
+              const derivHtml = buildDerivation(deg, shift);
 
               // Changes list
               let changesHtml = '<ul class="rw-changes">';
@@ -1312,7 +1470,7 @@
 
               html += `<div class="rw-step-card">
                 <p class="rw-step-heading">Step ${i + 1} of ${steps.length} — fold x<sup>${deg}</sup></p>
-                <p class="rw-narr">${narr}</p>
+                ${derivHtml}
                 ${buildStepGrid(before, foldShifted, after, deg)}
                 <div style="margin-top:10px;">${changesHtml}</div>
                 <p class="rw-narr" style="margin:12px 0 0;font-size:0.9rem;color:#555;">
