@@ -101,6 +101,95 @@
       font-weight: 800;
     }
 
+    /* ── Interactive Multiplication Explorer ── */
+    .pm-widget {
+      background: #f7f9ff;
+      border: 1px solid #c7d2ea;
+      border-radius: 16px;
+      padding: 22px;
+      margin: 18px 0;
+    }
+    .pm-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .pm-label { font-weight: 700; color: #334e7d; min-width: 130px; }
+    .pm-hex-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1.05rem;
+      padding: 7px 12px;
+      border: 2px solid #c7d2ea;
+      border-radius: 8px;
+      width: 90px;
+      background: #fff;
+      color: #16243d;
+    }
+    .pm-hex-input:focus { outline: none; border-color: #334e7d; }
+    .pm-poly-display {
+      font-style: italic;
+      color: #334e7d;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+    .pm-preset-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 18px; }
+    .pm-preset-btn {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: 1px solid #c7d2ea;
+      background: #eef3ff;
+      color: #334e7d;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .pm-preset-btn:hover { background: #dde6ff; }
+    .pm-grid-wrap { overflow-x: auto; margin: 14px 0; }
+    .pm-grid-table {
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    .pm-grid-table th, .pm-grid-table td {
+      border: 1px solid #c7d2ea;
+      padding: 8px 14px;
+      text-align: center;
+      min-width: 80px;
+    }
+    .pm-grid-table th { background: #eef3ff; color: #1f3763; font-weight: 800; }
+    .pm-grid-table td.cancel-cell { background: #fdeaea; color: #7f0000; }
+    .pm-grid-table td.keep-cell { background: #edf7ed; color: #1b5e20; }
+    .pm-all-terms {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      background: #fff8e6;
+      border: 1px solid #e8dbbf;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+    }
+    .pm-result-box {
+      background: #edf7ed;
+      border: 2px solid #b8dfc5;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #1b5e20;
+      margin-top: 10px;
+    }
+    .pm-degree-warn {
+      background: #fff3cd;
+      border: 1px solid #e8dbbf;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.88rem;
+      color: #7d5a00;
+      margin-top: 8px;
+      display: inline-block;
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -142,8 +231,10 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_09_polynomial_addition_over_gf_2_html.html">← Module 09</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        <a class="nav-link" href="tutorial_11_polynomial_reduction_irreducible_polynomials_html.html">Module 11 →</a>
+        <button class="print-button" onclick="window.print()">Print</button>
       </nav>
     </header>
 
@@ -167,6 +258,21 @@
         <p>
           You should know how to read bytes as polynomials, how coefficient addition over \(\mathrm{GF}(2)\) works, and why duplicate terms cancel. You do not need polynomial reduction yet. This tutorial intentionally stops before AES's folding rule.
         </p>
+      </section>
+
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box purpose-box">
+          <div class="box-title">After completing this module you will be able to</div>
+          <ul>
+            <li>Apply the rule \(x^i\cdot x^j = x^{i+j}\) to multiply any two single terms.</li>
+            <li>Distribute every term of one polynomial across every term of another and list all partial products.</li>
+            <li>Combine like powers over \(\mathrm{GF}(2)\) by cancelling duplicate terms in pairs.</li>
+            <li>Compute the unreduced product of any two byte-polynomials, including cases where the degree exceeds 7.</li>
+            <li>Explain why polynomial multiplication may produce powers above \(x^7\) and why reduction will be needed next.</li>
+            <li>Distinguish polynomial multiplication over \(\mathrm{GF}(2)\) from ordinary integer polynomial multiplication.</li>
+          </ul>
+        </div>
       </section>
 
       <section id="symbols-used">
@@ -488,6 +594,149 @@
             </tr>
           </tbody>
         </table>
+      </section>
+
+      <section id="interactive-explorer" class="no-print">
+        <h2>Interactive: Polynomial Multiplication Explorer</h2>
+        <p>Enter two hex bytes and watch the distribution grid build in real time. Green cells survive; red cells cancel in pairs.</p>
+
+        <div class="pm-widget">
+          <div class="pm-row">
+            <span class="pm-label">Polynomial A:</span>
+            <input class="pm-hex-input" id="pm-hex-a" type="text" value="0x03" maxlength="4" autocomplete="off" />
+            <span class="pm-poly-display" id="pm-poly-a"></span>
+          </div>
+          <div class="pm-row">
+            <span class="pm-label">Polynomial B:</span>
+            <input class="pm-hex-input" id="pm-hex-b" type="text" value="0x57" maxlength="4" autocomplete="off" />
+            <span class="pm-poly-display" id="pm-poly-b"></span>
+          </div>
+
+          <div class="pm-preset-row">
+            <strong style="align-self:center;font-size:0.85rem;color:#334e7d;">Presets:</strong>
+            <button class="pm-preset-btn" onclick="pmSetPreset('0x03','0x57')">0x03 × 0x57</button>
+            <button class="pm-preset-btn" onclick="pmSetPreset('0x02','0x57')">0x02 × 0x57</button>
+            <button class="pm-preset-btn" onclick="pmSetPreset('0x02','0x80')">0x02 × 0x80</button>
+            <button class="pm-preset-btn" onclick="pmSetPreset('0x0f','0x0f')">0x0F × 0x0F</button>
+            <button class="pm-preset-btn" onclick="pmSetPreset('0xff','0x02')">0xFF × 0x02</button>
+          </div>
+
+          <h3 style="margin:0 0 8px;color:#334e7d;">Distribution grid</h3>
+          <div class="pm-grid-wrap">
+            <table class="pm-grid-table" id="pm-grid-table">
+              <thead id="pm-grid-head"></thead>
+              <tbody id="pm-grid-body"></tbody>
+            </table>
+          </div>
+
+          <h3 style="margin:14px 0 6px;color:#334e7d;">All generated terms</h3>
+          <div class="pm-all-terms" id="pm-all-terms"></div>
+
+          <h3 style="margin:10px 0 6px;color:#334e7d;">Unreduced product</h3>
+          <div class="pm-result-box" id="pm-result-box"></div>
+          <span class="pm-degree-warn" id="pm-degree-warn" style="display:none;"></span>
+        </div>
+
+        <script>
+        (function() {
+          function hexToPoly(h) {
+            var n = parseInt(h, 16);
+            if (isNaN(n)) return [];
+            var terms = [];
+            for (var i = 7; i >= 0; i--) { if (n & (1 << i)) terms.push(i); }
+            return terms;
+          }
+          function polyToStr(exps) {
+            if (!exps || exps.length === 0) return '0';
+            return exps.slice().sort(function(a,b){return b-a;}).map(function(e){
+              return e===0 ? '1' : e===1 ? 'x' : 'x\u207F'.replace('\u207F','^'+e);
+            }).join(' + ');
+          }
+          function termStr(e) {
+            return e===0 ? '1' : e===1 ? 'x' : 'x^'+e;
+          }
+
+          function pmUpdate() {
+            var ha = document.getElementById('pm-hex-a').value.trim();
+            var hb = document.getElementById('pm-hex-b').value.trim();
+            var a = hexToPoly(ha), b = hexToPoly(hb);
+
+            document.getElementById('pm-poly-a').textContent = '= ' + polyToStr(a);
+            document.getElementById('pm-poly-b').textContent = '= ' + polyToStr(b);
+
+            if (a.length === 0 || b.length === 0) {
+              document.getElementById('pm-all-terms').textContent = '—';
+              document.getElementById('pm-result-box').textContent = '—';
+              document.getElementById('pm-grid-head').innerHTML = '';
+              document.getElementById('pm-grid-body').innerHTML = '';
+              return;
+            }
+
+            // Build all partial products
+            var products = []; // {ea, eb, sum}
+            for (var i = 0; i < a.length; i++) {
+              for (var j = 0; j < b.length; j++) {
+                products.push({ea: a[i], eb: b[j], sum: a[i]+b[j]});
+              }
+            }
+
+            // Count each sum
+            var counts = {};
+            products.forEach(function(p) { counts[p.sum] = (counts[p.sum]||0)+1; });
+
+            // Build grid table: rows=A terms, cols=B terms
+            var head = '<tr><th>×</th>';
+            b.forEach(function(eb) { head += '<th>' + termStr(eb) + '</th>'; });
+            head += '</tr>';
+            document.getElementById('pm-grid-head').innerHTML = head;
+
+            var body = '';
+            a.forEach(function(ea) {
+              body += '<tr><th>' + termStr(ea) + '</th>';
+              b.forEach(function(eb) {
+                var s = ea+eb;
+                var cls = counts[s] % 2 === 0 ? 'cancel-cell' : 'keep-cell';
+                body += '<td class="' + cls + '">' + termStr(s) + '</td>';
+              });
+              body += '</tr>';
+            });
+            document.getElementById('pm-grid-body').innerHTML = body;
+
+            // All terms list (sorted desc, mark cancelled)
+            var allTermsSorted = products.slice().sort(function(a,b){return b.sum-a.sum;});
+            var allStr = allTermsSorted.map(function(p){
+              return counts[p.sum]%2===0 ? '(' + termStr(p.sum) + ')' : termStr(p.sum);
+            }).join(' + ');
+            document.getElementById('pm-all-terms').textContent = allStr + '  [parentheses = cancelled pairs]';
+
+            // Compute result
+            var resultExps = Object.keys(counts).filter(function(e){return counts[e]%2===1;})
+              .map(Number).sort(function(a,b){return b-a;});
+            var resultStr = resultExps.length===0 ? '0' : resultExps.map(termStr).join(' + ');
+            document.getElementById('pm-result-box').textContent = resultStr;
+
+            // Degree warning
+            var maxDeg = resultExps.length > 0 ? resultExps[0] : 0;
+            var warn = document.getElementById('pm-degree-warn');
+            if (maxDeg >= 8) {
+              warn.textContent = '⚠ Degree ' + maxDeg + ' — this product exceeds byte size and will need reduction in Module 11.';
+              warn.style.display = 'inline-block';
+            } else {
+              warn.style.display = 'none';
+            }
+          }
+
+          window.pmSetPreset = function(ha, hb) {
+            document.getElementById('pm-hex-a').value = ha;
+            document.getElementById('pm-hex-b').value = hb;
+            pmUpdate();
+          };
+
+          document.getElementById('pm-hex-a').addEventListener('input', pmUpdate);
+          document.getElementById('pm-hex-b').addEventListener('input', pmUpdate);
+          pmUpdate();
+        })();
+        </script>
       </section>
 
       <section id="common-mistakes">

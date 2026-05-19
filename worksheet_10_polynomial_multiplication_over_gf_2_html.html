@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 10: Polynomial Multiplication over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #e8f4ef);
+      border: 1px solid #b2d4c4;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .nav-link {
+      padding: 7px 16px;
+      border-radius: 8px;
+      background: #e8f4ef;
+      border: 1px solid #b2d4c4;
+      color: #2a6049;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-link:hover { background: #c5e0d4; }
+
+    .directions-box  { background: var(--accent-soft); border-color: #c7d2ea; }
+    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .answer-key-box  { background: var(--gold-soft); border-color: #ead399; }
+    .challenge-box   { background: #f7f8fb; border-color: #ccd4e2; }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0;
+    }
+    .field-label { font-weight: 750; color: #333333; }
+    .field-input {
+      width: 100%; border: none; border-bottom: 1.5px solid #333;
+      background: transparent; font-size: 1rem; padding: 4px 2px;
+      color: #16243d; font-family: inherit;
+    }
+    .field-input:focus { outline: none; border-bottom-color: var(--accent); }
+
+    .reference-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .data-table,
+    .work-table,
+    .answer-table,
+    .term-table,
+    .grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.95rem;
+    }
+    .data-table th, .data-table td,
+    .work-table th, .work-table td,
+    .answer-table th, .answer-table td,
+    .term-table th, .term-table td,
+    .grid-table th, .grid-table td {
+      border: 1px solid #b2d4c4;
+      padding: 9px 10px;
+      vertical-align: middle;
+    }
+    .data-table th, .work-table th, .answer-table th,
+    .term-table th, .grid-table th {
+      background: #e8f4ef;
+      color: #2a6049;
+      text-align: center;
+    }
+    .term-table td, .grid-table td { text-align: center; }
+
+    .written-area {
+      width: 100%; padding: 8px 12px; margin-top: 6px;
+      border: 2px solid #c7d2ea; border-radius: 8px;
+      font-family: system-ui, sans-serif; font-size: 0.95rem;
+      line-height: 1.6; resize: vertical; color: #16243d;
+      background: #f0f4fb; box-sizing: border-box;
+    }
+    .written-area:focus { outline: none; border-color: var(--accent); background: #fff; }
+    .write-wrap { display: block; }
+    .write-lines { display: none; }
+    .wl { height: 1.9em; }
+
+    .ans-input {
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 1rem; font-weight: 700;
+      padding: 6px 10px; border: 2px solid #c7d2ea; border-radius: 8px;
+      background: #f0f4fb; color: #16243d; min-width: 80px;
+    }
+    .ans-input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+    .work-space {
+      border: 1px dashed #999999;
+      border-radius: 10px;
+      min-height: 110px;
+      padding: 10px;
+      margin: 10px 0 18px;
+      background: #fffefe;
+    }
+    .large-work-space { min-height: 160px; }
+
+    .problem {
+      border: 1px solid #b2d4c4;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 18px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+    .problem-title { font-weight: 900; color: #2a3a6b; margin-bottom: 8px; }
+
+    .answer-key { border-top: 4px double #334e7d; padding-top: 20px; }
+    .answer-step {
+      margin: 10px 0;
+      padding-left: 14px;
+      border-left: 4px solid #c7d2ea;
+    }
+
+    .bottom-nav {
+      border-top: 1px solid var(--border);
+      padding: 22px 0 0;
+      margin-top: 40px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .nav-bundle { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .nav-item {
+      padding: 9px 18px;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid #b2d4c4;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .nav-item:hover { background: var(--accent-soft); }
+    .nav-secondary { background: #e8f4ef; border-color: var(--border); color: #2a6049; }
+    .nav-secondary:hover { background: #c5e0d4; }
+
+    /* Score bar */
+    .ws-score-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      background: #f0f4fb; border: 1px solid #c7d2ea; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 24px;
+    }
+    .ws-score-bar p { margin: 0; font-size: 0.9rem; color: #334e7d; flex: 1; }
+    .ws-score-display { font-size: 1.1rem; font-weight: 900; color: #334e7d; }
+    .ws-btn { padding: 9px 20px; border-radius: 8px; border: none; font-size: 0.88rem; font-weight: 800; cursor: pointer; transition: opacity 0.15s; }
+    .ws-btn:hover { opacity: 0.85; }
+    .ws-btn-check { background: #334e7d; color: #fff; }
+    .ws-btn-regen { background: #2a6049; color: #fff; }
+    .ws-btn-reset { background: #e8dbbf; color: #7d5a00; }
+    .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
+    .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
+    @media print { .ws-score-bar { display: none !important; } }
+
+    /* Multiplication grid styling */
+    .grid-table th.row-header { background: #f0e8d4; color: #7d4a00; border-color: #d4b87a; }
+    .grid-table td.row-header { background: #f0e8d4; color: #7d4a00; font-weight: 700; border-color: #d4b87a; }
+
+    @media (max-width: 760px) {
+      body { font-size: 16px; }
+      header.worksheet-header, main { padding: 24px; }
+      .student-info, .reference-grid { grid-template-columns: 1fr; }
+    }
+
+    @page { margin: 0.75in; }
+    @media print {
+      body { background: #ffffff; color: #000000; font-size: 10.5pt; line-height: 1.35; }
+      .page { max-width: none; padding: 0; }
+      header.worksheet-header, main {
+        box-shadow: none; border: none; border-radius: 0;
+        padding: 0; background: #ffffff;
+      }
+      .workbook-nav, .no-print { display: none !important; }
+      h1 { font-size: 22pt; }
+      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
+      h3 { font-size: 12pt; break-after: avoid; }
+      .box, .problem, table, .work-space { break-inside: avoid; }
+      .box, .problem, .work-space { background: #ffffff !important; border-color: #999999; }
+      .data-table th, .work-table th, .answer-table th,
+      .term-table th, .grid-table th { background: #eeeeee !important; }
+      a { color: #000000; text-decoration: none; }
+      .ans-input {
+        border: none !important; border-bottom: 1.5px solid #444 !important;
+        border-radius: 0 !important; background: transparent !important;
+        color: #000 !important;
+      }
+      .field-input { border-bottom: 1.5px solid #444 !important; }
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      .wl { height: 1.9em; border-bottom: 1px solid #888; }
+      .bottom-nav { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 10</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Polynomial Multiplication over GF(2)</h1>
+      <p class="subtitle">
+        Practice multiplying single terms, distributing across polynomials, cancelling duplicate terms, and forming unreduced products — the foundation for GF(2<sup>8</sup>) arithmetic in AES.
+      </p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a class="nav-link" href="#student-info">Name/Date</a>
+        <a class="nav-link" href="#part-a">Part A</a>
+        <a class="nav-link" href="#part-b">Part B</a>
+        <a class="nav-link" href="#part-c">Part C</a>
+        <a class="nav-link" href="#part-d">Part D</a>
+        <a class="nav-link" href="#part-e">Part E</a>
+        <a class="nav-link" href="#part-f">Part F</a>
+        <a class="nav-link" href="#part-g">Part G</a>
+        <a class="nav-link" href="#part-h">Part H</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <a class="nav-link" href="index.html" style="margin-left:auto;">Dashboard</a>
+        <button class="print-button" onclick="window.print()">Print / Save as PDF</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- SCORE BAR -->
+      <div class="ws-score-bar" id="ws-score-bar" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#f0f4fb;border:1px solid #c7d2ea;border-radius:10px;padding:12px 18px;margin-bottom:24px;">
+        <p>Work through the problems, then click <strong>Check Answers</strong> to score all fill-in questions. Click <strong>Regenerate</strong> for new computation problems.</p>
+        <span class="ws-score-display" id="ws-score-display"></span>
+        <button class="ws-btn ws-btn-check" onclick="wsCheckAll()">&#10003; Check Answers</button>
+        <button class="ws-btn ws-btn-regen" onclick="wsRegenerate()">&#x27F3; Regenerate</button>
+        <button class="ws-btn ws-btn-reset" onclick="wsReset()">&#x21BA; Reset</button>
+      </div>
+
+      <!-- STUDENT INFO -->
+      <section id="student-info">
+        <div class="student-info">
+          <div>
+            <span class="field-label">Name:</span>
+            <input class="field-input" type="text" placeholder="Your name" autocomplete="off" />
+          </div>
+          <div>
+            <span class="field-label">Date:</span>
+            <input class="field-input" type="text" placeholder="Date" autocomplete="off" />
+          </div>
+        </div>
+      </section>
+
+      <!-- QUICK REFERENCE -->
+      <section id="quick-reference">
+        <h2>Quick Reference</h2>
+        <details open>
+          <summary style="cursor:pointer; font-weight:700; color:#1f3763; padding:8px 0;">Show / Hide Reference</summary>
+          <div class="box quick-reference-box" style="margin-top:12px;">
+            <div class="box-title">GF(2) Polynomial Multiplication Rules</div>
+            <div class="reference-grid">
+              <div>
+                <p style="margin:0 0 8px;font-weight:700;">Step 1 — Multiply single terms</p>
+                <p style="margin:0 0 6px;">Add the exponents: \(x^i \cdot x^j = x^{i+j}\)</p>
+                <p style="margin:0 0 6px;">Examples:</p>
+                <ul style="margin:0;padding-left:18px;line-height:1.9;">
+                  <li>\(x^3 \cdot x^4 = x^7\)</li>
+                  <li>\(x^6 \cdot x^2 = x^8\)</li>
+                  <li>\(x^5 \cdot 1 = x^5\)</li>
+                </ul>
+                <p style="margin:10px 0 6px;font-weight:700;">Step 2 — Distribute</p>
+                <p style="margin:0;">Multiply every term of one polynomial by every term of the other (like FOIL, but for any number of terms).</p>
+              </div>
+              <div>
+                <p style="margin:0 0 8px;font-weight:700;">Step 3 — Cancel like terms (GF(2))</p>
+                <p style="margin:0 0 6px;">Over GF(2), \(1+1=0\). Any term that appears an <em>even</em> number of times cancels; odd occurrences survive.</p>
+                <p style="margin:10px 0 8px;font-weight:700;">Result = unreduced product</p>
+                <p style="margin:0 0 4px;">The result may have powers above \(x^7\). This is called the <em>unreduced product</em>. Reduction modulo an irreducible polynomial is covered in Module 11.</p>
+                <p style="margin:10px 0 0;"><strong>Example:</strong><br>
+                  \((x^2+1)(x+1)\)<br>
+                  \(= x^3 + x^2 + x + 1\)<br>
+                  (all terms distinct, none cancel)
+                </p>
+              </div>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- PART A: Vocabulary -->
+      <section id="part-a">
+        <h2>Part A: Vocabulary</h2>
+        <p>Fill in each blank with the correct word or expression.</p>
+
+        <div class="problem">
+          <div class="problem-title">A1. When multiplying \(x^i \cdot x^j\), we <input class="ans-input" data-answer="add" type="text" style="width:110px" autocomplete="off" /> the exponents.</div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A2. Over GF(2), duplicate like terms <input class="ans-input" data-answer="cancel" type="text" style="width:110px" autocomplete="off" /> because \(1+1=0 \pmod{2}\).</div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A3. Multiplying \(x^7 \cdot x^7\) gives \(x^{\,\)<input class="ans-input" data-answer="14" type="text" style="width:70px" autocomplete="off" />\(\,}\).</div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A4. A product that has not yet been reduced modulo an irreducible polynomial is called the <input class="ans-input" data-answer="unreduced" type="text" style="width:150px" autocomplete="off" /> product.</div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">A5. The highest possible degree when multiplying two byte-polynomials (each at most \(x^7\)) is <input class="ans-input" data-answer="14" type="text" style="width:70px" autocomplete="off" />.</div>
+        </div>
+      </section>
+
+      <!-- PART B: Single-term multiplication table -->
+      <section id="part-b">
+        <h2>Part B: Single-Term Multiplication Table</h2>
+        <p>Fill in the <em>Exponent sum</em> and <em>Result</em> columns. Recall: \(x^i \cdot x^j = x^{i+j}\); treat \(1 = x^0\).</p>
+
+        <table class="term-table">
+          <thead>
+            <tr>
+              <th style="width:28%">Expression</th>
+              <th style="width:28%">Exponent sum</th>
+              <th style="width:28%">Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(x^3 \cdot x^2\)</td>
+              <td><input class="ans-input" data-answer="5" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^5" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>\(x^7 \cdot x\)</td>
+              <td><input class="ans-input" data-answer="8" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^8" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>\(x^4 \cdot 1\)</td>
+              <td><input class="ans-input" data-answer="4" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^4" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>\(x^6 \cdot x^5\)</td>
+              <td><input class="ans-input" data-answer="11" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^11" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>\(x^7 \cdot x^7\)</td>
+              <td><input class="ans-input" data-answer="14" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^14" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td>\(1 \cdot 1\)</td>
+              <td><input class="ans-input" data-answer="0" type="text" style="width:80px" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="1" type="text" style="width:100px" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART C: Simplify like terms -->
+      <section id="part-c">
+        <h2>Part C: Simplify Like Terms over GF(2)</h2>
+        <p>Reduce each expression by cancelling any term that appears an even number of times.</p>
+
+        <div class="problem">
+          <div class="problem-title">C1. \(x^2 + x^2\) = <input class="ans-input" data-answer="0" type="text" style="width:120px" autocomplete="off" /></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. \(x^5 + x^3 + x^5\) = <input class="ans-input" data-answer="x^3" type="text" style="width:120px" autocomplete="off" /></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. \(x^7 + x^4 + x^4 + x\) = <input class="ans-input" data-answer="x^7+x" type="text" style="width:160px" autocomplete="off" /></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C4. \(x^6 + x^6 + x^3 + x^3 + 1\) = <input class="ans-input" data-answer="1" type="text" style="width:120px" autocomplete="off" /></div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C5. \(x^8 + x^7 + x^7 + x^2 + x + x\) = <input class="ans-input" data-answer="x^8+x^2" type="text" style="width:160px" autocomplete="off" /></div>
+        </div>
+      </section>
+
+      <!-- PART D: Small polynomial products (REGENERATABLE) -->
+      <section id="part-d">
+        <h2>Part D: Small Polynomial Products</h2>
+        <p>Multiply the polynomials over GF(2). Use the work space, then enter the simplified (unreduced) result. Click <strong>Regenerate</strong> for new problems.</p>
+
+        <div id="partd-container">
+          <!-- Filled in by JS on load -->
+        </div>
+      </section>
+
+      <!-- PART E: Distribution grid (static) -->
+      <section id="part-e">
+        <h2>Part E: Distribution Grid</h2>
+        <p>Use the grid below to multiply \((x^2 + x + 1)(x^3 + x)\) over GF(2). Fill each cell with the product of its row and column headers. Then collect all results, cancel pairs, and write the final polynomial.</p>
+
+        <table class="grid-table" style="max-width:520px;">
+          <thead>
+            <tr>
+              <th class="row-header" style="width:20%">&times;</th>
+              <th style="width:40%">\(x^3\)</th>
+              <th style="width:40%">\(x\)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="row-header">\(x^2\)</td>
+              <td><input class="ans-input" data-answer="x^5" type="text" style="width:90%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^3" type="text" style="width:90%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td class="row-header">\(x\)</td>
+              <td><input class="ans-input" data-answer="x^4" type="text" style="width:90%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x^2" type="text" style="width:90%" autocomplete="off" /></td>
+            </tr>
+            <tr>
+              <td class="row-header">\(1\)</td>
+              <td><input class="ans-input" data-answer="x^3" type="text" style="width:90%" autocomplete="off" /></td>
+              <td><input class="ans-input" data-answer="x" type="text" style="width:90%" autocomplete="off" /></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="problem" style="margin-top:18px;">
+          <div class="problem-title">Collect all six partial products, cancel duplicate terms, and write the simplified result:</div>
+          <p style="margin:8px 0 4px;">Partial products (before cancellation): <em>x<sup>5</sup>, x<sup>3</sup>, x<sup>4</sup>, x<sup>2</sup>, x<sup>3</sup>, x</em></p>
+          <p style="margin:4px 0 4px;">Terms that cancel: <em>x<sup>3</sup> appears twice</em></p>
+          Final result: <input class="ans-input" data-answer="x^5+x^4+x^2+x" type="text" style="width:260px" autocomplete="off" />
+        </div>
+      </section>
+
+      <!-- PART F: Byte-polynomial products (REGENERATABLE) -->
+      <section id="part-f">
+        <h2>Part F: Byte-Polynomial Products (Unreduced)</h2>
+        <p>Each problem gives two bytes as hex values. Express each as a polynomial over GF(2), multiply them, cancel duplicate terms, and write the <strong>unreduced</strong> result. Do not reduce modulo any polynomial. Click <strong>Regenerate</strong> for new byte pairs.</p>
+
+        <div id="partf-container">
+          <!-- Filled in by JS on load -->
+        </div>
+      </section>
+
+      <!-- PART G: True/False -->
+      <section id="part-g">
+        <h2>Part G: True or False</h2>
+        <p>Write <strong>true</strong> or <strong>false</strong> in each blank.</p>
+
+        <div class="problem">
+          <div class="problem-title">G1. \(x^3 \cdot x^5 = x^{15}\).</div>
+          <p>Answer: <input class="ans-input" data-answer="false" type="text" style="width:100px" autocomplete="off" /> &nbsp; <span style="font-size:0.9rem;color:#666;">(Hint: what is 3+5?)</span></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G2. Over GF(2), \(x^4 + x^4 = 0\).</div>
+          <p>Answer: <input class="ans-input" data-answer="true" type="text" style="width:100px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G3. Polynomial multiplication over GF(2) always produces byte-sized results (degree at most 7).</div>
+          <p>Answer: <input class="ans-input" data-answer="false" type="text" style="width:100px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G4. Multiplying any polynomial by \(1\) leaves it unchanged.</div>
+          <p>Answer: <input class="ans-input" data-answer="true" type="text" style="width:100px" autocomplete="off" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">G5. This module uses the AES irreducible polynomial to reduce the product.</div>
+          <p>Answer: <input class="ans-input" data-answer="false" type="text" style="width:100px" autocomplete="off" /></p>
+        </div>
+      </section>
+
+      <!-- PART H: Written explanation -->
+      <section id="part-h">
+        <h2>Part H: Written Explanation</h2>
+        <p>Answer each question in complete sentences. These responses are not scored by the checker.</p>
+
+        <div class="problem">
+          <div class="problem-title">H1. Explain in your own words why multiplication can create powers beyond \(x^7\), but addition cannot.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Write your answer here…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">H2. Explain the difference between ordinary polynomial multiplication (over the integers) and multiplication over GF(2). What changes, and what stays the same?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" rows="4" placeholder="Write your answer here…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANSWER KEY -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+        <div class="box answer-key-box">
+          <div class="box-title">Self-study note</div>
+          <p>
+            For every multiplication: (1) multiply each pair of terms by adding exponents; (2) collect like terms; (3) cancel any term appearing an even number of times — those coefficients equal \(1+1+\cdots=0\) mod 2. The result is the unreduced product; powers above \(x^7\) are valid here.
+          </p>
+        </div>
+
+        <h3>Part A: Vocabulary</h3>
+        <div class="answer-step">
+          <p><strong>A1.</strong> add</p>
+          <p><strong>A2.</strong> cancel</p>
+          <p><strong>A3.</strong> \(x^{14}\) (7+7=14)</p>
+          <p><strong>A4.</strong> unreduced</p>
+          <p><strong>A5.</strong> 14 (highest: \(x^7 \cdot x^7 = x^{14}\))</p>
+        </div>
+
+        <h3>Part B: Single-Term Multiplication Table</h3>
+        <table class="answer-table" style="max-width:420px;">
+          <thead>
+            <tr><th>Expression</th><th>Exponent sum</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>\(x^3 \cdot x^2\)</td><td>5</td><td>\(x^5\)</td></tr>
+            <tr><td>\(x^7 \cdot x\)</td><td>8</td><td>\(x^8\)</td></tr>
+            <tr><td>\(x^4 \cdot 1\)</td><td>4</td><td>\(x^4\)</td></tr>
+            <tr><td>\(x^6 \cdot x^5\)</td><td>11</td><td>\(x^{11}\)</td></tr>
+            <tr><td>\(x^7 \cdot x^7\)</td><td>14</td><td>\(x^{14}\)</td></tr>
+            <tr><td>\(1 \cdot 1\)</td><td>0</td><td>\(1\)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Part C: Simplify Like Terms</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> \(x^2+x^2 = 0\) — the only term cancels.</p>
+          <p><strong>C2.</strong> \(x^5+x^3+x^5 = x^3\) — the two \(x^5\) cancel.</p>
+          <p><strong>C3.</strong> \(x^7+x^4+x^4+x = x^7+x\) — the two \(x^4\) cancel.</p>
+          <p><strong>C4.</strong> \(x^6+x^6+x^3+x^3+1 = 1\) — both \(x^6\) and \(x^3\) pairs cancel.</p>
+          <p><strong>C5.</strong> \(x^8+x^7+x^7+x^2+x+x = x^8+x^2\) — the two \(x^7\) cancel and the two \(x\) cancel.</p>
+        </div>
+
+        <h3>Part D: Small Polynomial Products</h3>
+        <div class="answer-step" id="partd-key">
+          <p>Answers are generated dynamically. Click <strong>Check Answers</strong> after completing Part D.</p>
+        </div>
+
+        <h3>Part E: Distribution Grid</h3>
+        <div class="answer-step">
+          <p>Grid cells for \((x^2+x+1)(x^3+x)\):</p>
+          <table class="answer-table" style="max-width:400px;">
+            <thead><tr><th>&times;</th><th>\(x^3\)</th><th>\(x\)</th></tr></thead>
+            <tbody>
+              <tr><td>\(x^2\)</td><td>\(x^5\)</td><td>\(x^3\)</td></tr>
+              <tr><td>\(x\)</td><td>\(x^4\)</td><td>\(x^2\)</td></tr>
+              <tr><td>\(1\)</td><td>\(x^3\)</td><td>\(x\)</td></tr>
+            </tbody>
+          </table>
+          <p>All partial products: \(x^5, x^3, x^4, x^2, x^3, x\)</p>
+          <p>\(x^3\) appears twice — cancel it. All others appear once.</p>
+          <p>Final result: \(x^5 + x^4 + x^2 + x\)</p>
+        </div>
+
+        <h3>Part F: Byte-Polynomial Products</h3>
+        <div class="answer-step" id="partf-key">
+          <p>Answers are generated dynamically. Click <strong>Check Answers</strong> after completing Part F.</p>
+        </div>
+
+        <h3>Part G: True or False</h3>
+        <div class="answer-step">
+          <p><strong>G1.</strong> False. \(3+5=8\), so \(x^3 \cdot x^5 = x^8\), not \(x^{15}\).</p>
+          <p><strong>G2.</strong> True. \(x^4+x^4 = 0\) because \(1+1=0\) mod 2.</p>
+          <p><strong>G3.</strong> False. Multiplying \(x^7 \cdot x^7\) gives \(x^{14}\), which exceeds degree 7. Reduction is a separate step (Module 11).</p>
+          <p><strong>G4.</strong> True. \(p(x) \cdot 1 = p(x)\) for any polynomial; 1 is the multiplicative identity.</p>
+          <p><strong>G5.</strong> False. Module 10 only computes the unreduced product. Reduction modulo the AES irreducible polynomial \(x^8+x^4+x^3+x+1\) is the topic of Module 11.</p>
+        </div>
+
+        <h3>Part H: Written Explanation (Sample Answers)</h3>
+        <div class="answer-step">
+          <p><strong>H1 sample.</strong> Addition over GF(2) corresponds to XOR on bits: each of the 8 bit positions is handled independently, and the result is still within the same 8-bit range. Multiplication, by contrast, involves adding exponents. When two high-degree terms are multiplied — for example \(x^7 \cdot x^7 = x^{14}\) — the resulting degree exceeds 7. Addition cannot increase the degree because it only combines existing terms; it never creates a new, higher-degree term.</p>
+          <p><strong>H2 sample.</strong> Both forms of polynomial multiplication use the same distributive rule (multiply every term of one polynomial by every term of the other) and the same rule for single terms (\(x^i \cdot x^j = x^{i+j}\)). The key difference is how like terms are combined: over the integers, coefficients are added normally (so \(x^3 + x^3 = 2x^3\)), whereas over GF(2) all arithmetic is mod 2, meaning \(x^3 + x^3 = 0\). This cancellation of duplicates is the only change; the distribution step is identical.</p>
+        </div>
+      </section>
+
+      <p class="footer-note">
+        Mathematics of Cryptography worksheet page. Paired with Tutorial 10: Polynomial Multiplication over GF(2).
+      </p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_09_polynomial_addition_over_gf_2_html.html" class="nav-item">&#8592; Worksheet 09</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="worksheet_11_polynomial_reduction_irreducible_polynomials_html.html" class="nav-item">Worksheet 11 &#8594;</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_10_polynomial_multiplication_over_gf_2_html.html" class="nav-item nav-secondary">Tutorial 10</a>
+          <a href="tutorial_10_polynomial_multiplication_over_gf_2_workbook_html.html" class="nav-item nav-secondary">Practice 10</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+  <!-- Print: build write-lines from textarea rows -->
+  <script>
+  document.querySelectorAll('.write-wrap').forEach(function(wrap) {
+    var ta = wrap.querySelector('textarea');
+    var ld = wrap.querySelector('.write-lines');
+    if (!ta || !ld) return;
+    var rows = parseInt(ta.getAttribute('rows')) || 3;
+    for (var i = 0; i < rows; i++) {
+      var d = document.createElement('div');
+      d.className = 'wl';
+      ld.appendChild(d);
+    }
+  });
+  </script>
+
+  <script>
+(function() {
+  // -------------------------------------------------------
+  // Polynomial helpers
+  // -------------------------------------------------------
+  function polyMul(a, b) {
+    var counts = {};
+    a.forEach(function(ea) { b.forEach(function(eb) {
+      var s = ea + eb; counts[s] = (counts[s] || 0) + 1;
+    }); });
+    var result = [];
+    Object.keys(counts).forEach(function(e) { if (counts[e] % 2 === 1) result.push(parseInt(e)); });
+    return result.sort(function(a, b) { return b - a; });
+  }
+
+  function polyStr(exps) {
+    if (!exps || exps.length === 0) return '0';
+    return exps.sort(function(a, b) { return b - a; })
+               .map(function(e) { return e === 0 ? '1' : e === 1 ? 'x' : 'x^' + e; })
+               .join('+');
+  }
+
+  function hexToPoly(h) {
+    var b = parseInt(h, 16);
+    var terms = [];
+    for (var i = 7; i >= 0; i--) { if (b & (1 << i)) terms.push(i); }
+    return terms;
+  }
+
+  function hexToPolyStr(h) {
+    return polyStr(hexToPoly(h));
+  }
+
+  function rnd(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+
+  // Returns a random polynomial with `count` distinct terms, exponents chosen from [minExp, maxExp]
+  function randPoly(count, minExp, maxExp) {
+    var pool = [];
+    for (var e = minExp; e <= maxExp; e++) pool.push(e);
+    // Fisher-Yates shuffle pool then take first `count`
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+    return pool.slice(0, count).sort(function(a, b) { return b - a; });
+  }
+
+  // -------------------------------------------------------
+  // Part D state
+  // -------------------------------------------------------
+  var partDProblems = [];
+
+  function generatePartDProblem() {
+    // 2 terms each, exponents 0–5
+    var a = randPoly(2, 0, 5);
+    var b = randPoly(2, 0, 5);
+    var product = polyMul(a, b);
+    return { a: a, b: b, product: product };
+  }
+
+  function renderPartD() {
+    var container = document.getElementById('partd-container');
+    container.innerHTML = '';
+    partDProblems = [];
+    for (var k = 1; k <= 5; k++) {
+      var prob = generatePartDProblem();
+      partDProblems.push(prob);
+      var pStr = polyStr(prob.a);
+      var qStr = polyStr(prob.b);
+      var ans = polyStr(prob.product);
+      var div = document.createElement('div');
+      div.className = 'problem';
+      div.innerHTML =
+        '<div class="problem-title">D' + k + '. Multiply: \\((' + pStr + ')(' + qStr + ')\\)</div>' +
+        '<div class="work-space"></div>' +
+        'Result: <input class="ans-input" data-answer="' + ans + '" type="text" style="width:300px" autocomplete="off" id="pd-' + k + '" />';
+      container.appendChild(div);
+    }
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([container]).catch(function(){});
+    }
+  }
+
+  // -------------------------------------------------------
+  // Part F state
+  // -------------------------------------------------------
+  var partFProblems = [];
+
+  function rndByte() {
+    // non-zero, avoid trivial 0x01 and 0xFF for variety; range 0x02–0xFE
+    var v;
+    do { v = rnd(2, 254); } while (v === 0);
+    return v;
+  }
+
+  function toHexStr(v) {
+    return '0x' + v.toString(16).padStart(2, '0').toUpperCase();
+  }
+
+  function generatePartFProblem() {
+    var aVal = rndByte();
+    var bVal = rndByte();
+    var aPoly = hexToPoly(aVal.toString(16).padStart(2, '0'));
+    var bPoly = hexToPoly(bVal.toString(16).padStart(2, '0'));
+    var product = polyMul(aPoly, bPoly);
+    return { aVal: aVal, bVal: bVal, aPoly: aPoly, bPoly: bPoly, product: product };
+  }
+
+  function renderPartF() {
+    var container = document.getElementById('partf-container');
+    container.innerHTML = '';
+    partFProblems = [];
+    for (var k = 1; k <= 3; k++) {
+      var prob = generatePartFProblem();
+      partFProblems.push(prob);
+      var aHex = toHexStr(prob.aVal);
+      var bHex = toHexStr(prob.bVal);
+      var aPolyStr = polyStr(prob.aPoly);
+      var bPolyStr = polyStr(prob.bPoly);
+      var ans = polyStr(prob.product);
+
+      var div = document.createElement('div');
+      div.className = 'problem';
+      div.innerHTML =
+        '<div class="problem-title">F' + k + '. Multiply the two bytes as polynomials (leave unreduced).</div>' +
+        '<p style="margin:6px 0;"><strong>Byte A:</strong> <code>' + aHex + '</code> &nbsp;=&nbsp; \\(' + aPolyStr + '\\)</p>' +
+        '<p style="margin:6px 0;"><strong>Byte B:</strong> <code>' + bHex + '</code> &nbsp;=&nbsp; \\(' + bPolyStr + '\\)</p>' +
+        '<div class="work-space"></div>' +
+        'Unreduced result: <input class="ans-input" data-answer="' + ans + '" type="text" style="width:360px" autocomplete="off" id="pf-' + k + '" />';
+      container.appendChild(div);
+    }
+    if (window.MathJax && window.MathJax.typesetPromise) {
+      window.MathJax.typesetPromise([container]).catch(function(){});
+    }
+  }
+
+  // -------------------------------------------------------
+  // Public worksheet functions
+  // -------------------------------------------------------
+  window.wsCheckAll = function() {
+    var inputs = document.querySelectorAll('.ans-input[data-answer]');
+    var correct = 0, total = 0;
+    inputs.forEach(function(inp) {
+      var user = inp.value.trim().toLowerCase().replace(/\s+/g, '');
+      var answers = inp.dataset.answer.split('|').map(function(a) {
+        return a.trim().toLowerCase().replace(/\s+/g, '');
+      });
+      var nUser = parseFloat(user);
+      total++;
+      var ok = false;
+      answers.forEach(function(ans) {
+        if (user === ans) { ok = true; return; }
+        var nAns = parseFloat(ans);
+        if (!isNaN(nUser) && !isNaN(nAns) && nUser === nAns) { ok = true; }
+      });
+      if (ok) {
+        inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
+      } else if (user !== '') {
+        inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
+      }
+    });
+    var disp = document.getElementById('ws-score-display');
+    if (total === 0) { disp.textContent = ''; return; }
+    var pct = Math.round(100 * correct / total);
+    disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
+    disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+  };
+
+  window.wsReset = function() {
+    document.querySelectorAll('.ans-input').forEach(function(inp) {
+      inp.value = ''; inp.classList.remove('ws-correct', 'ws-wrong');
+    });
+    document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
+    var disp = document.getElementById('ws-score-display');
+    if (disp) disp.textContent = '';
+  };
+
+  window.wsRegenerate = function() { wsRegenerateImpl(); };
+
+  function wsRegenerateImpl() {
+    renderPartD();
+    renderPartF();
+  }
+
+  // -------------------------------------------------------
+  // Initial render
+  // -------------------------------------------------------
+  renderPartD();
+  renderPartF();
+
+})();
+  </script>
+</body>
+</html>
