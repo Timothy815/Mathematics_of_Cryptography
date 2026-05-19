@@ -236,91 +236,86 @@
       </section>
 
       <section id="big-idea">
-        <h2>The big idea</h2>
+        <h2>The big idea: you make a declaration</h2>
         <div class="box intuition-box">
-          <div class="box-title">Intuition first</div>
+          <div class="box-title">The core move</div>
           <p>
-            Reduction is controlled substitution. If the modulus polynomial tells us that a high power of \(x\) is equivalent to a smaller combination of terms, then we replace the high power with that smaller combination. Repeat until every term fits below the modulus degree.
+            You <em>choose</em> a polynomial \(m(x)\) and <em>declare</em> it equal to zero. That one declaration instantly gives you a swap rule: the highest-degree term of \(m(x)\) can always be replaced by the remaining terms. Every reduction step is just applying that swap, then cancelling duplicates.
           </p>
         </div>
 
+        <p>
+          This is not a derivation — it is a <strong>chosen rule</strong>. The moment you declare \(m(x)=0\), high-degree terms have an exact low-degree substitute and can always be eliminated. The result is an arithmetic world where every polynomial has degree below that of \(m(x)\).
+        </p>
+
         <div class="diagram" role="img" aria-label="Polynomial reduction as folding high powers">
-          <div class="diagram-title">Folding high powers back down</div>
+          <div class="diagram-title">What reduction looks like</div>
           <div class="flow-row">
-            <div class="flow-node">Unreduced product<br>may contain \(x^8,x^9,\dots\)</div>
+            <div class="flow-node">Declare<br>\(m(x)=0\)</div>
             <div class="flow-arrow">→</div>
-            <div class="machine-node">Apply modulus<br>polynomial rule</div>
+            <div class="machine-node">Derive<br>swap rule</div>
             <div class="flow-arrow">→</div>
-            <div class="flow-node">Reduced polynomial<br>degree below 8</div>
+            <div class="flow-node">Apply swap,<br>cancel pairs</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-node">Degree below<br>\(\deg m(x)\)</div>
           </div>
         </div>
       </section>
 
       <section id="integer-analogy">
-        <h2>The integer modular arithmetic analogy</h2>
+        <h2>How integer clocks do the same thing</h2>
         <p>
-          In integer modular arithmetic, reducing modulo \(n\) means keeping the remainder after division by \(n\):
+          A clock face <em>declares</em> that 12 equals 0. Once you make that declaration you get an immediate swap rule: wherever 12 appears, write 0 (equivalently, drop it). That is why 13 o'clock becomes 1 o'clock — you swap the 12 away and are left with 1.
         </p>
         <div class="math-display">
           \[
-            29\bmod 12=5
+            13 = 12 + 1 \xrightarrow{\text{declare }12=0} 0 + 1 = 1
           \]
         </div>
         <p>
-          Because:
+          The swap-and-cancel idea is exactly the same for polynomials. Instead of declaring the number 12 equal to zero, you declare a <em>polynomial</em> \(m(x)\) equal to zero. The highest-power term plays the role that 12 played on the clock — it is the "wrap point" — and every lower-degree term in \(m(x)\) is what you get after the swap.
         </p>
-        <div class="math-display">
-          \[
-            29=2\cdot12+5
-          \]
-        </div>
-
-        <p>
-          Polynomial reduction works the same way in spirit:</p>
-        <div class="math-display">
-          \[
-            p(x)=q(x)m(x)+r(x)
-          \]
-        </div>
-        <p>
-          The reduced result is the remainder \(r(x)\), whose degree is smaller than the degree of \(m(x)\).</p>
 
         <div class="box definition-box">
-          <div class="box-title">Definition: polynomial reduction</div>
+          <div class="box-title">Reduction = declaring \(m(x)=0\), then swapping</div>
           <p>
-            Polynomial reduction modulo \(m(x)\) means finding the remainder after dividing by \(m(x)\). The result must have degree smaller than \(m(x)\).</p>
+            Declare \(m(x)=0\). Rearrange to isolate the highest-power term. That gives you the swap rule. Apply it to any polynomial that contains the forbidden high power. Repeat until the degree is below \(\deg m(x)\).
+          </p>
         </div>
       </section>
 
       <section id="toy-modulus">
-        <h2>A small toy modulus first</h2>
+        <h2>A small toy modulus: watch the declaration in action</h2>
         <p>
-          Before AES's degree-8 rule, use a smaller rule so the idea is visible. Let:</p>
+          Let's declare a small polynomial equal to zero so every step is visible. Choose:</p>
         <div class="math-display">
           \[
             m(x)=x^3+x+1
           \]
         </div>
-        <p>
-          Since we reduce modulo \(m(x)\), we treat \(m(x)\) as equivalent to 0:</p>
+
+        <p><strong>Step 1 — make the declaration.</strong> You decree:</p>
         <div class="math-display">
           \[
-            x^3+x+1\equiv0\pmod{m(x)}
+            x^3+x+1 = 0
           \]
         </div>
-        <p>
-          Rearranging over \(\mathrm{GF}(2)\), where subtraction is the same as addition, gives:</p>
+
+        <p><strong>Step 2 — rearrange to get the swap rule.</strong> Over \(\mathrm{GF}(2)\), adding a term to both sides is the same as subtracting it (because \(-1=1\)). Add \(x+1\) to both sides:</p>
         <div class="math-display">
           \[
-            x^3\equiv x+1\pmod{x^3+x+1}
+            x^3 = x+1
           \]
         </div>
 
         <div class="box intuition-box">
-          <div class="box-title">The folding rule</div>
+          <div class="box-title">The swap rule</div>
           <p>
-            Whenever \(x^3\) appears, we can replace it with \(x+1\). That is the toy folding rule.</p>
+            Wherever \(x^3\) appears, write \(x+1\) instead. That is the <em>only</em> rule you need.
+            The reason \(x\) and the constant \(1\) appear on the right is that they are the <em>other two terms already sitting in \(m(x)\)</em>. Nothing is added from outside — they were always there.</p>
         </div>
+
+        <p><strong>Why is this valid?</strong> Because you declared \(x^3+x+1=0\), meaning \(x^3\) and \(x+1\) are declared to be the same thing in this arithmetic world. Using one wherever the other appears is not an approximation — it is exact equality under the declared rule.</p>
       </section>
 
       <section id="toy-example-1">
@@ -527,6 +522,57 @@
               x^8+x^4+x^2\equiv x^3+x^2+x+1
             \]
           </div>
+        </div>
+      </section>
+
+      <section id="aes-example-3">
+        <h2>Worked example 5: reduce \(x^8+x^6+x^3+x^2\) — a complete walkthrough</h2>
+        <p>
+          This is a product you might get after multiplying two byte-polynomials. The \(x^8\) term is in forbidden territory (degree must stay below 8), so we must eliminate it using the swap rule.</p>
+
+        <p><strong>Swap rule (from declaring \(m(x)=0\)):</strong></p>
+        <div class="math-display">
+          \[
+            x^8 \equiv x^4+x^3+x+1
+          \]
+        </div>
+
+        <p><strong>Step 1 — Spot the forbidden term.</strong> We have \(x^8\) in the polynomial. Write it out explicitly:</p>
+        <div class="math-display">
+          \[
+            \underbrace{x^8}_{\text{forbidden}}+x^6+x^3+x^2
+          \]
+        </div>
+
+        <p><strong>Step 2 — Apply the swap.</strong> Replace \(x^8\) with \(x^4+x^3+x+1\):</p>
+        <div class="math-display">
+          \[
+            (x^4+x^3+x+1)+x^6+x^3+x^2
+          \]
+        </div>
+
+        <p><strong>Step 3 — Collect all terms.</strong> Write every term grouped by degree:</p>
+        <div class="math-display">
+          \[
+            x^6+x^4+(x^3+x^3)+x^2+x+1
+          \]
+        </div>
+
+        <p><strong>Step 4 — Cancel pairs.</strong> Over \(\mathrm{GF}(2)\), any term that appears twice cancels to 0 (because \(1+1=0\)):</p>
+        <div class="math-display">
+          \[
+            x^3+x^3 = 0
+          \]
+        </div>
+
+        <div class="box definition-box">
+          <div class="box-title">Reduced result</div>
+          <div class="math-display">
+            \[
+              x^8+x^6+x^3+x^2\;\equiv\; x^6+x^4+x^2+x+1\pmod{x^8+x^4+x^3+x+1}
+            \]
+          </div>
+          <p style="margin-top:0.6rem">The \(x^3\) that came from the swap cancelled with the \(x^3\) that was already in the original polynomial. The constant \(1\) and the \(x\) came directly from the swap rule — they are the lower four terms of \(m(x)\).</p>
         </div>
       </section>
 
