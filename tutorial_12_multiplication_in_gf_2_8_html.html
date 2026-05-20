@@ -883,146 +883,294 @@
         </div>
       </section>
 
-      <section id="gf-explorer">
-        <h2>Interactive GF(2⁸) multiplier</h2>
-        <p>
-          Enter two hex bytes to multiply them in \(\mathrm{GF}(2^8)\), or enter one byte to see its \(\operatorname{xtime}\) result. Every step is shown.
-        </p>
-        <div id="gfe-widget" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:18px 0;">
-          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px;">
-            <div>
-              <label style="font-weight:700;display:block;margin-bottom:4px;">Byte A (hex)</label>
-              <input id="gfe-a" type="text" value="57" maxlength="4"
-                style="width:90px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:1rem;">
-            </div>
-            <div>
-              <label style="font-weight:700;display:block;margin-bottom:4px;">Byte B (hex)</label>
-              <input id="gfe-b" type="text" value="13" maxlength="4"
-                style="width:90px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:1rem;">
-            </div>
-            <div style="display:flex;flex-wrap:wrap;gap:8px;">
-              <button onclick="gfeCompute()" style="padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.97rem;">Compute A × B</button>
-              <button onclick="gfeXtime()" style="padding:9px 20px;background:#2a6049;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.97rem;">Compute xtime(A)</button>
-            </div>
-          </div>
-          <div id="gfe-output" style="min-height:60px;"></div>
-        </div>
+      <section id="gf-explorer" class="no-print">
+        <h2>Interactive: GF(2⁸) step-through multiplier</h2>
+        <p>Enter bytes A and B and click <strong>Start</strong>. Step through the xtime chain one power of x at a time. At each step you will see whether B selects that power, and any fold is shown as a Before / XOR / After bit grid — the same visual used in the Module 11 reduction explorer.</p>
+
         <style>
-          .gfe-step { background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:8px 0;font-size:0.95rem;line-height:1.7; }
-          .gfe-step code { background:#eef3ff;padding:2px 6px;border-radius:4px;font-family:'Cascadia Code',monospace; }
-          .gfe-selected { background:#eaf7ef;border-color:#b8dfc5; }
-          .gfe-notsel   { opacity:0.6; }
-          .gfe-result   { font-size:1.07rem;font-weight:800;color:var(--accent); }
-          .gfe-err      { color:#c0392b;font-weight:700; }
+          .gm-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
+          .gm-input-row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:16px; }
+          .gm-input-row label { display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px; color:#1f3763; }
+          .gm-hex-field { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:110px; }
+          .gm-btn-start { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .gm-btn-next  { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .gm-btn-reset { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
+          .gm-presets { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+          .gm-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
+          .gm-btn-preset:hover { background:#eef3ff; }
+
+          /* B selector panel */
+          .gm-b-panel { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:14px 18px; margin:14px 0; }
+          .gm-b-bits { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 6px; }
+          .gm-b-bit { width:38px; height:44px; border:1.5px solid #c7d2ea; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+          .gm-b-bit .gm-b-power { font-size:0.65rem; color:#888; margin-bottom:2px; }
+          .gm-b-bit .gm-b-val { font-weight:800; font-size:1rem; }
+          .gm-b-bit.gm-sel1 { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .gm-b-bit.gm-sel1 .gm-b-power { color:#a8e6b8; }
+          .gm-b-bit.gm-sel0 { background:#f5f7fc; color:#bbb; }
+          .gm-b-bit.gm-current { outline:3px solid #334e7d; outline-offset:1px; }
+
+          /* Step cards */
+          .gm-step-card { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:18px 22px; margin-bottom:14px; }
+          .gm-step-card.gm-start { border-color:#b0bcd4; background:#f4f6fb; }
+          .gm-step-card.gm-done  { border-color:#2a8a4a; background:#eafaf0; }
+          .gm-step-heading { font-size:1rem; font-weight:800; color:#1f3763; margin:0 0 10px; }
+          .gm-step-card.gm-done .gm-step-heading { color:#1a6a30; }
+          .gm-narr { font-size:0.93rem; line-height:1.65; color:#2a2a2a; margin:0 0 10px; }
+          .gm-narr code { background:#f0f0f0; border-radius:4px; padding:1px 5px; font-size:0.88rem; }
+
+          /* 9-column bit grid (x⁸ … x⁰) */
+          .gm-grid-wrap { overflow-x:auto; margin:10px 0 12px; }
+          .gm-grid { border-collapse:collapse; min-width:400px; }
+          .gm-grid td, .gm-grid th { text-align:center; padding:0; min-width:34px; }
+          .gm-row-lbl { font-size:0.75rem; font-weight:700; color:#444; text-align:right !important; padding-right:10px !important; white-space:nowrap; min-width:110px; }
+          .gm-deg { font-size:0.68rem; color:#666; padding:2px 1px 3px; font-weight:600; }
+          .gm-cell { width:34px; height:32px; border:1px solid #dde3ee; font-weight:800; font-size:0.95rem; line-height:32px; }
+
+          /* Cell colours — same semantics as Module 11 reduction explorer */
+          .sc2-elim   { background:#e05800; color:#fff; border-color:#b03000; }
+          .sc2-hi1    { background:#ffd0a0; color:#7a2a00; border-color:#e0a060; }
+          .sc2-hi0    { background:#fdf0e8; color:#caa080; }
+          .sc2-lo1    { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .sc2-lo0    { background:#f5f7fc; color:#bbb; }
+          .sc2-xor1   { background:#fff0a0; color:#5a4000; border-color:#d0c040; font-weight:900; }
+          .sc2-xor0   { background:#fafafa; color:#ccc; }
+          .sc2-added  { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .sc2-cancel { background:#fdeaea; color:#c04040; border-color:#e0a0a0; }
+          .sc2-kept1  { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .sc2-kept0  { background:#f5f7fc; color:#bbb; }
+          .sc2-hi-gone{ background:#fdf0e8; color:#caa080; }
+          .gm-bdy { border-left:3px solid #334e7d !important; }
+
+          /* B-selection badge */
+          .gm-sel-badge { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; font-size:0.9rem; font-weight:700; margin:10px 0; }
+          .gm-sel-badge.yes { background:#eafaf0; border:1.5px solid #2a8a4a; color:#1a6030; }
+          .gm-sel-badge.no  { background:#f5f5f5; border:1.5px solid #ccc; color:#888; }
+
+          /* Result box */
+          .gm-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:12px; }
+
+          /* Controls */
+          .gm-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
         </style>
+
+        <div class="gm-shell">
+          <div class="gm-input-row">
+            <div>
+              <label for="gm-a-in">Byte A (hex)</label>
+              <input class="gm-hex-field" id="gm-a-in" type="text" value="57" maxlength="4" autocomplete="off">
+            </div>
+            <div>
+              <label for="gm-b-in">Byte B (hex)</label>
+              <input class="gm-hex-field" id="gm-b-in" type="text" value="13" maxlength="4" autocomplete="off">
+            </div>
+            <div class="gm-presets">
+              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Presets:</span>
+              <button class="gm-btn-preset" onclick="gmLoad(0x57,0x13)">0x57 × 0x13</button>
+              <button class="gm-btn-preset" onclick="gmLoad(0x57,0x03)">0x57 × 0x03</button>
+              <button class="gm-btn-preset" onclick="gmLoad(0x83,0xCA)">0x83 × 0xCA</button>
+              <button class="gm-btn-preset" onclick="gmLoad(0x53,0xCA)">0x53 × 0xCA</button>
+            </div>
+            <button class="gm-btn-start" onclick="gmStart()">Start →</button>
+          </div>
+
+          <div id="gm-b-panel" style="display:none;" class="gm-b-panel"></div>
+          <div id="gm-steps"></div>
+          <div class="gm-controls" id="gm-controls" style="display:none;">
+            <button class="gm-btn-next" id="gm-btn-next" onclick="gmNext()">Next →</button>
+            <button class="gm-btn-reset" onclick="gmReset()">Reset</button>
+          </div>
+        </div>
+
         <script>
-        function xtimeFn(a) {
-          const shifted = (a << 1) & 0xFF;
-          return (a & 0x80) ? (shifted ^ 0x1B) : shifted;
-        }
-        function gfMulFn(a, b) {
-          let result = 0, aa = a;
-          for (let i = 0; i < 8; i++) {
-            if ((b >> i) & 1) result ^= aa;
-            aa = xtimeFn(aa);
+        (function(){
+          /* ── state ── */
+          var gfA=0, gfB=0, gfChain=[], gfStep=-1;
+
+          /* ── math ── */
+          function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+          function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xt(aa);} return r; }
+          function pb(s){ s=s.trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
+          function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+          function dl(d){ return d===0?'1':d===1?'x':'x<sup>'+d+'</sup>'; }
+          function ph(v){ if(v===0)return '<em>0</em>'; var t=[]; for(var d=7;d>=0;d--)if((v>>d)&1)t.push(dl(d)); return t.join(' <span style="color:#888">+</span> '); }
+
+          /* ── 9-column grid helpers ── */
+          function degRow(){
+            var h='<tr><td class="gm-row-lbl"></td>';
+            for(var d=8;d>=0;d--) h+='<th class="gm-deg'+(d===7?' gm-bdy':'')+'">'+dl(d)+'</th>';
+            return h+'</tr>';
           }
-          return result;
-        }
-        function parseByte(s) {
-          s = s.trim().replace(/^0x/i,'');
-          if (!/^[0-9a-fA-F]{1,2}$/.test(s)) return null;
-          return parseInt(s, 16);
-        }
-        function hex(v) { return '0x' + v.toString(16).toUpperCase().padStart(2,'0'); }
-        function byteToPolyStr(v) {
-          if (v === 0) return '0';
-          const terms = [];
-          for (let d = 7; d >= 0; d--) {
-            if ((v >> d) & 1) {
-              if (d === 0)      terms.push('1');
-              else if (d === 1) terms.push('x');
-              else              terms.push('x\u207F'.replace('\u207F', (['⁰','¹','²','³','⁴','⁵','⁶','⁷'][d] || d)));
+          function bitRow(lbl, val, cfn){
+            var h='<tr><td class="gm-row-lbl">'+lbl+'</td>';
+            for(var d=8;d>=0;d--){
+              var bit=(val>>d)&1, bdy=d===7?' gm-bdy':'';
+              h+='<td class="gm-cell '+cfn(d,bit)+bdy+'">'+bit+'</td>';
             }
+            return h+'</tr>';
           }
-          return terms.join(' + ');
-        }
-        const supMap = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸'};
-        function sup(n) { return String(n).split('').map(c=>supMap[c]||c).join(''); }
-        function bpStr(v) {
-          if (v === 0) return '0';
-          const terms = [];
-          for (let d = 7; d >= 0; d--) {
-            if ((v >> d) & 1) {
-              if (d === 0) terms.push('1');
-              else if (d === 1) terms.push('x');
-              else terms.push('x' + sup(d));
+          function grid(rows){ return '<div class="gm-grid-wrap"><table class="gm-grid"><tbody>'+degRow()+rows+'</tbody></table></div>'; }
+
+          /* ── colour helpers ── */
+          function cNorm(d,b){ return d===8?(b?'sc2-hi1':'sc2-hi0'):(b?'sc2-lo1':'sc2-lo0'); }
+          function cXor(d,b){ return b?'sc2-xor1':'sc2-xor0'; }
+          function cAfterFold(s9, cur){ return function(d,b){ if(d===8)return 'sc2-hi-gone'; var sb=(s9>>d)&1; if(sb===0&&b===1)return 'sc2-added'; if(sb===1&&b===0)return 'sc2-cancel'; return b?'sc2-kept1':'sc2-kept0'; }; }
+          function cAfterXor(acc, v){ return function(d,b){ if(d===8)return 'sc2-hi0'; var ab=(acc>>d)&1, vb=(v>>d)&1; if(ab===0&&vb===1)return 'sc2-added'; if(ab===1&&vb===1)return 'sc2-cancel'; return b?'sc2-kept1':'sc2-kept0'; }; }
+
+          /* ── B panel ── */
+          function renderBPanel(highlight){
+            var h='<div style="font-size:0.88rem;font-weight:700;color:#1f3763;margin-bottom:6px;">B = '+hx(gfB)+' = '+ph(gfB)+'</div>';
+            h+='<div style="font-size:0.82rem;color:#555;margin-bottom:8px;">Green = B selects this power of A. Grey = skipped.</div>';
+            h+='<div class="gm-b-bits">';
+            for(var d=7;d>=0;d--){
+              var bit=(gfB>>d)&1, cls=bit?'gm-sel1':'gm-sel0', cur=d===highlight?' gm-current':'';
+              h+='<div class="gm-b-bit '+cls+cur+'"><div class="gm-b-power">'+dl(d)+'</div><div class="gm-b-val">'+bit+'</div></div>';
             }
+            h+='</div>';
+            document.getElementById('gm-b-panel').innerHTML=h;
+            document.getElementById('gm-b-panel').style.display='';
           }
-          return terms.join(' + ');
-        }
-        function gfeXtime() {
-          const aVal = parseByte(document.getElementById('gfe-a').value);
-          const out = document.getElementById('gfe-output');
-          if (aVal === null) { out.innerHTML = '<p class="gfe-err">Enter a valid 1–2 digit hex byte for A (e.g. 57 or A3).</p>'; return; }
-          const topBit = (aVal & 0x80) !== 0;
-          const shifted = (aVal << 1) & 0xFF;
-          const result = topBit ? (shifted ^ 0x1B) : shifted;
-          let html = '';
-          html += `<div class="gfe-step"><strong>Input byte A:</strong> ${hex(aVal)}<br>As polynomial: ${bpStr(aVal)}</div>`;
-          html += `<div class="gfe-step"><strong>Multiply by x (shift left):</strong><br>`;
-          html += `Shifted value = ${hex((aVal << 1))} (before masking to 8 bits)`;
-          if (topBit) {
-            html += `<br>⚠ Top bit (x⁷) was 1 → shifting creates x⁸ term → must reduce!<br>`;
-            html += `Low byte after shift = ${hex(shifted)}<br>`;
-            html += `XOR with <code>0x1B</code> (= x⁴+x³+x+1): ${hex(shifted)} ⊕ 0x1B = <strong>${hex(result)}</strong>`;
-          } else {
-            html += `<br>Top bit was 0 → no x⁸ term → no reduction needed.<br>`;
-            html += `Low byte = <strong>${hex(result)}</strong>`;
+
+          /* ── sel badge ── */
+          function badge(k,bit){
+            return bit
+              ? '<div class="gm-sel-badge yes">✓ B bit '+k+' = 1 — <strong>'+dl(k)+'·A = '+hx(gfChain[k])+' will be XOR\'d into the result</strong></div>'
+              : '<div class="gm-sel-badge no">○ B bit '+k+' = 0 — '+dl(k)+'·A is skipped</div>';
           }
-          html += `</div>`;
-          html += `<div class="gfe-step gfe-result">xtime(${hex(aVal)}) = ${hex(result)}<br><span style="font-weight:400;font-size:0.95rem">As polynomial: ${bpStr(result)}</span></div>`;
-          out.innerHTML = html;
-          if (window.MathJax && typeof MathJax.typesetPromise === 'function') MathJax.typesetPromise([out]).catch(()=>{});
-        }
-        function gfeCompute() {
-          const aVal = parseByte(document.getElementById('gfe-a').value);
-          const bVal = parseByte(document.getElementById('gfe-b').value);
-          const out = document.getElementById('gfe-output');
-          if (aVal === null || bVal === null) { out.innerHTML = '<p class="gfe-err">Enter valid 1–2 digit hex bytes for both A and B.</p>'; return; }
-          // Build xtime chain for A
-          const chain = [aVal];
-          for (let i = 1; i < 8; i++) chain.push(xtimeFn(chain[i-1]));
-          // Find which bits of B select which chain entries
-          const selected = [];
-          for (let i = 0; i < 8; i++) if ((bVal >> i) & 1) selected.push(i);
-          let html = '';
-          html += `<div class="gfe-step"><strong>A = ${hex(aVal)}</strong>  ·  <strong>B = ${hex(bVal)}</strong><br>B as polynomial: ${bpStr(bVal)}<br>So A·B = `;
-          if (selected.length === 0) {
-            html += `0 (B = 0)</div>`;
-          } else {
-            html += selected.map(i => (i===0 ? 'A' : `x${sup(i)}·A`)).join(' ⊕ ') + '</div>';
+
+          /* ── step 0 ── */
+          function step0(){
+            var h='';
+            h+='<div class="gm-step-card gm-start">';
+            h+='<p class="gm-step-heading">Computing '+hx(gfA)+' × '+hx(gfB)+' in GF(2⁸)</p>';
+            h+='<p class="gm-narr">A = '+ph(gfA)+'<br>B = '+ph(gfB)+'<br><br>Build the xtime chain x⁰·A … x⁷·A using repeated xtime, then XOR the entries where B has a 1 bit.</p>';
+            h+='</div>';
+            h+='<div class="gm-step-card">';
+            h+='<p class="gm-step-heading">Step 0 — x⁰·A = A (the starting value)</p>';
+            h+='<p class="gm-narr">x⁰ = 1, so x⁰·A = A. No xtime needed.</p>';
+            h+=grid(bitRow('x⁰·A = A', gfA, cNorm));
+            h+=badge(0,(gfB>>0)&1);
+            h+='<p class="gm-narr" style="margin:8px 0 0;font-size:0.9rem;color:#555;">Value: '+ph(gfA)+' = <code>'+hx(gfA)+'</code></p>';
+            h+='</div>';
+            document.getElementById('gm-steps').innerHTML=h;
           }
-          html += `<div class="gfe-step"><strong>xtime chain for A:</strong><br>`;
-          chain.forEach((v, i) => {
-            const sel = selected.includes(i);
-            const cls = sel ? 'gfe-selected' : 'gfe-notsel';
-            html += `<span class="${cls}" style="display:inline-block;margin:2px 4px;padding:3px 8px;border-radius:6px;border:1px solid #c7d2ea;background:${sel?'#eaf7ef':'#f7f8fb'}">`;
-            html += `x${sup(i)}·A = ${hex(v)}${sel ? ' ✓' : ''}`;
-            html += `</span>`;
+
+          /* ── xtime step k (1–7) ── */
+          function stepK(k){
+            var prev=gfChain[k-1], curr=gfChain[k];
+            var folds=!!(prev&0x80), s9=(prev<<1)&0x1FF, MOD9=0x11B;
+            var h='<div class="gm-step-card">';
+            h+='<p class="gm-step-heading">Step '+k+' — compute '+dl(k)+'·A = xtime('+dl(k-1)+'·A)</p>';
+            h+='<p class="gm-narr">Input: '+dl(k-1)+'·A = '+ph(prev)+' = <code>'+hx(prev)+'</code>. Multiply by x — shift every bit left.</p>';
+            if(!folds){
+              h+='<p class="gm-narr" style="background:#eafaf0;border:1px solid #b8dfc5;border-radius:8px;padding:8px 12px;color:#1a6030;margin-bottom:10px;">✓ Top bit is 0 — no x⁸ term created. Clean shift, no fold.</p>';
+              h+=grid(
+                bitRow(dl(k-1)+'·A (input)', prev, cNorm)+
+                bitRow(dl(k)+'·A (shifted)', curr, cNorm)
+              );
+            } else {
+              h+='<p class="gm-narr" style="background:#fff8f0;border:1px solid #e0c090;border-radius:8px;padding:8px 12px;color:#8a4000;margin-bottom:10px;">⚠ Top bit is 1 — shifting creates x⁸ (orange). XOR the modulus m(x) = 0x11B to fold it back.</p>';
+              h+=grid(
+                bitRow('After ×x (pre-fold)', s9, function(d,b){ return d===8?(b?'sc2-elim':'sc2-hi0'):(b?'sc2-lo1':'sc2-lo0'); })+
+                bitRow('XOR m(x) = 0x11B', MOD9, cXor)+
+                bitRow('Result', curr, cAfterFold(s9,curr))
+              );
+            }
+            h+=badge(k,(gfB>>k)&1);
+            h+='<p class="gm-narr" style="margin:8px 0 0;font-size:0.9rem;color:#555;">Value: '+ph(curr)+' = <code>'+hx(curr)+'</code></p>';
+            h+='</div>';
+            document.getElementById('gm-steps').innerHTML+=h;
+          }
+
+          /* ── accumulation ── */
+          function stepAcc(){
+            var sel=[], result=gfm(gfA,gfB);
+            for(var i=0;i<8;i++) if((gfB>>i)&1) sel.push(i);
+            var h='<div class="gm-step-card">';
+            h+='<p class="gm-step-heading">Step 8 — XOR the selected chain entries</p>';
+            h+='<p class="gm-narr">B = '+ph(gfB)+'. XOR the entries where B has a 1 bit: '+
+              (sel.length===0?'none (B = 0)':sel.map(function(k){return dl(k)+'·A = <code>'+hx(gfChain[k])+'</code>';}).join(', '))+'.</p>';
+            if(sel.length===0){
+              h+='<p class="gm-narr" style="font-weight:700;">B = 0 → result = 0x00.</p>';
+            } else {
+              var acc=0;
+              for(var si=0;si<sel.length;si++){
+                var k=sel[si], v=gfChain[k], after=acc^v;
+                h+='<div style="margin:12px 0;">';
+                h+='<div style="font-size:0.85rem;font-weight:700;color:#334e7d;margin-bottom:4px;">XOR in '+dl(k)+'·A = '+hx(v)+':</div>';
+                h+=grid(
+                  bitRow('Running total', acc, function(d,b){ return d===8?'sc2-hi0':(b?'sc2-kept1':'sc2-kept0'); })+
+                  bitRow('⊕ '+dl(k)+'·A', v, cXor)+
+                  bitRow('After XOR', after, cAfterXor(acc,v))
+                );
+                h+='</div>';
+                acc=after;
+              }
+            }
+            h+='<div class="gm-result-box">';
+            h+='<div style="font-size:0.9rem;margin-bottom:5px;">GF(2⁸) product</div>';
+            h+='<div style="font-size:1.2rem;font-weight:800;">'+hx(gfA)+' × '+hx(gfB)+' = <code style="color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;">'+hx(result)+'</code></div>';
+            h+='<div style="font-size:0.9rem;margin-top:5px;opacity:.85;">'+ph(result)+'</div>';
+            h+='</div></div>';
+            document.getElementById('gm-steps').innerHTML+=h;
+          }
+
+          /* ── controls ── */
+          function updateCtrl(){
+            var btn=document.getElementById('gm-btn-next');
+            document.getElementById('gm-controls').style.display='';
+            if(gfStep>=8){ btn.style.display='none'; }
+            else if(gfStep===7){ btn.innerHTML='Accumulate →'; btn.style.display=''; }
+            else { btn.innerHTML='Next: '+dl(gfStep+1)+'·A →'; btn.style.display=''; }
+          }
+
+          function scrollLast(){
+            setTimeout(function(){
+              var cards=document.querySelectorAll('.gm-step-card');
+              if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'nearest'});
+            },60);
+          }
+
+          /* ── public ── */
+          window.gmStart=function(){
+            var a=pb(document.getElementById('gm-a-in').value);
+            var b=pb(document.getElementById('gm-b-in').value);
+            if(a===null||b===null){
+              document.getElementById('gm-steps').innerHTML='<p style="color:#c00;font-weight:700;">Enter valid hex bytes (00–FF) for both A and B.</p>';
+              return;
+            }
+            gfA=a; gfB=b; gfChain=[gfA];
+            for(var i=1;i<8;i++) gfChain.push(xt(gfChain[i-1]));
+            gfStep=0;
+            renderBPanel(0); step0(); updateCtrl(); scrollLast();
+          };
+
+          window.gmNext=function(){
+            if(gfStep>=8) return;
+            gfStep++;
+            if(gfStep<=7){ renderBPanel(gfStep); stepK(gfStep); }
+            else { renderBPanel(-1); stepAcc(); }
+            updateCtrl(); scrollLast();
+          };
+
+          window.gmReset=function(){
+            gfA=0; gfB=0; gfChain=[]; gfStep=-1;
+            document.getElementById('gm-b-panel').style.display='none';
+            document.getElementById('gm-steps').innerHTML='';
+            document.getElementById('gm-controls').style.display='none';
+          };
+
+          window.gmLoad=function(a,b){
+            document.getElementById('gm-a-in').value=a.toString(16).toUpperCase().padStart(2,'0');
+            document.getElementById('gm-b-in').value=b.toString(16).toUpperCase().padStart(2,'0');
+            gmReset();
+          };
+
+          ['gm-a-in','gm-b-in'].forEach(function(id){
+            document.getElementById(id).addEventListener('keydown',function(e){ if(e.key==='Enter') gmStart(); });
           });
-          html += `</div>`;
-          if (selected.length > 0) {
-            html += `<div class="gfe-step"><strong>XOR selected values:</strong><br>`;
-            html += selected.map(i => hex(chain[i])).join(' ⊕ ');
-            const result = gfMulFn(aVal, bVal);
-            html += ` = <strong>${hex(result)}</strong></div>`;
-            html += `<div class="gfe-step gfe-result">${hex(aVal)} × ${hex(bVal)} = ${hex(result)} in GF(2⁸)</div>`;
-          } else {
-            html += `<div class="gfe-step gfe-result">${hex(aVal)} × ${hex(bVal)} = 0x00 in GF(2⁸)</div>`;
-          }
-          out.innerHTML = html;
-          if (window.MathJax && typeof MathJax.typesetPromise === 'function') MathJax.typesetPromise([out]).catch(()=>{});
-        }
+
+        })();
         </script>
       </section>
 
