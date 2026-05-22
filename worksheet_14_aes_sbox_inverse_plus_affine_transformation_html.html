@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 14: The AES S-box — Inverse plus Affine Transformation | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { margin: 0.75in; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #1a5c2a, #2a8a4a);
+      border: 1px solid #1a5c2a;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      color: #ffffff;
+    }
+
+    header.worksheet-header .course-label,
+    header.worksheet-header .volume-label,
+    header.worksheet-header h1,
+    header.worksheet-header .subtitle {
+      color: #ffffff;
+    }
+
+    header.worksheet-header h1 { color: #ffffff; }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .workbook-nav .nav-link {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .workbook-nav .nav-link:hover { background: rgba(255,255,255,0.25); }
+
+    .workbook-nav .print-button {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0 28px;
+    }
+
+    .field-label { font-weight: 700; display: block; margin-bottom: 4px; }
+    .field-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1.5px solid #333;
+      font-size: 1rem;
+      padding: 4px 0;
+      background: transparent;
+      outline: none;
+    }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 16px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 800; color: #1f3763; margin-bottom: 8px; }
+
+    .ans-input {
+      border: none;
+      border-bottom: 1.5px solid #555;
+      width: 120px;
+      font-size: 1rem;
+      padding: 2px 4px;
+      background: transparent;
+      outline: none;
+      font-family: 'Cascadia Code', monospace;
+    }
+
+    .ans-input.ws-correct { border-color: #1a7a3a; background: #eafaf0; border-radius: 4px; }
+    .ans-input.ws-wrong   { border-color: #c0392b; background: #fdeaea; border-radius: 4px; }
+
+    .ans-input-sm {
+      border: none;
+      border-bottom: 1.5px solid #555;
+      width: 70px;
+      font-size: 1rem;
+      padding: 2px 4px;
+      background: transparent;
+      outline: none;
+      font-family: 'Cascadia Code', monospace;
+      text-align: center;
+    }
+    .ans-input-sm.ws-correct { border-color: #1a7a3a; background: #eafaf0; border-radius: 4px; }
+    .ans-input-sm.ws-wrong   { border-color: #c0392b; background: #fdeaea; border-radius: 4px; }
+
+    .ans-input-bit {
+      border: none;
+      border-bottom: 1.5px solid #555;
+      width: 38px;
+      font-size: 1rem;
+      padding: 2px 4px;
+      background: transparent;
+      outline: none;
+      font-family: 'Cascadia Code', monospace;
+      text-align: center;
+    }
+    .ans-input-bit.ws-correct { border-color: #1a7a3a; background: #eafaf0; border-radius: 4px; }
+    .ans-input-bit.ws-wrong   { border-color: #c0392b; background: #fdeaea; border-radius: 4px; }
+
+    .work-space {
+      border: 1px dashed #aaa;
+      border-radius: 8px;
+      min-height: 80px;
+      padding: 8px;
+      margin: 10px 0 6px;
+      background: #fffefe;
+    }
+
+    .work-space.lg { min-height: 120px; }
+    .work-space.xl { min-height: 160px; }
+
+    .write-wrap { position: relative; margin: 8px 0; }
+    .written-area { width: 100%; min-height: 80px; border: 1px dashed #aaa; border-radius: 8px; padding: 8px; font-size: 1rem; resize: vertical; }
+    .write-lines { display: none; }
+    .wl { display: block; height: 1.9em; border-bottom: 1px solid #888; }
+
+    .ws-score-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: #e8f6ec;
+      border: 1px solid #a8d8b8;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+    }
+
+    .ws-btn-check  { background: #1a5c2a; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+    .ws-btn-regen  { background: #2a8a4a; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+    .ws-btn-reset  { background: #e5e9f2; color: #334e7d; border: 1px solid #c7d2ea; border-radius: 8px; padding: 8px 18px; font-size: 0.97rem; cursor: pointer; }
+    #ws-score-display { font-weight: 700; font-size: 1rem; color: #1a5c2a; }
+
+    .answer-key { border-top: 4px double #2a8a4a; padding-top: 24px; margin-top: 40px; }
+    .answer-step { margin: 10px 0; padding-left: 14px; border-left: 4px solid #a8d8b8; }
+
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 0.95rem;
+    }
+    .ws-table th, .ws-table td {
+      border: 1px solid var(--border);
+      padding: 9px 11px;
+      vertical-align: middle;
+    }
+    .ws-table th {
+      background: #e8f6ec;
+      color: #1a5c2a;
+      text-align: left;
+    }
+    .ws-table td { text-align: center; }
+    .ws-table td:first-child { text-align: left; }
+
+    .special-row { background: #fff8e1; }
+
+    .bit-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    .bit-label {
+      font-family: 'Cascadia Code', monospace;
+      font-size: 0.9rem;
+      color: #555;
+      width: 36px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 760px) {
+      .student-info { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .no-print, .ws-score-bar, .workbook-nav { display: none !important; }
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      header.worksheet-header { background: #1a5c2a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .ans-input, .ans-input-sm, .ans-input-bit { border: none; border-bottom: 1.5px solid #333 !important; background: transparent !important; border-radius: 0 !important; }
+      .ans-input.ws-correct, .ans-input.ws-wrong,
+      .ans-input-sm.ws-correct, .ans-input-sm.ws-wrong,
+      .ans-input-bit.ws-correct, .ans-input-bit.ws-wrong { background: transparent !important; }
+      .answer-key { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 14</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>The AES S-box: Inverse plus Affine Transformation</h1>
+      <p class="subtitle">Two-stage mapping · Bit decomposition · Affine output bits · Special cases · Conceptual questions</p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a href="#part-a" class="nav-link">Part A</a>
+        <a href="#part-b" class="nav-link">Part B</a>
+        <a href="#part-c" class="nav-link">Part C</a>
+        <a href="#part-d" class="nav-link">Part D</a>
+        <a href="#part-e" class="nav-link">Part E</a>
+        <a href="#answer-key" class="nav-link">Answer Key</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">&#127968; Dashboard</a>
+        <button class="print-button" onclick="window.print()">&#128424; Print</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p style="margin:0;font-size:0.95rem;">Check your fill-in answers or reset.</p>
+        <span id="ws-score-display"></span>
+        <button class="ws-btn-check" onclick="wsCheckAll()">Check Answers</button>
+        <button class="ws-btn-regen" onclick="wsRegenerate()">Regenerate</button>
+        <button class="ws-btn-reset" onclick="wsReset()">Reset</button>
+      </div>
+
+      <div class="student-info">
+        <div>
+          <label class="field-label">Name:</label>
+          <input class="field-input" type="text" />
+        </div>
+        <div>
+          <label class="field-label">Date:</label>
+          <input class="field-input" type="text" />
+        </div>
+      </div>
+
+      <details class="no-print" style="background:#e8f6ec;border:1px solid #a8d8b8;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary style="font-weight:800;cursor:pointer;color:#1a5c2a;">Quick Reference — tap to expand</summary>
+        <div style="margin-top:10px;line-height:1.8;">
+          <strong>AES S-box construction (two stages):</strong>
+          <br>
+          <strong>Stage 1 — GF(2⁸) inverse:</strong> For \(a \ne \texttt{0x00}\), compute \(a^{-1}\) in \(\mathrm{GF}(2^8)\). By convention, \(\texttt{0x00}^{-1} = \texttt{0x00}\).
+          <br>
+          <strong>Stage 2 — Affine transformation:</strong> Let the bits of \(a^{-1}\) be \(b_0\ldots b_7\) (LSB first). Then:
+          \[s_i = b_i \oplus b_{(i+4)\%8} \oplus b_{(i+5)\%8} \oplus b_{(i+6)\%8} \oplus b_{(i+7)\%8} \oplus c_i\]
+          where the affine constant is \(\texttt{0x63}\), giving \((c_0,\ldots,c_7)=(1,1,0,0,0,1,1,0)\).
+          <br>
+          <strong>Key example:</strong> \(\texttt{0x53}^{-1}=\texttt{0xCA}\), \(\mathrm{SBox}(\texttt{0x53})=\texttt{0xED}\).
+          <br>
+          <strong>Special case:</strong> \(\mathrm{SBox}(\texttt{0x00})=\texttt{0x63}\) (because Stage 1 maps 0x00 to itself, and the affine constant alone gives 0x63).
+        </div>
+      </details>
+
+      <!-- Part A -->
+      <section id="part-a">
+        <h2>Part A — S-box two-stage mapping</h2>
+        <p>For each input byte, fill in the <strong>GF(2⁸) inverse</strong> (Stage 1) and then the final <strong>S-box output</strong> (Stage 2 — affine applied to the inverse). Give answers in hexadecimal (e.g. <code>0xCA</code>). The two shaded rows at the bottom are fixed special cases already filled in for reference.</p>
+
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Input \(a\)</th>
+              <th>Stage 1: \(a^{-1}\) in \(\mathrm{GF}(2^8)\)</th>
+              <th>Stage 2: S-box output</th>
+            </tr>
+          </thead>
+          <tbody id="part-a-tbody">
+            <!-- dynamic rows inserted by JS -->
+          </tbody>
+          <tbody>
+            <tr class="special-row">
+              <td>Fixed 1</td>
+              <td><code>0x00</code></td>
+              <td><code>0x00</code> <em>(by convention)</em></td>
+              <td><code>0x63</code></td>
+            </tr>
+            <tr class="special-row">
+              <td>Fixed 2</td>
+              <td><code>0x53</code></td>
+              <td><code>0xCA</code></td>
+              <td><code>0xED</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Part B -->
+      <section id="part-b">
+        <h2>Part B — Affine bit decomposition</h2>
+        <p>The inverse of \(\texttt{0x53}\) is \(\texttt{0xCA}\). Write out the individual bits of \(\texttt{0xCA}\) from \(b_0\) (LSB) to \(b_7\) (MSB). Enter <strong>0</strong> or <strong>1</strong> for each bit.</p>
+
+        <div class="problem">
+          <div class="problem-title">Bits of \(\texttt{0xCA}\) — \(b_i = \lfloor \texttt{0xCA} / 2^i \rfloor \bmod 2\)</div>
+          <p style="margin-bottom:10px;">
+            \(\texttt{0xCA} = 1100\,1010_2\) — confirm each bit below:
+          </p>
+          <div class="bit-row" id="bit-row-b">
+            <!-- generated by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Part C -->
+      <section id="part-c">
+        <h2>Part C — Compute two affine output bits</h2>
+        <p>Using the bits of \(\texttt{0xCA}\) from Part B and the affine constant \(\texttt{0x63}\) where \((c_0,c_1,\ldots)=(1,1,0,0,0,1,1,0)\), apply the affine formula to compute \(s_0\) and \(s_1\). Fill in only the numeric result (0 or 1).</p>
+
+        <div class="problem">
+          <div class="problem-title">C1. Compute \(s_0 = b_0 \oplus b_4 \oplus b_5 \oplus b_6 \oplus b_7 \oplus c_0\)</div>
+          <p>\(s_0 = 0 \oplus 0 \oplus 0 \oplus 1 \oplus 1 \oplus 1 = \)
+            <input class="ans-input-bit" data-answer="1" />
+          </p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Compute \(s_1 = b_1 \oplus b_5 \oplus b_6 \oplus b_7 \oplus b_0 \oplus c_1\)</div>
+          <p>\(s_1 = 1 \oplus 0 \oplus 1 \oplus 1 \oplus 0 \oplus 1 = \)
+            <input class="ans-input-bit" data-answer="0" />
+          </p>
+        </div>
+      </section>
+
+      <!-- Part D -->
+      <section id="part-d">
+        <h2>Part D — Special case: \(\texttt{0x00}\)</h2>
+
+        <div class="problem">
+          <div class="problem-title">D1. What is the inverse-step output for \(\texttt{0x00}\) in the AES S-box construction?</div>
+          <p>Stage 1 output: <input class="ans-input" data-answer="0x00|0x0|00|0" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. What is \(\mathrm{SBox}(\texttt{0x00})\)?</div>
+          <p>\(\mathrm{SBox}(\texttt{0x00}) = \) <input class="ans-input" data-answer="0x63|63" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. True or False: \(\texttt{0x00}\) is handled differently from all other bytes in Stage 1 of the S-box construction.</div>
+          <p><input class="ans-input" data-answer="true|True|TRUE" style="width:90px;" /></p>
+        </div>
+      </section>
+
+      <!-- Part E -->
+      <section id="part-e">
+        <h2>Part E — Conceptual short-answer questions</h2>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does the affine transformation use XOR, not ordinary addition?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Think about the field arithmetic used throughout AES…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. What is the affine constant and where does it appear in the S-box output?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Identify the constant value and describe its role in each output bit…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. Why is the AES S-box invertible? (Invertibility is required for AES decryption.)</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Consider what properties of both stages guarantee invertibility…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E4. Is the AES S-box just a random lookup table? Explain.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Describe the mathematical structure underlying the table…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Answer Key -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+        <div class="box" style="background:#e8f6ec;border:1px solid #a8d8b8;padding:14px 18px;border-radius:10px;margin-bottom:18px;">
+          <strong>Note:</strong> Written responses in Part E are not graded automatically — compare your explanations to the sample answers below.
+        </div>
+
+        <h3>Part A — S-box two-stage mapping</h3>
+        <div class="answer-step" id="ak-part-a"></div>
+
+        <h3>Part B — Affine bit decomposition</h3>
+        <div class="answer-step">
+          <p>\(\texttt{0xCA} = 1100\,1010_2\). Reading bits LSB first:</p>
+          <ul style="line-height:2.2;">
+            <li>\(b_0 = 0\), \(b_1 = 1\), \(b_2 = 0\), \(b_3 = 1\), \(b_4 = 0\), \(b_5 = 0\), \(b_6 = 1\), \(b_7 = 1\)</li>
+          </ul>
+        </div>
+
+        <h3>Part C — Affine output bits</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> \(s_0 = b_0 \oplus b_4 \oplus b_5 \oplus b_6 \oplus b_7 \oplus c_0 = 0\oplus 0\oplus 0\oplus 1\oplus 1\oplus 1 = \mathbf{1}\)</p>
+          <p><strong>C2.</strong> \(s_1 = b_1 \oplus b_5 \oplus b_6 \oplus b_7 \oplus b_0 \oplus c_1 = 1\oplus 0\oplus 1\oplus 1\oplus 0\oplus 1 = \mathbf{0}\)</p>
+          <p>These are the two LSBs of \(\texttt{0xED} = 1110\,1101_2\). &#10003;</p>
+        </div>
+
+        <h3>Part D — Special case 0x00</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> \(\texttt{0x00}\) — by convention, the inverse-step maps zero to zero.</p>
+          <p><strong>D2.</strong> \(\mathrm{SBox}(\texttt{0x00}) = \texttt{0x63}\). Applying the affine transformation to all-zero bits XORs only the constant bits of \(\texttt{0x63}\), yielding \(\texttt{0x63}\) directly.</p>
+          <p><strong>D3.</strong> <strong>True.</strong> Every other nonzero byte uses its genuine GF(2⁸) multiplicative inverse as Stage 1 input; \(\texttt{0x00}\) has no inverse and is mapped to itself by a special-case rule.</p>
+        </div>
+
+        <h3>Part E — Conceptual questions</h3>
+        <div class="answer-step">
+          <p><strong>E1 sample.</strong> AES operates entirely within \(\mathrm{GF}(2)\)-based arithmetic. In \(\mathrm{GF}(2)\) the only possible bit values are 0 and 1, and \(1+1=0\) — which is exactly XOR. Ordinary integer addition would produce carry bits (e.g. \(1+1=2\)), breaking the field structure. The affine transformation is defined over \(\mathrm{GF}(2)\), so XOR is the correct and only valid addition operation.</p>
+          <p><strong>E2 sample.</strong> The affine constant is \(\texttt{0x63}\), whose bits are \((c_0,\ldots,c_7)=(1,1,0,0,0,1,1,0)\). It is XORed into each output bit \(s_i\) as the final additive term. It ensures that the S-box has no fixed points at the all-zeros or all-ones positions that would otherwise simplify cryptanalysis. Concretely, \(\mathrm{SBox}(\texttt{0x00})=\texttt{0x63}\) arises entirely from this constant.</p>
+          <p><strong>E3 sample.</strong> Both stages of the S-box are individually invertible, so their composition is invertible. Stage 1 (GF(2⁸) inversion) is a bijection on \(\{0,\ldots,255\}\): every nonzero element has a unique inverse, and 0 maps to 0. Stage 2 (affine transformation) is an invertible linear map over \(\mathrm{GF}(2)\) — the 8×8 binary matrix used has full rank. Because both stages are bijections, the combined S-box is also a bijection, and AES decryption can apply the inverse S-box (InvSubBytes).</p>
+          <p><strong>E4 sample.</strong> No. The AES S-box has a precise algebraic construction: Stage 1 is multiplicative inversion in \(\mathrm{GF}(2^8)\), and Stage 2 is a specific affine transformation over \(\mathrm{GF}(2)\). The result happens to be representable as a 256-byte lookup table for efficiency, but the values are fully determined by the field arithmetic and the chosen constant \(\texttt{0x63}\). The algebraic structure is transparent and published in FIPS 197; it was deliberately chosen to resist differential and linear cryptanalysis while remaining efficient to implement.</p>
+        </div>
+      </section>
+
+      <p class="footer-note">Mathematics of Cryptography · Worksheet 14 · The AES S-box: Inverse plus Affine Transformation</p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_13_multiplicative_inverses_in_gf_2_8_html.html" class="nav-item">&#8592; Worksheet 13</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="worksheet_15_aes_key_schedule_html.html" class="nav-item">Worksheet 15 &#8594;</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_html.html" class="nav-item nav-secondary">Tutorial 14</a>
+          <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_workbook_html.html" class="nav-item nav-secondary">Practice 14</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+<script>
+// ── Write-lines generator ──────────────────────────────────────────────────
+document.querySelectorAll('.write-lines').forEach(function(wl) {
+  for (var i = 0; i < 3; i++) {
+    var s = document.createElement('span');
+    s.className = 'wl';
+    wl.appendChild(s);
+  }
+});
+
+// ── GF(2^8) helpers ───────────────────────────────────────────────────────
+function xt(a) { var s = (a << 1) & 0xFF; return (a & 0x80) ? (s ^ 0x1B) : s; }
+function gfm(a, b) { var r = 0, aa = a; for (var i = 0; i < 8; i++) { if ((b >> i) & 1) r ^= aa; aa = xt(aa); } return r; }
+function gfInv(a) { if (a === 0) return 0; for (var b = 1; b < 256; b++) { if (gfm(a, b) === 1) return b; } return 0; }
+var C63 = [1,1,0,0,0,1,1,0]; // bits of 0x63, index 0 = LSB
+function affine(inv) {
+  var b = [];
+  for (var i = 0; i < 8; i++) b.push((inv >> i) & 1);
+  var s = [];
+  for (var i = 0; i < 8; i++) {
+    s.push(b[i] ^ b[(i+4)%8] ^ b[(i+5)%8] ^ b[(i+6)%8] ^ b[(i+7)%8] ^ C63[i]);
+  }
+  return s;
+}
+function sboxOf(a) {
+  var inv = gfInv(a);
+  var s = affine(inv);
+  var v = 0;
+  for (var i = 0; i < 8; i++) v |= (s[i] << i);
+  return v;
+}
+function hx(v) { return '0x' + v.toString(16).toUpperCase().padStart(2, '0'); }
+function ansAttr(v) { var h = v.toString(16).toUpperCase().padStart(2, '0'); var l = h.toLowerCase(); return '0x' + h + '|0x' + l + '|' + h + '|' + l; }
+
+// ── Normalise for answer checking ─────────────────────────────────────────
+function normalise(s) {
+  return (s || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function wsCheckAll() {
+  var correct = 0, total = 0;
+  document.querySelectorAll('[data-answer]').forEach(function(inp) {
+    if (inp.tagName !== 'INPUT') return;
+    if (!inp.dataset.answer) return;
+    total++;
+    var accepted = inp.dataset.answer.split('|').map(function(a) { return normalise(a); });
+    var val = normalise(inp.value);
+    inp.classList.remove('ws-correct', 'ws-wrong');
+    if (accepted.includes(val)) {
+      inp.classList.add('ws-correct'); correct++;
+    } else {
+      inp.classList.add('ws-wrong');
+    }
+  });
+  document.getElementById('ws-score-display').textContent =
+    total ? 'Score: ' + correct + ' / ' + total : '';
+}
+
+function wsReset() {
+  document.querySelectorAll('[data-answer]').forEach(function(inp) {
+    if (inp.tagName !== 'INPUT') return;
+    inp.value = '';
+    inp.classList.remove('ws-correct', 'ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent = '';
+}
+
+// ── Random helper ─────────────────────────────────────────────────────────
+function pickDistinct(count, lo, hi, exclude) {
+  var pool = [];
+  for (var v = lo; v <= hi; v++) {
+    if (!exclude || exclude.indexOf(v) === -1) pool.push(v);
+  }
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+  return pool.slice(0, count);
+}
+
+// ── Main problem generator ────────────────────────────────────────────────
+function generateProblems() {
+
+  // ── Part A — S-box two-stage mapping ────────────────────────────────────
+  // Pick 4 random nonzero bytes, excluding 0x00 (0) and 0x53 (83)
+  var partA_bytes = pickDistinct(4, 1, 255, [0x53]);
+  var htmlA = '';
+  var akA = '<ul style="line-height:2.2;">';
+
+  partA_bytes.forEach(function(a, i) {
+    var inv = gfInv(a);
+    var sb  = sboxOf(a);
+    htmlA += '<tr>';
+    htmlA += '<td>A' + (i + 1) + '</td>';
+    htmlA += '<td><code>' + hx(a) + '</code></td>';
+    htmlA += '<td><input class="ans-input" data-answer="' + ansAttr(inv) + '" /></td>';
+    htmlA += '<td><input class="ans-input" data-answer="' + ansAttr(sb) + '" /></td>';
+    htmlA += '</tr>';
+    akA += '<li><strong>A' + (i + 1) + '.</strong> ' +
+           hx(a) + ': inverse = <strong>' + hx(inv) + '</strong>, S-box = <strong>' + hx(sb) + '</strong>.</li>';
+  });
+
+  akA += '</ul>';
+  document.getElementById('part-a-tbody').innerHTML = htmlA;
+  document.getElementById('ak-part-a').innerHTML = akA;
+
+  // ── Part B — Bit decomposition of 0xCA ──────────────────────────────────
+  // Fixed: 0xCA = 11001010 binary; bits LSB first: 0,1,0,1,0,0,1,1
+  var caBits = [0, 1, 0, 1, 0, 0, 1, 1];
+  var bitRowHtml = '';
+  for (var i = 0; i < 8; i++) {
+    bitRowHtml += '<span class="bit-label">b<sub>' + i + '</sub>=</span>';
+    bitRowHtml += '<input class="ans-input-bit" data-answer="' + caBits[i] + '" />';
+    if (i < 7) bitRowHtml += '<span style="color:#aaa;font-size:1.1rem;margin:0 2px;">,</span>';
+  }
+  document.getElementById('bit-row-b').innerHTML = bitRowHtml;
+
+  if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+    MathJax.typesetPromise([document.body]).catch(function() {});
+  }
+}
+
+// Generate on page load
+generateProblems();
+
+function wsRegenerate() {
+  generateProblems();
+  wsReset();
+}
+</script>
+</body>
+</html>

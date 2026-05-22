@@ -153,12 +153,25 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_13_multiplicative_inverses_in_gf_2_8_html.html">← Module 13</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_15_inverse_sbox_and_reversibility_html.html">Module 15 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
 
     <main>
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <ul>
+          <li>Describe the two-stage AES S-box construction: finite-field inverse followed by affine transformation.</li>
+          <li>Explain why <code>S-box(0x00) = 0x63</code>.</li>
+          <li>Apply the affine formula \(s_i = b_i \oplus b_{(i+4)\bmod 8} \oplus b_{(i+5)\bmod 8} \oplus b_{(i+6)\bmod 8} \oplus b_{(i+7)\bmod 8} \oplus c_i\) to compute each output bit.</li>
+          <li>Trace the full mapping <code>0x53 → 0xCA → 0xED</code>.</li>
+          <li>Explain why the S-box is a mathematical construction, not an arbitrary table.</li>
+        </ul>
+      </section>
+
       <section id="why-this-tutorial-exists">
         <h2>Why this tutorial exists</h2>
         <div class="box purpose-box">
@@ -556,6 +569,286 @@
           <p>
             A lookup table can store the answers, but the AES S-box is defined by a mathematical construction.</p>
         </div>
+      </section>
+
+      <section id="sbox-explorer" class="no-print">
+        <h2>Interactive: AES S-box step-through</h2>
+        <p>Enter any byte and step through both stages — the finite-field inverse and the affine transformation bit by bit — to see exactly how the S-box output is built.</p>
+
+        <style>
+          .sb-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
+          .sb-input-row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:16px; }
+          .sb-input-row label { display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px; color:#1f3763; }
+          .sb-hex-field { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:110px; }
+          .sb-btn-start  { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .sb-btn-next   { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .sb-btn-reset  { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
+          .sb-presets { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+          .sb-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
+          .sb-btn-preset:hover { background:#eef3ff; }
+
+          .sb-step-card { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:18px 22px; margin-bottom:14px; }
+          .sb-step-card.sb-start { border-color:#b0bcd4; background:#f4f6fb; }
+          .sb-step-card.sb-done  { border-color:#2a8a4a; background:#eafaf0; }
+          .sb-step-heading { font-size:1rem; font-weight:800; color:#1f3763; margin:0 0 10px; }
+          .sb-step-card.sb-done .sb-step-heading { color:#1a6a30; }
+          .sb-narr { font-size:0.93rem; line-height:1.65; color:#2a2a2a; margin:0 0 10px; }
+          .sb-narr code { background:#f0f0f0; border-radius:4px; padding:1px 5px; font-size:0.88rem; }
+
+          /* Byte cards for input/inverse/output display */
+          .sb-trio { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:10px; align-items:center; margin:14px 0; }
+          .sb-duo  { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin:14px 0; }
+          .sb-byte-card { border:1.5px solid #c7d2ea; border-radius:12px; padding:12px; text-align:center; background:#fff; }
+          .sb-byte-card.sb-inv-card { background:#eaf7ef; border-color:#b8dfc5; }
+          .sb-byte-card.sb-out-card { background:var(--purple-soft); border-color:#d8c8f5; }
+          .sb-byte-label { font-size:0.78rem; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+          .sb-byte-hex { font-family:'Cascadia Code','Consolas',monospace; font-size:1.5rem; font-weight:900; color:#1f3763; }
+          .sb-byte-bin { font-size:0.78rem; color:#888; margin-top:3px; font-family:'Cascadia Code','Consolas',monospace; }
+          .sb-arrow { font-size:1.6rem; color:#334e7d; font-weight:900; text-align:center; }
+
+          /* Bit row for displaying b₀…b₇ */
+          .sb-bit-row { display:flex; gap:4px; flex-wrap:nowrap; margin:10px 0 4px; overflow-x:auto; }
+          .sb-bit-cell { min-width:36px; height:52px; border:1.5px solid #c7d2ea; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+          .sb-bit-pos  { font-size:0.6rem; color:#888; margin-bottom:2px; }
+          .sb-bit-val  { font-weight:800; font-size:1rem; }
+          /* Bit cell colours */
+          .sb-bit-active1  { background:#e05800; color:#fff; border-color:#b03000; }   /* contributing, value 1 */
+          .sb-bit-active0  { background:#fff0d0; color:#8a4000; border-color:#e0b060; } /* contributing, value 0 */
+          .sb-bit-inactive1{ background:#2a5ab0; color:#fff; border-color:#1a3a80; }   /* not contributing, value 1 */
+          .sb-bit-inactive0{ background:#f5f7fc; color:#bbb; }                          /* not contributing, value 0 */
+          .sb-bit-const1   { background:#fff0a0; color:#5a4000; border-color:#d0c040; font-weight:900; } /* constant bit 1 */
+          .sb-bit-const0   { background:#fafafa; color:#ccc; }                          /* constant bit 0 */
+          .sb-bit-result1  { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .sb-bit-result0  { background:#fdeaea; color:#c04040; border-color:#e0a0a0; }
+
+          /* Formula row */
+          .sb-formula { background:#f7f8fc; border:1px solid #c7d2ea; border-radius:8px; padding:12px 14px; margin:10px 0; font-size:0.92rem; line-height:2; }
+          .sb-f-active1 { background:#e05800; color:#fff; padding:1px 5px; border-radius:4px; font-weight:800; }
+          .sb-f-active0 { background:#fff0d0; color:#8a4000; padding:1px 5px; border-radius:4px; font-weight:800; }
+          .sb-f-const   { background:#fff0a0; color:#5a4000; padding:1px 5px; border-radius:4px; font-weight:800; }
+          .sb-f-result  { font-weight:900; font-size:1.05rem; }
+
+          /* Output assembly row */
+          .sb-out-row { display:flex; gap:4px; flex-wrap:nowrap; margin:10px 0; overflow-x:auto; }
+
+          /* Result box */
+          .sb-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:12px; }
+          .sb-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+        </style>
+
+        <div class="sb-shell">
+          <div class="sb-input-row">
+            <div>
+              <label for="sb-in">Input byte (hex)</label>
+              <input class="sb-hex-field" id="sb-in" type="text" value="53" maxlength="4" autocomplete="off">
+            </div>
+            <div class="sb-presets">
+              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Presets:</span>
+              <button class="sb-btn-preset" onclick="sbLoad(0x53)">0x53 → 0xED</button>
+              <button class="sb-btn-preset" onclick="sbLoad(0x00)">0x00 → 0x63</button>
+              <button class="sb-btn-preset" onclick="sbLoad(0x01)">0x01 → 0x7C</button>
+              <button class="sb-btn-preset" onclick="sbLoad(0x7C)">0x7C → 0x10</button>
+            </div>
+            <button class="sb-btn-start" onclick="sbStart()">Start →</button>
+          </div>
+
+          <div id="sb-steps"></div>
+          <div class="sb-controls" id="sb-controls" style="display:none;">
+            <button class="sb-btn-next" id="sb-btn-next" onclick="sbNext()">Next →</button>
+            <button class="sb-btn-reset" onclick="sbReset()">Reset</button>
+          </div>
+        </div>
+
+        <script>
+        (function(){
+          // ── state ──
+          var sbA=0, sbInv=0, sbBits=[], sbOutBits=[], sbStep=-1;
+          var C63=[1,1,0,0,0,1,1,0]; // c₀…c₇ for 0x63, index 0=LSB
+
+          // ── math ──
+          function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+          function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xt(aa);} return r; }
+          function gfInv(a){ if(a===0)return 0; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return 0; }
+          function pb(s){ s=s.trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
+          function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+          function toBin(v){ var b=v.toString(2).padStart(8,'0'); return b.slice(0,4)+' '+b.slice(4); }
+          function getB(v){ var b=[]; for(var i=0;i<8;i++) b.push((v>>i)&1); return b; }
+          function bitsToVal(bits){ var v=0; for(var i=0;i<8;i++) v|=(bits[i]<<i); return v; }
+
+          // ── bit row renderer ──
+          // bits: array [b₀…b₇], active: array of bit indices that contribute, isConst: bool
+          function bitRow(bits, active, label, isConst){
+            var h='';
+            if(label) h+='<div style="font-size:0.8rem;font-weight:700;color:#555;margin-bottom:4px;">'+label+'</div>';
+            h+='<div class="sb-bit-row">';
+            // Show b₀ to b₇ left-to-right (LSB first, matching the formula)
+            for(var i=0;i<8;i++){
+              var bit=bits[i], cls;
+              if(isConst){ cls=bit?'sb-bit-const1':'sb-bit-const0'; }
+              else if(active && active.indexOf(i)>=0){ cls=bit?'sb-bit-active1':'sb-bit-active0'; }
+              else { cls=bit?'sb-bit-inactive1':'sb-bit-inactive0'; }
+              h+='<div class="sb-bit-cell '+cls+'">';
+              h+='<div class="sb-bit-pos">b<sub>'+i+'</sub></div>';
+              h+='<div class="sb-bit-val">'+bit+'</div>';
+              h+='</div>';
+            }
+            h+='</div>';
+            return h;
+          }
+
+          // ── step 0: input + inverse ──
+          function step0(){
+            var binA=toBin(sbA), binInv=toBin(sbInv);
+            var b=sbBits;
+            var h='<div class="sb-step-card sb-start">';
+            h+='<p class="sb-step-heading">Computing S-box('+hx(sbA)+') — two stages</p>';
+            h+='<p class="sb-narr">Stage 1: find the finite-field inverse in GF(2⁸).<br>Stage 2: apply the affine transformation to the inverse bits, one output bit at a time.</p>';
+            h+='</div>';
+
+            h+='<div class="sb-step-card">';
+            h+='<p class="sb-step-heading">Stage 1 — Finite-field inverse</p>';
+            if(sbA===0){
+              h+='<p class="sb-narr"><code>0x00</code> has no multiplicative inverse. AES defines the inverse-step output for zero as <code>0x00</code>. Every bit bᵢ entering the affine transformation is 0.</p>';
+            } else {
+              h+='<p class="sb-narr">Find the byte b such that '+hx(sbA)+' × b ≡ 1 (mod AES modulus). Result: '+hx(sbA)+'⁻¹ = <strong>'+hx(sbInv)+'</strong>.</p>';
+            }
+            h+='<div class="sb-duo">';
+            h+='<div class="sb-byte-card"><div class="sb-byte-label">Input byte</div><div class="sb-byte-hex">'+hx(sbA)+'</div><div class="sb-byte-bin">'+binA+'</div></div>';
+            h+='<div class="sb-arrow">→</div>';
+            h+='<div class="sb-byte-card sb-inv-card"><div class="sb-byte-label">Inverse ('+hx(sbInv)+')</div><div class="sb-byte-hex">'+hx(sbInv)+'</div><div class="sb-byte-bin">'+binInv+'</div></div>';
+            h+='</div>';
+            h+='<p class="sb-narr" style="margin-top:8px;color:#555;font-size:0.9rem;">The inverse bits b₀…b₇ (LSB → MSB) feed into Stage 2:</p>';
+            h+=bitRow(b, [], 'Inverse bits — all non-contributing at this point', false);
+            h+='</div>';
+
+            document.getElementById('sb-steps').innerHTML=h;
+          }
+
+          // ── affine step for output bit i ──
+          function stepAffine(i){
+            var b=sbBits;
+            var active=[i,(i+4)%8,(i+5)%8,(i+6)%8,(i+7)%8];
+            var ci=C63[i];
+            var xorTerms=active.map(function(j){return b[j];});
+            var si=xorTerms[0]^xorTerms[1]^xorTerms[2]^xorTerms[3]^xorTerms[4]^ci;
+            sbOutBits[i]=si;
+
+            var h='<div class="sb-step-card">';
+            h+='<p class="sb-step-heading">Stage 2 — Affine step: compute output bit s<sub>'+i+'</sub></p>';
+            h+='<p class="sb-narr">Formula: s<sub>'+i+'</sub> = b<sub>'+i+'</sub> ⊕ b<sub>'+(i+4)%8+'</sub> ⊕ b<sub>'+(i+5)%8+'</sub> ⊕ b<sub>'+(i+6)%8+'</sub> ⊕ b<sub>'+(i+7)%8+'</sub> ⊕ c<sub>'+i+'</sub></p>';
+
+            // Inverse bits with contributing ones highlighted
+            h+=bitRow(b, active, 'Inverse bits — orange = contributing to s<sub>'+i+'</sub>', false);
+
+            // Constant bit row
+            h+=bitRow(C63, [i], 'Constant 0x63 bits — yellow = c<sub>'+i+'</sub>', true);
+
+            // Formula expansion
+            h+='<div class="sb-formula">';
+            h+='s<sub>'+i+'</sub> = ';
+            var pieces=[];
+            active.forEach(function(j){
+              var cls=b[j]?'sb-f-active1':'sb-f-active0';
+              pieces.push('<span class="'+cls+'">b<sub>'+j+'</sub>='+b[j]+'</span>');
+            });
+            pieces.push('<span class="sb-f-const">c<sub>'+i+'</sub>='+ci+'</span>');
+            h+=pieces.join(' ⊕ ');
+            h+=' = '+xorTerms.concat([ci]).join(' ⊕ ')+' = ';
+            h+='<span class="sb-f-result '+(si?'sb-bit-result1':'sb-bit-result0')+'" style="padding:2px 8px;border-radius:5px;">&nbsp;'+si+'&nbsp;</span>';
+            h+='</div>';
+
+            // Accumulated output bits so far
+            h+='<div style="margin-top:10px;">';
+            h+='<div style="font-size:0.8rem;font-weight:700;color:#555;margin-bottom:4px;">Output bits collected so far (s₀ to s<sub>'+i+'</sub>, LSB first):</div>';
+            h+='<div class="sb-out-row">';
+            for(var j=0;j<8;j++){
+              var filled=(j<=i);
+              var cls=filled?(sbOutBits[j]?'sb-bit-result1':'sb-bit-result0'):'sb-bit-inactive0';
+              var val=filled?sbOutBits[j]:'·';
+              h+='<div class="sb-bit-cell '+cls+'"><div class="sb-bit-pos">s<sub>'+j+'</sub></div><div class="sb-bit-val">'+val+'</div></div>';
+            }
+            h+='</div>';
+            if(i===7){
+              var outVal=bitsToVal(sbOutBits);
+              h+='<p style="margin:8px 0 0;font-size:0.95rem;font-weight:700;color:#1f3763;">All 8 output bits assembled → <code>'+hx(outVal)+'</code></p>';
+            }
+            h+='</div>';
+            h+='</div>';
+
+            document.getElementById('sb-steps').innerHTML+=h;
+          }
+
+          // ── final summary ──
+          function stepFinal(){
+            var outVal=bitsToVal(sbOutBits);
+            var binOut=toBin(outVal);
+            var h='<div class="sb-step-card sb-done">';
+            h+='<p class="sb-step-heading">S-box complete</p>';
+            h+='<div class="sb-trio">';
+            h+='<div class="sb-byte-card"><div class="sb-byte-label">Input</div><div class="sb-byte-hex">'+hx(sbA)+'</div><div class="sb-byte-bin">'+toBin(sbA)+'</div></div>';
+            h+='<div class="sb-arrow">→<br><span style="font-size:0.7rem;font-weight:700;">Stage 1</span></div>';
+            h+='<div class="sb-byte-card sb-inv-card"><div class="sb-byte-label">Inverse</div><div class="sb-byte-hex">'+hx(sbInv)+'</div><div class="sb-byte-bin">'+toBin(sbInv)+'</div></div>';
+            h+='<div class="sb-arrow">→<br><span style="font-size:0.7rem;font-weight:700;">Stage 2</span></div>';
+            h+='<div class="sb-byte-card sb-out-card"><div class="sb-byte-label">S-box output</div><div class="sb-byte-hex">'+hx(outVal)+'</div><div class="sb-byte-bin">'+binOut+'</div></div>';
+            h+='</div>';
+            h+='<div class="sb-result-box">';
+            h+='<div style="font-size:0.9rem;margin-bottom:4px;">AES S-box result</div>';
+            h+='<div style="font-size:1.2rem;font-weight:800;">S-box('+hx(sbA)+') = <code style="color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;">'+hx(outVal)+'</code></div>';
+            h+='</div>';
+            h+='</div>';
+            document.getElementById('sb-steps').innerHTML+=h;
+          }
+
+          // ── controls ──
+          function updateCtrl(){
+            var btn=document.getElementById('sb-btn-next');
+            document.getElementById('sb-controls').style.display='';
+            if(sbStep>=9){ btn.style.display='none'; }
+            else if(sbStep>=1&&sbStep<=7){ btn.innerHTML='Next: s<sub>'+(sbStep)+'</sub> →'; btn.style.display=''; }
+            else if(sbStep===8){ btn.innerHTML='Finalise →'; btn.style.display=''; }
+            else { btn.innerHTML='Start Stage 2: s<sub>0</sub> →'; btn.style.display=''; }
+          }
+
+          function scrollLast(){
+            setTimeout(function(){
+              var cards=document.querySelectorAll('.sb-step-card');
+              if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'nearest'});
+            },60);
+          }
+
+          // ── public ──
+          window.sbStart=function(){
+            var a=pb(document.getElementById('sb-in').value);
+            if(a===null){
+              document.getElementById('sb-steps').innerHTML='<p style="color:#c00;font-weight:700;">Enter a valid hex byte (00–FF).</p>';
+              return;
+            }
+            sbA=a; sbInv=gfInv(a); sbBits=getB(sbInv); sbOutBits=[]; sbStep=0;
+            step0(); updateCtrl(); scrollLast();
+          };
+
+          window.sbNext=function(){
+            if(sbStep>=9) return;
+            sbStep++;
+            if(sbStep>=1&&sbStep<=8){ stepAffine(sbStep-1); }
+            else if(sbStep===9){ stepFinal(); }
+            updateCtrl(); scrollLast();
+          };
+
+          window.sbReset=function(){
+            sbA=0; sbInv=0; sbBits=[]; sbOutBits=[]; sbStep=-1;
+            document.getElementById('sb-steps').innerHTML='';
+            document.getElementById('sb-controls').style.display='none';
+          };
+
+          window.sbLoad=function(a){
+            document.getElementById('sb-in').value=a.toString(16).toUpperCase().padStart(2,'0');
+            sbReset();
+          };
+
+          document.getElementById('sb-in').addEventListener('keydown',function(e){ if(e.key==='Enter') sbStart(); });
+        })();
+        </script>
       </section>
 
       <section id="common-mistakes">
