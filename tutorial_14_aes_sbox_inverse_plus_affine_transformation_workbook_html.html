@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 14: The AES S-box | Mathematics of Cryptography</title>
+  <title>Practice 14: The AES S-box — Inverse plus Affine Transformation | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #fffdf4, #fdf3d0);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,615 +35,423 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .drill-section {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .drill-section h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
 
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .drill-card {
+      background: #f7f5ef;
+      border: 1px solid #dde3ee;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
 
-    .affine-box { background: var(--purple-soft); border-color: #d8c8f5; }
+    .drill-q {
+      font-size: 1.07rem;
+      min-height: 2.4em;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
 
-    .student-info {
+    .drill-hint {
+      font-size: 0.88rem;
+      color: #5a6a8a;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+
+    .drill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .drill-input {
+      font-size: 1rem;
+      padding: 7px 12px;
+      border: 1.5px solid #b0bcd4;
+      border-radius: 8px;
+      width: 200px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .drill-input.correct { border-color: #2a8a4a; background: #eafaf0; }
+    .drill-input.wrong   { border-color: #c0392b; background: #fdeaea; }
+
+    .drill-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-check { background: #334e7d; color: #fff; }
+    .btn-next  { background: #e5e9f2; color: #334e7d; border: 1px solid #c7d2ea; }
+
+    .drill-fb {
+      min-height: 1.4em;
+      font-weight: 700;
+      font-size: 0.97rem;
+      margin-top: 8px;
+    }
+    .drill-fb.ok  { color: #1a7a3a; }
+    .drill-fb.err { color: #b0192a; font-weight: 400; }
+
+    .drill-streak {
+      font-size: 0.82rem;
+      color: #7a8aaa;
+      margin-top: 4px;
+    }
+
+    .quick-ref summary {
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 10px 0;
+      color: var(--accent);
+    }
+
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      margin-top: 12px;
     }
 
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .bit-table,
-    .affine-table,
-    .sbox-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .bit-table th, .bit-table td,
-    .affine-table th, .affine-table td,
-    .sbox-table th, .sbox-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .bit-table th,
-    .affine-table th,
-    .sbox-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .bit-table th,
-    .bit-table td,
-    .affine-table th,
-    .affine-table td,
-    .sbox-table th,
-    .sbox-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
+    .qr-card {
+      background: #f0f4fb;
+      border: 1px solid #c7d2ea;
       border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
+      padding: 12px 14px;
+      font-size: 0.93rem;
     }
 
-    .large-work-space { min-height: 150px; }
-
-    .extra-large-work-space { min-height: 230px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
-    }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
+    .qr-card strong { display: block; margin-bottom: 5px; color: #1f3763; }
 
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
-      .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .bit-table th,
-      .affine-table th,
-      .sbox-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      @page { margin: 0.75in; }
+      .no-print, .workbook-nav { display: none !important; }
+      .drill-section { display: none !important; }
+      .quick-ref { display: block !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 14</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 14</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
-      <h1>The AES S-box: Inverse plus Affine Transformation</h1>
+      <h1>The AES S-box — Inverse plus Affine Transformation</h1>
       <p class="subtitle">
-        Printable practice for the two-stage AES S-box construction, special zero handling, bit ordering, and affine transformation reasoning.
+        Four drills: GF(2⁸) inverse (Stage 1) · full S-box pipeline · special and boundary cases · two-stage trace
       </p>
 
-      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
-        <a class="nav-link" href="#warm-up">Part A</a>
-        <a class="nav-link" href="#stage-practice">Part B</a>
-        <a class="nav-link" href="#zero-case">Part C</a>
-        <a class="nav-link" href="#bit-order">Part D</a>
-        <a class="nav-link" href="#affine-bit-practice">Part E</a>
-        <a class="nav-link" href="#answer-key">Answer Key</a>
-        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Practice navigation">
+        <a href="#d1-sec" class="nav-link">Drill 1</a>
+        <a href="#d2-sec" class="nav-link">Drill 2</a>
+        <a href="#d3-sec" class="nav-link">Drill 3</a>
+        <a href="#d4-sec" class="nav-link">Drill 4</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
+      <details class="quick-ref no-print" style="background:#f0f4fb;border:1px solid #c7d2ea;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <strong>S-box construction</strong>
+            Stage 1: find the \(\mathrm{GF}(2^8)\) inverse.<br>
+            Stage 2: apply the affine transformation.<br>
+            \(\mathrm{S}(a) = \mathrm{Affine}(a^{-1})\)
           </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
+          <div class="qr-card">
+            <strong>Special case: S-box(0x00) = 0x63</strong>
+            \(\texttt{0x00}\) has no inverse, so Stage 1 yields \(\texttt{0x00}\).<br>
+            XORing all-zero bits with constant \(\texttt{0x63}\) gives \(\texttt{0x63}\).
           </div>
+          <div class="qr-card">
+            <strong>Affine formula</strong>
+            \(s_i = b_i \oplus b_{(i+4)\%8} \oplus b_{(i+5)\%8} \oplus b_{(i+6)\%8} \oplus b_{(i+7)\%8} \oplus c_i\)<br>
+            where \(b\) is the inverse byte and \(c_i\) are bits of \(\texttt{0x63}\).
+          </div>
+          <div class="qr-card">
+            <strong>Affine constant: 0x63</strong>
+            \(\texttt{0x63} = 01100011_2\).<br>
+            It is XORed in at the end of the affine step (bit by bit via \(c_i\)).
+          </div>
+        </div>
+      </details>
+
+      <!-- Drill 1 -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — Stage 1: What is the \(\mathrm{GF}(2^8)\) inverse entering the affine step?</h2>
+        <p>Find the GF(2⁸) multiplicative inverse that feeds into Stage 2 of the S-box computation.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint" id="d1-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-in" type="text" placeholder="e.g. 0xCA or CA" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d1.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d1.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
       </section>
 
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Keep the two stages separate. First identify the finite-field inverse. Then apply or reason about the affine transformation. Watch bit order carefully: the affine formula uses bit 0 as the least significant bit.
-          </p>
+      <!-- Drill 2 -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — Full pipeline: What is S-box(\(a\))?</h2>
+        <p>Apply both stages: GF(2⁸) inverse (Stage 1) then affine transformation (Stage 2) to find the S-box output.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint" id="d2-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-in" type="text" placeholder="e.g. 0x7C or 7C" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d2.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d2.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
         </div>
       </section>
 
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">AES S-box construction</div>
-            <ol>
-              <li>Take the multiplicative inverse in \(\mathrm{GF}(2^8)\).</li>
-              <li>For <code>0x00</code>, use <code>0x00</code> as the inverse-step value.</li>
-              <li>Apply the affine transformation.</li>
-            </ol>
+      <!-- Drill 3 -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Special and boundary cases</h2>
+        <p>Compute S-box values for noteworthy inputs, including the FIPS 197 example and boundary bytes.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint" id="d3-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d3-in" type="text" placeholder="e.g. 0x63 or 63" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d3.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d3.next()">New Problem →</button>
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Affine formula</div>
-            <div class="math-display">
-              \[
-                s_i=b_i\oplus b_{(i+4)\bmod8}\oplus b_{(i+5)\bmod8}\oplus b_{(i+6)\bmod8}\oplus b_{(i+7)\bmod8}\oplus c_i
-              \]
-            </div>
-            <p>
-              The constant byte is <code>0x63</code>. Addition is XOR.
-            </p>
-          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
         </div>
       </section>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What is an S-box?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What are the two major stages of the AES S-box construction?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. What does “affine transformation” mean in friendly language?</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. What does \(\oplus\) mean in the affine formula?</div>
-          <span class="blank-line"></span>
+      <!-- Drill 4 -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Two-stage trace: given the inverse, what is the S-box output?</h2>
+        <p>The GF(2⁸) inverse is already provided. Apply only Stage 2 (the affine transformation) to get the S-box output.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint" id="d4-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-in" type="text" placeholder="e.g. 0xED or ED" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d4.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d4.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
         </div>
       </section>
 
-      <section id="stage-practice">
-        <h2>Part B: Two-stage mapping practice</h2>
-        <p>Fill in the missing stage or output.</p>
+      <p class="footer-note">Mathematics of Cryptography · Practice 14 · The AES S-box — Inverse plus Affine Transformation</p>
 
-        <table class="sbox-table">
-          <thead>
-            <tr><th>Problem</th><th>Input byte</th><th>Inverse step</th><th>Affine step / output</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td><code>0x00</code></td><td></td><td><code>0x63</code></td></tr>
-            <tr><td>B2</td><td><code>0x53</code></td><td><code>0xCA</code></td><td></td></tr>
-            <tr><td>B3</td><td><code>0x01</code></td><td></td><td><code>0x7C</code></td></tr>
-            <tr><td>B4</td><td><code>0x53</code></td><td></td><td><code>0xED</code></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="zero-case">
-        <h2>Part C: Special zero case</h2>
-
-        <div class="problem">
-          <div class="problem-title">C1. Why does AES not take a true multiplicative inverse of <code>0x00</code>?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Why does <code>S-box(0x00)</code> become <code>0x63</code>?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="bit-order">
-        <h2>Part D: Bit-order practice</h2>
-        <p>Remember: normal byte display usually lists bit 7 down to bit 0. The affine formula uses bit 0 up to bit 7.</p>
-
-        <div class="problem">
-          <div class="problem-title">D1. Fill in the bits of <code>0x63</code>.</div>
-          <table class="bit-table">
-            <thead>
-              <tr><th>Bit position</th><th>7</th><th>6</th><th>5</th><th>4</th><th>3</th><th>2</th><th>1</th><th>0</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Bit value</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D2. Fill in <code>0x63</code> from bit 0 up to bit 7.</div>
-          <table class="bit-table">
-            <thead>
-              <tr><th>Bit position</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>\(c_i\)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">D3. Fill in <code>0xCA</code> from bit 0 up to bit 7.</div>
-          <p><code>0xCA = 11001010₂</code></p>
-          <table class="bit-table">
-            <thead>
-              <tr><th>Bit position</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>\(b_i\)</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="affine-bit-practice">
-        <h2>Part E: Affine bit calculations</h2>
-        <p>Use the inverse byte <code>0xCA</code>, whose bit values from bit 0 to bit 7 are:</p>
-        <div class="math-display">
-          \[
-            b_0=0,\ b_1=1,\ b_2=0,\ b_3=1,\ b_4=0,\ b_5=0,\ b_6=1,\ b_7=1
-          \]
-        </div>
-        <p>Use <code>0x63</code>, whose constant bits from bit 0 to bit 7 are:</p>
-        <div class="math-display">
-          \[
-            c_0=1,\ c_1=1,\ c_2=0,\ c_3=0,\ c_4=0,\ c_5=1,\ c_6=1,\ c_7=0
-          \]
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E1. Compute \(s_0\).</div>
-          <div class="math-display">
-            \[
-              s_0=b_0\oplus b_4\oplus b_5\oplus b_6\oplus b_7\oplus c_0
-            \]
-          </div>
-          <div class="work-space"></div>
-          <p>Result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E2. Compute \(s_1\).</div>
-          <div class="math-display">
-            \[
-              s_1=b_1\oplus b_5\oplus b_6\oplus b_7\oplus b_0\oplus c_1
-            \]
-          </div>
-          <div class="work-space"></div>
-          <p>Result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E3. Compute \(s_2\).</div>
-          <div class="math-display">
-            \[
-              s_2=b_2\oplus b_6\oplus b_7\oplus b_0\oplus b_1\oplus c_2
-            \]
-          </div>
-          <div class="work-space"></div>
-          <p>Result:</p>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E4. Compute \(s_3\).</div>
-          <div class="math-display">
-            \[
-              s_3=b_3\oplus b_7\oplus b_0\oplus b_1\oplus b_2\oplus c_3
-            \]
-          </div>
-          <div class="work-space"></div>
-          <p>Result:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="complete-affine-output">
-        <h2>Part F: Complete the affine output for <code>0xCA</code></h2>
-        <p>Fill in the known results from the tutorial.</p>
-
-        <table class="affine-table">
-          <thead>
-            <tr><th>Output bit</th><th>\(s_0\)</th><th>\(s_1\)</th><th>\(s_2\)</th><th>\(s_3\)</th><th>\(s_4\)</th><th>\(s_5\)</th><th>\(s_6\)</th><th>\(s_7\)</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Bit value</td><td></td><td></td><td></td><td></td><td>0</td><td>1</td><td>1</td><td>1</td></tr>
-          </tbody>
-        </table>
-
-        <div class="problem">
-          <div class="problem-title">F1. Write the output bits from bit 0 to bit 7.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F2. Rewrite those bits as a normal byte from bit 7 down to bit 0.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">F3. Convert the normal byte to hex.</div>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="matrix-concept">
-        <h2>Part G: Matrix-view concept</h2>
-
-        <div class="problem">
-          <div class="problem-title">G1. What does the matrix form \(s=Ab+c\) mean in words?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">G2. Why is the affine transformation not simply “random bit shuffling”?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="concept-checks">
-        <h2>Part H: Concept checks</h2>
-
-        <div class="problem">
-          <div class="problem-title">H1. Why is the AES S-box not just a random lookup table?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Why does the inverse step provide nonlinearity?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H3. Why does AES apply the affine transformation after the inverse step?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>The AES S-box maps one byte to one byte.</td><td></td></tr>
-            <tr><td>The AES S-box is only the multiplicative inverse step.</td><td></td></tr>
-            <tr><td><code>0x00</code> has a true multiplicative inverse in \(\mathrm{GF}(2^8)\).</td><td></td></tr>
-            <tr><td>The affine transformation uses XOR operations over bits.</td><td></td></tr>
-            <tr><td><code>S-box(0x53) = 0xED</code>.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            The most important mental separation is this: the inverse step produces an intermediate byte, and the affine step produces the final S-box output.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> An S-box is a substitution box: a function or table that maps each input value to a replacement output value.</p>
-          <p><strong>A2.</strong> First, take the multiplicative inverse in \(\mathrm{GF}(2^8)\). Second, apply the affine transformation.</p>
-          <p><strong>A3.</strong> An affine transformation is a structured bit-mixing step followed by XOR with a fixed constant.</p>
-          <p><strong>A4.</strong> \(\oplus\) means XOR, or addition modulo 2.</p>
-        </div>
-
-        <h3>Part B: Two-stage mapping practice</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>Inverse step is <code>0x00</code>; affine output is <code>0x63</code>.</td></tr>
-            <tr><td>B2</td><td>Affine output is <code>0xED</code>.</td></tr>
-            <tr><td>B3</td><td>Inverse step is <code>0x01</code>.</td></tr>
-            <tr><td>B4</td><td>Inverse step is <code>0xCA</code>.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Special zero case</h3>
-        <div class="answer-step">
-          <p><strong>C1 sample answer.</strong> <code>0x00</code> has no true multiplicative inverse because zero times any byte is still zero.</p>
-          <p><strong>C2 sample answer.</strong> AES uses <code>0x00</code> as the inverse-step value for input <code>0x00</code>. Since all inverse bits are 0, the affine formula outputs only the constant bits, giving <code>0x63</code>.</p>
-        </div>
-
-        <h3>Part D: Bit-order practice</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td><code>0x63 = 01100011₂</code>, so bit 7 down to bit 0 is 0,1,1,0,0,0,1,1.</td></tr>
-            <tr><td>D2</td><td>Bit 0 up to bit 7 is 1,1,0,0,0,1,1,0.</td></tr>
-            <tr><td>D3</td><td><code>0xCA = 11001010₂</code>, so bit 0 up to bit 7 is 0,1,0,1,0,0,1,1.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part E: Affine bit calculations</h3>
-        <div class="answer-step">
-          <p><strong>E1.</strong></p>
-          <div class="math-display">
-            \[
-              s_0=0\oplus0\oplus0\oplus1\oplus1\oplus1=1
-            \]
-          </div>
-          <p><strong>E2.</strong></p>
-          <div class="math-display">
-            \[
-              s_1=1\oplus0\oplus1\oplus1\oplus0\oplus1=0
-            \]
-          </div>
-          <p><strong>E3.</strong></p>
-          <div class="math-display">
-            \[
-              s_2=0\oplus1\oplus1\oplus0\oplus1\oplus0=1
-            \]
-          </div>
-          <p><strong>E4.</strong></p>
-          <div class="math-display">
-            \[
-              s_3=1\oplus1\oplus0\oplus1\oplus0\oplus0=1
-            \]
-          </div>
-        </div>
-
-        <h3>Part F: Complete the affine output for <code>0xCA</code></h3>
-        <div class="answer-step">
-          <p><strong>F1.</strong> From bit 0 to bit 7:</p>
-          <div class="math-display">
-            \[
-              1,0,1,1,0,1,1,1
-            \]
-          </div>
-          <p><strong>F2.</strong> Normal byte display from bit 7 down to bit 0:</p>
-          <div class="math-display">
-            \[
-              11101101_2
-            \]
-          </div>
-          <p><strong>F3.</strong></p>
-          <div class="math-display">
-            \[
-              11101101_2=\texttt{0xED}
-            \]
-          </div>
-        </div>
-
-        <h3>Part G: Matrix-view concept</h3>
-        <div class="answer-step">
-          <p><strong>G1 sample answer.</strong> The inverse byte is treated as a bit vector. AES multiplies it by a fixed binary matrix, then XORs a fixed constant vector into the result.</p>
-          <p><strong>G2 sample answer.</strong> It is not random because the same fixed formula is used every time. It is a structured linear transformation plus a constant over \(\mathrm{GF}(2)\).</p>
-        </div>
-
-        <h3>Part H: Concept checks</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> The S-box can be stored as a lookup table, but its values come from a defined mathematical construction: finite-field inversion followed by an affine transformation.</p>
-          <p><strong>H2 sample answer.</strong> The inverse operation creates a complex, nonlinear relationship between input bits and output bits. It is not a simple XOR, shift, or linear mixing operation.</p>
-          <p><strong>H3 sample answer.</strong> The affine transformation reshapes the inverse result to avoid undesirable patterns and improve the cryptographic behavior of the S-box.</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>The AES S-box maps one byte to one byte.</td><td>True</td><td>It is an 8-bit substitution box.</td></tr>
-            <tr><td>The AES S-box is only the multiplicative inverse step.</td><td>False</td><td>It also includes the affine transformation.</td></tr>
-            <tr><td><code>0x00</code> has a true multiplicative inverse in \(\mathrm{GF}(2^8)\).</td><td>False</td><td>Zero has no multiplicative inverse.</td></tr>
-            <tr><td>The affine transformation uses XOR operations over bits.</td><td>True</td><td>It is performed over \(\mathrm{GF}(2)\).</td></tr>
-            <tr><td><code>S-box(0x53) = 0xED</code>.</td><td>True</td><td><code>0x53</code> inverses to <code>0xCA</code>, then affines to <code>0xED</code>.</td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 14: The AES S-box: Inverse plus Affine Transformation.
-      </p>
-
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_15_inverse_sbox_and_reversibility_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_workbook_html.html" class="nav-item">← Practice 13</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_15_aes_mixcolumns_workbook_html.html" class="nav-item">Practice 15 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_html.html" class="nav-item nav-secondary">Tutorial 14</a>
+          <a href="worksheet_14_aes_sbox_inverse_plus_affine_transformation_html.html" class="nav-item nav-secondary">Worksheet 14</a>
         </div>
-    </nav>
+      </nav>
     </main>
   </div>
+
+<script>
+// ── GF(2^8) helpers ────────────────────────────────────────────────────────
+function xtime(a){ const s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+function gfMul(a,b){ let r=0,aa=a; for(let i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xtime(aa);} return r; }
+
+// Build full inverse table at load time
+const INV = new Uint8Array(256);
+for(let a=1;a<256;a++) for(let b=1;b<256;b++) if(gfMul(a,b)===1){INV[a]=b;INV[b]=a;break;}
+
+// Affine transformation (Stage 2 of S-box)
+const C63 = [1,1,0,0,0,1,1,0]; // bits of 0x63, index 0 = LSB
+function affine(inv){
+  const b = [];
+  for(let i=0;i<8;i++) b.push((inv>>i)&1);
+  let v = 0;
+  for(let i=0;i<8;i++) v |= ((b[i]^b[(i+4)%8]^b[(i+5)%8]^b[(i+6)%8]^b[(i+7)%8]^C63[i])<<i);
+  return v;
+}
+
+// Build full S-box at load time
+const SBOX = new Uint8Array(256);
+for(let a=0;a<256;a++) SBOX[a]=affine(INV[a]);
+
+function hex2(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+function parseHexAnswer(s){ s=s.trim().replace(/^0x/i,''); if(!/^[0-9a-fA-F]{1,2}$/.test(s))return null; return parseInt(s,16); }
+
+// ── makeDrill engine ───────────────────────────────────────────────────────
+function makeDrill(cfg) {
+  let streak = 0, total = 0;
+  const qEl    = document.getElementById(cfg.qId);
+  const hintEl = document.getElementById(cfg.hintId);
+  const inEl   = document.getElementById(cfg.inId);
+  const fbEl   = document.getElementById(cfg.fbId);
+  const stEl   = document.getElementById(cfg.stId);
+
+  let currentData = null;
+
+  function render() {
+    currentData = cfg.gen();
+    qEl.innerHTML = currentData.q;
+    if (hintEl) hintEl.innerHTML = currentData.hint || '';
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([qEl, hintEl].filter(Boolean)).catch(() => {});
+    fbEl.textContent = '';
+    fbEl.className = 'drill-fb';
+    if (inEl) { inEl.value = ''; inEl.className = 'drill-input'; }
+    updateStreak();
+  }
+
+  function updateStreak() {
+    stEl.textContent = total ? `Streak: ${streak} / ${total}` : '';
+  }
+
+  function check() {
+    const raw = inEl ? inEl.value : null;
+    const result = cfg.check(raw, currentData);
+    total++;
+    if (result.correct) {
+      streak++;
+      fbEl.innerHTML = '✓ ' + (result.msg || 'Correct!');
+      fbEl.className = 'drill-fb ok';
+      if (inEl) inEl.className = 'drill-input correct';
+    } else {
+      streak = 0;
+      fbEl.innerHTML = '✗ ' + (result.msg || 'Not quite.');
+      fbEl.className = 'drill-fb err';
+      if (inEl) inEl.className = 'drill-input wrong';
+    }
+    updateStreak();
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([fbEl]).catch(() => {});
+  }
+
+  if (inEl) inEl.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+  render();
+  return { check, next: render };
+}
+
+// ── Drill 1: Stage 1 — GF(2^8) inverse entering the affine step ───────────
+const d1 = makeDrill({
+  qId: 'd1-q', hintId: 'd1-hint', inId: 'd1-in', fbId: 'd1-fb', stId: 'd1-streak',
+  gen() {
+    const a = Math.floor(Math.random() * 255) + 1; // 0x01–0xFF
+    const answer = INV[a];
+    return {
+      a, answer,
+      q: `When computing S-box(${hex2(a)}), Stage 1 finds the \\(\\mathrm{GF}(2^8)\\) inverse. What is that inverse?`,
+      hint: `Find b such that ${hex2(a)} \u00d7 b = 0x01 in \\(\\mathrm{GF}(2^8)\\). This is the input to Stage 2.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>CA</code> or <code>0xCA</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `${hex2(data.a)}\u207b\u00b9 = ${hex2(data.answer)}. This byte feeds into the affine transformation.` };
+    return { correct: false, msg: `Not quite. ${hex2(data.a)}\u207b\u00b9 = ${hex2(data.answer)}, since ${hex2(data.a)} \u00d7 ${hex2(data.answer)} = 0x01.` };
+  }
+});
+
+// ── Drill 2: full pipeline — S-box(a) ─────────────────────────────────────
+const d2 = makeDrill({
+  qId: 'd2-q', hintId: 'd2-hint', inId: 'd2-in', fbId: 'd2-fb', stId: 'd2-streak',
+  gen() {
+    const a = Math.floor(Math.random() * 256); // 0x00–0xFF
+    const answer = SBOX[a];
+    return {
+      a, answer,
+      q: `What is the AES S-box output for input ${hex2(a)}?`,
+      hint: `Stage 1: find inverse (use 0x00 \u2192 0x00 for zero). Stage 2: apply affine transformation.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>7C</code> or <code>0x7C</code>.' };
+    const inv = INV[data.a];
+    if (ans === data.answer) {
+      const note = (data.a === 0) ? ' [For 0x00: since inverse step gives 0x00, all bits are zero, so output = affine constant 0x63.]' : '';
+      return { correct: true, msg: `S-box(${hex2(data.a)}) = ${hex2(data.answer)}.${note}` };
+    }
+    return { correct: false, msg: `Not quite. Stage 1: ${hex2(data.a)}\u207b\u00b9 = ${hex2(inv)}. Stage 2: Affine(${hex2(inv)}) = ${hex2(data.answer)}.` };
+  }
+});
+
+// ── Drill 3: special and boundary cases ───────────────────────────────────
+const SPECIAL = [0x00, 0x01, 0x53, 0x7C, 0xFF, 0x02, 0xF0, 0xAB];
+
+const d3 = makeDrill({
+  qId: 'd3-q', hintId: 'd3-hint', inId: 'd3-in', fbId: 'd3-fb', stId: 'd3-streak',
+  gen() {
+    const a = SPECIAL[Math.floor(Math.random() * SPECIAL.length)];
+    const answer = SBOX[a];
+    const inv = INV[a];
+    let hint = `Stage 1: ${hex2(a)}\u207b\u00b9 = ${hex2(inv)}. Stage 2: Affine(${hex2(inv)}) = ${hex2(answer)}.`;
+    if (a === 0x00) hint = `0x00 has no inverse; AES uses 0x00 as the Stage 1 result. XORing all-zero bits with 0x63 gives 0x63.`;
+    return { a, answer, inv, hint, q: `What is S-box(${hex2(a)})?` };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>63</code> or <code>0x63</code>.' };
+    if (ans === data.answer) {
+      let msg = `S-box(${hex2(data.a)}) = ${hex2(data.answer)}.`;
+      if (data.a === 0x00) msg += ' 0x00 has no inverse, so AES uses 0x00 as the Stage 1 result. XORing all-zero bits with 0x63 gives 0x63.';
+      else if (data.a === 0x01) msg += ` 0x01\u207b\u00b9 = 0x01. Affine(0x01) = ${hex2(data.answer)}.`;
+      else if (data.a === 0x53) msg += ' The famous FIPS 197 example. 0x53\u207b\u00b9 = 0xCA, Affine(0xCA) = 0xED.';
+      return { correct: true, msg };
+    }
+    return { correct: false, msg: `Not quite. Stage 1: ${hex2(data.a)}\u207b\u00b9 = ${hex2(data.inv)}. Stage 2: Affine(${hex2(data.inv)}) = ${hex2(data.answer)}.` };
+  }
+});
+
+// ── Drill 4: two-stage trace — given inverse, find S-box output ───────────
+const d4 = makeDrill({
+  qId: 'd4-q', hintId: 'd4-hint', inId: 'd4-in', fbId: 'd4-fb', stId: 'd4-streak',
+  gen() {
+    const a = Math.floor(Math.random() * 255) + 1; // 0x01–0xFF
+    const inv = INV[a];
+    const out = SBOX[a];
+    return {
+      a, inv, out, answer: out,
+      q: `The \\(\\mathrm{GF}(2^8)\\) inverse of ${hex2(a)} is ${hex2(inv)}. What is S-box(${hex2(a)})?`,
+      hint: `The inverse ${hex2(inv)} is already found. Now apply the affine transformation to get the S-box output.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>ED</code> or <code>0xED</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `Affine(${hex2(data.inv)}) = ${hex2(data.out)} = S-box(${hex2(data.a)}).` };
+    return { correct: false, msg: `Not quite. Affine(${hex2(data.inv)}) = ${hex2(data.out)}.` };
+  }
+});
+</script>
 </body>
 </html>

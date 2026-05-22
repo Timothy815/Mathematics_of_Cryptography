@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Workbook 13: Multiplicative Inverses in GF(2^8) | Mathematics of Cryptography</title>
+  <title>Practice 13: Multiplicative Inverses in GF(2^8) | Mathematics of Cryptography</title>
 
   <script>
     window.MathJax = {
@@ -20,8 +20,8 @@
   <link rel="stylesheet" href="css/style.css">
   <style>
     header.workbook-header {
-      background: linear-gradient(135deg, #ffffff, #eef3ff);
-      border: 1px solid var(--border);
+      background: linear-gradient(135deg, #fffdf4, #fdf3d0);
+      border: 1px solid #e8dbbf;
       border-radius: var(--radius);
       padding: 36px;
       box-shadow: var(--shadow);
@@ -35,599 +35,405 @@
       margin: 22px 0 0;
     }
 
-    .directions-box { background: var(--accent-soft); border-color: #c7d2ea; }
+    .drill-section {
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 28px;
+    }
 
-    .quick-reference-box { background: var(--green-soft); border-color: #b8dfc5; }
+    .drill-section h2 {
+      margin-top: 0;
+      color: var(--accent);
+    }
 
-    .answer-key-box { background: var(--gold-soft); border-color: #ead399; }
+    .drill-card {
+      background: #f7f5ef;
+      border: 1px solid #dde3ee;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 16px;
+    }
 
-    .challenge-box { background: #f7f8fb; border-color: #ccd4e2; }
+    .drill-q {
+      font-size: 1.07rem;
+      min-height: 2.4em;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
 
-    .student-info {
+    .drill-hint {
+      font-size: 0.88rem;
+      color: #5a6a8a;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+
+    .drill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .drill-input {
+      font-size: 1rem;
+      padding: 7px 12px;
+      border: 1.5px solid #b0bcd4;
+      border-radius: 8px;
+      width: 200px;
+      font-family: 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    .drill-input.correct { border-color: #2a8a4a; background: #eafaf0; }
+    .drill-input.wrong   { border-color: #c0392b; background: #fdeaea; }
+
+    .drill-btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.97rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-check { background: #334e7d; color: #fff; }
+    .btn-next  { background: #e5e9f2; color: #334e7d; border: 1px solid #c7d2ea; }
+
+    .drill-fb {
+      min-height: 1.4em;
+      font-weight: 700;
+      font-size: 0.97rem;
+      margin-top: 8px;
+    }
+    .drill-fb.ok  { color: #1a7a3a; }
+    .drill-fb.err { color: #b0192a; font-weight: 400; }
+
+    .drill-streak {
+      font-size: 0.82rem;
+      color: #7a8aaa;
+      margin-top: 4px;
+    }
+
+    .quick-ref summary {
+      font-weight: 800;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 10px 0;
+      color: var(--accent);
+    }
+
+    .qr-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      margin: 20px 0;
+      margin-top: 12px;
     }
 
-    .field-line { border-bottom: 1.5px solid #333333; min-height: 32px; padding-top: 6px; }
-
-    .field-label { font-weight: 750; color: #333333; }
-
-    .reference-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .data-table,
-    .work-table,
-    .answer-table,
-    .inverse-table,
-    .verify-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 16px 0;
-      font-size: 0.95rem;
-    }
-
-    .data-table th, .data-table td,
-    .work-table th, .work-table td,
-    .answer-table th, .answer-table td,
-    .inverse-table th, .inverse-table td,
-    .verify-table th, .verify-table td {
-      border: 1px solid var(--border);
-      padding: 9px 10px;
-      vertical-align: top;
-    }
-
-    .data-table th,
-    .work-table th,
-    .answer-table th,
-    .inverse-table th,
-    .verify-table th {
-      background: #eef3ff;
-      color: #1f3763;
-      text-align: left;
-    }
-
-    .inverse-table th,
-    .inverse-table td,
-    .verify-table th,
-    .verify-table td { text-align: center; vertical-align: middle; }
-
-    .blank-line {
-      display: block;
-      border-bottom: 1.4px solid #333333;
-      min-height: 28px;
-      margin: 8px 0 12px;
-    }
-
-    .work-space {
-      border: 1px dashed #999999;
+    .qr-card {
+      background: #f0f4fb;
+      border: 1px solid #c7d2ea;
       border-radius: 10px;
-      min-height: 92px;
-      padding: 10px;
-      margin: 10px 0 18px;
-      background: #fffefe;
+      padding: 12px 14px;
+      font-size: 0.93rem;
     }
 
-    .large-work-space { min-height: 150px; }
-
-    .extra-large-work-space { min-height: 230px; }
-
-    .problem {
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin: 18px 0;
-      background: #ffffff;
-      break-inside: avoid;
-    }
-
-    .problem-title { font-weight: 900; color: #1f3763; margin-bottom: 8px; }
-
-    .answer-key {
-      border-top: 4px double #334e7d;
-      padding-top: 20px;
-    }
-
-    .answer-step {
-      margin: 10px 0;
-      padding-left: 14px;
-      border-left: 4px solid #c7d2ea;
-    }
-
-    @media (max-width: 760px) {
-      body { font-size: 16px; }
-      header.workbook-header, main { padding: 24px; }
-      .student-info, .reference-grid { grid-template-columns: 1fr; }
-    }
+    .qr-card strong { display: block; margin-bottom: 5px; color: #1f3763; }
 
     @media print {
-      @page { margin: 0.6in; }
-
-      body {
-        background: #ffffff;
-        color: #000000;
-        font-size: 10.5pt;
-        line-height: 1.35;
-      }
-
-      .page { max-width: none; padding: 0; }
-
-      header.workbook-header,
-      main {
-        box-shadow: none;
-        border: none;
-        border-radius: 0;
-        padding: 0;
-        background: #ffffff;
-      }
-
-      .workbook-nav,
-      .no-print { display: none !important; }
-
-      h1 { font-size: 22pt; }
-      h2 { font-size: 15pt; border-bottom: 1px solid #999999; break-after: avoid; }
-      h3 { font-size: 12pt; break-after: avoid; }
-
-      .box, .problem, table, .work-space { break-inside: avoid; }
-
-      .box, .problem, .work-space {
-        background: #ffffff !important;
-        border-color: #999999;
-      }
-
-      .data-table th,
-      .work-table th,
-      .answer-table th,
-      .inverse-table th,
-      .verify-table th {
-        background: #eeeeee !important;
-      }
-
-      a { color: #000000; text-decoration: none; }
+      @page { margin: 0.75in; }
+      .no-print, .workbook-nav { display: none !important; }
+      .drill-section { display: none !important; }
+      .quick-ref { display: block !important; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="workbook-header">
-      <div class="course-label">Mathematics of Cryptography · Workbook 13</div>
+      <div class="course-label">Mathematics of Cryptography · Practice 13</div>
       <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
       <h1>Multiplicative Inverses in \(\mathrm{GF}(2^8)\)</h1>
       <p class="subtitle">
-        Printable practice for inverse meaning, zero and identity cases, inverse verification, and the AES S-box connection.
+        Four drills: curated easy pairs · full random range · symmetry of inverse pairs · product of an inverse pair
       </p>
 
-      <nav class="workbook-nav no-print" aria-label="Workbook navigation">
-        <a class="nav-link" href="#warm-up">Part A</a>
-        <a class="nav-link" href="#notation-practice">Part B</a>
-        <a class="nav-link" href="#identity-zero">Part C</a>
-        <a class="nav-link" href="#known-inverse-pairs">Part D</a>
-        <a class="nav-link" href="#verify-02">Part E</a>
-        <a class="nav-link" href="#inverse-checking">Part F</a>
-        <a class="nav-link" href="#finding-methods">Part G</a>
-        <a class="nav-link" href="#aes-sbox-connection">Part H</a>
-        <a class="nav-link" href="#answer-key">Answer Key</a>
-        <a class="nav-link" href="index.html" style="margin-left:auto;">🏠 Dashboard</a>
-        <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
+      <nav class="workbook-nav no-print" aria-label="Practice navigation">
+        <a href="#d1-sec" class="nav-link">Drill 1</a>
+        <a href="#d2-sec" class="nav-link">Drill 2</a>
+        <a href="#d3-sec" class="nav-link">Drill 3</a>
+        <a href="#d4-sec" class="nav-link">Drill 4</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print</button>
       </nav>
     </header>
 
     <main>
-      <section id="student-info">
-        <div class="student-info">
-          <div>
-            <span class="field-label">Name:</span>
-            <div class="field-line"></div>
+      <details class="quick-ref no-print" style="background:#f0f4fb;border:1px solid #c7d2ea;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary>Quick Reference — tap to expand</summary>
+        <div class="qr-grid">
+          <div class="qr-card">
+            <strong>Inverse definition</strong>
+            \(a \times a^{-1} = \texttt{0x01}\) in \(\mathrm{GF}(2^8)\)<br>
+            Find \(b\) such that \(a \times b = \texttt{0x01}\).
           </div>
-          <div>
-            <span class="field-label">Date:</span>
-            <div class="field-line"></div>
+          <div class="qr-card">
+            <strong>The multiplicative identity</strong>
+            \(\texttt{0x01}\) is the identity: \(a \times \texttt{0x01} = a\) for all \(a\).<br>
+            Every nonzero element has a unique inverse.
           </div>
-        </div>
-      </section>
-
-      <section id="directions">
-        <h2>Directions</h2>
-        <div class="box directions-box">
-          <div class="box-title">How to use this workbook</div>
-          <p>
-            Remember that an inverse is checked by multiplication in \(\mathrm{GF}(2^8)\), not ordinary integer multiplication. A byte \(b\) is the inverse of byte \(a\) when their finite-field product is <code>0x01</code>.
-          </p>
-        </div>
-      </section>
-
-      <section id="quick-reference">
-        <h2>Quick reference</h2>
-        <div class="reference-grid">
-          <div class="box quick-reference-box">
-            <div class="box-title">Inverse definition</div>
-            <div class="math-display">
-              \[
-                a\cdot a^{-1}=1
-              \]
-              \[
-                a(x)b(x)\equiv1\pmod{x^8+x^4+x^3+x+1}
-              \]
-            </div>
-            <p>
-              In byte form, the identity value is <code>0x01</code>.
-            </p>
+          <div class="qr-card">
+            <strong>Special case: 0x00</strong>
+            \(\texttt{0x00}\) has <em>no</em> inverse.<br>
+            It is the additive identity, not invertible under multiplication.
           </div>
-
-          <div class="box quick-reference-box">
-            <div class="box-title">Important boundary</div>
-            <ul>
-              <li><code>0x00</code> has no multiplicative inverse.</li>
-              <li>Every nonzero byte has an inverse in AES's \(\mathrm{GF}(2^8)\).</li>
-              <li>The AES S-box uses the inverse step, then an affine transformation.</li>
-            </ul>
+          <div class="qr-card">
+            <strong>Symmetry of inverse pairs</strong>
+            If \(a^{-1} = b\), then \(b^{-1} = a\).<br>
+            \(a \times b = \texttt{0x01} \Leftrightarrow b \times a = \texttt{0x01}\).
           </div>
         </div>
-      </section>
+      </details>
 
-      <section id="warm-up">
-        <h2>Part A: Warm-up vocabulary</h2>
-
-        <div class="problem">
-          <div class="problem-title">A1. What is a multiplicative inverse in friendly language?</div>
-          <span class="blank-line"></span>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A2. What byte is the multiplicative identity in \(\mathrm{GF}(2^8)\)?</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A3. Which byte has no multiplicative inverse?</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">A4. Why should you not think of a byte inverse as an ordinary fraction?</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="notation-practice">
-        <h2>Part B: Inverse notation practice</h2>
-        <p>Interpret each statement.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Statement</th><th>Meaning</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>B1</td><td>\(a^{-1}=b\)</td><td></td></tr>
-            <tr><td>B2</td><td>\(a\cdot b=\texttt{0x01}\)</td><td></td></tr>
-            <tr><td>B3</td><td>\(\texttt{0x02}^{-1}=\texttt{0x8D}\)</td><td></td></tr>
-            <tr><td>B4</td><td>\(\texttt{0x53}^{-1}=\texttt{0xCA}\)</td><td></td></tr>
-            <tr><td>B5</td><td>\(\texttt{0x00}^{-1}\)</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="identity-zero">
-        <h2>Part C: Identity and zero cases</h2>
-
-        <div class="problem">
-          <div class="problem-title">C1. Explain why <code>0x01</code> is its own inverse.</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C2. Explain why <code>0x00</code> has no inverse.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">C3. Complete the sentence: Every nonzero byte has an inverse because AES uses a/an __________________ modulus polynomial.</div>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="known-inverse-pairs">
-        <h2>Part D: Known inverse pairs</h2>
-        <p>Use the table to answer the questions.</p>
-
-        <table class="inverse-table">
-          <thead>
-            <tr><th>Byte</th><th>Inverse</th><th>Check</th></tr>
-          </thead>
-          <tbody>
-            <tr><td><code>0x01</code></td><td><code>0x01</code></td><td><code>0x01 · 0x01 = 0x01</code></td></tr>
-            <tr><td><code>0x02</code></td><td><code>0x8D</code></td><td><code>0x02 · 0x8D = 0x01</code></td></tr>
-            <tr><td><code>0x53</code></td><td><code>0xCA</code></td><td><code>0x53 · 0xCA = 0x01</code></td></tr>
-            <tr><td><code>0x57</code></td><td><code>0xBF</code></td><td><code>0x57 · 0xBF = 0x01</code></td></tr>
-          </tbody>
-        </table>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Problem</th><th>Question</th><th>Answer</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>D1</td><td>What is the inverse of <code>0x02</code>?</td><td></td></tr>
-            <tr><td>D2</td><td>What is the inverse of <code>0x8D</code>?</td><td></td></tr>
-            <tr><td>D3</td><td>What is the inverse of <code>0x53</code>?</td><td></td></tr>
-            <tr><td>D4</td><td>What is the inverse of <code>0xCA</code>?</td><td></td></tr>
-            <tr><td>D5</td><td>What is the inverse of <code>0x57</code>?</td><td></td></tr>
-            <tr><td>D6</td><td>What is the inverse of <code>0xBF</code>?</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="verify-02">
-        <h2>Part E: Verify <code>0x02 · 0x8D = 0x01</code></h2>
-        <p>Use polynomial form to verify the inverse pair.</p>
-
-        <div class="problem">
-          <div class="problem-title">E1. Convert <code>0x8D</code> to polynomial form.</div>
-          <span class="blank-line"></span>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E2. Multiply that polynomial by \(x\), since <code>0x02</code> represents \(x\).</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">E3. Replace \(x^8\) using the AES rule and simplify.</div>
-          <p>Use \(x^8\equiv x^4+x^3+x+1\).</p>
-          <div class="work-space large-work-space"></div>
-          <p>Final result:</p>
-          <span class="blank-line"></span>
-        </div>
-      </section>
-
-      <section id="inverse-checking">
-        <h2>Part F: Inverse checking</h2>
-        <p>For each product, decide whether the candidate is an inverse.</p>
-
-        <table class="verify-table">
-          <thead>
-            <tr>
-              <th>Problem</th>
-              <th>Byte</th>
-              <th>Candidate inverse</th>
-              <th>Given product in \(\mathrm{GF}(2^8)\)</th>
-              <th>Is it an inverse?</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>F1</td><td><code>0x53</code></td><td><code>0xCA</code></td><td><code>0x01</code></td><td></td></tr>
-            <tr><td>F2</td><td><code>0x57</code></td><td><code>0xBF</code></td><td><code>0x01</code></td><td></td></tr>
-            <tr><td>F3</td><td><code>0x02</code></td><td><code>0x8D</code></td><td><code>0x01</code></td><td></td></tr>
-            <tr><td>F4</td><td><code>0x57</code></td><td><code>0x13</code></td><td><code>0xFE</code></td><td></td></tr>
-            <tr><td>F5</td><td><code>0x00</code></td><td><code>0x01</code></td><td><code>0x00</code></td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="finding-methods">
-        <h2>Part G: Methods for finding inverses</h2>
-        <p>Match each method with its description.</p>
-
-        <table class="work-table">
-          <thead>
-            <tr><th>Method</th><th>Description</th><th>Matching letter</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>G1. Brute force search</td><td></td><td></td></tr>
-            <tr><td>G2. Polynomial extended Euclidean algorithm</td><td></td><td></td></tr>
-            <tr><td>G3. Exponentiation</td><td></td><td></td></tr>
-            <tr><td>G4. Lookup table</td><td></td><td></td></tr>
-          </tbody>
-        </table>
-
-        <div class="box challenge-box">
-          <div class="box-title">Descriptions</div>
-          <p><strong>A.</strong> Precompute and store each byte's inverse.</p>
-          <p><strong>B.</strong> Try each nonzero byte until the product becomes <code>0x01</code>.</p>
-          <p><strong>C.</strong> Use a polynomial version of Bézout's identity to find the inverse.</p>
-          <p><strong>D.</strong> Use the finite-field fact that \(a^{-1}=a^{254}\) for nonzero bytes.</p>
-        </div>
-      </section>
-
-      <section id="aes-sbox-connection">
-        <h2>Part H: AES S-box connection</h2>
-
-        <div class="problem">
-          <div class="problem-title">H1. What are the two major stages of the AES S-box construction?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H2. Why is the inverse step considered nonlinear?</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">H3. The inverse of <code>0x53</code> is <code>0xCA</code>. The AES S-box output for <code>0x53</code> is <code>0xED</code>. What extra step happens after inversion?</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="concept-checks">
-        <h2>Part I: Concept checks</h2>
-
-        <div class="problem">
-          <div class="problem-title">I1. Explain the connection between irreducible polynomials and the existence of inverses.</div>
-          <div class="work-space large-work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">I2. Explain why inverse pairs are symmetric: if \(a^{-1}=b\), then \(b^{-1}=a\).</div>
-          <div class="work-space"></div>
-        </div>
-
-        <div class="problem">
-          <div class="problem-title">I3. Explain why checking an inverse requires finite-field multiplication.</div>
-          <div class="work-space"></div>
-        </div>
-      </section>
-
-      <section id="self-check">
-        <h2>Self-check</h2>
-        <table class="work-table">
-          <thead>
-            <tr><th>Statement</th><th>True or False?</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>The inverse of a nonzero byte is another byte that multiplies with it to produce <code>0x01</code>.</td><td></td></tr>
-            <tr><td><code>0x00</code> has a multiplicative inverse in \(\mathrm{GF}(2^8)\).</td><td></td></tr>
-            <tr><td>To verify an inverse, ordinary integer multiplication is enough.</td><td></td></tr>
-            <tr><td>The AES S-box uses the inverse step and then an affine transformation.</td><td></td></tr>
-            <tr><td>The polynomial extended Euclidean algorithm can be used to find inverses.</td><td></td></tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section id="answer-key" class="answer-key page-break">
-        <h2>Answer key with work steps</h2>
-        <div class="box answer-key-box">
-          <div class="box-title">Note for self-study</div>
-          <p>
-            The central test is simple: finite-field product equals <code>0x01</code>. The hard part is remembering that the multiplication must be \(\mathrm{GF}(2^8)\) multiplication, not ordinary multiplication.
-          </p>
-        </div>
-
-        <h3>Part A: Warm-up vocabulary</h3>
-        <div class="answer-step">
-          <p><strong>A1.</strong> A multiplicative inverse is the value that undoes multiplication by another value. In \(\mathrm{GF}(2^8)\), it is a byte that multiplies with another byte to give <code>0x01</code>.</p>
-          <p><strong>A2.</strong> <code>0x01</code>.</p>
-          <p><strong>A3.</strong> <code>0x00</code>.</p>
-          <p><strong>A4.</strong> A byte inverse is not a decimal fraction. It is another byte inside the finite field, and the multiplication uses polynomial multiplication plus AES reduction.</p>
-        </div>
-
-        <h3>Part B: Inverse notation practice</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Meaning</th></tr></thead>
-          <tbody>
-            <tr><td>B1</td><td>\(b\) is the inverse of \(a\).</td></tr>
-            <tr><td>B2</td><td>\(a\) and \(b\) are inverse partners if the product is in \(\mathrm{GF}(2^8)\).</td></tr>
-            <tr><td>B3</td><td><code>0x8D</code> is the inverse of <code>0x02</code>.</td></tr>
-            <tr><td>B4</td><td><code>0xCA</code> is the inverse of <code>0x53</code>.</td></tr>
-            <tr><td>B5</td><td>Undefined. <code>0x00</code> has no multiplicative inverse.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part C: Identity and zero cases</h3>
-        <div class="answer-step">
-          <p><strong>C1 sample answer.</strong> <code>0x01</code> is the multiplicative identity, so <code>0x01 · 0x01 = 0x01</code>. Therefore it is its own inverse.</p>
-          <p><strong>C2 sample answer.</strong> Zero times any byte is zero. Since <code>0x00 · b</code> can never equal <code>0x01</code>, zero has no multiplicative inverse.</p>
-          <p><strong>C3.</strong> Irreducible.</p>
-        </div>
-
-        <h3>Part D: Known inverse pairs</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Answer</th></tr></thead>
-          <tbody>
-            <tr><td>D1</td><td><code>0x8D</code></td></tr>
-            <tr><td>D2</td><td><code>0x02</code></td></tr>
-            <tr><td>D3</td><td><code>0xCA</code></td></tr>
-            <tr><td>D4</td><td><code>0x53</code></td></tr>
-            <tr><td>D5</td><td><code>0xBF</code></td></tr>
-            <tr><td>D6</td><td><code>0x57</code></td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part E: Verify <code>0x02 · 0x8D = 0x01</code></h3>
-        <div class="answer-step">
-          <p><strong>E1.</strong></p>
-          <div class="math-display">
-            \[
-              \texttt{0x8D}=10001101_2=x^7+x^3+x^2+1
-            \]
+      <!-- Drill 1 -->
+      <section class="drill-section" id="d1-sec">
+        <h2>Drill 1 — What is \(a^{-1}\)? (curated easy set)</h2>
+        <p>Each problem draws from a set of well-known inverse pairs. Find the multiplicative inverse in \(\mathrm{GF}(2^8)\).</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d1-q">Loading…</div>
+          <div class="drill-hint" id="d1-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d1-in" type="text" placeholder="e.g. 0x8D or 8D" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d1.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d1.next()">New Problem →</button>
           </div>
-          <p><strong>E2.</strong></p>
-          <div class="math-display">
-            \[
-              x(x^7+x^3+x^2+1)=x^8+x^4+x^3+x
-            \]
-          </div>
-          <p><strong>E3.</strong></p>
-          <div class="math-display">
-            \[
-              x^8\equiv x^4+x^3+x+1
-            \]
-            \[
-              x^8+x^4+x^3+x\equiv(x^4+x^3+x+1)+x^4+x^3+x=1
-            \]
-          </div>
-          <p>Final result: <code>0x01</code>.</p>
+          <div class="drill-fb" id="d1-fb"></div>
+          <div class="drill-streak" id="d1-streak"></div>
         </div>
-
-        <h3>Part F: Inverse checking</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Is it an inverse?</th><th>Reason</th></tr></thead>
-          <tbody>
-            <tr><td>F1</td><td>Yes</td><td>The finite-field product is <code>0x01</code>.</td></tr>
-            <tr><td>F2</td><td>Yes</td><td>The finite-field product is <code>0x01</code>.</td></tr>
-            <tr><td>F3</td><td>Yes</td><td>The finite-field product is <code>0x01</code>.</td></tr>
-            <tr><td>F4</td><td>No</td><td>The product is <code>0xFE</code>, not <code>0x01</code>.</td></tr>
-            <tr><td>F5</td><td>No</td><td>Zero has no inverse, and the product is <code>0x00</code>.</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part G: Methods for finding inverses</h3>
-        <table class="answer-table">
-          <thead><tr><th>Problem</th><th>Matching letter</th></tr></thead>
-          <tbody>
-            <tr><td>G1. Brute force search</td><td>B</td></tr>
-            <tr><td>G2. Polynomial extended Euclidean algorithm</td><td>C</td></tr>
-            <tr><td>G3. Exponentiation</td><td>D</td></tr>
-            <tr><td>G4. Lookup table</td><td>A</td></tr>
-          </tbody>
-        </table>
-
-        <h3>Part H: AES S-box connection</h3>
-        <div class="answer-step">
-          <p><strong>H1 sample answer.</strong> First AES takes the multiplicative inverse in \(\mathrm{GF}(2^8)\), with <code>0x00</code> handled specially. Then it applies an affine transformation.</p>
-          <p><strong>H2 sample answer.</strong> The inverse step is nonlinear because it does not behave like a simple XOR, shift, or linear bit-mixing operation. It creates a more complex relationship between input bits and output bits.</p>
-          <p><strong>H3 sample answer.</strong> AES applies an affine transformation after inversion.</p>
-        </div>
-
-        <h3>Part I: Concept checks</h3>
-        <div class="answer-step">
-          <p><strong>I1 sample answer.</strong> An irreducible modulus polynomial creates a field. In a field, every nonzero element has a multiplicative inverse.</p>
-          <p><strong>I2 sample answer.</strong> If \(a\cdot b=1\), then \(b\cdot a=1\) because multiplication in this field is commutative. Therefore each is the inverse of the other.</p>
-          <p><strong>I3 sample answer.</strong> The inverse relationship is defined inside \(\mathrm{GF}(2^8)\), so the product must be computed using finite-field multiplication and AES reduction.</p>
-        </div>
-
-        <h3>Self-check</h3>
-        <table class="answer-table">
-          <thead><tr><th>Statement</th><th>Answer</th><th>Why</th></tr></thead>
-          <tbody>
-            <tr><td>The inverse of a nonzero byte is another byte that multiplies with it to produce <code>0x01</code>.</td><td>True</td><td>That is the definition.</td></tr>
-            <tr><td><code>0x00</code> has a multiplicative inverse in \(\mathrm{GF}(2^8)\).</td><td>False</td><td>Zero has no multiplicative inverse.</td></tr>
-            <tr><td>To verify an inverse, ordinary integer multiplication is enough.</td><td>False</td><td>You must use finite-field multiplication.</td></tr>
-            <tr><td>The AES S-box uses the inverse step and then an affine transformation.</td><td>True</td><td>Those are the two major stages.</td></tr>
-            <tr><td>The polynomial extended Euclidean algorithm can be used to find inverses.</td><td>True</td><td>It finds polynomial Bézout coefficients.</td></tr>
-          </tbody>
-        </table>
       </section>
 
-      <p class="footer-note">
-        Mathematics of Cryptography workbook page. Paired with Tutorial 13: Multiplicative Inverses in GF(2^8).
-      </p>
+      <!-- Drill 2 -->
+      <section class="drill-section" id="d2-sec">
+        <h2>Drill 2 — What is \(a^{-1}\)? (full random range)</h2>
+        <p>Any nonzero byte may appear. Find its multiplicative inverse in \(\mathrm{GF}(2^8)\).</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d2-q">Loading…</div>
+          <div class="drill-hint" id="d2-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d2-in" type="text" placeholder="e.g. 0x3F or 3F" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d2.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d2.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d2-fb"></div>
+          <div class="drill-streak" id="d2-streak"></div>
+        </div>
+      </section>
 
-    <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+      <!-- Drill 3 -->
+      <section class="drill-section" id="d3-sec">
+        <h2>Drill 3 — Symmetry of inverse pairs</h2>
+        <p>Given that two bytes multiply to \(\texttt{0x01}\), identify the inverse using the symmetry property.</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d3-q">Loading…</div>
+          <div class="drill-hint" id="d3-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d3-in" type="text" placeholder="e.g. 0xCA or CA" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d3.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d3.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d3-fb"></div>
+          <div class="drill-streak" id="d3-streak"></div>
+        </div>
+      </section>
+
+      <!-- Drill 4 -->
+      <section class="drill-section" id="d4-sec">
+        <h2>Drill 4 — Identify the product of an inverse pair</h2>
+        <p>Two bytes form an inverse pair. What does their product equal in \(\mathrm{GF}(2^8)\)?</p>
+        <div class="drill-card">
+          <div class="drill-q" id="d4-q">Loading…</div>
+          <div class="drill-hint" id="d4-hint"></div>
+          <div class="drill-row">
+            <input class="drill-input" id="d4-in" type="text" placeholder="e.g. 0x01 or 01" autocomplete="off" />
+            <button class="drill-btn btn-check" onclick="d4.check()">Check</button>
+            <button class="drill-btn btn-next"  onclick="d4.next()">New Problem →</button>
+          </div>
+          <div class="drill-fb" id="d4-fb"></div>
+          <div class="drill-streak" id="d4-streak"></div>
+        </div>
+      </section>
+
+      <p class="footer-note">Mathematics of Cryptography · Practice 13 · Multiplicative Inverses in GF(2⁸)</p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
         <div class="nav-bundle">
-            <a href="tutorial_12_multiplication_in_gf_2_8_workbook_html.html" class="nav-item" id="prevLink">← Previous</a>
-            <a href="index.html" class="nav-item">🏠 Dashboard</a>
-            <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_workbook_html.html" class="nav-item" id="nextLink">Next →</a>
+          <a href="tutorial_12_multiplication_in_gf_2_8_workbook_html.html" class="nav-item">← Practice 12</a>
+          <a href="index.html" class="nav-item">🏠 Dashboard</a>
+          <a href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_workbook_html.html" class="nav-item">Practice 14 →</a>
         </div>
         <div class="nav-bundle">
-            <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_html.html" class="nav-item nav-secondary">Switch to Tutorial</a>
+          <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_html.html" class="nav-item nav-secondary">Tutorial 13</a>
+          <a href="worksheet_13_multiplicative_inverses_in_gf_2_8_html.html" class="nav-item nav-secondary">Worksheet 13</a>
         </div>
-    </nav>
+      </nav>
     </main>
   </div>
+
+<script>
+// ── GF(2^8) helpers ────────────────────────────────────────────────────────
+function xtime(a){ const s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+function gfMul(a,b){ let r=0,aa=a; for(let i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xtime(aa);} return r; }
+
+// Build full inverse table at load time
+const INV = new Uint8Array(256);
+for(let a=1;a<256;a++) for(let b=1;b<256;b++) if(gfMul(a,b)===1){INV[a]=b;INV[b]=a;break;}
+
+function hex2(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+function parseHexAnswer(s){ s=s.trim().replace(/^0x/i,''); if(!/^[0-9a-fA-F]{1,2}$/.test(s))return null; return parseInt(s,16); }
+
+// ── makeDrill engine ───────────────────────────────────────────────────────
+function makeDrill(cfg) {
+  let streak = 0, total = 0;
+  const qEl    = document.getElementById(cfg.qId);
+  const hintEl = document.getElementById(cfg.hintId);
+  const inEl   = document.getElementById(cfg.inId);
+  const fbEl   = document.getElementById(cfg.fbId);
+  const stEl   = document.getElementById(cfg.stId);
+
+  let currentData = null;
+
+  function render() {
+    currentData = cfg.gen();
+    qEl.innerHTML = currentData.q;
+    if (hintEl) hintEl.innerHTML = currentData.hint || '';
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([qEl, hintEl].filter(Boolean)).catch(() => {});
+    fbEl.textContent = '';
+    fbEl.className = 'drill-fb';
+    if (inEl) { inEl.value = ''; inEl.className = 'drill-input'; }
+    updateStreak();
+  }
+
+  function updateStreak() {
+    stEl.textContent = total ? `Streak: ${streak} / ${total}` : '';
+  }
+
+  function check() {
+    const raw = inEl ? inEl.value : null;
+    const result = cfg.check(raw, currentData);
+    total++;
+    if (result.correct) {
+      streak++;
+      fbEl.innerHTML = '✓ ' + (result.msg || 'Correct!');
+      fbEl.className = 'drill-fb ok';
+      if (inEl) inEl.className = 'drill-input correct';
+    } else {
+      streak = 0;
+      fbEl.innerHTML = '✗ ' + (result.msg || 'Not quite.');
+      fbEl.className = 'drill-fb err';
+      if (inEl) inEl.className = 'drill-input wrong';
+    }
+    updateStreak();
+    if (window.MathJax && typeof MathJax.typesetPromise === 'function')
+      MathJax.typesetPromise([fbEl]).catch(() => {});
+  }
+
+  if (inEl) inEl.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+
+  render();
+  return { check, next: render };
+}
+
+// ── Drill 1: curated easy/famous inverse pairs ─────────────────────────────
+const CURATED = [
+  [0x01, 0x01], [0x02, 0x8D], [0x03, 0xF6], [0x04, 0xC7],
+  [0x05, 0x52], [0x06, 0x7B], [0x09, 0x8F], [0x0A, 0x29],
+  [0x53, 0xCA], [0x57, 0xBF], [0x7C, 0x93], [0xFF, 0x1C]
+];
+
+const d1 = makeDrill({
+  qId: 'd1-q', hintId: 'd1-hint', inId: 'd1-in', fbId: 'd1-fb', stId: 'd1-streak',
+  gen() {
+    const pair = CURATED[Math.floor(Math.random() * CURATED.length)];
+    const a = pair[0], answer = pair[1];
+    return {
+      a, answer,
+      q: `What is the multiplicative inverse of ${hex2(a)} in \\(\\mathrm{GF}(2^8)\\)?`,
+      hint: `Find b such that ${hex2(a)} \u00d7 b = 0x01 in \\(\\mathrm{GF}(2^8)\\).`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>8D</code> or <code>0x8D</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `${hex2(data.a)} \u00d7 ${hex2(data.answer)} = 0x01 in \\(\\mathrm{GF}(2^8)\\).` };
+    return { correct: false, msg: `Not quite. The inverse of ${hex2(data.a)} is ${hex2(data.answer)}, since ${hex2(data.a)} \u00d7 ${hex2(data.answer)} = 0x01.` };
+  }
+});
+
+// ── Drill 2: full random range ─────────────────────────────────────────────
+const d2 = makeDrill({
+  qId: 'd2-q', hintId: 'd2-hint', inId: 'd2-in', fbId: 'd2-fb', stId: 'd2-streak',
+  gen() {
+    const a = Math.floor(Math.random() * 255) + 1; // 0x01–0xFF
+    const answer = INV[a];
+    return {
+      a, answer,
+      q: `What is the multiplicative inverse of ${hex2(a)} in \\(\\mathrm{GF}(2^8)\\)?`,
+      hint: `Use the fact that a \u00d7 a\u207b\u00b9 = 0x01.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>3F</code> or <code>0x3F</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `${hex2(data.a)} \u00d7 ${hex2(data.answer)} = 0x01 in \\(\\mathrm{GF}(2^8)\\).` };
+    return { correct: false, msg: `Not quite. The inverse of ${hex2(data.a)} is ${hex2(data.answer)}, since ${hex2(data.a)} \u00d7 ${hex2(data.answer)} = 0x01.` };
+  }
+});
+
+// ── Drill 3: symmetry of inverse pairs ────────────────────────────────────
+const d3 = makeDrill({
+  qId: 'd3-q', hintId: 'd3-hint', inId: 'd3-in', fbId: 'd3-fb', stId: 'd3-streak',
+  gen() {
+    // Pick a such that a !== INV[a] (avoid trivial self-inverse like 0x01)
+    let a;
+    do { a = Math.floor(Math.random() * 254) + 2; } while (INV[a] === a);
+    const b = INV[a];
+    // Given: a × b = 0x01. Question: what is b⁻¹? Answer: a (symmetry)
+    return {
+      a, b, answer: a,
+      q: `In \\(\\mathrm{GF}(2^8)\\), ${hex2(a)} \u00d7 ${hex2(b)} = 0x01. What is ${hex2(b)}<sup>\u22121</sup>?`,
+      hint: `If a \u00d7 b = 0x01, then b is the inverse of a. Inverse pairs are symmetric.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>CA</code> or <code>0xCA</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `Since ${hex2(data.a)} \u00d7 ${hex2(data.b)} = 0x01, each is the inverse of the other.` };
+    return { correct: false, msg: `Not quite. Since ${hex2(data.a)} \u00d7 ${hex2(data.b)} = 0x01, we have ${hex2(data.b)}<sup>\u22121</sup> = ${hex2(data.answer)}.` };
+  }
+});
+
+// ── Drill 4: product of an inverse pair ───────────────────────────────────
+const d4 = makeDrill({
+  qId: 'd4-q', hintId: 'd4-hint', inId: 'd4-in', fbId: 'd4-fb', stId: 'd4-streak',
+  gen() {
+    const a = Math.floor(Math.random() * 255) + 1; // 0x01–0xFF
+    const inv = INV[a];
+    return {
+      a, inv, answer: 0x01,
+      q: `What is ${hex2(a)} \u00d7 ${hex2(inv)} in \\(\\mathrm{GF}(2^8)\\)? (These bytes are an inverse pair.)`,
+      hint: `An inverse pair always multiplies to the multiplicative identity.`
+    };
+  },
+  check(raw, data) {
+    const ans = parseHexAnswer(raw);
+    if (ans === null) return { correct: false, msg: 'Could not parse. Enter hex like <code>01</code> or <code>0x01</code>.' };
+    if (ans === data.answer) return { correct: true, msg: `0x01 is the multiplicative identity. Any byte times its inverse gives 0x01.` };
+    return { correct: false, msg: `Not quite. Any byte multiplied by its inverse equals 0x01 by definition.` };
+  }
+});
+</script>
 </body>
 </html>
