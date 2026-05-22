@@ -341,38 +341,273 @@
         </table>
       </section>
 
-      <section id="inverse-explorer">
-        <h2>Interactive: inverse explorer</h2>
-        <p>
-          Enter any nonzero byte and the explorer will find its inverse by brute force, then verify the product.
-        </p>
+      <section id="inverse-explorer" class="no-print">
+        <h2>Interactive: inverse finder and verifier</h2>
+        <p>Enter any nonzero byte. The explorer finds its inverse by brute force, then steps through the full GF(2⁸) multiplication — bit grids, xtime chain, folding steps, and final accumulation — to confirm the product is <code>0x01</code>.</p>
 
-        <div class="diagram" style="max-width:600px;">
-          <div class="diagram-title">GF(2⁸) Inverse Explorer</div>
+        <style>
+          .gi-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
+          .gi-input-row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:16px; }
+          .gi-input-row label { display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px; color:#1f3763; }
+          .gi-hex-field { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:110px; }
+          .gi-btn-start  { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .gi-btn-next   { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .gi-btn-reset  { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
+          .gi-presets { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+          .gi-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
+          .gi-btn-preset:hover { background:#eef3ff; }
+          .gi-found-banner { background:#eaf7ef; border:1.5px solid #2a8a4a; border-radius:10px; padding:12px 18px; margin:12px 0; font-size:1rem; color:#1a5c2a; font-weight:700; }
+          .gi-b-panel { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:14px 18px; margin:14px 0; }
+          .gi-b-bits { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 6px; }
+          .gi-b-bit { width:38px; height:44px; border:1.5px solid #c7d2ea; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; flex-shrink:0; }
+          .gi-b-bit .gi-b-power { font-size:0.65rem; color:#888; margin-bottom:2px; }
+          .gi-b-bit .gi-b-val { font-weight:800; font-size:1rem; }
+          .gi-b-bit.gi-sel1 { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .gi-b-bit.gi-sel1 .gi-b-power { color:#a8e6b8; }
+          .gi-b-bit.gi-sel0 { background:#f5f7fc; color:#bbb; }
+          .gi-b-bit.gi-current { outline:3px solid #334e7d; outline-offset:1px; }
+          .gi-step-card { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:18px 22px; margin-bottom:14px; }
+          .gi-step-card.gi-start { border-color:#b0bcd4; background:#f4f6fb; }
+          .gi-step-card.gi-done  { border-color:#2a8a4a; background:#eafaf0; }
+          .gi-step-heading { font-size:1rem; font-weight:800; color:#1f3763; margin:0 0 10px; }
+          .gi-step-card.gi-done .gi-step-heading { color:#1a6a30; }
+          .gi-narr { font-size:0.93rem; line-height:1.65; color:#2a2a2a; margin:0 0 10px; }
+          .gi-narr code { background:#f0f0f0; border-radius:4px; padding:1px 5px; font-size:0.88rem; }
+          .gi-grid-wrap { overflow-x:auto; margin:10px 0 12px; }
+          .gi-grid { border-collapse:collapse; min-width:400px; }
+          .gi-grid td, .gi-grid th { text-align:center; padding:0; min-width:34px; }
+          .gi-row-lbl { font-size:0.75rem; font-weight:700; color:#444; text-align:right !important; padding-right:10px !important; white-space:nowrap; min-width:130px; }
+          .gi-deg { font-size:0.68rem; color:#666; padding:2px 1px 3px; font-weight:600; }
+          .gi-cell { width:34px; height:32px; border:1px solid #dde3ee; font-weight:800; font-size:0.95rem; line-height:32px; }
+          .gi-bdy { border-left:3px solid #334e7d !important; }
+          /* reuse sc2 colour classes */
+          .gi-elim   { background:#e05800; color:#fff; border-color:#b03000; }
+          .gi-hi1    { background:#ffd0a0; color:#7a2a00; border-color:#e0a060; }
+          .gi-hi0    { background:#fdf0e8; color:#caa080; }
+          .gi-lo1    { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .gi-lo0    { background:#f5f7fc; color:#bbb; }
+          .gi-xor1   { background:#fff0a0; color:#5a4000; border-color:#d0c040; font-weight:900; }
+          .gi-xor0   { background:#fafafa; color:#ccc; }
+          .gi-added  { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .gi-cancel { background:#fdeaea; color:#c04040; border-color:#e0a0a0; }
+          .gi-kept1  { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .gi-kept0  { background:#f5f7fc; color:#bbb; }
+          .gi-hi-gone{ background:#fdf0e8; color:#caa080; }
+          .gi-sel-badge { display:inline-flex; align-items:center; gap:7px; padding:7px 14px; border-radius:8px; font-size:0.9rem; font-weight:700; margin:10px 0; }
+          .gi-sel-badge.yes { background:#eafaf0; border:1.5px solid #2a8a4a; color:#1a6030; }
+          .gi-sel-badge.no  { background:#f5f5f5; border:1.5px solid #ccc; color:#888; }
+          .gi-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:12px; }
+          .gi-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+        </style>
 
-          <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-            <label style="font-weight:700;">Input byte (hex):</label>
-            <input id="inv-input" type="text" value="0x53" maxlength="4"
-              style="width:90px;padding:8px 10px;border:2px solid #334e7d;border-radius:8px;font-family:monospace;font-size:1rem;text-align:center;" />
-            <button onclick="invExplore()"
-              style="background:#334e7d;color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:0.97rem;font-weight:700;cursor:pointer;">
-              Find Inverse
-            </button>
-          </div>
-
-          <div id="inv-result" style="display:none;border-radius:12px;overflow:hidden;">
-            <div id="inv-result-row" style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:14px;">
-              <div id="inv-box-a" style="border:2px solid #c7d2ea;border-radius:12px;padding:12px;text-align:center;background:#fff;font-weight:900;"></div>
-              <div style="font-size:1.4rem;color:#334e7d;font-weight:900;text-align:center;">×</div>
-              <div id="inv-box-b" style="border:2px solid #c7d2ea;border-radius:12px;padding:12px;text-align:center;background:#fff;font-weight:900;"></div>
-              <div style="font-size:1.4rem;color:#334e7d;font-weight:900;text-align:center;">=</div>
-              <div style="border:2px solid #b8dfc5;border-radius:12px;padding:12px;text-align:center;background:#eaf7ef;font-weight:900;color:#1a5c2a;font-size:1.1rem;">0x01</div>
+        <div class="gi-shell">
+          <div class="gi-input-row">
+            <div>
+              <label for="gi-a-in">Byte A (hex)</label>
+              <input class="gi-hex-field" id="gi-a-in" type="text" value="53" maxlength="4" autocomplete="off">
             </div>
-            <div id="inv-detail" style="background:#f7f8fc;border:1px solid #c7d2ea;border-radius:10px;padding:14px;font-size:0.94rem;line-height:1.7;"></div>
+            <div class="gi-presets">
+              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Presets:</span>
+              <button class="gi-btn-preset" onclick="giLoad(0x53)">0x53</button>
+              <button class="gi-btn-preset" onclick="giLoad(0x02)">0x02</button>
+              <button class="gi-btn-preset" onclick="giLoad(0x57)">0x57</button>
+              <button class="gi-btn-preset" onclick="giLoad(0x01)">0x01</button>
+            </div>
+            <button class="gi-btn-start" onclick="giStart()">Find Inverse →</button>
           </div>
 
-          <div id="inv-error" style="display:none;color:#c04040;font-weight:700;padding:10px;"></div>
+          <div id="gi-found" style="display:none;" class="gi-found-banner"></div>
+          <div id="gi-b-panel" style="display:none;" class="gi-b-panel"></div>
+          <div id="gi-steps"></div>
+          <div class="gi-controls" id="gi-controls" style="display:none;">
+            <button class="gi-btn-next" id="gi-btn-next" onclick="giNext()">Next →</button>
+            <button class="gi-btn-reset" onclick="giReset()">Reset</button>
+          </div>
         </div>
+
+        <script>
+        (function(){
+          var giA=0, giInv=0, giChain=[], giStep=-1;
+
+          function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+          function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xt(aa);} return r; }
+          function gfInv(a){ if(a===0)return null; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return null; }
+          function pb(s){ s=s.trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
+          function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+          function dl(d){ return d===0?'1':d===1?'x':'x<sup>'+d+'</sup>'; }
+          function ph(v){ if(v===0)return '<em>0</em>'; var t=[]; for(var d=7;d>=0;d--)if((v>>d)&1)t.push(dl(d)); return t.join(' <span style="color:#888">+</span> '); }
+
+          function degRow(){
+            var h='<tr><td class="gi-row-lbl"></td>';
+            for(var d=8;d>=0;d--) h+='<th class="gi-deg'+(d===7?' gi-bdy':'')+'">'+dl(d)+'</th>';
+            return h+'</tr>';
+          }
+          function bitRow(lbl,val,cfn){
+            var h='<tr><td class="gi-row-lbl">'+lbl+'</td>';
+            for(var d=8;d>=0;d--){
+              var bit=(val>>d)&1, bdy=d===7?' gi-bdy':'';
+              h+='<td class="gi-cell '+cfn(d,bit)+bdy+'">'+bit+'</td>';
+            }
+            return h+'</tr>';
+          }
+          function grid(rows){ return '<div class="gi-grid-wrap"><table class="gi-grid"><tbody>'+degRow()+rows+'</tbody></table></div>'; }
+
+          function cNorm(d,b){ return d===8?(b?'gi-hi1':'gi-hi0'):(b?'gi-lo1':'gi-lo0'); }
+          function cXor(d,b){ return b?'gi-xor1':'gi-xor0'; }
+          function cAfterFold(s9,cur){ return function(d,b){ if(d===8)return 'gi-hi-gone'; var sb=(s9>>d)&1; if(sb===0&&b===1)return 'gi-added'; if(sb===1&&b===0)return 'gi-cancel'; return b?'gi-kept1':'gi-kept0'; }; }
+          function cAfterXor(acc,v){ return function(d,b){ if(d===8)return 'gi-hi0'; var ab=(acc>>d)&1, vb=(v>>d)&1; if(ab===0&&vb===1)return 'gi-added'; if(ab===1&&vb===1)return 'gi-cancel'; return b?'gi-kept1':'gi-kept0'; }; }
+
+          function renderBPanel(highlight){
+            var h='<div style="font-size:0.88rem;font-weight:700;color:#1f3763;margin-bottom:6px;">A⁻¹ = '+hx(giInv)+' = '+ph(giInv)+'</div>';
+            h+='<div style="font-size:0.82rem;color:#555;margin-bottom:8px;">Each bit of A⁻¹ tells us which xtime values to XOR together. Green = selected. Grey = skipped.</div>';
+            h+='<div class="gi-b-bits">';
+            for(var d=7;d>=0;d--){
+              var bit=(giInv>>d)&1, cls=bit?'gi-sel1':'gi-sel0', cur=d===highlight?' gi-current':'';
+              h+='<div class="gi-b-bit '+cls+cur+'"><div class="gi-b-power">'+dl(d)+'</div><div class="gi-b-val">'+bit+'</div></div>';
+            }
+            h+='</div>';
+            document.getElementById('gi-b-panel').innerHTML=h;
+            document.getElementById('gi-b-panel').style.display='';
+          }
+
+          function badge(k,bit){
+            return bit
+              ? '<div class="gi-sel-badge yes">✓ A⁻¹ bit '+k+' = 1 — <strong>'+dl(k)+'·A = '+hx(giChain[k])+' will be XOR\'d into the running total</strong></div>'
+              : '<div class="gi-sel-badge no">○ A⁻¹ bit '+k+' = 0 — '+dl(k)+'·A is skipped</div>';
+          }
+
+          function step0(){
+            var h='<div class="gi-step-card gi-start">';
+            h+='<p class="gi-step-heading">Verifying '+hx(giA)+' × '+hx(giInv)+' = 0x01 in GF(2⁸)</p>';
+            h+='<p class="gi-narr">A = '+ph(giA)+'<br>A⁻¹ = '+ph(giInv)+'<br><br>Build the xtime chain x⁰·A … x⁷·A, then XOR the entries selected by the bits of A⁻¹. The result must be <code>0x01</code> to confirm the inverse.</p>';
+            h+='</div>';
+            h+='<div class="gi-step-card">';
+            h+='<p class="gi-step-heading">Step 0 — x⁰·A = A (the starting value)</p>';
+            h+='<p class="gi-narr">x⁰ = 1, so x⁰·A = A. No xtime needed.</p>';
+            h+=grid(bitRow('x⁰·A = A', giA, cNorm));
+            h+=badge(0,(giInv>>0)&1);
+            h+='<p class="gi-narr" style="margin:8px 0 0;font-size:0.9rem;color:#555;">Value: '+ph(giA)+' = <code>'+hx(giA)+'</code></p>';
+            h+='</div>';
+            document.getElementById('gi-steps').innerHTML=h;
+          }
+
+          function stepK(k){
+            var prev=giChain[k-1], curr=giChain[k];
+            var folds=!!(prev&0x80), s9=(prev<<1)&0x1FF, MOD9=0x11B;
+            var h='<div class="gi-step-card">';
+            h+='<p class="gi-step-heading">Step '+k+' — compute '+dl(k)+'·A = xtime('+dl(k-1)+'·A)</p>';
+            h+='<p class="gi-narr">Input: '+dl(k-1)+'·A = '+ph(prev)+' = <code>'+hx(prev)+'</code>. Multiply by x — shift every bit left.</p>';
+            if(!folds){
+              h+='<p class="gi-narr" style="background:#eafaf0;border:1px solid #b8dfc5;border-radius:8px;padding:8px 12px;color:#1a6030;margin-bottom:10px;">✓ Top bit is 0 — no x⁸ term created. Clean shift, no fold needed.</p>';
+              h+=grid(
+                bitRow(dl(k-1)+'·A (input)', prev, cNorm)+
+                bitRow(dl(k)+'·A (shifted)', curr, cNorm)
+              );
+            } else {
+              h+='<p class="gi-narr" style="background:#fff8f0;border:1px solid #e0c090;border-radius:8px;padding:8px 12px;color:#8a4000;margin-bottom:10px;">⚠ Top bit is 1 — shifting creates x⁸ (orange). XOR the modulus m(x) = 0x11B to fold it back.</p>';
+              h+=grid(
+                bitRow('After ×x (pre-fold)', s9, function(d,b){ return d===8?(b?'gi-elim':'gi-hi0'):(b?'gi-lo1':'gi-lo0'); })+
+                bitRow('XOR m(x) = 0x11B', MOD9, cXor)+
+                bitRow('Result', curr, cAfterFold(s9,curr))
+              );
+            }
+            h+=badge(k,(giInv>>k)&1);
+            h+='<p class="gi-narr" style="margin:8px 0 0;font-size:0.9rem;color:#555;">Value: '+ph(curr)+' = <code>'+hx(curr)+'</code></p>';
+            h+='</div>';
+            document.getElementById('gi-steps').innerHTML+=h;
+          }
+
+          function stepAcc(){
+            var sel=[], result=gfm(giA,giInv);
+            for(var i=0;i<8;i++) if((giInv>>i)&1) sel.push(i);
+            var h='<div class="gi-step-card">';
+            h+='<p class="gi-step-heading">Final step — XOR the selected chain entries</p>';
+            h+='<p class="gi-narr">A⁻¹ = '+ph(giInv)+'. XOR the entries where A⁻¹ has a 1 bit: '+
+              (sel.length===0?'none':sel.map(function(k){return dl(k)+'·A = <code>'+hx(giChain[k])+'</code>';}).join(', '))+'.</p>';
+            var acc=0;
+            for(var si=0;si<sel.length;si++){
+              var k=sel[si], v=giChain[k], after=acc^v;
+              h+='<div style="margin:12px 0;">';
+              h+='<div style="font-size:0.85rem;font-weight:700;color:#334e7d;margin-bottom:4px;">XOR in '+dl(k)+'·A = '+hx(v)+':</div>';
+              h+=grid(
+                bitRow('Running total', acc, function(d,b){ return d===8?'gi-hi0':(b?'gi-kept1':'gi-kept0'); })+
+                bitRow('⊕ '+dl(k)+'·A', v, cXor)+
+                bitRow('After XOR', after, cAfterXor(acc,v))
+              );
+              h+='</div>';
+              acc=after;
+            }
+            h+='<div class="gi-result-box">';
+            h+='<div style="font-size:0.9rem;margin-bottom:5px;">GF(2⁸) product</div>';
+            h+='<div style="font-size:1.2rem;font-weight:800;">'+hx(giA)+' × '+hx(giInv)+' = <code style="color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;">'+hx(result)+'</code>';
+            if(result===1) h+=' <span style="color:#7ef5a8;font-size:1rem;">✓ Confirmed inverse</span>';
+            h+='</div>';
+            h+='<div style="font-size:0.9rem;margin-top:5px;opacity:.85;">';
+            if(result===1) h+='Every nonzero byte multiplied by its inverse gives <code style="background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;">0x01</code>.';
+            h+='</div>';
+            h+='</div></div>';
+            document.getElementById('gi-steps').innerHTML+=h;
+          }
+
+          function updateCtrl(){
+            var btn=document.getElementById('gi-btn-next');
+            document.getElementById('gi-controls').style.display='';
+            if(giStep>=8){ btn.style.display='none'; }
+            else if(giStep===7){ btn.innerHTML='Accumulate →'; btn.style.display=''; }
+            else { btn.innerHTML='Next: '+dl(giStep+1)+'·A →'; btn.style.display=''; }
+          }
+
+          function scrollLast(){
+            setTimeout(function(){
+              var cards=document.querySelectorAll('.gi-step-card');
+              if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'nearest'});
+            },60);
+          }
+
+          window.giStart=function(){
+            var a=pb(document.getElementById('gi-a-in').value);
+            if(a===null){
+              document.getElementById('gi-steps').innerHTML='<p style="color:#c00;font-weight:700;">Enter a valid hex byte (00–FF).</p>';
+              return;
+            }
+            if(a===0){
+              document.getElementById('gi-steps').innerHTML='<p style="color:#c00;font-weight:700;">0x00 has no multiplicative inverse.</p>';
+              document.getElementById('gi-found').style.display='none';
+              return;
+            }
+            var inv=gfInv(a);
+            giA=a; giInv=inv; giChain=[giA];
+            for(var i=1;i<8;i++) giChain.push(xt(giChain[i-1]));
+            giStep=0;
+            document.getElementById('gi-found').innerHTML='Inverse found: &nbsp;<code>'+hx(giA)+'</code><sup>−1</sup> = <code>'+hx(giInv)+'</code>&nbsp; — now stepping through the verification.';
+            document.getElementById('gi-found').style.display='';
+            renderBPanel(0); step0(); updateCtrl(); scrollLast();
+          };
+
+          window.giNext=function(){
+            if(giStep>=8) return;
+            giStep++;
+            if(giStep<=7){ renderBPanel(giStep); stepK(giStep); }
+            else { renderBPanel(-1); stepAcc(); }
+            updateCtrl(); scrollLast();
+          };
+
+          window.giReset=function(){
+            giA=0; giInv=0; giChain=[]; giStep=-1;
+            document.getElementById('gi-found').style.display='none';
+            document.getElementById('gi-b-panel').style.display='none';
+            document.getElementById('gi-steps').innerHTML='';
+            document.getElementById('gi-controls').style.display='none';
+          };
+
+          window.giLoad=function(a){
+            document.getElementById('gi-a-in').value=a.toString(16).toUpperCase().padStart(2,'0');
+            giReset();
+          };
+
+          document.getElementById('gi-a-in').addEventListener('keydown',function(e){ if(e.key==='Enter') giStart(); });
+        })();
+        </script>
       </section>
 
       <section id="worked-check-02">
@@ -703,63 +938,5 @@
     </nav>
     </main>
   </div>
-<script>
-function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
-function gfm(a,b){
-  var r=0, aa=a;
-  for(var i=0;i<8;i++){ if((b>>i)&1) r^=aa; aa=xt(aa); }
-  return r;
-}
-function gfInv(a){
-  if(a===0) return null;
-  for(var b=1;b<256;b++){ if(gfm(a,b)===1) return b; }
-  return null;
-}
-function toBin(v){ return v.toString(2).padStart(8,'0'); }
-function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
-function polyStr(v){
-  if(v===0) return '0';
-  var t=[];
-  for(var d=7;d>=0;d--) if((v>>d)&1){
-    if(d===0) t.push('1'); else if(d===1) t.push('x'); else t.push('x<sup>'+d+'</sup>');
-  }
-  return t.join(' + ');
-}
-
-function invExplore(){
-  var raw = document.getElementById('inv-input').value.trim();
-  var v = parseInt(raw, 16);
-  if(isNaN(v) || v<0 || v>255){
-    document.getElementById('inv-error').style.display='block';
-    document.getElementById('inv-error').textContent = 'Enter a valid hex byte, e.g. 0x53 or A7.';
-    document.getElementById('inv-result').style.display='none';
-    return;
-  }
-  document.getElementById('inv-error').style.display='none';
-
-  if(v===0){
-    document.getElementById('inv-error').style.display='block';
-    document.getElementById('inv-error').textContent = '0x00 has no multiplicative inverse.';
-    document.getElementById('inv-result').style.display='none';
-    return;
-  }
-
-  var inv = gfInv(v);
-  var prod = gfm(v, inv);
-
-  document.getElementById('inv-box-a').innerHTML = hx(v)+'<br><small style="font-weight:400;font-size:0.82rem;color:#555;">'+polyStr(v)+'</small>';
-  document.getElementById('inv-box-b').innerHTML = hx(inv)+'<br><small style="font-weight:400;font-size:0.82rem;color:#555;">'+polyStr(inv)+'</small>';
-
-  var detail = '<strong>Input:</strong> '+hx(v)+' = '+toBin(v).slice(0,4)+' '+toBin(v).slice(4)
-    +' &nbsp;=&nbsp; '+polyStr(v)+'<br>';
-  detail += '<strong>Inverse found:</strong> '+hx(inv)+' = '+toBin(inv).slice(0,4)+' '+toBin(inv).slice(4)
-    +' &nbsp;=&nbsp; '+polyStr(inv)+'<br>';
-  detail += '<strong>Verify:</strong> '+hx(v)+' &times; '+hx(inv)+' = '+hx(prod);
-  if(prod===1) detail += ' &nbsp;<span style="color:#1a5c2a;font-weight:800;">&#10003; Confirmed inverse</span>';
-
-  document.getElementById('inv-detail').innerHTML = detail;
-  document.getElementById('inv-result').style.display='block';
-}
-</script>
 </body>
 </html>
