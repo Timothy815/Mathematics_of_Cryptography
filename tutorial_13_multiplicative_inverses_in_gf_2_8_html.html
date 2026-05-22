@@ -138,12 +138,25 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_12_multiplication_in_gf_2_8_html.html">← Module 12</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_14_aes_sbox_inverse_plus_affine_transformation_html.html">Module 14 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
 
     <main>
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <ul>
+          <li>Define the multiplicative inverse of a byte in \(\mathrm{GF}(2^8)\).</li>
+          <li>Explain why <code>0x00</code> has no inverse and why every other byte does.</li>
+          <li>Verify an inverse pair by computing the \(\mathrm{GF}(2^8)\) product and confirming it equals <code>0x01</code>.</li>
+          <li>Name four methods for finding inverses: brute force, polynomial extended Euclidean algorithm, exponentiation, and lookup table.</li>
+          <li>Describe the role of the inverse step in the AES S-box construction.</li>
+        </ul>
+      </section>
+
       <section id="why-this-tutorial-exists">
         <h2>Why this tutorial exists</h2>
         <div class="box purpose-box">
@@ -328,6 +341,40 @@
         </table>
       </section>
 
+      <section id="inverse-explorer">
+        <h2>Interactive: inverse explorer</h2>
+        <p>
+          Enter any nonzero byte and the explorer will find its inverse by brute force, then verify the product.
+        </p>
+
+        <div class="diagram" style="max-width:600px;">
+          <div class="diagram-title">GF(2⁸) Inverse Explorer</div>
+
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+            <label style="font-weight:700;">Input byte (hex):</label>
+            <input id="inv-input" type="text" value="0x53" maxlength="4"
+              style="width:90px;padding:8px 10px;border:2px solid #334e7d;border-radius:8px;font-family:monospace;font-size:1rem;text-align:center;" />
+            <button onclick="invExplore()"
+              style="background:#334e7d;color:#fff;border:none;border-radius:10px;padding:9px 22px;font-size:0.97rem;font-weight:700;cursor:pointer;">
+              Find Inverse
+            </button>
+          </div>
+
+          <div id="inv-result" style="display:none;border-radius:12px;overflow:hidden;">
+            <div id="inv-result-row" style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:14px;">
+              <div id="inv-box-a" style="border:2px solid #c7d2ea;border-radius:12px;padding:12px;text-align:center;background:#fff;font-weight:900;"></div>
+              <div style="font-size:1.4rem;color:#334e7d;font-weight:900;text-align:center;">×</div>
+              <div id="inv-box-b" style="border:2px solid #c7d2ea;border-radius:12px;padding:12px;text-align:center;background:#fff;font-weight:900;"></div>
+              <div style="font-size:1.4rem;color:#334e7d;font-weight:900;text-align:center;">=</div>
+              <div style="border:2px solid #b8dfc5;border-radius:12px;padding:12px;text-align:center;background:#eaf7ef;font-weight:900;color:#1a5c2a;font-size:1.1rem;">0x01</div>
+            </div>
+            <div id="inv-detail" style="background:#f7f8fc;border:1px solid #c7d2ea;border-radius:10px;padding:14px;font-size:0.94rem;line-height:1.7;"></div>
+          </div>
+
+          <div id="inv-error" style="display:none;color:#c04040;font-weight:700;padding:10px;"></div>
+        </div>
+      </section>
+
       <section id="worked-check-02">
         <h2>Worked example 1: verify that <code>0x8D</code> is the inverse of <code>0x02</code></h2>
         <p>
@@ -345,7 +392,7 @@
           \]
         </div>
         <p>
-          Reduce \(x^8\) using the AES rule:</p>
+          Reduce \(x^8\) using the folding rule:</p>
         <div class="math-display">
           \[
             x^8\equiv x^4+x^3+x+1
@@ -656,5 +703,63 @@
     </nav>
     </main>
   </div>
+<script>
+function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+function gfm(a,b){
+  var r=0, aa=a;
+  for(var i=0;i<8;i++){ if((b>>i)&1) r^=aa; aa=xt(aa); }
+  return r;
+}
+function gfInv(a){
+  if(a===0) return null;
+  for(var b=1;b<256;b++){ if(gfm(a,b)===1) return b; }
+  return null;
+}
+function toBin(v){ return v.toString(2).padStart(8,'0'); }
+function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+function polyStr(v){
+  if(v===0) return '0';
+  var t=[];
+  for(var d=7;d>=0;d--) if((v>>d)&1){
+    if(d===0) t.push('1'); else if(d===1) t.push('x'); else t.push('x<sup>'+d+'</sup>');
+  }
+  return t.join(' + ');
+}
+
+function invExplore(){
+  var raw = document.getElementById('inv-input').value.trim();
+  var v = parseInt(raw, 16);
+  if(isNaN(v) || v<0 || v>255){
+    document.getElementById('inv-error').style.display='block';
+    document.getElementById('inv-error').textContent = 'Enter a valid hex byte, e.g. 0x53 or A7.';
+    document.getElementById('inv-result').style.display='none';
+    return;
+  }
+  document.getElementById('inv-error').style.display='none';
+
+  if(v===0){
+    document.getElementById('inv-error').style.display='block';
+    document.getElementById('inv-error').textContent = '0x00 has no multiplicative inverse.';
+    document.getElementById('inv-result').style.display='none';
+    return;
+  }
+
+  var inv = gfInv(v);
+  var prod = gfm(v, inv);
+
+  document.getElementById('inv-box-a').innerHTML = hx(v)+'<br><small style="font-weight:400;font-size:0.82rem;color:#555;">'+polyStr(v)+'</small>';
+  document.getElementById('inv-box-b').innerHTML = hx(inv)+'<br><small style="font-weight:400;font-size:0.82rem;color:#555;">'+polyStr(inv)+'</small>';
+
+  var detail = '<strong>Input:</strong> '+hx(v)+' = '+toBin(v).slice(0,4)+' '+toBin(v).slice(4)
+    +' &nbsp;=&nbsp; '+polyStr(v)+'<br>';
+  detail += '<strong>Inverse found:</strong> '+hx(inv)+' = '+toBin(inv).slice(0,4)+' '+toBin(inv).slice(4)
+    +' &nbsp;=&nbsp; '+polyStr(inv)+'<br>';
+  detail += '<strong>Verify:</strong> '+hx(v)+' &times; '+hx(inv)+' = '+hx(prod);
+  if(prod===1) detail += ' &nbsp;<span style="color:#1a5c2a;font-weight:800;">&#10003; Confirmed inverse</span>';
+
+  document.getElementById('inv-detail').innerHTML = detail;
+  document.getElementById('inv-result').style.display='block';
+}
+</script>
 </body>
 </html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 13: Multiplicative Inverses in GF(2^8) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { margin: 0.75in; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #1a5c2a, #2a8a4a);
+      border: 1px solid #1a5c2a;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      color: #ffffff;
+    }
+
+    header.worksheet-header .course-label,
+    header.worksheet-header .volume-label,
+    header.worksheet-header h1,
+    header.worksheet-header .subtitle {
+      color: #ffffff;
+    }
+
+    header.worksheet-header h1 { color: #ffffff; }
+
+    .workbook-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+    }
+
+    .workbook-nav .nav-link {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .workbook-nav .nav-link:hover { background: rgba(255,255,255,0.25); }
+
+    .workbook-nav .print-button {
+      background: rgba(255,255,255,0.15);
+      color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .student-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 20px 0 28px;
+    }
+
+    .field-label { font-weight: 700; display: block; margin-bottom: 4px; }
+    .field-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1.5px solid #333;
+      font-size: 1rem;
+      padding: 4px 0;
+      background: transparent;
+      outline: none;
+    }
+
+    .problem {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin: 16px 0;
+      background: #ffffff;
+      break-inside: avoid;
+    }
+
+    .problem-title { font-weight: 800; color: #1f3763; margin-bottom: 8px; }
+
+    .ans-input {
+      border: none;
+      border-bottom: 1.5px solid #555;
+      width: 120px;
+      font-size: 1rem;
+      padding: 2px 4px;
+      background: transparent;
+      outline: none;
+      font-family: 'Cascadia Code', monospace;
+    }
+
+    .ans-input.ws-correct { border-color: #1a7a3a; background: #eafaf0; border-radius: 4px; }
+    .ans-input.ws-wrong   { border-color: #c0392b; background: #fdeaea; border-radius: 4px; }
+
+    .ans-input-sm {
+      border: none;
+      border-bottom: 1.5px solid #555;
+      width: 70px;
+      font-size: 1rem;
+      padding: 2px 4px;
+      background: transparent;
+      outline: none;
+      font-family: 'Cascadia Code', monospace;
+      text-align: center;
+    }
+    .ans-input-sm.ws-correct { border-color: #1a7a3a; background: #eafaf0; border-radius: 4px; }
+    .ans-input-sm.ws-wrong   { border-color: #c0392b; background: #fdeaea; border-radius: 4px; }
+
+    .work-space {
+      border: 1px dashed #aaa;
+      border-radius: 8px;
+      min-height: 80px;
+      padding: 8px;
+      margin: 10px 0 6px;
+      background: #fffefe;
+    }
+
+    .work-space.lg { min-height: 120px; }
+    .work-space.xl { min-height: 160px; }
+
+    .write-wrap { position: relative; margin: 8px 0; }
+    .written-area { width: 100%; min-height: 80px; border: 1px dashed #aaa; border-radius: 8px; padding: 8px; font-size: 1rem; resize: vertical; }
+    .write-lines { display: none; }
+    .wl { display: block; height: 1.9em; border-bottom: 1px solid #888; }
+
+    .ws-score-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: #e8f6ec;
+      border: 1px solid #a8d8b8;
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 24px;
+    }
+
+    .ws-btn-check  { background: #1a5c2a; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+    .ws-btn-regen  { background: #2a8a4a; color: #fff; border: none; border-radius: 8px; padding: 8px 20px; font-size: 0.97rem; font-weight: 700; cursor: pointer; }
+    .ws-btn-reset  { background: #e5e9f2; color: #334e7d; border: 1px solid #c7d2ea; border-radius: 8px; padding: 8px 18px; font-size: 0.97rem; cursor: pointer; }
+    #ws-score-display { font-weight: 700; font-size: 1rem; color: #1a5c2a; }
+
+    .answer-key { border-top: 4px double #2a8a4a; padding-top: 24px; margin-top: 40px; }
+    .answer-step { margin: 10px 0; padding-left: 14px; border-left: 4px solid #a8d8b8; }
+
+    .ws-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 0.95rem;
+    }
+    .ws-table th, .ws-table td {
+      border: 1px solid var(--border);
+      padding: 9px 11px;
+      vertical-align: middle;
+    }
+    .ws-table th {
+      background: #e8f6ec;
+      color: #1a5c2a;
+      text-align: left;
+    }
+    .ws-table td { text-align: center; }
+    .ws-table td:first-child { text-align: left; }
+
+    .impostor-row { background: #fff8e1; }
+
+    @media (max-width: 760px) {
+      .student-info { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      .no-print, .ws-score-bar, .workbook-nav { display: none !important; }
+      .written-area { display: none !important; }
+      .write-lines { display: block !important; }
+      header.worksheet-header { background: #1a5c2a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .ans-input, .ans-input-sm { border: none; border-bottom: 1.5px solid #333 !important; background: transparent !important; border-radius: 0 !important; }
+      .ans-input.ws-correct, .ans-input.ws-wrong,
+      .ans-input-sm.ws-correct, .ans-input-sm.ws-wrong { background: transparent !important; }
+      .answer-key { page-break-before: always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 13</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Multiplicative Inverses in \(\mathrm{GF}(2^8)\)</h1>
+      <p class="subtitle">Verification · False-inverse identification · Finding inverses · Special cases · Conceptual questions</p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a href="#part-a" class="nav-link">Part A</a>
+        <a href="#part-b" class="nav-link">Part B</a>
+        <a href="#part-c" class="nav-link">Part C</a>
+        <a href="#part-d" class="nav-link">Part D</a>
+        <a href="#part-e" class="nav-link">Part E</a>
+        <a href="#answer-key" class="nav-link">Answer Key</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">&#127968; Dashboard</a>
+        <button class="print-button" onclick="window.print()">&#128424; Print</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p style="margin:0;font-size:0.95rem;">Check your fill-in answers or reset.</p>
+        <span id="ws-score-display"></span>
+        <button class="ws-btn-check" onclick="wsCheckAll()">Check Answers</button>
+        <button class="ws-btn-regen" onclick="wsRegenerate()">Regenerate</button>
+        <button class="ws-btn-reset" onclick="wsReset()">Reset</button>
+      </div>
+
+      <div class="student-info">
+        <div>
+          <label class="field-label">Name:</label>
+          <input class="field-input" type="text" />
+        </div>
+        <div>
+          <label class="field-label">Date:</label>
+          <input class="field-input" type="text" />
+        </div>
+      </div>
+
+      <details class="no-print" style="background:#e8f6ec;border:1px solid #a8d8b8;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary style="font-weight:800;cursor:pointer;color:#1a5c2a;">Quick Reference — tap to expand</summary>
+        <div style="margin-top:10px;line-height:1.8;">
+          <strong>Multiplicative inverse:</strong> For \(a\in\mathrm{GF}(2^8)\), \(a\ne0\), there exists a unique \(b\) such that \(a\cdot b=\texttt{0x01}\). We write \(b=a^{-1}\).
+          <br>
+          <strong>GF(2⁸) multiply rule:</strong> Use the xtime chain — build \(a,\,\text{xt}(a),\,\text{xt}^2(a),\ldots\) then XOR entries selected by the bits of \(b\).
+          <br>
+          <strong>xtime:</strong> \(\text{xt}(a)=(a\ll1)\) if top bit = 0; else \((a\ll1)\oplus\texttt{0x1B}\).
+          <br>
+          <strong>Verified pair:</strong> \(a\cdot b=\texttt{0x01}\) in \(\mathrm{GF}(2^8)\) \(\Leftrightarrow\) \(b=a^{-1}\).
+          <br>
+          <strong>Identity:</strong> \(\texttt{0x01}^{-1}=\texttt{0x01}\). Zero has no inverse.
+          <br>
+          <strong>AES example:</strong> \(\texttt{0x53}^{-1}=\texttt{0xCA}\) (used in the AES S-box).
+        </div>
+      </details>
+
+      <!-- Part A -->
+      <section id="part-a">
+        <h2>Part A — Verify inverse pairs</h2>
+        <p>Each row gives a byte \(a\) and a claimed inverse. The product \(a\cdot b\) in \(\mathrm{GF}(2^8)\) is shown for you. Decide whether the candidate really is the inverse by entering <strong>Yes</strong> or <strong>No</strong>.</p>
+
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Byte \(a\)</th>
+              <th>Candidate inverse \(b\)</th>
+              <th>Product \(a\cdot b\) in \(\mathrm{GF}(2^8)\)</th>
+              <th>Is it an inverse?</th>
+            </tr>
+          </thead>
+          <tbody id="part-a-tbody"></tbody>
+        </table>
+      </section>
+
+      <!-- Part B -->
+      <section id="part-b">
+        <h2>Part B — Identify the false inverse</h2>
+        <p>Three rows are genuine inverse pairs; one is an impostor. The product column tells the truth. For each row write <strong>Yes</strong> or <strong>No</strong>.</p>
+
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Byte \(a\)</th>
+              <th>Candidate \(b\)</th>
+              <th>Given product \(a\cdot b\)</th>
+              <th>Inverse?</th>
+            </tr>
+          </thead>
+          <tbody id="part-b-tbody"></tbody>
+        </table>
+
+        <div class="problem" style="margin-top:16px;">
+          <div class="problem-title">Which problem number is the impostor?</div>
+          <p>Problem number: <input class="ans-input-sm" id="impostor-input" data-answer="" /></p>
+        </div>
+      </section>
+
+      <!-- Part C -->
+      <section id="part-c">
+        <h2>Part C — Find the inverse</h2>
+        <p>For each byte below, determine its multiplicative inverse in \(\mathrm{GF}(2^8)\). Give your answer in hexadecimal (e.g. <code>0x8D</code>).</p>
+
+        <table class="ws-table">
+          <thead>
+            <tr>
+              <th>Problem</th>
+              <th>Byte \(a\)</th>
+              <th>Inverse \(a^{-1}\)</th>
+            </tr>
+          </thead>
+          <tbody id="part-c-tbody"></tbody>
+        </table>
+      </section>
+
+      <!-- Part D -->
+      <section id="part-d">
+        <h2>Part D — Zero and identity special cases</h2>
+
+        <div class="problem">
+          <div class="problem-title">D1. What is the multiplicative inverse of \(\texttt{0x01}\)?</div>
+          <p>\(\texttt{0x01}^{-1}=\) <input class="ans-input" data-answer="0x01|0x1|01|1" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. True or False: \(\texttt{0x00}\) has a multiplicative inverse in \(\mathrm{GF}(2^8)\).</div>
+          <p><input class="ans-input" data-answer="false|False|FALSE" style="width:90px;" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D3. Which byte is its own multiplicative inverse? (Hint: it is also the multiplicative identity.)</div>
+          <p>That byte is: <input class="ans-input" data-answer="0x01|0x1|01|1" /></p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D4. True or False: If \(a\cdot b=\texttt{0x01}\) in \(\mathrm{GF}(2^8)\), then \(b\cdot a=\texttt{0x01}\) also.</div>
+          <p><input class="ans-input" data-answer="true|True|TRUE" style="width:90px;" /></p>
+        </div>
+      </section>
+
+      <!-- Part E -->
+      <section id="part-e">
+        <h2>Part E — Conceptual short-answer questions</h2>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why does every nonzero byte have a multiplicative inverse in \(\mathrm{GF}(2^8)\)?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Think about what an irreducible modulus guarantees…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. Why must you use \(\mathrm{GF}(2^8)\) multiplication (not ordinary decimal or binary integer multiplication) to verify inverses?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Consider what arithmetic rule the field uses…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. What are the two mathematical stages of the AES S-box construction?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Name both operations in order…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E4. Why does \(\texttt{0x00}\) have no multiplicative inverse?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Recall the field axiom about zero divisors…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Answer Key -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+        <div class="box" style="background:#e8f6ec;border:1px solid #a8d8b8;padding:14px 18px;border-radius:10px;margin-bottom:18px;">
+          <strong>Note:</strong> Written responses in Part E are not graded automatically — compare your explanations to the sample answers below.
+        </div>
+
+        <h3>Part A — Verify inverse pairs</h3>
+        <div class="answer-step" id="ak-part-a"></div>
+
+        <h3>Part B — Identify the false inverse</h3>
+        <div class="answer-step" id="ak-part-b"></div>
+
+        <h3>Part C — Find the inverse</h3>
+        <div class="answer-step" id="ak-part-c"></div>
+
+        <h3>Part D — Special cases</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong> \(\texttt{0x01}^{-1}=\texttt{0x01}\). Verification: \(\texttt{0x01}\cdot\texttt{0x01}=\texttt{0x01}\). &#10003;</p>
+          <p><strong>D2.</strong> <strong>False.</strong> \(\texttt{0x00}\) has no inverse; there is no byte \(b\) such that \(\texttt{0x00}\cdot b=\texttt{0x01}\) because zero times anything is zero.</p>
+          <p><strong>D3.</strong> \(\texttt{0x01}\). Any element equal to its own inverse satisfies \(a^2=\texttt{0x01}\); the multiplicative identity \(\texttt{0x01}\) satisfies this trivially.</p>
+          <p><strong>D4.</strong> <strong>True.</strong> \(\mathrm{GF}(2^8)\) multiplication is commutative, so \(a\cdot b=b\cdot a\).</p>
+        </div>
+
+        <h3>Part E — Conceptual questions</h3>
+        <div class="answer-step">
+          <p><strong>E1 sample.</strong> Because the AES modulus \(m(x)=x^8+x^4+x^3+x+1\) is <em>irreducible</em> over \(\mathrm{GF}(2)\), the quotient ring \(\mathrm{GF}(2)[x]/m(x)\) is a field. In any field, every nonzero element has a multiplicative inverse. Equivalently, any nonzero polynomial \(a(x)\) of degree less than 8 is coprime to \(m(x)\), so the Extended Euclidean Algorithm over \(\mathrm{GF}(2)[x]\) yields coefficients \(u,v\) with \(a(x)u(x)+m(x)v(x)=1\), meaning \(u(x)\) is the inverse of \(a(x)\) modulo \(m(x)\).</p>
+          <p><strong>E2 sample.</strong> In \(\mathrm{GF}(2^8)\) both addition and multiplication are defined over polynomials with binary coefficients, reduced modulo the AES irreducible polynomial. Ordinary decimal multiplication does not reduce modulo anything and does not use XOR for addition, so it gives completely different — and wrong — results.</p>
+          <p><strong>E3 sample.</strong> The two stages are: (1) take the multiplicative inverse of the byte in \(\mathrm{GF}(2^8)\) (mapping \(\texttt{0x00}\mapsto\texttt{0x00}\)); (2) apply an affine transformation over \(\mathrm{GF}(2)\) (a fixed 8×8 binary matrix multiplication plus XOR with the constant \(\texttt{0x63}\)).</p>
+          <p><strong>E4 sample.</strong> Multiplication by zero always produces zero: for any byte \(b\), \(\texttt{0x00}\cdot b=\texttt{0x00}\ne\texttt{0x01}\). Therefore no candidate inverse can satisfy the required equation.</p>
+        </div>
+      </section>
+
+      <p class="footer-note">Mathematics of Cryptography · Worksheet 13 · Multiplicative Inverses in GF(2⁸)</p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_12_multiplication_in_gf_2_8_html.html" class="nav-item">&#8592; Worksheet 12</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="worksheet_14_the_aes_s_box_html.html" class="nav-item">Worksheet 14 &#8594;</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_html.html" class="nav-item nav-secondary">Tutorial 13</a>
+          <a href="tutorial_13_multiplicative_inverses_in_gf_2_8_workbook_html.html" class="nav-item nav-secondary">Practice 13</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+<script>
+// ── Write-lines generator ──────────────────────────────────────────────────
+document.querySelectorAll('.write-lines').forEach(function(wl) {
+  for (var i = 0; i < 3; i++) {
+    var s = document.createElement('span');
+    s.className = 'wl';
+    wl.appendChild(s);
+  }
+});
+
+// ── GF(2^8) helpers ───────────────────────────────────────────────────────
+function xt(a) { var s = (a << 1) & 0xFF; return (a & 0x80) ? (s ^ 0x1B) : s; }
+function gfm(a, b) { var r = 0, aa = a; for (var i = 0; i < 8; i++) { if ((b >> i) & 1) r ^= aa; aa = xt(aa); } return r; }
+function gfInv(a) { if (a === 0) return 0; for (var b = 1; b < 256; b++) { if (gfm(a, b) === 1) return b; } return 0; }
+function hx(v) { return '0x' + v.toString(16).toUpperCase().padStart(2, '0'); }
+function ansAttr(v) { var h = v.toString(16).toUpperCase().padStart(2, '0'); var l = h.toLowerCase(); return '0x' + h + '|0x' + l + '|' + h + '|' + l; }
+
+// ── Normalise for answer checking ─────────────────────────────────────────
+function normalise(s) {
+  return (s || '').trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function wsCheckAll() {
+  var correct = 0, total = 0;
+  document.querySelectorAll('[data-answer]').forEach(function(inp) {
+    if (inp.tagName !== 'INPUT') return;
+    if (!inp.dataset.answer) return;
+    total++;
+    var accepted = inp.dataset.answer.split('|').map(function(a) { return normalise(a); });
+    var val = normalise(inp.value);
+    inp.classList.remove('ws-correct', 'ws-wrong');
+    if (accepted.includes(val)) {
+      inp.classList.add('ws-correct'); correct++;
+    } else {
+      inp.classList.add('ws-wrong');
+    }
+  });
+  document.getElementById('ws-score-display').textContent =
+    total ? 'Score: ' + correct + ' / ' + total : '';
+}
+
+function wsReset() {
+  document.querySelectorAll('[data-answer]').forEach(function(inp) {
+    if (inp.tagName !== 'INPUT') return;
+    inp.value = '';
+    inp.classList.remove('ws-correct', 'ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent = '';
+}
+
+// ── Random problem generator ───────────────────────────────────────────────
+function pickDistinct(count, lo, hi, exclude) {
+  // Pick `count` distinct integers in [lo, hi] not in `exclude` array
+  var pool = [];
+  for (var v = lo; v <= hi; v++) {
+    if (!exclude || exclude.indexOf(v) === -1) pool.push(v);
+  }
+  // Fisher-Yates shuffle then slice
+  for (var i = pool.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+  }
+  return pool.slice(0, count);
+}
+
+function generateProblems() {
+
+  // ── Part A — Verify inverse pairs ───────────────────────────────────────
+  // Pick 4 distinct nonzero bytes
+  var partA_bytes = pickDistinct(4, 1, 255, null);
+  var htmlA = '';
+  var akA = '<ul style="line-height:2.2;">';
+  partA_bytes.forEach(function(a, i) {
+    var inv = gfInv(a);
+    var prod = gfm(a, inv); // always 0x01
+    htmlA += '<tr>';
+    htmlA += '<td>A' + (i + 1) + '</td>';
+    htmlA += '<td><code>' + hx(a) + '</code></td>';
+    htmlA += '<td><code>' + hx(inv) + '</code></td>';
+    htmlA += '<td style="text-align:center;"><code>' + hx(prod) + '</code></td>';
+    htmlA += '<td><input class="ans-input-sm" data-answer="yes|Yes|YES" /></td>';
+    htmlA += '</tr>';
+    akA += '<li><strong>A' + (i + 1) + '.</strong> ' + hx(a) + ' &times; ' + hx(inv) +
+            ' = ' + hx(prod) + ' &nbsp;&rarr;&nbsp; <strong>Yes</strong>, it is the inverse.</li>';
+  });
+  akA += '</ul>';
+  document.getElementById('part-a-tbody').innerHTML = htmlA;
+  document.getElementById('ak-part-a').innerHTML = akA;
+
+  // ── Part B — Identify the false inverse ────────────────────────────────
+  // Pick 4 distinct nonzero bytes for the 4 rows
+  var partB_bytes = pickDistinct(4, 1, 255, null);
+  // Choose which index (0-3) is the impostor
+  var impostorIdx = Math.floor(Math.random() * 4);
+  var htmlB = '';
+  var akB = '<ul style="line-height:2.2;">';
+  var impostorLabel = '';
+  partB_bytes.forEach(function(a, i) {
+    var trueInv = gfInv(a);
+    var candidate, prod, isInverse;
+    if (i === impostorIdx) {
+      // Use a wrong candidate: try a+1, a+2, ... (mod 256, nonzero, not the real inverse)
+      var c = (a + 1) % 256;
+      while (c === 0 || c === trueInv) { c = (c + 1) % 256; }
+      candidate = c;
+      prod = gfm(a, candidate);
+      isInverse = false;
+      impostorLabel = 'B' + (i + 1);
+    } else {
+      candidate = trueInv;
+      prod = 0x01;
+      isInverse = true;
+    }
+    var rowClass = (i === impostorIdx) ? ' class="impostor-row"' : '';
+    htmlB += '<tr' + rowClass + '>';
+    htmlB += '<td>B' + (i + 1) + '</td>';
+    htmlB += '<td><code>' + hx(a) + '</code></td>';
+    htmlB += '<td><code>' + hx(candidate) + '</code></td>';
+    htmlB += '<td style="text-align:center;"><code>' + hx(prod) + '</code></td>';
+    htmlB += '<td><input class="ans-input-sm" data-answer="' + (isInverse ? 'yes|Yes|YES' : 'no|No|NO') + '" /></td>';
+    htmlB += '</tr>';
+    akB += '<li><strong>B' + (i + 1) + '.</strong> ' + hx(a) + ' &times; ' + hx(candidate) +
+            ' = ' + hx(prod) + ' &nbsp;&rarr;&nbsp; <strong>' + (isInverse ? 'Yes' : 'No &mdash; IMPOSTOR') + '</strong>';
+    if (!isInverse) {
+      akB += ' (real inverse of ' + hx(a) + ' is ' + hx(trueInv) + ')';
+    }
+    akB += '</li>';
+  });
+  akB += '</ul>';
+  akB += '<p><strong>Impostor:</strong> Problem <strong>' + impostorLabel + '</strong>.</p>';
+  document.getElementById('part-b-tbody').innerHTML = htmlB;
+  document.getElementById('ak-part-b').innerHTML = akB;
+
+  // Update the impostor-input data-answer
+  var impInput = document.getElementById('impostor-input');
+  impInput.dataset.answer = impostorLabel + '|' + impostorLabel.toLowerCase();
+
+  // ── Part C — Find the inverse ───────────────────────────────────────────
+  // Exclude bytes already used in Parts A and B to avoid repetition
+  var used = partA_bytes.concat(partB_bytes);
+  var partC_bytes = pickDistinct(4, 1, 255, used);
+  var htmlC = '';
+  var akC = '<ul style="line-height:2.2;">';
+  partC_bytes.forEach(function(a, i) {
+    var inv = gfInv(a);
+    htmlC += '<tr>';
+    htmlC += '<td>C' + (i + 1) + '</td>';
+    htmlC += '<td><code>' + hx(a) + '</code></td>';
+    htmlC += '<td><input class="ans-input" data-answer="' + ansAttr(inv) + '" /></td>';
+    htmlC += '</tr>';
+    akC += '<li><strong>C' + (i + 1) + '.</strong> ' + hx(a) + '^{-1} = <strong>' + hx(inv) + '</strong>. '
+         + 'Verify: ' + hx(a) + ' &times; ' + hx(inv) + ' = ' + hx(gfm(a, inv)) + ' &#10003;</li>';
+  });
+  akC += '</ul>';
+  document.getElementById('part-c-tbody').innerHTML = htmlC;
+  document.getElementById('ak-part-c').innerHTML = akC;
+
+  if (window.MathJax && typeof MathJax.typesetPromise === 'function') {
+    MathJax.typesetPromise([document.body]).catch(function() {});
+  }
+}
+
+// Generate on page load
+generateProblems();
+
+function wsRegenerate() {
+  generateProblems();
+  wsReset();
+}
+</script>
+</body>
+</html>
