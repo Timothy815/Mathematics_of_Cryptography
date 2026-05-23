@@ -58,7 +58,7 @@ This file defines the required structure and quality bar for every module in the
 
 ### Head & Header
 - [ ] `<title>` format: `"Practice ##: <Module Title> | Mathematics of Cryptography"`
-- [ ] `<header class="workbook-header">` — warm gold gradient: `linear-gradient(135deg, #ffffff, #fff8e6)`, border `#e8dbbf`
+- [ ] `<header class="workbook-header">` — warm gold gradient: `linear-gradient(135deg, #fffdf4, #fdf3d0)`, border `#e8dbbf`
 - [ ] `.course-label`: `"Mathematics of Cryptography · Practice ##"`
 - [ ] `.volume-label`
 - [ ] `<h1>` title
@@ -185,35 +185,50 @@ For a fully produced module the card should contain, in this order:
 
 ---
 
-## Known Issues — Modules 01–09 (as of 2026-05-18)
+## Known Issues — Open as of 2026-05-23
 
 | # | File | Issue | Status |
 |---|---|---|---|
-| 01 | workbook | Header uses blue `#eef3ff` gradient instead of warm gold `#fff8e6` | Open |
-| 02 | tutorial | No interactive widget | Open |
-| 03 | tutorial | No interactive widget | Open |
-| 03 | — | No notebook | Open |
-| 05 | tutorial | No interactive widget | Open |
-| 06 | tutorial | No interactive widget | Open |
-| 07 | tutorial | No interactive widget | Open |
-| 06 | tutorial | Learning objectives missing | **Fixed 2026-05-18** |
-| 07 | tutorial | Learning objectives missing | **Fixed 2026-05-18** |
-| 09 | tutorial | Learning objectives missing | **Fixed 2026-05-18** |
-| 06–09 | worksheets | Used `workbook-header` class instead of `worksheet-header` (wrong color scheme) | **Fixed 2026-05-18** |
+| 02 | tutorial | No step-through interactive widget (only bit-flipper in workbook) | Open — low priority |
+| 03 | — | No notebook | **Intentional** — topic does not benefit from computation |
+| 03 | tutorial | No interactive widget | Open — low priority |
+| 05 | tutorial | No interactive widget | Open — low priority |
+| 06 | tutorial | No interactive widget | Open — low priority |
+| 07 | tutorial | No interactive widget | Open — low priority |
+| 15+ | all | Not yet brought to gold standard | **Next focus** |
+
+### Recently Fixed (2026-05-23)
+- All workbook header gradients updated to `#fffdf4, #fdf3d0` (Modules 01–11)
+- Course labels corrected to "Practice N" (Modules 01–04)
+- All workbook aria-labels standardised to "Practice navigation" (Modules 01–10)
+- Top nav prev/next links added to Modules 01–05, 09
+- Print button added to Module 12 top nav
+- Broken Practice 15 link fixed in Module 14 workbook
+- Infographic sections added to Module 13 and 14 tutorials
+- Module 08 AES connection section: added 6-module road map table and `0x57 × 0x83 = 0xC1` payoff preview
+- Module 09: added AddRoundKey concrete example and multiplication-degree teaser in "What comes next"
 
 ---
 
-## Module Completion Tracker
+## Module Completion Tracker — as of 2026-05-23
+
+**Gold standard practice** = `makeDrill()` engine + gold gradient + `drill-section/card/q/fb/streak` CSS + `aria-label="Practice navigation"`
+*Module 02 practice is a justified exception: uses a custom interactive bit-flipper widget that is pedagogically superior to a text-input drill for this topic.*
 
 | Module | Tutorial | Practice | Worksheet | Notebook | Slides | Podcast | Video | Infographic |
 |---|---|---|---|---|---|---|---|---|
-| 01 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 02 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 03 | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✓ | ✓ |
-| 04 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 05 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 06 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 07 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 08 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 09 | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 10–76 | ✓ | old | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| 01 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 02 | ✓ gold | ✓ gold* | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 03 | ✓ gold | ✓ gold | ✓ | ✗ intentional | ✓ | ✓ | ✓ | ✓ |
+| 04 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 05 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 06 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 07 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ ×2 | ✓ |
+| 08 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 09 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 10 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 11 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ ×2 | ✓ |
+| 12 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 13 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 14 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 15–76 | ✓ (varies) | old format | ✗ | ✗ | ✗ | ✗ | ✗ | varies |
