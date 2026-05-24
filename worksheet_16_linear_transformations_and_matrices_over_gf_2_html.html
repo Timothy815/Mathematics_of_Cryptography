@@ -137,7 +137,7 @@
       <div class="ws-score-bar no-print" id="ws-score-bar">
         <p>Browser mode: enter answers and click Check to score automatically. <span id="ws-score-display"></span></p>
         <button class="ws-btn-check"  onclick="wsCheckAll()">Check all</button>
-        <button class="ws-btn-regen"  onclick="wsRegenerate()">New values</button>
+        <button class="ws-btn-regen"  onclick="wsRegenerate()">Regenerate</button>
         <button class="ws-btn-reset"  onclick="wsReset()">Reset</button>
       </div>
 
@@ -419,7 +419,7 @@
     // display
     var h='<div class="math-display">\\[A=\\begin{bmatrix}';
     A.forEach(function(row){ h+=row.join('&')+'\\\\'; });
-    h='\\end{bmatrix},\\quad v=\\begin{bmatrix}'+v.join('\\\\')+'\\end{bmatrix}\\]</div>';
+    h+='\\end{bmatrix},\\quad v=\\begin{bmatrix}'+v.join('\\\\')+'\\end{bmatrix}\\]</div>';
     document.getElementById('wd-display').innerHTML=h;
     document.getElementById('wd0').dataset.answer=String(y[0]);
     document.getElementById('wd1').dataset.answer=String(y[1]);
@@ -453,12 +453,19 @@
 
   function wsRegenerate(){
     genPartD();
-    wsReset();
+    // Only reset Part D inputs — preserve student answers in static parts
+    ['wd0','wd1','wd2','wd3'].forEach(function(id){
+      var el=document.getElementById(id);
+      el.value='';
+      el.classList.remove('ws-correct','ws-wrong');
+    });
+    document.getElementById('ws-score-display').textContent='';
   }
 
   function wsReset(){
     document.querySelectorAll('[data-answer]').forEach(function(el){
       if(el.tagName!=='INPUT') return;
+      el.value='';
       el.classList.remove('ws-correct','ws-wrong');
     });
     document.getElementById('ws-score-display').textContent='';
