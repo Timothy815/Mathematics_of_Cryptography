@@ -437,18 +437,16 @@
     var correct=0, total=0;
     document.querySelectorAll('[data-answer]').forEach(function(el){
       if(el.tagName!=='INPUT') return;
+      total++;
       var given=normalize(el.value);
       var accepted=el.dataset.answer.split('|');
       var ok=accepted.some(function(a){return normalize(a)===given;});
       el.classList.remove('ws-correct','ws-wrong');
-      if(given==='') return;
       if(ok){el.classList.add('ws-correct');correct++;}
       else{el.classList.add('ws-wrong');}
-      total++;
     });
     var disp=document.getElementById('ws-score-display');
-    if(total>0) disp.textContent='Score: '+correct+' / '+total+' answered';
-    else disp.textContent='';
+    disp.textContent=total?'Score: '+correct+' / '+total:'';
   }
 
   function wsRegenerate(){
@@ -473,7 +471,8 @@
 
   /* generate write-lines */
   document.querySelectorAll('.write-lines').forEach(function(el){
-    var n=Math.max(3,Math.round(el.parentElement.querySelector('textarea').rows||3));
+    var ta=el.parentElement&&el.parentElement.querySelector('textarea');
+    var n=Math.max(3,ta?Math.round(ta.rows||3):3);
     var h='';
     for(var i=0;i<n;i++) h+='<span class="wl"></span>';
     el.innerHTML=h;
