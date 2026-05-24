@@ -544,7 +544,7 @@
           .anat-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; background:#f7f5ef; border:1px solid #c7d2ea; border-radius:14px; padding:18px 22px; margin:18px 0 0; }
           .anat-bar label { display:block; font-weight:700; font-size:0.88rem; margin-bottom:5px; color:#1f3763; }
           .anat-hex { font-family:'Cascadia Code',Consolas,monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:88px; }
-          .anat-go   { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+          .anat-go   { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:0.95rem; font-weight:700; cursor:pointer; min-width:180px; }
           .anat-go:hover { opacity:0.85; }
           .anat-rst  { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 16px; font-size:0.95rem; font-weight:700; cursor:pointer; }
           .anat-pre  { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:6px 11px; font-size:0.84rem; cursor:pointer; }
@@ -628,6 +628,32 @@
 
           /* Divider */
           .anat-divider { text-align:center; font-size:0.85rem; font-weight:800; color:#888; letter-spacing:.08em; text-transform:uppercase; margin:8px 0; }
+
+          /* Output bit accumulator */
+          .acc-wrap { margin:12px 0 4px; }
+          .acc-lbl  { font-size:0.78rem; font-weight:700; color:#555; margin-bottom:6px; }
+          .acc-row  { display:flex; gap:4px; overflow-x:auto; padding-bottom:4px; }
+          .acc-cell { display:flex; flex-direction:column; align-items:center; min-width:34px; border-radius:6px; padding:5px 4px; border:2px solid #dde2f0; background:#f0f0f0; flex-shrink:0; }
+          .acc-cell .ac-pos { font-size:0.58rem; color:#aaa; margin-bottom:2px; }
+          .acc-cell .ac-val { font-size:1.05rem; font-weight:900; color:#ccc; line-height:1; }
+          /* forward (sbox blue) */
+          .acc-cell.fv1  { background:#334e7d; border-color:#1f3763; }
+          .acc-cell.fv1 .ac-val { color:#fff; }
+          .acc-cell.fv0  { background:#e5e9f2; border-color:#c7d2ea; }
+          .acc-cell.fv0 .ac-val { color:#555; }
+          /* reverse (pivot amber) */
+          .acc-cell.rv1  { background:#f5c518; border-color:#c9960a; }
+          .acc-cell.rv1 .ac-val { color:#1a1000; }
+          .acc-cell.rv0  { background:#fdf8dc; border-color:#e8d880; }
+          .acc-cell.rv0 .ac-val { color:#7a5c00; }
+
+          /* Highlight newly-added affine row */
+          tr.aff-new > td { background:#fffde7; }
+
+          /* Step bar at bottom of output */
+          .anat-step-bar { display:flex; flex-wrap:wrap; align-items:center; gap:12px; background:#f7f5ef; border:1px solid #c7d2ea; border-radius:14px; padding:14px 22px; margin-top:14px; }
+          .anat-hint     { font-size:0.87rem; color:#555; font-style:italic; flex:1; min-width:120px; }
+          .anat-prog     { font-size:0.78rem; font-weight:700; color:#888; white-space:nowrap; }
         </style>
 
         <!-- Input bar -->
@@ -643,270 +669,311 @@
             <button class="anat-pre" onclick="anatLoad('AB')">0xAB</button>
             <button class="anat-pre" onclick="anatLoad('FF')">0xFF</button>
           </div>
-          <button class="anat-go" onclick="anatReveal()">Show full anatomy →</button>
-          <button class="anat-rst" onclick="anatReset()">↺ Reset</button>
+          <button class="anat-rst" onclick="anatLoad(document.getElementById('anat-in').value)">↺ Reset</button>
         </div>
 
-        <!-- Anatomy output -->
-        <div id="anat-out" style="display:none;">
+        <!-- Anatomy output — sections revealed progressively by the state machine -->
+        <div id="anat-out">
 
           <!-- ① S-box lookup table -->
-          <div class="anat-sec">
+          <div class="anat-sec" id="sec-sbox" style="display:none;">
             <div class="anat-sec-hd"><span class="anat-sec-num">①</span> The S-box — all 256 entries</div>
-            <p class="anat-note">Row = high nibble of input, column = low nibble. The highlighted cell is S(<span id="lbl-x"></span>). Row and column are tinted to help you find it.</p>
+            <p class="anat-note">Row = high nibble of input, column = low nibble. The highlighted cell is S(<span id="lbl-x"></span>). Row and column are tinted.</p>
             <div class="sg-scroll" id="sg-fwd"></div>
             <div class="sg-caption" id="sg-fwd-cap"></div>
           </div>
 
           <!-- ② Forward computation -->
-          <div class="anat-sec">
-            <div class="anat-sec-hd"><span class="anat-sec-num">②</span> How S(<span id="lbl-x2"></span>) is computed inside the S-box</div>
+          <div class="anat-sec" id="sec-fwd" style="display:none;">
+            <div class="anat-sec-hd"><span class="anat-sec-num">②</span> How S(<span id="lbl-x2"></span>) is computed</div>
 
-            <!-- Step 1: gf_inv -->
-            <div class="anat-sub">
+            <div class="anat-sub" id="fwd-gfinv-sub">
               <div class="anat-sub-hd">Step 1 — Field inverse: find b such that <strong>x · b = 0x01</strong> in GF(2⁸)</div>
               <div id="fwd-in-bits"></div>
               <div class="gfinv-box" id="fwd-gfinv-verify"></div>
               <div id="fwd-piv-bits"></div>
             </div>
 
-            <!-- Step 2: affine -->
-            <div class="anat-sub">
-              <div class="anat-sub-hd">Step 2 — Affine transform: s<sub>i</sub> = b<sub>i</sub> ⊕ b<sub>i+4</sub> ⊕ b<sub>i+5</sub> ⊕ b<sub>i+6</sub> ⊕ b<sub>i+7</sub> ⊕ c<sub>i</sub> &nbsp;&nbsp;(c = 0x63)</div>
-              <p class="anat-note" style="margin-bottom:8px;">Each output bit is an XOR of five input bits plus one bit of the constant 0x63. Filled badges contribute 1; hollow badges contribute 0.</p>
-              <div class="aff-scroll"><div id="fwd-aff-tbl"></div></div>
-              <div id="fwd-out-bits"></div>
+            <div class="anat-sub" id="fwd-aff-sub">
+              <div class="anat-sub-hd">Step 2 — Affine transform: s<sub>i</sub> = b<sub>i</sub> ⊕ b<sub>i+4</sub> ⊕ b<sub>i+5</sub> ⊕ b<sub>i+6</sub> ⊕ b<sub>i+7</sub> ⊕ c<sub>i</sub> &nbsp;(c = 0x63)</div>
+              <p class="anat-note" style="margin-bottom:8px;">Each row computes one output bit. Filled badges = 1, hollow = 0.</p>
+              <div class="aff-scroll">
+                <table class="aff-tbl" id="fwd-aff-tbl">
+                  <thead><tr>
+                    <th>Output bit</th>
+                    <th>Computation — b<sub>pos</sub>(value) &nbsp; filled=1 &nbsp; hollow=0</th>
+                    <th>Result</th>
+                  </tr></thead>
+                  <tbody id="fwd-aff-body"></tbody>
+                </table>
+              </div>
+              <!-- Output bit accumulator -->
+              <div class="acc-wrap" id="fwd-acc-wrap" style="display:none;">
+                <div class="acc-lbl">Output bits assembled so far &nbsp;(s<sub>7</sub> → s<sub>0</sub>):</div>
+                <div class="acc-row" id="fwd-acc-row"></div>
+              </div>
+              <div id="fwd-out-bits" style="display:none;"></div>
             </div>
 
-            <div class="anat-confirm" id="fwd-confirm"></div>
+            <div class="anat-confirm" id="fwd-confirm" style="display:none;"></div>
           </div>
 
-          <div class="anat-divider">↓ &nbsp; now reverse it &nbsp; ↓</div>
+          <!-- Divider -->
+          <div class="anat-divider" id="anat-divider" style="display:none;">↓ &nbsp; now reverse it &nbsp; ↓</div>
 
           <!-- ③ InvSBox lookup table -->
-          <div class="anat-sec">
+          <div class="anat-sec" id="sec-invsbox" style="display:none;">
             <div class="anat-sec-hd"><span class="anat-sec-num">③</span> The Inverse S-box — 256-entry inverse lookup</div>
-            <p class="anat-note">Built by inverting every (input→output) pair of the S-box. Row = high nibble of S(x), column = low nibble of S(x). The highlighted cell is S⁻¹(<span id="lbl-sx"></span>).</p>
+            <p class="anat-note">Built by inverting every entry of the S-box. Row = high nibble of S(x), column = low nibble. The highlighted cell is S⁻¹(<span id="lbl-sx"></span>).</p>
             <div class="sg-scroll" id="sg-inv"></div>
             <div class="sg-caption" id="sg-inv-cap"></div>
           </div>
 
           <!-- ④ Reverse computation -->
-          <div class="anat-sec">
+          <div class="anat-sec" id="sec-rev" style="display:none;">
             <div class="anat-sec-hd"><span class="anat-sec-num">④</span> How S⁻¹(<span id="lbl-sx2"></span>) recovers the original</div>
 
-            <!-- Step 1: inv_affine -->
-            <div class="anat-sub">
-              <div class="anat-sub-hd">Step 1 — Inverse affine: b<sub>i</sub> = s<sub>i+2</sub> ⊕ s<sub>i+5</sub> ⊕ s<sub>i+7</sub> ⊕ d<sub>i</sub> &nbsp;&nbsp;(d = 0x05)</div>
-              <p class="anat-note" style="margin-bottom:8px;">The inverse affine uses only 3 input bits per output (not 5), plus a different constant. Notice: the row indices cycle through the same positions as the forward transform, just offset differently.</p>
+            <div class="anat-sub" id="rev-aff-sub">
+              <div class="anat-sub-hd">Step 1 — Inverse affine: b<sub>i</sub> = s<sub>i+2</sub> ⊕ s<sub>i+5</sub> ⊕ s<sub>i+7</sub> ⊕ d<sub>i</sub> &nbsp;(d = 0x05, only 3 terms — not 5)</div>
               <div id="rev-in-bits"></div>
-              <div class="aff-scroll"><div id="rev-aff-tbl"></div></div>
-              <div id="rev-piv-bits"></div>
+              <div class="aff-scroll">
+                <table class="aff-tbl inv-aff" id="rev-aff-tbl">
+                  <thead><tr>
+                    <th>Output bit</th>
+                    <th>Computation — s<sub>pos</sub>(value)</th>
+                    <th>Result</th>
+                  </tr></thead>
+                  <tbody id="rev-aff-body"></tbody>
+                </table>
+              </div>
+              <div class="acc-wrap" id="rev-acc-wrap" style="display:none;">
+                <div class="acc-lbl">Output bits assembled so far &nbsp;(b<sub>7</sub> → b<sub>0</sub>):</div>
+                <div class="acc-row" id="rev-acc-row"></div>
+              </div>
+              <div id="rev-piv-bits" style="display:none;"></div>
             </div>
 
-            <!-- Pivot bridge -->
-            <div class="pivot-bridge">
+            <div class="pivot-bridge" id="pivot-bridge" style="display:none;">
               <span class="pivot-star">★</span>
-              <strong>Same pivot.</strong> The inverse affine produced <strong id="lbl-piv"></strong> — the exact value that gf_inv produced in Step 1 of the forward path. This is not a coincidence: gf_inv(gf_inv(x)) = x, so applying the field inverse twice is always an identity.
+              <strong>Same pivot.</strong> The inverse affine produced <strong id="lbl-piv"></strong> — the exact value gf_inv produced in Step 1 forward. Both paths converge here because gf_inv(gf_inv(x)) = x.
             </div>
 
-            <!-- Step 2: gf_inv again -->
-            <div class="anat-sub pivot-sub">
-              <div class="anat-sub-hd">Step 2 — Field inverse again: gf_inv(pivot) recovers the original</div>
+            <div class="anat-sub pivot-sub" id="rev-recovery" style="display:none;">
+              <div class="anat-sub-hd">Step 2 — Field inverse again: gf_inv(pivot) = original</div>
               <div id="rev-piv-bits2"></div>
               <div class="gfinv-box" id="rev-gfinv-verify"></div>
               <div id="rev-out-bits"></div>
             </div>
 
-            <div class="anat-confirm" id="rev-confirm"></div>
+            <div class="anat-confirm" id="rev-confirm" style="display:none;"></div>
+          </div>
+
+          <!-- Step bar — always visible at bottom, drives the state machine -->
+          <div class="anat-step-bar">
+            <button class="anat-go" id="anat-step-btn" onclick="anatStep()">Show anatomy →</button>
+            <span class="anat-hint" id="anat-hint">Enter a byte and begin.</span>
+            <span class="anat-prog" id="anat-prog"></span>
           </div>
 
         </div><!-- end #anat-out -->
 
         <script>
         (function(){
-          /* ── GF(2⁸) helpers ── */
+          /* ── GF(2⁸) ── */
           function xt(a){ return (a<<1)&0xFF^((a&0x80)?0x1B:0); }
           function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa;aa=xt(aa);}return r; }
           function gfInv(a){ if(!a)return 0; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return 0; }
-
-          /* Forward affine: s_i = b_i ^ b_{i+4} ^ b_{i+5} ^ b_{i+6} ^ b_{i+7} ^ c_i  (c=0x63) */
-          var AFC=[1,1,0,0,0,1,1,0];
+          var AFC=[1,1,0,0,0,1,1,0]; /* c = 0x63 */
+          var AID=[1,0,1,0,0,0,0,0]; /* d = 0x05 */
           function aff(v){ var b=[],o=0; for(var i=0;i<8;i++)b[i]=(v>>i)&1; for(var i=0;i<8;i++)o|=((b[i]^b[(i+4)%8]^b[(i+5)%8]^b[(i+6)%8]^b[(i+7)%8]^AFC[i])<<i); return o; }
-
-          /* Inverse affine (formula): b_i = s_{i+2} ^ s_{i+5} ^ s_{i+7} ^ d_i  (d=0x05) */
-          var AID=[1,0,1,0,0,0,0,0];
-          function invAffFormula(y){ var b=[],o=0; for(var i=0;i<8;i++)b[i]=(y>>i)&1; for(var i=0;i<8;i++)o|=((b[(i+2)%8]^b[(i+5)%8]^b[(i+7)%8]^AID[i])<<i); return o; }
-
-          /* Build tables */
           var SB=new Uint8Array(256), ISB=new Uint8Array(256);
           for(var i=0;i<256;i++) SB[i]=aff(gfInv(i));
           for(var i=0;i<256;i++) ISB[SB[i]]=i;
 
-          /* Helpers */
+          /* ── Utilities ── */
           function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
           function pb(s){ s=(s||'').trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
-          function bits(v){ var a=[]; for(var i=0;i<8;i++)a[i]=(v>>i)&1; return a; }
+          function bts(v){ var a=[]; for(var i=0;i<8;i++)a[i]=(v>>i)&1; return a; }
+          function $(id){ return document.getElementById(id); }
+          function show(id){ $(id).style.display=''; }
+          function sub(n){ return '\u2080\u2081\u2082\u2083\u2084\u2085\u2086\u2087'[n]; } /* subscript digits */
 
-          /* ── Build a 16×16 grid ── */
-          function buildGrid(table, hiIdx, scrollId, capId, capFn, targetCls){
-            var hr=hiIdx>>4, hc=hiIdx&0xF;
-            var h='<table class="sg-tbl"><tr><th></th>';
+          /* ── Grid builder ── */
+          function buildGrid(tbl,hi,sid,cid,targetCls){
+            var hr=hi>>4, hc=hi&0xF, h='<table class="sg-tbl"><tr><th></th>';
             for(var c=0;c<16;c++) h+='<th>'+c.toString(16).toUpperCase()+'</th>';
             h+='</tr>';
             for(var r=0;r<16;r++){
               h+='<tr><th>'+r.toString(16).toUpperCase()+'</th>';
               for(var c=0;c<16;c++){
-                var idx=r*16+c, val=table[idx];
-                var cls=(idx===hiIdx)?(targetCls||'sg-target'):(r===hr||c===hc)?'sg-band':'';
+                var idx=r*16+c, val=tbl[idx];
+                var cls=(idx===hi)?(targetCls||'sg-target'):(r===hr||c===hc)?'sg-band':'';
                 h+='<td'+(cls?' class="'+cls+'"':'')+'>'+val.toString(16).toUpperCase().padStart(2,'0')+'</td>';
               }
               h+='</tr>';
             }
             h+='</table>';
-            document.getElementById(scrollId).innerHTML=h;
-            document.getElementById(capId).innerHTML=capFn(hr,hc,table[hiIdx]);
+            $(sid).innerHTML=h;
+            return hr+','+hc+','+tbl[hi]; /* for caption callers */
           }
 
-          /* ── Build a bit display row ── */
-          function buildBits(val, containerId, labelHtml, colorCls){
-            var b=bits(val);
-            var h='<div class="bits-outer '+colorCls+'">'
-              +'<div class="bits-lbl">'+labelHtml+' = <code>'+hx(val)+'</code></div>'
-              +'<div class="bits-row">';
-            for(var i=7;i>=0;i--){
-              h+='<div class="bit-cell bv'+b[i]+'">'
-                +'<div class="bit-pos">b<sub>'+i+'</sub></div>'
-                +'<div class="bit-val">'+b[i]+'</div>'
-                +'</div>';
-            }
+          /* ── Bit row builder ── */
+          function buildBits(val, cid, lbl, cls){
+            var b=bts(val), h='<div class="bits-outer '+cls+'"><div class="bits-lbl">'+lbl+' = <code>'+hx(val)+'</code></div><div class="bits-row">';
+            for(var i=7;i>=0;i--)
+              h+='<div class="bit-cell bv'+b[i]+'"><div class="bit-pos">b<sub>'+i+'</sub></div><div class="bit-val">'+b[i]+'</div></div>';
             h+='</div></div>';
-            document.getElementById(containerId).innerHTML=h;
+            $(cid).innerHTML=h;
           }
 
-          /* ── Build forward affine computation table ── */
-          /* s_i = b_i ^ b_{i+4} ^ b_{i+5} ^ b_{i+6} ^ b_{i+7} ^ c_i */
-          function buildFwdAff(pivVal, containerId){
-            var b=bits(pivVal);
-            var shifts=[0,4,5,6,7]; /* positions relative to i, including i itself */
-            var h='<table class="aff-tbl"><thead><tr>'
-              +'<th>Output bit</th><th>Computation — b<sub>pos</sub>(value) in blue if 1, gray if 0</th><th>Result</th>'
-              +'</tr></thead><tbody>';
-            var outVal=0;
-            for(var i=0;i<8;i++){
-              var res=AFC[i], thtml='';
-              for(var j=0;j<shifts.length;j++){
-                var p=(i+shifts[j])%8, v=b[p];
-                res^=v;
-                thtml+='<span class="at bv'+v+'">b<sub>'+p+'</sub>('+v+')</span>';
-                thtml+='<span class="axor">⊕</span>';
-              }
-              thtml+='<span class="at at-const bv'+AFC[i]+'">c<sub>'+i+'</sub>('+AFC[i]+')</span>';
-              outVal|=(res<<i);
-              h+='<tr><td class="aff-out-lbl">s<sub>'+i+'</sub></td>'
-                +'<td class="aff-formula">'+thtml+'</td>'
-                +'<td class="aff-res-cell bv'+res+'">'+res+'</td></tr>';
+          /* ── Accumulator row builder — 8 "?" cells, filled one per step ── */
+          function buildAcc(rowId, pfx) {
+            var h='';
+            for(var i=7;i>=0;i--)
+              h+='<div class="acc-cell" id="'+pfx+'-ac-'+i+'"><div class="ac-pos">'+pfx[0]+sub(i)+'</div><div class="ac-val">?</div></div>';
+            $(rowId).innerHTML=h;
+          }
+          function fillAcc(pfx, bitIdx, val){
+            var cell=$(pfx+'-ac-'+bitIdx);
+            cell.className='acc-cell '+(pfx==='fwd'?'fv':'rv')+val;
+            cell.querySelector('.ac-val').textContent=val;
+          }
+
+          /* ── Precompute affine row HTMLs ── */
+          function makeAffRow(outLabel, inBits, positions, CONST, idx, rowCls){
+            var res=CONST[idx], thtml='';
+            for(var j=0;j<positions.length;j++){
+              var p=positions[j], v=inBits[p];
+              res^=v;
+              thtml+='<span class="at bv'+v+'">'+outLabel[0]+'<sub>'+p+'</sub>('+v+')</span><span class="axor">⊕</span>';
             }
-            h+='</tbody></table>';
-            document.getElementById(containerId).innerHTML=h;
-            return outVal;
+            var cLabel=(rowCls==='fwd')?'c':'d';
+            thtml+='<span class="at at-const bv'+CONST[idx]+'">'+cLabel+'<sub>'+idx+'</sub>('+CONST[idx]+')</span>';
+            return {bit:res, html:'<tr class="aff-new"><td class="aff-out-lbl">'+outLabel[1]+'<sub>'+idx+'</sub></td><td class="aff-formula">'+thtml+'</td><td class="aff-res-cell bv'+res+'">'+res+'</td></tr>'};
           }
 
-          /* ── Build inverse affine computation table ── */
-          /* b_i = s_{i+2} ^ s_{i+5} ^ s_{i+7} ^ d_i */
-          function buildInvAff(sboxVal, containerId){
-            var b=bits(sboxVal);
-            var shifts=[2,5,7]; /* positions relative to i */
-            var h='<table class="aff-tbl inv-aff"><thead><tr>'
-              +'<th>Output bit</th><th>Computation — s<sub>pos</sub>(value) in blue if 1, gray if 0</th><th>Result</th>'
-              +'</tr></thead><tbody>';
-            var outVal=0;
+          /* ── State machine ── */
+          var PHASE=0, cA=null, cPiv, cSo, cRec, cFwd=[], cRev=[];
+
+          function precompute(a){
+            cA=a; cPiv=gfInv(a); cSo=SB[a]; cRec=ISB[cSo];
+            var pb=bts(cPiv), sb=bts(cSo);
+            cFwd=[]; cRev=[];
             for(var i=0;i<8;i++){
-              var res=AID[i], thtml='';
-              for(var j=0;j<shifts.length;j++){
-                var p=(i+shifts[j])%8, v=b[p];
-                res^=v;
-                thtml+='<span class="at bv'+v+'">s<sub>'+p+'</sub>('+v+')</span>';
-                thtml+='<span class="axor">⊕</span>';
-              }
-              thtml+='<span class="at at-const bv'+AID[i]+'">d<sub>'+i+'</sub>('+AID[i]+')</span>';
-              outVal|=(res<<i);
-              h+='<tr><td class="aff-out-lbl">b<sub>'+i+'</sub></td>'
-                +'<td class="aff-formula">'+thtml+'</td>'
-                +'<td class="aff-res-cell bv'+res+'">'+res+'</td></tr>';
+              cFwd.push(makeAffRow(['b','s'], pb, [i,(i+4)%8,(i+5)%8,(i+6)%8,(i+7)%8], AFC, i, 'fwd'));
+              cRev.push(makeAffRow(['s','b'], sb, [(i+2)%8,(i+5)%8,(i+7)%8],           AID, i, 'rev'));
             }
-            h+='</tbody></table>';
-            document.getElementById(containerId).innerHTML=h;
-            return outVal;
           }
 
-          /* ── Main orchestrator ── */
-          function anatReveal(){
-            var a=pb(document.getElementById('anat-in').value);
+          function clearDisplay(){
+            ['sec-sbox','sec-fwd','sec-invsbox','sec-rev','anat-divider',
+             'fwd-confirm','fwd-acc-wrap','fwd-out-bits',
+             'pivot-bridge','rev-recovery','rev-confirm','rev-acc-wrap','rev-piv-bits'].forEach(function(id){
+              $(id).style.display='none';
+            });
+            $('fwd-aff-body').innerHTML='';
+            $('rev-aff-body').innerHTML='';
+            $('fwd-out-bits').innerHTML='';
+            $('rev-piv-bits').innerHTML='';
+            $('rev-piv-bits2').innerHTML='';
+            $('rev-out-bits').innerHTML='';
+          }
+
+          function setBtn(lbl,hint,prog){
+            $('anat-step-btn').textContent=lbl;
+            $('anat-hint').textContent=hint||'';
+            $('anat-prog').textContent=prog||'';
+          }
+
+          function anatStep(){
+            var a=pb($('anat-in').value);
             if(a===null){ alert('Enter a valid hex byte 00–FF.'); return; }
+            if(a!==cA){ precompute(a); clearDisplay(); PHASE=0; }
+            PHASE++;
 
-            var piv=gfInv(a);       /* pivot = field inverse of input */
-            var so =SB[a];          /* S-box output */
-            var pivCheck=invAffFormula(so); /* should == piv */
-            var rec=ISB[so];        /* recovered = a */
+            if(PHASE===1){
+              /* ① S-box + gf_inv + pivot + affine header + empty accumulator */
+              ['sec-sbox','sec-fwd'].forEach(show);
+              $('lbl-x').textContent=hx(cA); $('lbl-x2').textContent=hx(cA);
+              buildGrid(SB,cA,'sg-fwd','sg-fwd-cap','sg-target');
+              $('sg-fwd-cap').innerHTML='Row <strong>'+(cA>>4).toString(16).toUpperCase()+'</strong>, column <strong>'+(cA&0xF).toString(16).toUpperCase()+'</strong> → <span class="sg-result">S('+hx(cA)+') = '+hx(cSo)+'</span>';
+              buildBits(cA,'fwd-in-bits','Input x','bc-input');
+              $('fwd-gfinv-verify').innerHTML='Verification: <code>'+hx(cA)+'</code> × <code>'+hx(cPiv)+'</code> = <code>0x01</code> in GF(2⁸) ✓ &nbsp;— gf_inv('+hx(cA)+') = '+hx(cPiv);
+              buildBits(cPiv,'fwd-piv-bits','★ Pivot &nbsp; gf_inv('+hx(cA)+')','bc-pivot');
+              buildAcc('fwd-acc-row','fwd'); show('fwd-acc-wrap');
+              setBtn('Compute s'+sub(0)+' →','Affine table: 8 rows to reveal, one per click. Each row computes one output bit from 5 pivot bits + constant.','0 / 8 rows');
 
-            /* Update labels */
-            ['lbl-x','lbl-x2'].forEach(function(id){ document.getElementById(id).textContent=hx(a); });
-            ['lbl-sx','lbl-sx2'].forEach(function(id){ document.getElementById(id).textContent=hx(so); });
-            document.getElementById('lbl-piv').textContent=hx(piv);
+            } else if(PHASE>=2 && PHASE<=9){
+              var row=PHASE-2;
+              /* remove highlight from previous row */
+              var prev=$('fwd-aff-body').querySelector('.aff-new');
+              if(prev) prev.className='';
+              $('fwd-aff-body').insertAdjacentHTML('beforeend', cFwd[row].html);
+              fillAcc('fwd', row, cFwd[row].bit);
+              if(PHASE===9){
+                /* last row — assemble output byte */
+                var outVal=0; for(var k=0;k<8;k++) outVal|=(cFwd[k].bit<<k);
+                buildBits(outVal,'fwd-out-bits','S('+hx(cA)+')','bc-sbox');
+                show('fwd-out-bits');
+                $('fwd-confirm').innerHTML='S('+hx(cA)+') = <code>'+hx(outVal)+'</code>'+(outVal===cSo?' ✓ matches table lookup above':'');
+                show('fwd-confirm');
+                setBtn('Continue to reverse →','All 8 bits of S('+hx(cA)+') = '+hx(outVal)+' assembled. Now reverse every step.','8 / 8 rows ✓');
+              } else {
+                setBtn('Compute s'+sub(row+1)+' →','s'+sub(row)+' = '+cFwd[row].bit+'. The formula shifts: each row reads a different window of 5 consecutive bits.',''+( row+1)+' / 8 rows');
+              }
 
-            /* ① S-box grid */
-            buildGrid(SB, a, 'sg-fwd', 'sg-fwd-cap',
-              function(r,c,v){
-                return 'Row <strong>'+r.toString(16).toUpperCase()+'</strong>, column <strong>'+c.toString(16).toUpperCase()+'</strong> → <span class="sg-result">S('+hx(a)+') = '+hx(v)+'</span>';
-              }, 'sg-target');
+            } else if(PHASE===10){
+              /* ③ InvSBox + S(x) bits + inv_affine header + rev accumulator */
+              show('anat-divider'); show('sec-invsbox'); show('sec-rev');
+              $('lbl-sx').textContent=hx(cSo); $('lbl-sx2').textContent=hx(cSo);
+              buildGrid(ISB,cSo,'sg-inv','sg-inv-cap','sg-target-inv');
+              $('sg-inv-cap').innerHTML='Row <strong>'+(cSo>>4).toString(16).toUpperCase()+'</strong>, column <strong>'+(cSo&0xF).toString(16).toUpperCase()+'</strong> → <span class="sg-result">S⁻¹('+hx(cSo)+') = '+hx(cA)+'</span>';
+              buildBits(cSo,'rev-in-bits','Start: S(x) = '+hx(cSo),'bc-sbox');
+              buildAcc('rev-acc-row','rev'); show('rev-acc-wrap');
+              setBtn('Compute b'+sub(0)+' →','Inverse affine: same structure, but only 3 terms per row (not 5) and a different constant d = 0x05.','0 / 8 rows');
 
-            /* ② Forward: gf_inv */
-            buildBits(a,   'fwd-in-bits',  'Input x',                    'bc-input');
-            document.getElementById('fwd-gfinv-verify').innerHTML=
-              'Verification: <code>'+hx(a)+'</code> × <code>'+hx(piv)+'</code> = <code>0x01</code> in GF(2⁸) ✓ &nbsp;—&nbsp; so gf_inv('+hx(a)+') = '+hx(piv);
-            buildBits(piv, 'fwd-piv-bits', '★ Pivot &nbsp; gf_inv('+hx(a)+')', 'bc-pivot');
+            } else if(PHASE>=11 && PHASE<=18){
+              var row=PHASE-11;
+              var prev=$('rev-aff-body').querySelector('.aff-new');
+              if(prev) prev.className='';
+              $('rev-aff-body').insertAdjacentHTML('beforeend', cRev[row].html);
+              fillAcc('rev', row, cRev[row].bit);
+              if(PHASE===18){
+                /* last row — assemble pivot, show bridge + recovery */
+                var pivVal=0; for(var k=0;k<8;k++) pivVal|=(cRev[k].bit<<k);
+                $('lbl-piv').textContent=hx(pivVal);
+                buildBits(pivVal,'rev-piv-bits','★ Pivot &nbsp; invAff('+hx(cSo)+')','bc-pivot');
+                show('rev-piv-bits');
+                show('pivot-bridge');
+                buildBits(pivVal,'rev-piv-bits2','★ Pivot = '+hx(pivVal),'bc-pivot');
+                $('rev-gfinv-verify').innerHTML='Verification: <code>'+hx(pivVal)+'</code> × <code>'+hx(cRec)+'</code> = <code>0x01</code> in GF(2⁸) ✓ &nbsp;— gf_inv('+hx(pivVal)+') = '+hx(cRec);
+                buildBits(cRec,'rev-out-bits','Recovered: gf_inv('+hx(pivVal)+')','bc-win');
+                show('rev-recovery');
+                $('rev-confirm').innerHTML='S\u207b\u00b9('+hx(cSo)+') = <code>'+hx(cRec)+'</code>'+(cRec===cA?' ✓ round-trip confirmed':'');
+                show('rev-confirm');
+                setBtn('\u21ba New byte','Pivot = '+hx(pivVal)+' — same as the forward gf_inv. S\u207b\u00b9(S('+hx(cA)+')) = '+hx(cRec)+' \u2713','8 / 8 rows ✓');
+              } else {
+                setBtn('Compute b'+sub(row+1)+' →','b'+sub(row)+' = '+cRev[row].bit+'. Notice how many fewer terms each row needs compared to the forward transform.',''+( row+1)+' / 8 rows');
+              }
 
-            /* ② Forward: affine */
-            var fwdOut=buildFwdAff(piv, 'fwd-aff-tbl');
-            buildBits(fwdOut, 'fwd-out-bits', 'S('+hx(a)+')', 'bc-sbox');
-            document.getElementById('fwd-confirm').innerHTML=
-              'S('+hx(a)+') = <code>'+hx(fwdOut)+'</code>'+(fwdOut===so?' ✓ matches table lookup above':'');
-
-            /* ③ InvSBox grid */
-            buildGrid(ISB, so, 'sg-inv', 'sg-inv-cap',
-              function(r,c,v){
-                return 'Row <strong>'+r.toString(16).toUpperCase()+'</strong>, column <strong>'+c.toString(16).toUpperCase()+'</strong> → <span class="sg-result">S⁻¹('+hx(so)+') = '+hx(v)+'</span>';
-              }, 'sg-target-inv');
-
-            /* ④ Reverse: inv_affine */
-            buildBits(so,       'rev-in-bits',   'Start: S(x) = '+hx(so),           'bc-sbox');
-            var revPiv=buildInvAff(so, 'rev-aff-tbl');
-            buildBits(revPiv,   'rev-piv-bits',  '★ Pivot &nbsp; invAff('+hx(so)+')', 'bc-pivot');
-
-            /* ④ Reverse: gf_inv again */
-            buildBits(revPiv,   'rev-piv-bits2', '★ Pivot = '+hx(revPiv),            'bc-pivot');
-            document.getElementById('rev-gfinv-verify').innerHTML=
-              'Verification: <code>'+hx(revPiv)+'</code> × <code>'+hx(rec)+'</code> = <code>0x01</code> in GF(2⁸) ✓ &nbsp;—&nbsp; so gf_inv('+hx(revPiv)+') = '+hx(rec);
-            buildBits(rec, 'rev-out-bits', 'Recovered: gf_inv('+hx(revPiv)+')', 'bc-win');
-            document.getElementById('rev-confirm').innerHTML=
-              'S⁻¹('+hx(so)+') = <code>'+hx(rec)+'</code>'+(rec===a?' ✓ round-trip confirmed — original byte recovered':'');
-
-            document.getElementById('anat-out').style.display='block';
+            } else {
+              /* reset */
+              PHASE=0; cA=null; clearDisplay();
+              setBtn('Show anatomy \u2192','Enter a byte and begin.','');
+            }
           }
 
-          function anatReset(){
-            document.getElementById('anat-out').style.display='none';
-          }
           function anatLoad(h){
-            document.getElementById('anat-in').value=h;
-            anatReset();
+            var v=typeof h==='string'?h:$('anat-in').value;
+            $('anat-in').value=v.replace(/^0x/i,'');
+            cA=null; PHASE=0; clearDisplay();
+            setBtn('Show anatomy \u2192','Enter a byte and begin.','');
           }
 
-          window.anatReveal = anatReveal;
-          window.anatReset  = anatReset;
-          window.anatLoad   = anatLoad;
-          document.getElementById('anat-in').addEventListener('keydown',function(e){ if(e.key==='Enter') anatReveal(); });
+          window.anatStep = anatStep;
+          window.anatLoad = anatLoad;
+          $('anat-in').addEventListener('keydown',function(e){ if(e.key==='Enter') anatStep(); });
+          setBtn('Show anatomy \u2192','Enter a byte and begin.','');
         })();
         </script>
       </section>
