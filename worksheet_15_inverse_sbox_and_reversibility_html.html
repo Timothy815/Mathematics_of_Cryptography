@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 15: Inverse S-box and Reversibility | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { margin: 0.75in; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #1a5c2a, #2a8a4a);
+      border: 1px solid #1a5c2a;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      color: #ffffff;
+    }
+
+    header.worksheet-header .course-label,
+    header.worksheet-header .volume-label,
+    header.worksheet-header h1,
+    header.worksheet-header .subtitle { color: #ffffff; }
+
+    .workbook-nav { display:flex; flex-wrap:wrap; gap:10px; margin:22px 0 0; }
+    .workbook-nav .nav-link {
+      background: rgba(255,255,255,0.15); color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+      padding: 6px 14px; text-decoration: none; font-weight: 700; font-size: 0.9rem;
+    }
+    .workbook-nav .nav-link:hover { background: rgba(255,255,255,0.25); }
+    .workbook-nav .print-button {
+      background: rgba(255,255,255,0.15); color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+      padding: 6px 14px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    }
+
+    .student-info { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 28px; }
+    .field-label { font-weight:700; display:block; margin-bottom:4px; }
+    .field-input { width:100%; border:none; border-bottom:1.5px solid #333; font-size:1rem; padding:4px 0; background:transparent; outline:none; }
+
+    .problem { border:1px solid var(--border); border-radius:12px; padding:16px 18px; margin:16px 0; background:#ffffff; break-inside:avoid; }
+    .problem-title { font-weight:800; color:#1f3763; margin-bottom:8px; }
+
+    .ans-input { border:none; border-bottom:1.5px solid #555; width:120px; font-size:1rem; padding:2px 4px; background:transparent; outline:none; font-family:'Cascadia Code',monospace; }
+    .ans-input.ws-correct { border-color:#1a7a3a; background:#eafaf0; border-radius:4px; }
+    .ans-input.ws-wrong   { border-color:#c0392b; background:#fdeaea; border-radius:4px; }
+
+    .ans-input-sm { border:none; border-bottom:1.5px solid #555; width:70px; font-size:1rem; padding:2px 4px; background:transparent; outline:none; font-family:'Cascadia Code',monospace; text-align:center; }
+    .ans-input-sm.ws-correct { border-color:#1a7a3a; background:#eafaf0; border-radius:4px; }
+    .ans-input-sm.ws-wrong   { border-color:#c0392b; background:#fdeaea; border-radius:4px; }
+
+    .work-space { border:1px dashed #aaa; border-radius:8px; min-height:80px; padding:8px; margin:10px 0 6px; background:#fffefe; }
+    .work-space.lg { min-height:120px; }
+    .work-space.xl { min-height:160px; }
+
+    .write-wrap { position:relative; margin:8px 0; }
+    .written-area { width:100%; min-height:80px; border:1px dashed #aaa; border-radius:8px; padding:8px; font-size:1rem; resize:vertical; }
+    .write-lines { display:none; }
+    .wl { display:block; height:1.9em; border-bottom:1px solid #888; }
+
+    .ws-score-bar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:#e8f6ec; border:1px solid #a8d8b8; border-radius:10px; padding:12px 18px; margin-bottom:24px; }
+    .ws-btn-check  { background:#1a5c2a; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+    .ws-btn-regen  { background:#2a8a4a; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+    .ws-btn-reset  { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:8px 18px; font-size:0.97rem; cursor:pointer; }
+    #ws-score-display { font-weight:700; font-size:1rem; color:#1a5c2a; }
+
+    .answer-key { border-top:4px double #2a8a4a; padding-top:24px; margin-top:40px; }
+    .answer-step { margin:10px 0; padding-left:14px; border-left:4px solid #a8d8b8; }
+
+    .ws-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.95rem; }
+    .ws-table th, .ws-table td { border:1px solid var(--border); padding:9px 11px; vertical-align:middle; }
+    .ws-table th { background:#e8f6ec; color:#1a5c2a; text-align:left; }
+    .ws-table td { text-align:center; }
+    .ws-table td:first-child { text-align:left; }
+
+    @media (max-width:760px) { .student-info { grid-template-columns:1fr; } }
+
+    @media print {
+      .no-print, .ws-score-bar, .workbook-nav { display:none !important; }
+      .written-area { display:none !important; }
+      .write-lines { display:block !important; }
+      header.worksheet-header { background:#1a5c2a !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .ans-input, .ans-input-sm { border:none; border-bottom:1.5px solid #333 !important; background:transparent !important; border-radius:0 !important; }
+      .ans-input.ws-correct, .ans-input.ws-wrong,
+      .ans-input-sm.ws-correct, .ans-input-sm.ws-wrong { background:transparent !important; }
+      .answer-key { page-break-before:always; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 15</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Inverse S-box and Reversibility</h1>
+      <p class="subtitle">Inverse mappings · Reverse-order reasoning · Bijection checks · Round-trip verification</p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a href="#part-a" class="nav-link">Part A</a>
+        <a href="#part-b" class="nav-link">Part B</a>
+        <a href="#part-c" class="nav-link">Part C</a>
+        <a href="#part-d" class="nav-link">Part D</a>
+        <a href="#part-e" class="nav-link">Part E</a>
+        <a href="#answer-key" class="nav-link">Answer Key</a>
+        <a href="index.html" class="nav-link" style="margin-left:auto;">&#127968; Dashboard</a>
+        <button class="print-button" onclick="window.print()">&#128424; Print</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p style="margin:0;font-size:0.95rem;">Check your fill-in answers or regenerate.</p>
+        <span id="ws-score-display"></span>
+        <button class="ws-btn-check" onclick="wsCheckAll()">Check Answers</button>
+        <button class="ws-btn-regen" onclick="wsRegenerate()">Regenerate</button>
+        <button class="ws-btn-reset" onclick="wsReset()">Reset</button>
+      </div>
+
+      <div class="student-info">
+        <div><label class="field-label">Name:</label><input class="field-input" type="text" /></div>
+        <div><label class="field-label">Date:</label><input class="field-input" type="text" /></div>
+      </div>
+
+      <details class="no-print" style="background:#e8f6ec;border:1px solid #a8d8b8;border-radius:12px;padding:14px 20px;margin-bottom:24px;">
+        <summary style="font-weight:800;cursor:pointer;color:#1a5c2a;">Quick Reference — tap to expand</summary>
+        <div style="margin-top:10px;line-height:1.9;">
+          <strong>Inverse lookup rule:</strong> If \(S(x) = y\), then \(S^{-1}(y) = x\).
+          The inverse S-box is the forward S-box table read backward.<br>
+          <strong>Internal order:</strong>
+          Forward: field inverse \(\to\) affine transformation.<br>
+          Inverse: <em>inverse affine first</em>, then field inverse again.<br>
+          <strong>Round-trip:</strong> \(S^{-1}(S(x)) = x\) for every byte \(x\).<br>
+          <strong>Bijection:</strong> AES S-box maps 256 inputs to 256 <em>distinct</em> outputs — no duplicates.
+          Any duplicate output would break decryption.<br>
+          <strong>Key examples:</strong>
+          \(S(\texttt{0x00})=\texttt{0x63}\), so \(S^{-1}(\texttt{0x63})=\texttt{0x00}\).\quad
+          \(S(\texttt{0x53})=\texttt{0xED}\), so \(S^{-1}(\texttt{0xED})=\texttt{0x53}\).
+        </div>
+      </details>
+
+      <!-- Part A -->
+      <section id="part-a">
+        <h2>Part A — Inverse S-box table</h2>
+        <p>Use the rule \(S(x)=y \Longleftrightarrow S^{-1}(y)=x\) to fill in each inverse mapping.</p>
+
+        <table class="ws-table">
+          <thead>
+            <tr><th>Problem</th><th>Forward S-box says</th><th>Inverse S-box must say</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>A1 (given)</td><td><code>S(0x00) = 0x63</code></td><td><code>InvS(0x63) = 0x00</code> — already filled</td></tr>
+            <tr><td>A2</td><td><code>S(0x53) = 0xED</code></td><td><code>InvS(0xED) = </code><input class="ans-input-sm" data-answer="0x53|53" /></td></tr>
+            <tr><td>A3</td><td><code>S(0x7C) = 0x10</code></td><td><code>InvS(0x10) = </code><input class="ans-input-sm" data-answer="0x7C|7C|0x7c|7c" /></td></tr>
+            <tr><td>A4</td><td><code>S(0x01) = 0x7C</code></td><td><code>InvS(0x7C) = </code><input class="ans-input-sm" data-answer="0x01|01|0x1|1" /></td></tr>
+            <tr><td>A5</td><td><code>S(0x02) = 0x77</code></td><td><code>InvS(0x77) = </code><input class="ans-input-sm" data-answer="0x02|02|0x2|2" /></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Part B -->
+      <section id="part-b">
+        <h2>Part B — Inverse table to forward table</h2>
+        <p>Now reverse the direction. Given the inverse S-box entry, write the corresponding forward S-box entry.</p>
+
+        <table class="ws-table" id="part-b-table">
+          <thead>
+            <tr><th>Problem</th><th>Inverse S-box says</th><th>Forward S-box must say</th></tr>
+          </thead>
+          <tbody id="part-b-body">
+            <!-- filled by JS -->
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Part C -->
+      <section id="part-c">
+        <h2>Part C — Reverse-order reasoning</h2>
+
+        <div class="problem">
+          <div class="problem-title">C1. In what order does the inverse S-box apply its internal steps?</div>
+          <p>Forward order: <strong>(1)</strong> field inverse, <strong>(2)</strong> affine transformation.</p>
+          <p>Inverse order: <strong>(1)</strong> <input class="ans-input" style="width:220px;" data-answer="inverse affine|inverse affine transformation|affine inverse|inv affine" />,
+          &nbsp;<strong>(2)</strong> <input class="ans-input" style="width:220px;" data-answer="field inverse|field inverse again|gf inverse|multiplicative inverse" />.</p>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C2. Complete the two-direction table for <code>0x53</code>.</div>
+          <table class="ws-table">
+            <thead><tr><th>Direction</th><th>Step 1</th><th>Step 2</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Forward S-box</td>
+                <td><code>0x53 → inverse → 0xCA</code></td>
+                <td><code>0xCA → affine → ___</code><input class="ans-input-sm" data-answer="0xED|ED" /></td>
+                <td><code>0xED</code></td>
+              </tr>
+              <tr>
+                <td>Inverse S-box</td>
+                <td><code>0xED → inv. affine → ___</code><input class="ans-input-sm" data-answer="0xCA|CA" /></td>
+                <td><code>0xCA → inverse → ___</code><input class="ans-input-sm" data-answer="0x53|53" /></td>
+                <td><code>0x53</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">C3. Complete the two-direction table for <code>0x00</code>.</div>
+          <table class="ws-table">
+            <thead><tr><th>Direction</th><th>Step 1</th><th>Step 2</th><th>Result</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>Forward S-box</td>
+                <td><code>0x00 → (special) → 0x00</code></td>
+                <td><code>0x00 → affine → ___</code><input class="ans-input-sm" data-answer="0x63|63" /></td>
+                <td><code>0x63</code></td>
+              </tr>
+              <tr>
+                <td>Inverse S-box</td>
+                <td><code>0x63 → inv. affine → ___</code><input class="ans-input-sm" data-answer="0x00|00|0x0|0" /></td>
+                <td><code>0x00 → inverse → ___</code><input class="ans-input-sm" data-answer="0x00|00|0x0|0" /></td>
+                <td><code>0x00</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Part D -->
+      <section id="part-d">
+        <h2>Part D — Bijection and reversibility checks</h2>
+
+        <div class="problem">
+          <div class="problem-title">D1. Decide whether each toy S-box (4 inputs, 4 outputs) is reversible.</div>
+          <table class="ws-table">
+            <thead><tr><th>S-box</th><th>Mapping</th><th>Reversible? (Yes/No)</th><th>Reason</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>P</td>
+                <td><code>0→2, 1→3, 2→0, 3→1</code></td>
+                <td><input class="ans-input-sm" data-answer="yes|Yes|YES" /></td>
+                <td><div class="work-space" style="min-height:40px;"></div></td>
+              </tr>
+              <tr>
+                <td>Q</td>
+                <td><code>0→2, 1→2, 2→0, 3→1</code></td>
+                <td><input class="ans-input-sm" data-answer="no|No|NO" /></td>
+                <td><div class="work-space" style="min-height:40px;"></div></td>
+              </tr>
+              <tr>
+                <td>R</td>
+                <td><code>0→1, 1→0, 2→3, 3→2</code></td>
+                <td><input class="ans-input-sm" data-answer="yes|Yes|YES" /></td>
+                <td><div class="work-space" style="min-height:40px;"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">D2. For S-box P above, build the inverse table.</div>
+          <table class="ws-table">
+            <thead><tr><th>Input to InvS-box</th><th>Output (recovered original)</th></tr></thead>
+            <tbody>
+              <tr><td>2</td><td><input class="ans-input-sm" data-answer="0" /></td></tr>
+              <tr><td>3</td><td><input class="ans-input-sm" data-answer="1" /></td></tr>
+              <tr><td>0</td><td><input class="ans-input-sm" data-answer="2" /></td></tr>
+              <tr><td>1</td><td><input class="ans-input-sm" data-answer="3" /></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Part E -->
+      <section id="part-e">
+        <h2>Part E — Conceptual questions</h2>
+
+        <div class="problem">
+          <div class="problem-title">E1. Why must AES decryption have an inverse S-box?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Think about what block cipher decryption needs to do to each byte…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E2. The field-inverse step is its own undoing: \((a^{-1})^{-1}=a\). Why does this not mean the full AES S-box is its own inverse?</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="What does the affine transformation do between the two field-inverse applications?"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E3. Suppose two different bytes, \(a\) and \(b\), produced the same S-box output \(y\). Explain why this would make decryption fail.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="What would the inverse S-box see when it receives y?"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+
+        <div class="problem">
+          <div class="problem-title">E4. Explain the round-trip property \(S^{-1}(S(x))=x\) in plain language, as if explaining to someone who has never seen modular arithmetic.</div>
+          <div class="write-wrap">
+            <textarea class="written-area" placeholder="Use an analogy — a lock and key, a function machine, shoes and socks — to make it vivid…"></textarea>
+            <div class="write-lines"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Answer Key -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+        <div class="box" style="background:#e8f6ec;border:1px solid #a8d8b8;padding:14px 18px;border-radius:10px;margin-bottom:18px;">
+          <strong>Note:</strong> Written responses in Part E are not auto-graded. Compare your explanations to the samples below.
+        </div>
+
+        <h3>Part A — Inverse S-box table</h3>
+        <div class="answer-step">
+          <p><strong>A2.</strong> <code>InvS(0xED) = 0x53</code></p>
+          <p><strong>A3.</strong> <code>InvS(0x10) = 0x7C</code></p>
+          <p><strong>A4.</strong> <code>InvS(0x7C) = 0x01</code></p>
+          <p><strong>A5.</strong> <code>InvS(0x77) = 0x02</code></p>
+        </div>
+
+        <h3>Part B — Inverse to forward</h3>
+        <div class="answer-step" id="ak-part-b"></div>
+
+        <h3>Part C — Reverse-order reasoning</h3>
+        <div class="answer-step">
+          <p><strong>C1.</strong> Inverse order: (1) <em>inverse affine transformation</em>, (2) <em>field inverse</em>.</p>
+          <p><strong>C2.</strong> Forward result: <code>0xED</code>. Inverse step 1: <code>0xCA</code>. Inverse step 2: <code>0x53</code>.</p>
+          <p><strong>C3.</strong> Forward result: <code>0x63</code>. Inverse step 1: <code>0x00</code>. Inverse step 2: <code>0x00</code>.</p>
+        </div>
+
+        <h3>Part D — Bijection checks</h3>
+        <div class="answer-step">
+          <p><strong>D1.</strong></p>
+          <ul>
+            <li><strong>P:</strong> Yes — outputs {2, 3, 0, 1} are all distinct.</li>
+            <li><strong>Q:</strong> No — inputs 0 and 1 both map to output 2. Decryption cannot determine which original byte produced output 2.</li>
+            <li><strong>R:</strong> Yes — outputs {1, 0, 3, 2} are all distinct.</li>
+          </ul>
+          <p><strong>D2.</strong> Inverse of P: InvS(2)=0, InvS(3)=1, InvS(0)=2, InvS(1)=3.</p>
+        </div>
+
+        <h3>Part E — Conceptual questions</h3>
+        <div class="answer-step">
+          <p><strong>E1 sample.</strong> AES decryption must reverse every step that AES encryption applied in order to recover the original plaintext. The SubBytes step in encryption uses the S-box to substitute each byte. Decryption must undo that substitution — which requires applying the inverse S-box (InvSubBytes) to each encrypted byte to recover the pre-substitution byte.</p>
+          <p><strong>E2 sample.</strong> The field-inverse step alone is involutive: taking the inverse twice returns to the original. But the AES S-box also applies the affine transformation after the field inverse. The composition is: field inverse → affine. Undoing that composition requires: inverse affine → field inverse. The full S-box is not the same function as the inverse S-box because of the affine step in the middle.</p>
+          <p><strong>E3 sample.</strong> The inverse S-box receives the output \(y\) and must produce the original input. If both \(a\) and \(b\) map to \(y\), the inverse S-box cannot know which of the two was the actual input — the information is destroyed. Any ciphertext byte equal to \(y\) would have two equally valid decryptions, making recovery impossible.</p>
+          <p><strong>E4 sample.</strong> Think of the S-box as a special lock. You put a key in (the input byte), turn it, and the lock produces a code (the S-box output). The inverse S-box is the matching key that, when given the code, tells you exactly which key was used. No matter which key you started with, the lock-and-unlock process always returns the original key. That is the round-trip property: encrypt-then-decrypt gets you back where you started, every single time.</p>
+        </div>
+      </section>
+
+      <p class="footer-note">Mathematics of Cryptography · Worksheet 15 · Inverse S-box and Reversibility</p>
+
+      <nav class="bottom-nav no-print" aria-label="Bottom navigation">
+        <div class="nav-bundle">
+          <a href="worksheet_14_aes_sbox_inverse_plus_affine_transformation_html.html" class="nav-item">&#8592; Worksheet 14</a>
+          <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+          <a href="worksheet_16_linear_transformations_and_matrices_over_gf_2_html.html" class="nav-item">Worksheet 16 &#8594;</a>
+        </div>
+        <div class="nav-bundle">
+          <a href="tutorial_15_inverse_sbox_and_reversibility_html.html" class="nav-item nav-secondary">Tutorial 15</a>
+          <a href="tutorial_15_inverse_sbox_and_reversibility_workbook_html.html" class="nav-item nav-secondary">Practice 15</a>
+        </div>
+      </nav>
+    </main>
+  </div>
+
+<script>
+// Write-lines generator
+document.querySelectorAll('.write-lines').forEach(function(wl){
+  for(var i=0;i<3;i++){ var s=document.createElement('span'); s.className='wl'; wl.appendChild(s); }
+});
+
+// GF(2^8) helpers
+function xt(a){ var s=(a<<1)&0xFF; return (a&0x80)?(s^0x1B):s; }
+function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa; aa=xt(aa);} return r; }
+function gfInv(a){ if(a===0)return 0; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return 0; }
+var C63=[1,1,0,0,0,1,1,0];
+function affine(inv){
+  var b=[],v=0;
+  for(var i=0;i<8;i++) b.push((inv>>i)&1);
+  for(var i=0;i<8;i++) v|=((b[i]^b[(i+4)%8]^b[(i+5)%8]^b[(i+6)%8]^b[(i+7)%8]^C63[i])<<i);
+  return v;
+}
+var SBOX=new Uint8Array(256), INVSBOX=new Uint8Array(256);
+for(var i=0;i<256;i++) SBOX[i]=affine(gfInv(i));
+for(var i=0;i<256;i++) INVSBOX[SBOX[i]]=i;
+function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+function ansAttr(v){ var h=v.toString(16).toUpperCase().padStart(2,'0'),l=h.toLowerCase(); return '0x'+h+'|0x'+l+'|'+h+'|'+l; }
+function normalise(s){ return (s||'').trim().toLowerCase().replace(/\s+/g,''); }
+
+// Part B: generate random inverse-to-forward problems
+function generatePartB(){
+  var pool=[];
+  for(var i=1;i<256;i++) if(i!==0x53&&i!==0x7C&&i!==0x01&&i!==0x02) pool.push(i);
+  for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
+  var sample=pool.slice(0,4);
+  var html='', akHtml='<ul style="line-height:2.2;">';
+  sample.forEach(function(x,idx){
+    var y=SBOX[x];
+    html+='<tr><td>B'+(idx+1)+'</td>';
+    html+='<td><code>InvS('+hx(y)+') = '+hx(x)+'</code></td>';
+    html+='<td><code>S('+hx(x)+') = </code><input class="ans-input" data-answer="'+ansAttr(y)+'" /></td></tr>';
+    akHtml+='<li><strong>B'+(idx+1)+'.</strong> S('+hx(x)+') = '+hx(y)+'.</li>';
+  });
+  document.getElementById('part-b-body').innerHTML=html;
+  document.getElementById('ak-part-b').innerHTML=akHtml+'</ul>';
+  if(window.MathJax && typeof MathJax.typesetPromise==='function')
+    MathJax.typesetPromise([document.body]).catch(function(){});
+}
+
+generatePartB();
+
+function wsCheckAll(){
+  var correct=0,total=0;
+  document.querySelectorAll('[data-answer]').forEach(function(inp){
+    if(inp.tagName!=='INPUT')return;
+    total++;
+    var accepted=inp.dataset.answer.split('|').map(function(a){return normalise(a);});
+    var val=normalise(inp.value);
+    inp.classList.remove('ws-correct','ws-wrong');
+    if(accepted.includes(val)){inp.classList.add('ws-correct');correct++;}
+    else inp.classList.add('ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent=total?'Score: '+correct+' / '+total:'';
+}
+
+function wsReset(){
+  document.querySelectorAll('[data-answer]').forEach(function(inp){
+    if(inp.tagName!=='INPUT')return;
+    inp.value=''; inp.classList.remove('ws-correct','ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent='';
+}
+
+function wsRegenerate(){ generatePartB(); wsReset(); }
+</script>
+</body>
+</html>
