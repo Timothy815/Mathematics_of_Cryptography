@@ -182,6 +182,7 @@ For a fully produced module the card should contain, in this order:
   - [ ] Podcast button — `btn-podcast` (rust `#b5451b`), `target="_blank"`
   - [ ] Video button — `btn-video` (dark navy `#1a1a2e`), `target="_blank"`
   - [ ] Notebook button — `btn-notebook` (teal `#0d6e6e`), `download` attribute
+  - [ ] AI Tutor button — `btn-gem` (indigo `#4338ca`), `target="_blank"`, links to module's Gemini Gem
 
 ---
 
