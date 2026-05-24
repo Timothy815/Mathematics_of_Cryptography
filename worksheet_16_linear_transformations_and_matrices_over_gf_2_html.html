@@ -265,12 +265,36 @@
       <section id="part-d">
         <h2>Part D — Practice Multiply <span style="font-weight:400;font-size:0.85rem;color:#888;">(click Regenerate for new values)</span></h2>
         <p>Compute \(y = Av\) for the matrix and vector shown. Use the work space to record your row-by-row steps.</p>
-        <div id="wd-display" class="math-display"></div>
+
+        <table style="border-collapse:collapse;font-family:'Cascadia Code','Consolas',monospace;font-size:1rem;margin:16px 0;">
+          <tbody>
+            <tr>
+              <td rowspan="4" style="padding-right:6px;font-weight:700;color:#1a5c2a;vertical-align:middle;">A =</td>
+              <td style="border-left:3px solid #555;padding:4px 10px;" id="da00">0</td><td style="padding:4px 10px;" id="da01">0</td><td style="padding:4px 10px;" id="da02">0</td><td style="border-right:3px solid #555;padding:4px 10px;" id="da03">0</td>
+              <td rowspan="4" style="padding:0 20px;font-size:1.4em;color:#555;vertical-align:middle;">&times;</td>
+              <td rowspan="4" style="padding-right:6px;font-weight:700;color:#1a5c2a;vertical-align:middle;">v =</td>
+              <td style="border-left:3px solid #555;padding:4px 14px;" id="dv0">0</td><td style="border-right:3px solid #555;padding:4px 14px;"></td>
+            </tr>
+            <tr>
+              <td style="border-left:3px solid #555;padding:4px 10px;" id="da10">0</td><td style="padding:4px 10px;" id="da11">0</td><td style="padding:4px 10px;" id="da12">0</td><td style="border-right:3px solid #555;padding:4px 10px;" id="da13">0</td>
+              <td style="border-left:3px solid #555;padding:4px 14px;" id="dv1">0</td><td style="border-right:3px solid #555;padding:4px 14px;"></td>
+            </tr>
+            <tr>
+              <td style="border-left:3px solid #555;padding:4px 10px;" id="da20">0</td><td style="padding:4px 10px;" id="da21">0</td><td style="padding:4px 10px;" id="da22">0</td><td style="border-right:3px solid #555;padding:4px 10px;" id="da23">0</td>
+              <td style="border-left:3px solid #555;padding:4px 14px;" id="dv2">0</td><td style="border-right:3px solid #555;padding:4px 14px;"></td>
+            </tr>
+            <tr>
+              <td style="border-left:3px solid #555;padding:4px 10px;" id="da30">0</td><td style="padding:4px 10px;" id="da31">0</td><td style="padding:4px 10px;" id="da32">0</td><td style="border-right:3px solid #555;padding:4px 10px;" id="da33">0</td>
+              <td style="border-left:3px solid #555;padding:4px 14px;" id="dv3">0</td><td style="border-right:3px solid #555;padding:4px 14px;"></td>
+            </tr>
+          </tbody>
+        </table>
+
         <table class="ws-table">
           <thead><tr><th>Output bit</th><th>y₀</th><th>y₁</th><th>y₂</th><th>y₃</th></tr></thead>
           <tbody>
             <tr>
-              <td>Answer</td>
+              <td>Your answer</td>
               <td><input class="ans-input" id="wd0" data-answer="0" autocomplete="off"></td>
               <td><input class="ans-input" id="wd1" data-answer="0" autocomplete="off"></td>
               <td><input class="ans-input" id="wd2" data-answer="0" autocomplete="off"></td>
@@ -421,25 +445,14 @@ var WD_MAT=[
 
 function genPartD(){
   var A=WD_MAT[Math.floor(Math.random()*WD_MAT.length)];
-  var v=[0,1,2,3].map(function(){return Math.round(Math.random());});
+  var v=[Math.round(Math.random()),Math.round(Math.random()),Math.round(Math.random()),Math.round(Math.random())];
   var y=gf2mv(A,v);
-  // Render as plain HTML — no MathJax, always updates instantly
-  var matRows=A.map(function(row){
-    return '<tr>'+row.map(function(b){return '<td>'+b+'</td>';}).join('')+'</tr>';
-  }).join('');
-  var vecRows=v.map(function(b){return '<tr><td>'+b+'</td></tr>';}).join('');
-  var h='<div class="wd-render">'
-      +'<span class="wd-label">A =</span>'
-      +'<div class="wd-bracket-wrap"><span class="wd-bracket">[</span>'
-      +'<table class="wd-matrix">'+matRows+'</table>'
-      +'<span class="wd-bracket">]</span></div>'
-      +'<span style="font-size:1.3em;color:#555;">&nbsp;&times;&nbsp;</span>'
-      +'<span class="wd-label">v =</span>'
-      +'<div class="wd-bracket-wrap"><span class="wd-bracket">[</span>'
-      +'<table class="wd-matrix">'+vecRows+'</table>'
-      +'<span class="wd-bracket">]</span></div>'
-      +'</div>';
-  document.getElementById('wd-display').innerHTML=h;
+  // Update every cell directly — no innerHTML, cannot fail
+  document.getElementById('da00').textContent=A[0][0]; document.getElementById('da01').textContent=A[0][1]; document.getElementById('da02').textContent=A[0][2]; document.getElementById('da03').textContent=A[0][3];
+  document.getElementById('da10').textContent=A[1][0]; document.getElementById('da11').textContent=A[1][1]; document.getElementById('da12').textContent=A[1][2]; document.getElementById('da13').textContent=A[1][3];
+  document.getElementById('da20').textContent=A[2][0]; document.getElementById('da21').textContent=A[2][1]; document.getElementById('da22').textContent=A[2][2]; document.getElementById('da23').textContent=A[2][3];
+  document.getElementById('da30').textContent=A[3][0]; document.getElementById('da31').textContent=A[3][1]; document.getElementById('da32').textContent=A[3][2]; document.getElementById('da33').textContent=A[3][3];
+  document.getElementById('dv0').textContent=v[0]; document.getElementById('dv1').textContent=v[1]; document.getElementById('dv2').textContent=v[2]; document.getElementById('dv3').textContent=v[3];
   document.getElementById('wd0').dataset.answer=String(y[0]);
   document.getElementById('wd1').dataset.answer=String(y[1]);
   document.getElementById('wd2').dataset.answer=String(y[2]);
