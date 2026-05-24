@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 16: Linear Transformations & Matrices over GF(2) | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    header.worksheet-header {
+      background: linear-gradient(135deg, #ffffff, #e8f4ef);
+      border: 1px solid #b2d4c4;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .field-input { border-bottom: 1.5px solid #333; min-height: 30px; padding-top: 4px; }
+    .field-label { font-weight: 750; color: #333; }
+
+    .ans-input {
+      border: none;
+      border-bottom: 2px solid #555;
+      background: transparent;
+      font-family: "Cascadia Code","Consolas",monospace;
+      font-size: 1rem;
+      width: 80px;
+      padding: 2px 4px;
+      transition: border-color 0.15s;
+    }
+    .ans-input:focus { outline: none; border-color: #334e7d; }
+    .ans-input.ws-correct { border-color: #4a9960; background: #eaf7ef; border-radius: 4px; }
+    .ans-input.ws-wrong   { border-color: #c0392b; background: #fdf0ee; border-radius: 4px; }
+    .ans-input.wide  { width: 130px; }
+    .ans-input.wider { width: 180px; }
+
+    .ws-score-bar {
+      background: #eef3ff;
+      border: 1px solid #c7d2ea;
+      border-radius: 14px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .ws-score-bar p { margin: 0; flex: 1; min-width: 140px; font-size: 0.92rem; color: #444; }
+    #ws-score-display { font-weight: 900; color: #334e7d; }
+    .ws-btn-check  { background: #334e7d; color: #fff; border: none; padding: 9px 20px; border-radius: 10px; font-weight: 900; cursor: pointer; }
+    .ws-btn-regen  { background: #f0f4fb; color: #334e7d; border: 1.5px solid #c7d2ea; padding: 9px 20px; border-radius: 10px; font-weight: 900; cursor: pointer; }
+    .ws-btn-reset  { background: #fff; color: #888; border: 1px solid #ccc; padding: 9px 20px; border-radius: 10px; font-weight: 900; cursor: pointer; }
+
+    details.qr { background: #f7f5ef; border: 1px solid #e8dbbf; border-radius: 14px; margin-bottom: 24px; }
+    details.qr summary { padding: 12px 18px; font-weight: 900; cursor: pointer; color: #1f3763; }
+    .qr-body { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 12px; padding: 0 18px 18px; }
+    .qr-item { background: #fff; border: 1px solid #e0e5f0; border-radius: 10px; padding: 12px; font-size: 0.88rem; }
+    .qr-item strong { display: block; color: #334e7d; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+
+    .work-space { border: 1px dashed #aaa; border-radius: 10px; min-height: 80px; padding: 10px; margin: 8px 0 16px; background: #fdfcfa; }
+    .work-space.tall { min-height: 130px; }
+
+    .write-wrap { position: relative; margin: 8px 0 16px; }
+    .written-area { width: 100%; min-height: 80px; border: 1px dashed #aaa; border-radius: 10px; padding: 10px; font-size: 1rem; background: #fdfcfa; resize: vertical; }
+    .write-lines { display: none; }
+    .wl { display: block; height: 1.9em; border-bottom: 1px solid #888; }
+
+    .data-table, .matrix-table, .bit-table, .compare-table {
+      width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 0.95rem;
+    }
+    .data-table th, .data-table td,
+    .matrix-table th, .matrix-table td,
+    .bit-table th, .bit-table td,
+    .compare-table th, .compare-table td {
+      border: 1px solid var(--border); padding: 9px 12px; vertical-align: top;
+    }
+    .data-table th, .matrix-table th, .bit-table th, .compare-table th {
+      background: #eef3ff; color: #1f3763; text-align: left;
+    }
+    .matrix-table td, .matrix-table th, .bit-table td, .bit-table th {
+      text-align: center; vertical-align: middle;
+    }
+
+    .answer-key { border-top: 4px double #334e7d; padding-top: 24px; margin-top: 32px; }
+    .answer-step { margin: 8px 0; padding-left: 14px; border-left: 4px solid #c7d2ea; }
+
+    @page { margin: 0.75in; }
+    @media print {
+      .written-area { display: none; }
+      .write-lines { display: block; }
+      .ws-score-bar, .no-print { display: none !important; }
+      .ans-input { background: transparent !important; border: none; border-bottom: 1px solid #555; border-radius: 0; }
+      header.worksheet-header { box-shadow: none; border: 1px solid #ccc; }
+      .workbook-nav { display: none !important; }
+    }
+    @media (max-width: 680px) {
+      .student-info { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 16</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Linear Transformations &amp; Matrices over \(\mathrm{GF}(2)\)</h1>
+      <p class="subtitle">Vectors as bit lists · matrix rows as recipes · multiplication · linear vs affine · invertibility</p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a class="nav-link" href="#part-a">Part A</a>
+        <a class="nav-link" href="#part-b">Part B</a>
+        <a class="nav-link" href="#part-c">Part C</a>
+        <a class="nav-link" href="#part-d">Part D</a>
+        <a class="nav-link" href="#part-e">Part E</a>
+        <a class="nav-link" href="#part-f">Part F</a>
+        <a class="nav-link" style="margin-left:auto;" href="index.html">🏠 Dashboard</a>
+        <button class="print-button" onclick="window.print()">🖨️ Print</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="student-info">
+        <div><span class="field-label">Name:</span><div class="field-input"></div></div>
+        <div><span class="field-label">Date:</span><div class="field-input"></div></div>
+      </div>
+
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p>Browser mode: enter answers and click Check to score automatically. <span id="ws-score-display"></span></p>
+        <button class="ws-btn-check"  onclick="wsCheckAll()">Check all</button>
+        <button class="ws-btn-regen"  onclick="wsRegenerate()">New values</button>
+        <button class="ws-btn-reset"  onclick="wsReset()">Reset</button>
+      </div>
+
+      <details class="qr">
+        <summary>Quick Reference</summary>
+        <div class="qr-body">
+          <div class="qr-item"><strong>XOR truth table</strong>0⊕0=0 &nbsp; 0⊕1=1 &nbsp; 1⊕0=1 &nbsp; 1⊕1=0<br>Odd # of 1s → result 1</div>
+          <div class="qr-item"><strong>Matrix multiply</strong>y = Av: row i of A gives y<sub>i</sub>. For each row, XOR the v<sub>j</sub> where A<sub>ij</sub>=1.</div>
+          <div class="qr-item"><strong>Linear: y = Av</strong><br>Affine: y = Av ⊕ c</div>
+          <div class="qr-item"><strong>Linearity</strong>L(u⊕v) = L(u)⊕L(v)</div>
+          <div class="qr-item"><strong>Invertible</strong>A is invertible iff A⁻¹A = I. Only invertible layers can be reversed in decryption.</div>
+        </div>
+      </details>
+
+      <!-- PART A: XOR warm-up -->
+      <section id="part-a">
+        <h2>Part A — XOR Arithmetic</h2>
+        <p>Compute each expression over \(\mathrm{GF}(2)\).</p>
+        <table class="bit-table">
+          <thead><tr><th>#</th><th>Expression</th><th>Answer</th></tr></thead>
+          <tbody>
+            <tr><td>A1</td><td>\(1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wa1" data-answer="0" autocomplete="off"></td></tr>
+            <tr><td>A2</td><td>\(1 \oplus 0 \oplus 1\)</td>
+              <td><input class="ans-input" id="wa2" data-answer="0" autocomplete="off"></td></tr>
+            <tr><td>A3</td><td>\(1 \oplus 1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wa3" data-answer="1" autocomplete="off"></td></tr>
+            <tr><td>A4</td><td id="wa4-q">\(1 \oplus 0 \oplus 1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wa4" data-answer="1" autocomplete="off"></td></tr>
+            <tr><td>A5</td><td id="wa5-q">\(1 \oplus 1 \oplus 0 \oplus 1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wa5" data-answer="0" autocomplete="off"></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART B: Row recipes -->
+      <section id="part-b">
+        <h2>Part B — Reading Row Recipes</h2>
+        <p>For each matrix row and input vector, write the recipe formula and compute the output bit.</p>
+        <table class="data-table">
+          <thead><tr><th>#</th><th>Row</th><th>Vector v</th><th>Recipe formula</th><th>Output bit</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>B1</td>
+              <td>\([1\ 0\ 1\ 0]\)</td>
+              <td>\(v=[1,0,1,1]\)</td>
+              <td><input class="ans-input wider" id="wb1f" data-answer="v0⊕v2|v₀⊕v₂" autocomplete="off" placeholder="e.g. v0⊕v2"></td>
+              <td><input class="ans-input" id="wb1" data-answer="0" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B2</td>
+              <td>\([0\ 1\ 1\ 0]\)</td>
+              <td>\(v=[1,0,1,1]\)</td>
+              <td><input class="ans-input wider" id="wb2f" data-answer="v1⊕v2|v₁⊕v₂" autocomplete="off" placeholder="e.g. v1⊕v2"></td>
+              <td><input class="ans-input" id="wb2" data-answer="1" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B3</td>
+              <td>\([1\ 1\ 0\ 1]\)</td>
+              <td>\(v=[1,0,1,1]\)</td>
+              <td><input class="ans-input wider" id="wb3f" data-answer="v0⊕v1⊕v3|v₀⊕v₁⊕v₃" autocomplete="off" placeholder="e.g. v0⊕v1⊕v3"></td>
+              <td><input class="ans-input" id="wb3" data-answer="0" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B4</td>
+              <td>\([1\ 1\ 1\ 1]\)</td>
+              <td id="wb4-vec-label">\(v=[1,1,0,1]\)</td>
+              <td><input class="ans-input wider" id="wb4f" data-answer="v0⊕v1⊕v2⊕v3|v₀⊕v₁⊕v₂⊕v₃" autocomplete="off" placeholder="all four bits"></td>
+              <td><input class="ans-input" id="wb4" data-answer="1" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART C: full matrix multiply -->
+      <section id="part-c">
+        <h2>Part C — Matrix-Vector Multiplication</h2>
+        <p>Use the matrix and vector below. Apply each row recipe to fill in the computation table.</p>
+        <div class="math-display">
+          \[
+            A = \begin{bmatrix}1&1&0&0\\0&1&1&0\\0&0&1&1\\1&0&0&1\end{bmatrix},
+            \quad
+            v = \begin{bmatrix}1\\0\\1\\1\end{bmatrix}
+          \]
+        </div>
+        <table class="matrix-table">
+          <thead><tr><th>Output bit</th><th>Row recipe</th><th>Substitution</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>\(y_0\)</td>
+              <td>\(v_0 \oplus v_1\)</td>
+              <td>\(1 \oplus 0\)</td>
+              <td><input class="ans-input" id="wc0" data-answer="1" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>\(y_1\)</td>
+              <td>\(v_1 \oplus v_2\)</td>
+              <td>\(0 \oplus 1\)</td>
+              <td><input class="ans-input" id="wc1" data-answer="1" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>\(y_2\)</td>
+              <td>\(v_2 \oplus v_3\)</td>
+              <td>\(1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wc2" data-answer="0" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>\(y_3\)</td>
+              <td>\(v_0 \oplus v_3\)</td>
+              <td>\(1 \oplus 1\)</td>
+              <td><input class="ans-input" id="wc3" data-answer="0" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>C1. Write the output vector \(y = Av\): &nbsp;
+          \(y = \begin{bmatrix}\) <input class="ans-input" id="wc4" data-answer="1" autocomplete="off"> \(\\\)
+          <input class="ans-input" id="wc5" data-answer="1" autocomplete="off"> \(\\\)
+          <input class="ans-input" id="wc6" data-answer="0" autocomplete="off"> \(\\\)
+          <input class="ans-input" id="wc7" data-answer="0" autocomplete="off"> \(\end{bmatrix}\)
+        </p>
+      </section>
+
+      <!-- PART D: random regenerating section -->
+      <section id="part-d">
+        <h2>Part D — Practice Multiply <span style="font-weight:400;font-size:0.85rem;color:#888;">(regenerates with new values)</span></h2>
+        <p id="wd-prompt">Compute \(y = Av\) for the values shown below.</p>
+        <div id="wd-display"></div>
+        <table class="matrix-table">
+          <thead><tr><th>Bit</th><th>y₀</th><th>y₁</th><th>y₂</th><th>y₃</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Answer</td>
+              <td><input class="ans-input" id="wd0" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wd1" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wd2" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wd3" data-answer="0" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="work-space tall"></div>
+      </section>
+
+      <!-- PART E: linear vs affine -->
+      <section id="part-e">
+        <h2>Part E — Linear or Affine?</h2>
+        <p>Classify each transformation. Write <strong>linear</strong> or <strong>affine</strong>.</p>
+        <table class="compare-table">
+          <thead><tr><th>#</th><th>Transformation</th><th>Classification</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>E1</td>
+              <td>\(y = Av\)</td>
+              <td><input class="ans-input wide" id="we1" data-answer="linear" autocomplete="off" placeholder="linear/affine"></td>
+              <td><div class="write-wrap"><textarea class="written-area" rows="1"></textarea><div class="write-lines"><span class="wl"></span></div></div></td>
+            </tr>
+            <tr>
+              <td>E2</td>
+              <td>\(y = Av \oplus c\)</td>
+              <td><input class="ans-input wide" id="we2" data-answer="affine" autocomplete="off" placeholder="linear/affine"></td>
+              <td><div class="write-wrap"><textarea class="written-area" rows="1"></textarea><div class="write-lines"><span class="wl"></span></div></div></td>
+            </tr>
+            <tr>
+              <td>E3</td>
+              <td>\(y = Pv\) where \(P\) is a permutation matrix</td>
+              <td><input class="ans-input wide" id="we3" data-answer="linear" autocomplete="off" placeholder="linear/affine"></td>
+              <td><div class="write-wrap"><textarea class="written-area" rows="1"></textarea><div class="write-lines"><span class="wl"></span></div></div></td>
+            </tr>
+            <tr>
+              <td>E4</td>
+              <td>The AES S-box affine layer: \(s = Ab \oplus c\)</td>
+              <td><input class="ans-input wide" id="we4" data-answer="affine" autocomplete="off" placeholder="linear/affine"></td>
+              <td><div class="write-wrap"><textarea class="written-area" rows="1"></textarea><div class="write-lines"><span class="wl"></span></div></div></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART F: written / concept -->
+      <section id="part-f">
+        <h2>Part F — Concept Questions</h2>
+
+        <p><strong>F1.</strong> A matrix has two identical rows. Can it be invertible? Explain why or why not.</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"><span class="wl"></span><span class="wl"></span><span class="wl"></span></div>
+        </div>
+
+        <p><strong>F2.</strong> The linearity property states \(L(u \oplus v) = L(u) \oplus L(v)\).
+          If \(L(u) = [1,1,0,0]\) and \(L(v) = [0,1,1,0]\), what is \(L(u \oplus v)\)?</p>
+        <p>Answer: <input class="ans-input wider" id="wf2" data-answer="1010" autocomplete="off" placeholder="e.g. 1010"></p>
+
+        <p><strong>F3.</strong> Why does AES need nonlinear S-boxes in addition to the linear matrix layers?</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"><span class="wl"></span><span class="wl"></span><span class="wl"></span></div>
+        </div>
+
+        <p><strong>F4.</strong> The identity matrix \(I\) maps every vector to itself. What is \(I^{-1}\)?</p>
+        <p>Answer: <input class="ans-input wider" id="wf4" data-answer="I|identity|I (identity)" autocomplete="off" placeholder="name or letter"></p>
+      </section>
+
+      <!-- ANSWER KEY -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+
+        <h3>Part A — XOR Arithmetic</h3>
+        <div class="answer-step">
+          <p>A1. 0 &nbsp; A2. 0 &nbsp; A3. 1 &nbsp; A4. 1 &nbsp; A5. 0</p>
+          <p><em>Rule: count the 1s. Odd count → result 1; even count → result 0.</em></p>
+        </div>
+
+        <h3>Part B — Row Recipes</h3>
+        <div class="answer-step">
+          <p>B1. Formula: v₀⊕v₂; &nbsp; result: 1⊕1 = 0</p>
+          <p>B2. Formula: v₁⊕v₂; &nbsp; result: 0⊕1 = 1</p>
+          <p>B3. Formula: v₀⊕v₁⊕v₃; &nbsp; result: 1⊕0⊕1 = 0</p>
+          <p>B4. Formula: v₀⊕v₁⊕v₂⊕v₃; &nbsp; for v=[1,1,0,1]: 1⊕1⊕0⊕1 = 1</p>
+        </div>
+
+        <h3>Part C — Matrix-Vector Multiplication</h3>
+        <div class="answer-step">
+          <p>y₀ = 1, y₁ = 1, y₂ = 0, y₃ = 0 &nbsp; → &nbsp; Av = [1,1,0,0]ᵀ</p>
+        </div>
+
+        <h3>Part D — Practice Multiply</h3>
+        <div class="answer-step"><p>See the regenerated values. Apply the row-recipe method to each row.</p></div>
+
+        <h3>Part E — Linear or Affine</h3>
+        <div class="answer-step">
+          <p>E1. Linear — form y=Av, no added constant.</p>
+          <p>E2. Affine — form y=Av⊕c, constant c added by XOR.</p>
+          <p>E3. Linear — a permutation matrix is still y=Pv with no constant.</p>
+          <p>E4. Affine — s=Ab⊕c where c = 0x63; the matrix multiply is linear but adding 0x63 makes it affine.</p>
+        </div>
+
+        <h3>Part F — Concept Questions</h3>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> No. Two identical rows mean two output bits are computed identically, so different inputs can produce the same output. The transformation is not one-to-one, therefore not invertible.</p>
+          <p><strong>F2.</strong> L(u⊕v) = L(u)⊕L(v) = [1,1,0,0]⊕[0,1,1,0] = [1,0,1,0]. Answer: 1010.</p>
+          <p><strong>F3 sample answer.</strong> Linear layers spread changes (diffusion) but preserve algebraic structure — a purely linear cipher can be broken by solving a system of linear equations. S-boxes add nonlinearity (confusion), making the equations intractable.</p>
+          <p><strong>F4.</strong> I⁻¹ = I. The identity matrix is its own inverse.</p>
+        </div>
+      </section>
+
+      <p class="footer-note">Mathematics of Cryptography · Worksheet 16 · Paired with Tutorial 16 and Practice 16.</p>
+    </main>
+
+    <nav class="bottom-nav no-print" aria-label="Worksheet navigation">
+      <div class="nav-bundle">
+        <a href="worksheet_15_inverse_sbox_and_reversibility_html.html" class="nav-item">← Worksheet 15</a>
+        <a href="index.html" class="nav-item">🏠 Dashboard</a>
+        <a href="worksheet_17_diffusion_branch_number_and_avalanche_html.html" class="nav-item">Worksheet 17 →</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_16_linear_transformations_and_matrices_over_gf_2_html.html" class="nav-item nav-secondary">Tutorial 16</a>
+        <a href="tutorial_16_linear_transformations_and_matrices_over_gf_2_workbook_html.html" class="nav-item nav-secondary">Practice 16</a>
+      </div>
+    </nav>
+  </div>
+
+  <script>
+  /* ── GF(2) utilities ── */
+  function gf2mv(A,v){ return A.map(function(row){return row.reduce(function(a,b,j){return a^(b*v[j]);},0);}); }
+
+  /* ── Part D random regeneration ── */
+  var WD_MAT=[
+    [[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]],
+    [[1,0,1,0],[0,1,0,1],[1,0,0,1],[0,1,1,0]],
+    [[1,0,0,1],[1,1,0,0],[0,1,1,0],[0,0,1,1]],
+    [[1,1,1,0],[0,1,1,1],[0,0,1,1],[1,0,0,1]]
+  ];
+  var WD_STATE={mat:null,vec:null};
+
+  function genPartD(){
+    var A=WD_MAT[Math.floor(Math.random()*WD_MAT.length)];
+    var v=[0,1,2,3].map(function(){return Math.round(Math.random());});
+    WD_STATE.mat=A; WD_STATE.vec=v;
+    var y=gf2mv(A,v);
+    // display
+    var h='<div class="math-display">\\[A=\\begin{bmatrix}';
+    A.forEach(function(row){ h+=row.join('&')+'\\\\'; });
+    h='\\end{bmatrix},\\quad v=\\begin{bmatrix}'+v.join('\\\\')+'\\end{bmatrix}\\]</div>';
+    document.getElementById('wd-display').innerHTML=h;
+    document.getElementById('wd0').dataset.answer=String(y[0]);
+    document.getElementById('wd1').dataset.answer=String(y[1]);
+    document.getElementById('wd2').dataset.answer=String(y[2]);
+    document.getElementById('wd3').dataset.answer=String(y[3]);
+    if(typeof MathJax!=='undefined'&&typeof MathJax.typesetPromise==='function')
+      MathJax.typesetPromise([document.getElementById('wd-display')]);
+  }
+  genPartD();
+
+  /* ── Scoring ── */
+  function normalize(s){ return s.trim().toLowerCase().replace(/\s+/g,''); }
+
+  function wsCheckAll(){
+    var correct=0, total=0;
+    document.querySelectorAll('[data-answer]').forEach(function(el){
+      if(el.tagName!=='INPUT') return;
+      var given=normalize(el.value);
+      var accepted=el.dataset.answer.split('|');
+      var ok=accepted.some(function(a){return normalize(a)===given;});
+      el.classList.remove('ws-correct','ws-wrong');
+      if(given==='') return;
+      if(ok){el.classList.add('ws-correct');correct++;}
+      else{el.classList.add('ws-wrong');}
+      total++;
+    });
+    var disp=document.getElementById('ws-score-display');
+    if(total>0) disp.textContent='Score: '+correct+' / '+total+' answered';
+    else disp.textContent='';
+  }
+
+  function wsRegenerate(){
+    genPartD();
+    wsReset();
+  }
+
+  function wsReset(){
+    document.querySelectorAll('[data-answer]').forEach(function(el){
+      if(el.tagName!=='INPUT') return;
+      el.classList.remove('ws-correct','ws-wrong');
+    });
+    document.getElementById('ws-score-display').textContent='';
+  }
+
+  /* generate write-lines */
+  document.querySelectorAll('.write-lines').forEach(function(el){
+    var n=Math.max(3,Math.round(el.parentElement.querySelector('textarea').rows||3));
+    var h='';
+    for(var i=0;i<n;i++) h+='<span class="wl"></span>';
+    el.innerHTML=h;
+  });
+  </script>
+</body>
+</html>
