@@ -84,6 +84,12 @@
     .ws-table td.left { text-align:left; }
 
     .math-display { text-align:center; margin:12px 0; }
+    .wd-render { display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin:12px 0; font-family:'Cascadia Code','Consolas',monospace; font-size:1rem; }
+    .wd-matrix { border-collapse:collapse; }
+    .wd-matrix td { padding:4px 10px; text-align:center; }
+    .wd-bracket-wrap { display:inline-flex; align-items:stretch; }
+    .wd-bracket { font-size:2.6em; line-height:1; color:#555; font-weight:200; }
+    .wd-label { font-weight:700; color:#1a5c2a; margin-right:6px; }
 
     details.qr { background:#f7f5ef; border:1px solid #e8dbbf; border-radius:14px; margin-bottom:24px; }
     details.qr summary { padding:12px 18px; font-weight:900; cursor:pointer; color:#1a5c2a; }
@@ -417,16 +423,27 @@ function genPartD(){
   var A=WD_MAT[Math.floor(Math.random()*WD_MAT.length)];
   var v=[0,1,2,3].map(function(){return Math.round(Math.random());});
   var y=gf2mv(A,v);
-  var h='\\[A=\\begin{bmatrix}';
-  A.forEach(function(row){ h+=row.join('&')+'\\\\'; });
-  h+='\\end{bmatrix},\\quad v=\\begin{bmatrix}'+v.join('\\\\')+'\\end{bmatrix}\\]';
+  // Render as plain HTML — no MathJax, always updates instantly
+  var matRows=A.map(function(row){
+    return '<tr>'+row.map(function(b){return '<td>'+b+'</td>';}).join('')+'</tr>';
+  }).join('');
+  var vecRows=v.map(function(b){return '<tr><td>'+b+'</td></tr>';}).join('');
+  var h='<div class="wd-render">'
+      +'<span class="wd-label">A =</span>'
+      +'<div class="wd-bracket-wrap"><span class="wd-bracket">[</span>'
+      +'<table class="wd-matrix">'+matRows+'</table>'
+      +'<span class="wd-bracket">]</span></div>'
+      +'<span style="font-size:1.3em;color:#555;">&nbsp;&times;&nbsp;</span>'
+      +'<span class="wd-label">v =</span>'
+      +'<div class="wd-bracket-wrap"><span class="wd-bracket">[</span>'
+      +'<table class="wd-matrix">'+vecRows+'</table>'
+      +'<span class="wd-bracket">]</span></div>'
+      +'</div>';
   document.getElementById('wd-display').innerHTML=h;
   document.getElementById('wd0').dataset.answer=String(y[0]);
   document.getElementById('wd1').dataset.answer=String(y[1]);
   document.getElementById('wd2').dataset.answer=String(y[2]);
   document.getElementById('wd3').dataset.answer=String(y[3]);
-  if(window.MathJax && typeof MathJax.typesetPromise==='function')
-    MathJax.typesetPromise([document.body]).catch(function(){});
 }
 genPartD();
 
