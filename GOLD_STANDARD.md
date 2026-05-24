@@ -232,4 +232,5 @@ For a fully produced module the card should contain, in this order:
 | 12 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | 13 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | 14 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| 15–76 | ✓ (varies) | old format | ✗ | ✗ | ✗ | ✗ | ✗ | varies |
+| 15 | ✓ gold | ✓ gold | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| 16–76 | ✓ (varies) | old format | ✗ | ✗ | ✗ | ✗ | ✗ | varies |
