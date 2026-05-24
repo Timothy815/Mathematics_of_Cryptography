@@ -537,186 +537,267 @@
 
       <section id="round-trip-explorer" class="no-print">
         <h2>Interactive: S-box Round-Trip Explorer</h2>
-        <p>Enter any byte to watch it travel forward through the S-box, then all the way back through the inverse S-box. The key visual: the same intermediate value appears in both directions, and the final output matches the original input exactly. This is what \(S^{-1}(S(x))=x\) looks like in motion.</p>
+        <p>Step through the forward and reverse paths <em>one move at a time</em>. Watch for the <strong>pivot</strong> — an intermediate value that appears in both directions. That shared value is the key to why the S-box can be reversed. Then see what happens when you try to reverse in the wrong order.</p>
 
         <style>
-          .rt-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
-          .rt-input-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:20px; }
-          .rt-input-row label { display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px; color:#1f3763; }
-          .rt-hex-field { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:110px; }
-          .rt-btn-go    { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:0.97rem; font-weight:700; cursor:pointer; }
-          .rt-btn-reset { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
-          .rt-presets   { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
-          .rt-btn-preset{ background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
-          .rt-btn-preset:hover { background:#eef3ff; }
+          /* === Round-Trip Explorer v2 === */
+          .rt2-card { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:22px 26px; margin:18px 0; }
+          .rt2-input-row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:22px; }
+          .rt2-hex-field { font-family:'Cascadia Code',Consolas,monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:88px; }
+          .rt2-btn { border:none; border-radius:8px; padding:10px 20px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+          .rt2-btn-primary   { background:#334e7d; color:#fff; }
+          .rt2-btn-secondary { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; }
+          .rt2-btn-primary:hover,.rt2-btn-secondary:hover { opacity:0.82; }
+          .rt2-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 12px; font-size:0.85rem; cursor:pointer; }
+          .rt2-btn-preset:hover { background:#eef3ff; }
 
-          .rt-flow { display:grid; gap:12px; margin:0 0 18px; }
-          .rt-flow-label { font-size:0.82rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em; color:#888; margin-bottom:4px; }
-          .rt-row { display:flex; flex-wrap:wrap; align-items:center; gap:0; }
-          .rt-bc  { flex:1; min-width:80px; max-width:140px; border-radius:12px; padding:10px 8px; text-align:center; border:2px solid transparent; }
-          .rt-bc-label { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; color:#666; }
-          .rt-bc-hex   { font-family:'Cascadia Code','Consolas',monospace; font-size:1.4rem; font-weight:900; }
-          .rt-bc-bin   { font-size:0.68rem; color:#aaa; margin-top:2px; font-family:'Cascadia Code','Consolas',monospace; }
+          .rt2-path-label { font-size:0.77rem; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:#666; margin:16px 0 6px; }
+          .rt2-pipe-row { display:flex; flex-wrap:wrap; align-items:center; min-height:88px; }
 
-          .rt-bc-input  { background:#eef3ff; border-color:#c7d2ea; }
-          .rt-bc-inter  { background:#eaf7ef; border-color:#b8dfc5; }
-          .rt-bc-sbox   { background:var(--purple-soft); border-color:#d8c8f5; }
-          .rt-bc-match  { background:#fffdf0; border-color:#e8d880; }
-          .rt-bc-win    { background:#e8f5e0; border-color:#7ac05a; }
+          .rt2-box { border-radius:12px; padding:10px 8px; text-align:center; border:2px solid transparent; min-width:76px; max-width:118px; flex:1; }
+          .rt2-box-lbl { font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; color:#666; }
+          .rt2-box-hex { font-family:'Cascadia Code',Consolas,monospace; font-size:1.28rem; font-weight:900; }
+          .rt2-box-bin { font-size:0.61rem; color:#aaa; margin-top:2px; font-family:'Cascadia Code',Consolas,monospace; }
+          .rt2-box-input { background:#eef3ff; border-color:#c7d2ea; }
+          .rt2-box-pivot { background:#fff8e1; border-color:#f5c518; }
+          .rt2-box-sbox  { background:var(--purple-soft,#f0ecff); border-color:#d0c0f0; }
+          .rt2-box-win   { background:#eaf7ef; border-color:#7ac05a; }
 
-          .rt-op { padding:0 8px; font-size:0.75rem; font-weight:700; color:#555; text-align:center; flex-shrink:0; line-height:1.3; white-space:nowrap; }
-          .rt-arrow { font-size:1.4rem; color:#334e7d; padding:0 4px; flex-shrink:0; }
+          .rt2-arrow { font-size:1.3rem; color:#334e7d; padding:0 3px; flex-shrink:0; }
+          .rt2-conn  { padding:0 4px; font-size:0.71rem; font-weight:700; color:#555; text-align:center; flex-shrink:0; line-height:1.3; white-space:nowrap; }
 
-          .rt-confirm { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:4px; text-align:center; font-size:1.05rem; font-weight:700; }
-          .rt-confirm code { color:#a8d8ff; font-size:1.1rem; }
+          .rt2-bridge { background:#fffde7; border:2px solid #f5c518; border-radius:10px; padding:11px 18px; margin:6px 0; font-size:0.9rem; display:none; }
+          .rt2-bridge-star { color:#c9960a; font-size:1.05rem; margin-right:5px; }
 
-          .rt-bijection { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:18px 22px; margin-top:18px; }
-          .rt-bij-title { font-weight:800; color:#1f3763; margin-bottom:10px; font-size:0.97rem; }
-          .rt-bij-table { width:100%; border-collapse:collapse; font-size:0.9rem; }
-          .rt-bij-table th { background:#eef3ff; color:#1f3763; padding:7px 10px; border:1px solid #c7d2ea; text-align:center; }
-          .rt-bij-table td { padding:6px 10px; border:1px solid #e0e5f0; text-align:center; font-family:'Cascadia Code','Consolas',monospace; }
-          .rt-bij-table td.unique   { background:#eaf7ef; color:#1a6a30; font-weight:800; }
-          .rt-bij-note { font-size:0.85rem; color:#555; margin-top:10px; }
+          .rt2-confirm { background:#1f3763; color:#fff; border-radius:10px; padding:13px 20px; margin-top:14px; text-align:center; font-size:1.05rem; font-weight:700; display:none; }
+          .rt2-confirm code { color:#a8d8ff; }
+
+          .rt2-step-row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:18px; padding-top:16px; border-top:1px solid #dde2f0; }
+          .rt2-step-hint { font-size:0.87rem; color:#555; font-style:italic; flex:1; min-width:160px; }
+
+          .rt2-wrong-card { background:#fff; border:1px solid #dde2f0; border-radius:14px; padding:20px 24px; margin-top:18px; display:none; }
+          .rt2-wrong-title { font-size:1rem; font-weight:800; color:#1f3763; margin:0 0 6px; }
+          .rt2-compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+          @media(max-width:580px){ .rt2-compare { grid-template-columns:1fr; } }
+          .rt2-compare-col { border-radius:12px; padding:14px 16px; }
+          .rt2-compare-col.ok  { background:#eaf7ef; border:1.5px solid #7ac05a; }
+          .rt2-compare-col.err { background:#fff0f0; border:1.5px solid #e57373; }
+          .rt2-compare-col h4 { margin:0 0 10px; font-size:0.9rem; }
+          .rt2-cstep { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin:6px 0; font-size:0.84rem; }
+          .rt2-cstep .mb { font-family:monospace; font-weight:800; padding:4px 8px; border-radius:6px; font-size:0.87rem; }
+          .rt2-cstep .op { color:#666; font-size:0.77rem; }
+          .rt2-badge { font-weight:800; padding:7px 12px; border-radius:7px; text-align:center; font-size:0.92rem; margin-top:10px; }
+          .rt2-badge.ok  { background:#d4edda; color:#1a6a30; }
+          .rt2-badge.err { background:#fde0e0; color:#c00; }
         </style>
 
-        <div class="rt-shell">
-          <div class="rt-input-row">
+        <div class="rt2-card">
+          <!-- Input row -->
+          <div class="rt2-input-row">
             <div>
-              <label for="rt-in">Input byte (hex)</label>
-              <input class="rt-hex-field" id="rt-in" type="text" value="53" maxlength="4" autocomplete="off">
+              <label style="display:block;font-weight:700;font-size:0.88rem;margin-bottom:5px;color:#1f3763;" for="rt2-in">Input byte (hex)</label>
+              <input class="rt2-hex-field" id="rt2-in" type="text" value="53" maxlength="4" autocomplete="off">
             </div>
-            <div class="rt-presets">
-              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Try:</span>
-              <button class="rt-btn-preset" onclick="rtLoad('53')">0x53</button>
-              <button class="rt-btn-preset" onclick="rtLoad('00')">0x00</button>
-              <button class="rt-btn-preset" onclick="rtLoad('01')">0x01</button>
-              <button class="rt-btn-preset" onclick="rtLoad('7C')">0x7C</button>
-              <button class="rt-btn-preset" onclick="rtLoad('FF')">0xFF</button>
+            <div style="display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;">
+              <span style="font-size:0.78rem;font-weight:700;color:#888;align-self:center;">Try:</span>
+              <button class="rt2-btn-preset" onclick="rt2Load('53')">0x53</button>
+              <button class="rt2-btn-preset" onclick="rt2Load('00')">0x00</button>
+              <button class="rt2-btn-preset" onclick="rt2Load('01')">0x01</button>
+              <button class="rt2-btn-preset" onclick="rt2Load('AB')">0xAB</button>
+              <button class="rt2-btn-preset" onclick="rt2Load('FF')">0xFF</button>
             </div>
-            <button class="rt-btn-go" onclick="rtRun()">Show round-trip →</button>
-            <button class="rt-btn-reset" onclick="rtReset()">Reset</button>
+            <button class="rt2-btn rt2-btn-secondary" onclick="rt2Reset()" style="align-self:flex-end;">↺ Reset</button>
           </div>
 
-          <div id="rt-display" style="display:none;">
-            <div class="rt-flow">
-              <div>
-                <div class="rt-flow-label">Forward — S-box(x)</div>
-                <div class="rt-row" id="rt-fwd-row"></div>
-              </div>
-              <div>
-                <div class="rt-flow-label">Reverse — InvS-box(S(x))</div>
-                <div class="rt-row" id="rt-rev-row"></div>
-              </div>
-            </div>
-            <div class="rt-confirm" id="rt-confirm"></div>
+          <!-- Forward path -->
+          <div class="rt2-path-label">Forward — computing S(x)</div>
+          <div class="rt2-pipe-row" id="rt2-fwd-row"></div>
+
+          <!-- Pivot bridge callout — appears when reverse pivot is revealed -->
+          <div class="rt2-bridge" id="rt2-bridge">
+            <span class="rt2-bridge-star">★</span>
+            <strong>Same pivot.</strong> inv_affine undid the affine and arrived at the exact same intermediate value. This works because gf_inv is its own inverse — applying it twice returns the original: gf_inv(gf_inv(x)) = x.
           </div>
 
-          <div class="rt-bijection">
-            <div class="rt-bij-title">Bijection sampler — are any two outputs the same?</div>
-            <p style="font-size:0.88rem;color:#555;margin:0 0 10px;">Eight randomly chosen bytes and their S-box outputs. Every output appears at most once — no two rows share an output value. That is what makes reversal possible.</p>
-            <table class="rt-bij-table">
-              <thead><tr><th>Input x</th><th>S-box(x)</th><th>InvS-box(S-box(x))</th><th>Round-trip</th></tr></thead>
-              <tbody id="rt-bij-body"></tbody>
-            </table>
-            <div class="rt-bij-note" id="rt-bij-note"></div>
-            <button class="rt-btn-preset" style="margin-top:10px;" onclick="rtBijRefresh()">Resample →</button>
+          <!-- Reverse path -->
+          <div class="rt2-path-label" id="rt2-rev-label" style="opacity:0;transition:opacity 0.3s;">Reverse — computing S&#x207b;&#xb9;(S(x))</div>
+          <div class="rt2-pipe-row" id="rt2-rev-row"></div>
+
+          <!-- Confirmation banner -->
+          <div class="rt2-confirm" id="rt2-confirm"></div>
+
+          <!-- Step controls -->
+          <div class="rt2-step-row">
+            <button class="rt2-btn rt2-btn-primary" id="rt2-step-btn" onclick="rt2Step()">Step 1 — Compute gf_inv →</button>
+            <span class="rt2-step-hint" id="rt2-step-hint">Enter a byte, then step through each operation.</span>
           </div>
+        </div>
+
+        <!-- Wrong-order section — revealed after all four steps -->
+        <div class="rt2-wrong-card" id="rt2-wrong-card">
+          <div class="rt2-wrong-title">What happens if you reverse the steps in the wrong order?</div>
+          <p style="font-size:0.88rem;color:#444;margin:0 0 4px;">The inverse S-box must apply <em>inverse affine first</em>, then gf_inv — the exact reverse of the forward order. Swap them and the output will not recover the original byte.</p>
+          <div class="rt2-compare" id="rt2-compare"></div>
         </div>
 
         <script>
         (function(){
+          /* GF(2^8) helpers */
           function xt(a){ return (a<<1)&0xFF^((a&0x80)?0x1B:0); }
           function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa;aa=xt(aa);}return r; }
-          function gfInv(a){ if(a===0)return 0; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return 0; }
-          var C63=[1,1,0,0,0,1,1,0];
-          function affine(inv){ var b=[],v=0; for(var i=0;i<8;i++)b.push((inv>>i)&1); for(var i=0;i<8;i++)v|=((b[i]^b[(i+4)%8]^b[(i+5)%8]^b[(i+6)%8]^b[(i+7)%8]^C63[i])<<i); return v; }
-          var SBOX=new Uint8Array(256),INVSBOX=new Uint8Array(256);
-          for(var i=0;i<256;i++)SBOX[i]=affine(gfInv(i));
-          for(var i=0;i<256;i++)INVSBOX[SBOX[i]]=i;
-          function invAffine(y){ return gfInv(INVSBOX[y]); }
+          function gfInv(a){ if(!a)return 0; for(var b=1;b<256;b++)if(gfm(a,b)===1)return b; return 0; }
+
+          /* Affine transform (forward) */
+          var C=[1,1,0,0,0,1,1,0];
+          function aff(v){ var b=[],o=0; for(var i=0;i<8;i++)b[i]=(v>>i)&1; for(var i=0;i<8;i++)o|=((b[i]^b[(i+4)%8]^b[(i+5)%8]^b[(i+6)%8]^b[(i+7)%8]^C[i])<<i); return o; }
+
+          /* Build SBOX and INVSBOX */
+          var SB=new Uint8Array(256), ISB=new Uint8Array(256);
+          for(var i=0;i<256;i++) SB[i]=aff(gfInv(i));
+          for(var i=0;i<256;i++) ISB[SB[i]]=i;
+
+          /* Inverse affine: invAff(y) = v where aff(v)=y.
+             Proof: SB[x]=aff(gfInv(x)), so if y=SB[x] then aff(gfInv(x))=y,
+             meaning invAff(y)=gfInv(x)=gfInv(ISB[y]). */
+          function invAff(y){ return gfInv(ISB[y]); }
+
+          /* Utilities */
           function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
-          function toBin(v){ var b=v.toString(2).padStart(8,'0'); return b.slice(0,4)+' '+b.slice(4); }
-          function pb(s){ s=s.trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
+          function b8(v){ var s=v.toString(2).padStart(8,'0'); return s.slice(0,4)+' '+s.slice(4); }
+          function pb(s){ s=(s||'').trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
 
-          function bc(cls,label,hex,bin){
-            return '<div class="rt-bc '+cls+'"><div class="rt-bc-label">'+label+'</div><div class="rt-bc-hex">'+hex+'</div>'+(bin?'<div class="rt-bc-bin">'+bin+'</div>':'')+'</div>';
+          /* Build a byte-display box */
+          function box(cls,lbl,val){
+            return '<div class="rt2-box '+cls+'">'
+              +'<div class="rt2-box-lbl">'+lbl+'</div>'
+              +'<div class="rt2-box-hex">'+hx(val)+'</div>'
+              +'<div class="rt2-box-bin">'+b8(val)+'</div>'
+              +'</div>';
+          }
+          /* Build an arrow+label connector */
+          function conn(label){
+            return '<div class="rt2-arrow">→</div>'
+              +'<div class="rt2-conn">'+label+'</div>'
+              +'<div class="rt2-arrow">→</div>';
           }
 
-          function rtRun(){
-            var a=pb(document.getElementById('rt-in').value);
-            if(a===null){
-              document.getElementById('rt-display').style.display='none';
-              alert('Enter a valid hex byte 00–FF.');
-              return;
+          /* State */
+          var step=0, curByte=null;
+
+          function rt2Step(){
+            var a=pb(document.getElementById('rt2-in').value);
+            if(a===null){ alert('Enter a valid hex byte 00–FF.'); return; }
+
+            /* Re-initialise if the input changed */
+            if(curByte!==a){ curByte=a; step=0; clearVis(); }
+
+            step++;
+            var piv=gfInv(a);   /* the shared pivot */
+            var so =SB[a];      /* S-box output      */
+            var ia =invAff(so); /* == piv, always    */
+            var rec=ISB[so];    /* == a,   always    */
+
+            var btn =document.getElementById('rt2-step-btn');
+            var hint=document.getElementById('rt2-step-hint');
+
+            if(step===1){
+              /* Forward: input → pivot */
+              document.getElementById('rt2-fwd-row').innerHTML=
+                box('rt2-box-input','Input x',a)+conn('gf_inv')+box('rt2-box-pivot','★ Pivot',piv);
+              btn.textContent='Step 2 — Apply affine →';
+              hint.textContent='gf_inv('+hx(a)+') = '+hx(piv)+'. Every non-zero byte has exactly one multiplicative inverse in GF(2\u2078). Critically: applying gf_inv twice is an identity.';
+
+            } else if(step===2){
+              /* Forward: complete row + start reverse with S(x) box */
+              document.getElementById('rt2-fwd-row').innerHTML=
+                box('rt2-box-input','Input x',a)+conn('gf_inv')+box('rt2-box-pivot','★ Pivot',piv)+conn('affine')+box('rt2-box-sbox','S(x)',so);
+              document.getElementById('rt2-rev-label').style.opacity='1';
+              document.getElementById('rt2-rev-row').innerHTML=
+                box('rt2-box-sbox','S(x) — start here',so);
+              btn.textContent='Step 3 — Apply inv_affine →';
+              hint.textContent='S('+hx(a)+') = '+hx(so)+'. The affine transform scrambled the bits of '+hx(piv)+'. Now reverse: start from '+hx(so)+' and undo each operation in reverse order.';
+
+            } else if(step===3){
+              /* Reverse: S(x) → inv_affine → pivot (same amber!) */
+              document.getElementById('rt2-rev-row').innerHTML=
+                box('rt2-box-sbox','S(x)',so)+conn('inv_affine')+box('rt2-box-pivot','★ Pivot',ia);
+              document.getElementById('rt2-bridge').style.display='block';
+              btn.textContent='Step 4 — Apply gf_inv →';
+              hint.textContent='inv_affine('+hx(so)+') = '+hx(ia)+' — the exact same pivot as Step 1. Both paths share this value because gf_inv is its own inverse.';
+
+            } else if(step===4){
+              /* Reverse: complete row + confirm + wrong-order panel */
+              document.getElementById('rt2-rev-row').innerHTML=
+                box('rt2-box-sbox','S(x)',so)+conn('inv_affine')+box('rt2-box-pivot','★ Pivot',ia)+conn('gf_inv')+box('rt2-box-win','Recovered',rec);
+              var conf=document.getElementById('rt2-confirm');
+              conf.innerHTML='S\u207b\u00b9(S('+hx(a)+')) = <code>'+hx(rec)+'</code>'
+                +(rec===a?' &nbsp;\u2713 Round-trip confirmed.':' \u2717 Mismatch — check implementation.');
+              conf.style.display='block';
+              buildWrong(a,so,piv,ia,rec);
+              document.getElementById('rt2-wrong-card').style.display='block';
+              btn.textContent='↺ Reset';
+              btn.onclick=rt2Reset;
+              hint.textContent='Scroll down to see what breaks when the steps are reversed in the wrong order.';
             }
-            var inv=gfInv(a), sout=SBOX[a], ia=invAffine(sout), rec=INVSBOX[sout];
-
-            var fwdRow=document.getElementById('rt-fwd-row');
-            fwdRow.innerHTML=
-              bc('rt-bc-input','Input',hx(a),toBin(a))+
-              '<div class="rt-arrow">→</div>'+
-              '<div class="rt-op">field<br>inverse</div>'+
-              '<div class="rt-arrow">→</div>'+
-              bc('rt-bc-inter','After inv',hx(inv),toBin(inv))+
-              '<div class="rt-arrow">→</div>'+
-              '<div class="rt-op">affine<br>transform</div>'+
-              '<div class="rt-arrow">→</div>'+
-              bc('rt-bc-sbox','S-box out',hx(sout),toBin(sout));
-
-            var revRow=document.getElementById('rt-rev-row');
-            revRow.innerHTML=
-              bc('rt-bc-sbox','S-box out',hx(sout),toBin(sout))+
-              '<div class="rt-arrow">→</div>'+
-              '<div class="rt-op">inverse<br>affine</div>'+
-              '<div class="rt-arrow">→</div>'+
-              bc('rt-bc-inter','Same inter',hx(ia),toBin(ia))+
-              '<div class="rt-arrow">→</div>'+
-              '<div class="rt-op">field<br>inverse</div>'+
-              '<div class="rt-arrow">→</div>'+
-              bc('rt-bc-win','Recovered',hx(rec),toBin(rec));
-
-            var match=(rec===a);
-            document.getElementById('rt-confirm').innerHTML=
-              (match
-                ? 'S\u207b\u00b9(S(<code>'+hx(a)+'</code>)) = <code>'+hx(rec)+'</code> &nbsp;\u2713&nbsp; Round-trip confirmed.'
-                : 'Mismatch — check your input.');
-
-            document.getElementById('rt-display').style.display='';
-            rtBijRefresh();
           }
 
-          function rtReset(){
-            document.getElementById('rt-display').style.display='none';
-            document.getElementById('rt-in').value='53';
+          /* Build the wrong-order comparison panel */
+          function buildWrong(a,so,piv,ia,rec){
+            /* Wrong order: gf_inv first, then inv_affine */
+            var wInter =gfInv(so);
+            var wResult=invAff(wInter);
+
+            var html='';
+
+            /* Correct column */
+            html+='<div class="rt2-compare-col ok">';
+            html+='<h4>\u2713 Correct — inv_affine \u2192 gf_inv</h4>';
+            html+='<div class="rt2-cstep">'
+              +'<span class="mb" style="background:#f0ecff;border:1.5px solid #d0c0f0;">'+hx(so)+'</span>'
+              +'<span class="op">\u2192 inv_affine \u2192</span>'
+              +'<span class="mb" style="background:#fff8e1;border:1.5px solid #f5c518;">'+hx(ia)+'</span>'
+              +'<span class="op">\u2192 gf_inv \u2192</span>'
+              +'<span class="mb" style="background:#eaf7ef;border:1.5px solid #7ac05a;">'+hx(rec)+'</span>'
+              +'</div>';
+            html+='<div class="rt2-badge ok">Result '+hx(rec)+' = input '+hx(a)+' \u2713</div>';
+            html+='</div>';
+
+            /* Wrong column */
+            html+='<div class="rt2-compare-col err">';
+            html+='<h4>\u2717 Wrong order — gf_inv \u2192 inv_affine</h4>';
+            html+='<div class="rt2-cstep">'
+              +'<span class="mb" style="background:#f0ecff;border:1.5px solid #d0c0f0;">'+hx(so)+'</span>'
+              +'<span class="op">\u2192 gf_inv \u2192</span>'
+              +'<span class="mb" style="background:#fff0f0;border:1.5px solid #e57373;">'+hx(wInter)+'</span>'
+              +'<span class="op">\u2192 inv_affine \u2192</span>'
+              +'<span class="mb" style="background:#fff0f0;border:1.5px solid #e57373;">'+hx(wResult)+'</span>'
+              +'</div>';
+            html+='<div class="rt2-badge err">Result '+hx(wResult)+' \u2260 input '+hx(a)+' \u2717</div>';
+            html+='</div>';
+
+            document.getElementById('rt2-compare').innerHTML=html;
           }
 
-          function rtBijRefresh(){
-            var pool=[];
-            for(var i=0;i<256;i++)pool.push(i);
-            for(var i=255;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=pool[i];pool[i]=pool[j];pool[j]=t;}
-            var sample=pool.slice(0,8);
-            var outputs={};
-            var rows='';
-            sample.forEach(function(x){
-              var y=SBOX[x],z=INVSBOX[y];
-              var dup=outputs[y]!==undefined;
-              outputs[y]=x;
-              rows+='<tr><td>'+hx(x)+'</td><td class="'+(dup?'':'unique')+'">'+hx(y)+'</td><td>'+hx(z)+'</td><td style="color:'+(z===x?'#1a6a30':'#c00')+';font-weight:800;">'+(z===x?'\u2713 '+hx(x):'\u2717')+'</td></tr>';
-            });
-            document.getElementById('rt-bij-body').innerHTML=rows;
-            var allUnique=Object.keys(outputs).length===sample.length;
-            document.getElementById('rt-bij-note').textContent=allUnique
-              ? 'All 8 outputs are distinct — no collision. Any of these could be reversed without ambiguity.'
-              : 'A collision appeared in this sample — two inputs share an output. Decryption would be ambiguous.';
+          function clearVis(){
+            document.getElementById('rt2-fwd-row').innerHTML='';
+            document.getElementById('rt2-rev-row').innerHTML='';
+            document.getElementById('rt2-rev-label').style.opacity='0';
+            document.getElementById('rt2-bridge').style.display='none';
+            document.getElementById('rt2-confirm').style.display='none';
+            document.getElementById('rt2-wrong-card').style.display='none';
+            var btn=document.getElementById('rt2-step-btn');
+            btn.textContent='Step 1 — Compute gf_inv →';
+            btn.onclick=rt2Step;
+            document.getElementById('rt2-step-hint').textContent='Enter a byte, then step through each operation.';
           }
 
-          window.rtRun=rtRun;
-          window.rtReset=rtReset;
-          window.rtBijRefresh=rtBijRefresh;
-          window.rtLoad=function(h){ document.getElementById('rt-in').value=h; rtReset(); document.getElementById('rt-display').style.display='none'; };
+          function rt2Reset(){ curByte=null; step=0; clearVis(); }
+          function rt2Load(h){ document.getElementById('rt2-in').value=h; rt2Reset(); }
 
-          document.getElementById('rt-in').addEventListener('keydown',function(e){if(e.key==='Enter')rtRun();});
-          rtBijRefresh();
+          window.rt2Step  = rt2Step;
+          window.rt2Reset = rt2Reset;
+          window.rt2Load  = rt2Load;
+          document.getElementById('rt2-in').addEventListener('keydown',function(e){ if(e.key==='Enter') rt2Step(); });
         })();
         </script>
       </section>
