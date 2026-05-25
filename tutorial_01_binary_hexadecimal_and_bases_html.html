@@ -1578,12 +1578,18 @@
 
             blocksEl.innerHTML = blocksHtml;
 
-            var numStr;
-            if(sys.base===2)       numStr = n.toString(2).padStart(sys.pad,'0');
-            else if(sys.base===16) numStr = n.toString(16).toUpperCase().padStart(sys.pad,'0');
-            else                   numStr = String(n);
+            /* Color each digit to match its denomination block */
+            var rawStr;
+            if(sys.base===2)       rawStr = n.toString(2).padStart(sys.defs.length,'0');
+            else if(sys.base===16) rawStr = n.toString(16).toUpperCase().padStart(sys.defs.length,'0');
+            else                   rawStr = n.toString(10).padStart(sys.defs.length,'0');
+
+            var coloredNum = rawStr.split('').map(function(d,i){
+              return '<span style="color:'+sys.defs[i].color+';font-weight:900;">'+d+'</span>';
+            }).join('');
+
             var eqBody = eqParts.length ? eqParts.join(' + ') : '0';
-            eqEl.innerHTML = numStr+'<sub>'+sys.sub+'</sub>&nbsp;&nbsp;=&nbsp;&nbsp;'+eqBody;
+            eqEl.innerHTML = coloredNum+'<sub>'+sys.sub+'</sub>&nbsp;&nbsp;=&nbsp;&nbsp;'+eqBody;
           });
         }
 
