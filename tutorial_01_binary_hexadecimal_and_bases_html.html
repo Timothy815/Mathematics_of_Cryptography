@@ -1541,6 +1541,17 @@
           return h+'</div>';
         }
 
+        /* Ghost: same outer dimensions as a real block, dashed border in the
+           denomination colour, no fill. Shows the place exists even when empty. */
+        function makeGhost(def){
+          var w = def.cols * UNIT + (def.cols - 1) * UGAP;
+          var h = def.rows * UNIT + (def.rows - 1) * UGAP;
+          var s = 'display:block;width:'+w+'px;height:'+h+'px;'
+                + 'border:1.5px dashed '+def.color+';border-radius:2px;'
+                + 'opacity:0.35;box-sizing:border-box;';
+          return '<div style="'+s+'"></div>';
+        }
+
         function renderDecomp(n){
           document.getElementById('decomp-slider').value = n;
           document.getElementById('decomp-val').textContent = n;
@@ -1549,17 +1560,15 @@
             var blocksEl = document.getElementById('decomp-'+sys.key+'-blocks');
             var eqEl     = document.getElementById('decomp-'+sys.key+'-eq');
 
-            if(n===0){
-              blocksEl.innerHTML = '<span class="decomp-zero">zero — empty — no blocks needed</span>';
-              eqEl.innerHTML = '0<sub>'+sys.sub+'</sub>';
-              return;
-            }
-
             var blocksHtml='', eqParts=[], rem=n;
             sys.defs.forEach(function(def){
               var count = Math.floor(rem/def.val);
               rem = rem % def.val;
-              if(count===0) return;
+              if(count===0){
+                /* Empty place — show one ghost to keep the position visible */
+                blocksHtml+='<div class="decomp-group">'+makeGhost(def)+'</div>';
+                return;
+              }
               var group='';
               for(var c=0;c<count;c++) group+=makeBlock(def);
               blocksHtml+='<div class="decomp-group">'+group+'</div>';
@@ -1573,7 +1582,8 @@
             if(sys.base===2)       numStr = n.toString(2).padStart(sys.pad,'0');
             else if(sys.base===16) numStr = n.toString(16).toUpperCase().padStart(sys.pad,'0');
             else                   numStr = String(n);
-            eqEl.innerHTML = numStr+'<sub>'+sys.sub+'</sub>&nbsp;&nbsp;=&nbsp;&nbsp;'+eqParts.join(' + ');
+            var eqBody = eqParts.length ? eqParts.join(' + ') : '0';
+            eqEl.innerHTML = numStr+'<sub>'+sys.sub+'</sub>&nbsp;&nbsp;=&nbsp;&nbsp;'+eqBody;
           });
         }
 
