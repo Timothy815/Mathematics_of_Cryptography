@@ -205,6 +205,25 @@
     .blk-count-display strong { font-family:'Cascadia Code','Consolas',monospace; font-size:1.15rem; color:#1f3763; }
     .blk-note { background:#fffde7; border-left:4px solid #f5a623; border-radius:0 8px 8px 0; padding:10px 14px; font-size:0.88rem; color:#555; margin-top:14px; min-height:2.2em; }
 
+    /* ── Block Decomposition widget ──────────────────────────── */
+    .decomp-controls { display:flex; gap:12px; align-items:center; margin-bottom:14px; flex-wrap:wrap; }
+    .decomp-slider { flex:1; min-width:160px; max-width:360px; accent-color:#334e7d; cursor:pointer; }
+    .decomp-val-display { font-family:'Cascadia Code','Consolas',monospace; font-size:1.4rem; font-weight:900; color:#1f3763; min-width:3.5ch; text-align:right; }
+    .decomp-arena { display:flex; flex-direction:column; gap:14px; margin:16px 0; }
+    .decomp-row { display:flex; align-items:flex-start; gap:14px; padding:14px 16px; background:#f7f9ff; border:1px solid #d0d9ee; border-radius:14px; }
+    .decomp-sys-label { font-weight:900; font-size:0.82rem; text-transform:uppercase; letter-spacing:0.08em; color:#334e7d; width:80px; flex-shrink:0; line-height:1.4; padding-top:2px; }
+    .decomp-sys-label small { font-weight:600; color:#888; display:block; font-size:0.72rem; text-transform:none; letter-spacing:0; }
+    .decomp-col { flex:1; min-width:0; }
+    .decomp-blocks { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; min-height:20px; }
+    .decomp-group { display:flex; gap:2px; align-items:flex-end; }
+    .decomp-eq { font-family:'Cascadia Code','Consolas',monospace; font-size:0.8rem; color:#334e7d; margin-top:8px; line-height:1.6; }
+    .decomp-zero { color:#aaa; font-style:italic; font-size:0.85rem; padding:6px 0; }
+    .decomp-note { background:#fffde7; border-left:4px solid #f5a623; border-radius:0 8px 8px 0; padding:10px 14px; font-size:0.88rem; color:#555; margin-top:14px; }
+    .decomp-btn-primary { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:9px 20px; font-weight:900; font-size:0.95rem; cursor:pointer; transition:background 0.15s; }
+    .decomp-btn-primary:hover { background:#1f3763; }
+    .decomp-btn-secondary { background:#f0f4fb; color:#334e7d; border:1.5px solid #c7d2ea; border-radius:8px; padding:9px 16px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:background 0.15s; }
+    .decomp-btn-secondary:hover { background:#e0e8f5; }
+
     /* ── Overflow counter ────────────────────────────────────── */
     .ov-wrap { margin: 16px 0; overflow-x: auto; }
     .ov-row  { display: flex; align-items: stretch; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; min-width: 560px; }
@@ -484,6 +503,64 @@
           <div class="blk-note" id="blk-note">
             Click <strong>Count +1</strong> to add one block to each 1s column simultaneously.
             Watch which columns exchange first — and how often.
+          </div>
+        </div>
+      </section>
+
+      <section id="block-decomp" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>The Same Number, Three Ways</h2>
+          <p>
+            Drag the slider to any value from 0 to 255. The widget decomposes it into physical
+            denomination blocks — exactly like the base-10 blocks used in primary school, but
+            extended to base 2 and base 16. Every block is assembled from the same unit square,
+            so you can see what each denomination is <em>made of</em>: a decimal rod is 10 unit
+            squares in a row; a decimal flat is 100 units in a 10&times;10 grid; a binary 128-block
+            is 128 units in a 16&times;8 grid; a hex block is 16 units in a 4&times;4 square.
+          </p>
+
+          <div class="decomp-controls">
+            <input type="range" id="decomp-slider" class="decomp-slider"
+                   min="0" max="255" value="0" oninput="decomp(parseInt(this.value))">
+            <span class="decomp-val-display" id="decomp-val">0</span>
+            <button class="decomp-btn-primary"
+                    onclick="decomp(Math.min(255,parseInt(document.getElementById('decomp-slider').value)+1))">+1</button>
+            <button class="decomp-btn-secondary"
+                    onclick="decomp(Math.max(0,parseInt(document.getElementById('decomp-slider').value)-1))">−1</button>
+            <button class="decomp-btn-secondary" onclick="decomp(0)">Reset</button>
+          </div>
+
+          <div class="decomp-arena">
+            <div class="decomp-row">
+              <div class="decomp-sys-label">Binary<small>base 2</small></div>
+              <div class="decomp-col">
+                <div class="decomp-blocks" id="decomp-bin-blocks"></div>
+                <div class="decomp-eq"     id="decomp-bin-eq"></div>
+              </div>
+            </div>
+            <div class="decomp-row">
+              <div class="decomp-sys-label">Decimal<small>base 10</small></div>
+              <div class="decomp-col">
+                <div class="decomp-blocks" id="decomp-dec-blocks"></div>
+                <div class="decomp-eq"     id="decomp-dec-eq"></div>
+              </div>
+            </div>
+            <div class="decomp-row">
+              <div class="decomp-sys-label">Hex<small>base 16</small></div>
+              <div class="decomp-col">
+                <div class="decomp-blocks" id="decomp-hex-blocks"></div>
+                <div class="decomp-eq"     id="decomp-hex-eq"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="decomp-note">
+            Every denomination block is built from the same unit square.
+            Binary denominations double each step (1, 2, 4, 8 … 128).
+            Decimal denominations multiply by ten (1, 10, 100).
+            Hex denominations multiply by sixteen (1, 16).
+            Three different groupings — one underlying count.
           </div>
         </div>
       </section>
@@ -1410,6 +1487,97 @@
 
         buildAll();
         renderAll(null);
+      })();
+      </script>
+
+      <script>
+      /* ── Block Decomposition widget ──────────────────────────── */
+      (function(){
+        var UNIT = 4, UGAP = 0.5;
+
+        var SYSTEMS = [
+          {
+            key:'bin', base:2, sub:'2', pad:8,
+            defs:[
+              {val:128, cols:16, rows:8},
+              {val:64,  cols:8,  rows:8},
+              {val:32,  cols:8,  rows:4},
+              {val:16,  cols:4,  rows:4},
+              {val:8,   cols:4,  rows:2},
+              {val:4,   cols:2,  rows:2},
+              {val:2,   cols:2,  rows:1},
+              {val:1,   cols:1,  rows:1}
+            ]
+          },
+          {
+            key:'dec', base:10, sub:'10', pad:0,
+            defs:[
+              {val:100, cols:10, rows:10},
+              {val:10,  cols:10, rows:1 },
+              {val:1,   cols:1,  rows:1 }
+            ]
+          },
+          {
+            key:'hex', base:16, sub:'16', pad:2,
+            defs:[
+              {val:16, cols:4, rows:4},
+              {val:1,  cols:1, rows:1}
+            ]
+          }
+        ];
+
+        function hexChar(n){ return n<10?String(n):'ABCDEF'[n-10]; }
+
+        function makeBlock(def){
+          var cells = def.cols * def.rows;
+          var gs = 'display:grid;grid-template-columns:repeat('+def.cols+','+UNIT+'px);gap:'+UGAP+'px;';
+          var cs = 'width:'+UNIT+'px;height:'+UNIT+'px;background:#334e7d;border-radius:0.5px;';
+          var h = '<div style="'+gs+'">';
+          for(var i=0;i<cells;i++) h+='<div style="'+cs+'"></div>';
+          return h+'</div>';
+        }
+
+        function renderDecomp(n){
+          document.getElementById('decomp-slider').value = n;
+          document.getElementById('decomp-val').textContent = n;
+
+          SYSTEMS.forEach(function(sys){
+            var blocksEl = document.getElementById('decomp-'+sys.key+'-blocks');
+            var eqEl     = document.getElementById('decomp-'+sys.key+'-eq');
+
+            if(n===0){
+              blocksEl.innerHTML = '<span class="decomp-zero">zero — empty — no blocks needed</span>';
+              eqEl.innerHTML = '0<sub>'+sys.sub+'</sub>';
+              return;
+            }
+
+            var blocksHtml='', eqParts=[], rem=n;
+            sys.defs.forEach(function(def){
+              var count = Math.floor(rem/def.val);
+              rem = rem % def.val;
+              if(count===0) return;
+              var group='';
+              for(var c=0;c<count;c++) group+=makeBlock(def);
+              blocksHtml+='<div class="decomp-group">'+group+'</div>';
+              var countLabel = sys.base===16 ? hexChar(count) : String(count);
+              eqParts.push(countLabel+'&times;'+def.val);
+            });
+
+            blocksEl.innerHTML = blocksHtml;
+
+            var numStr;
+            if(sys.base===2)       numStr = n.toString(2).padStart(sys.pad,'0');
+            else if(sys.base===16) numStr = n.toString(16).toUpperCase().padStart(sys.pad,'0');
+            else                   numStr = String(n);
+            eqEl.innerHTML = numStr+'<sub>'+sys.sub+'</sub>&nbsp;&nbsp;=&nbsp;&nbsp;'+eqParts.join(' + ');
+          });
+        }
+
+        window.decomp = function(n){
+          renderDecomp(Math.max(0,Math.min(255,n)));
+        };
+
+        renderDecomp(0);
       })();
       </script>
 
