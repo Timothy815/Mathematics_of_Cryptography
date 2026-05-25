@@ -459,13 +459,13 @@
             <div class="blk-row">
               <div class="blk-sys-label">Binary<small>base 2<br>2 blocks/col</small></div>
               <div class="blk-cols" id="blk-bin-cols"></div>
-              <div class="blk-eq" id="blk-bin-eq">= 00000<sub>2</sub></div>
+              <div class="blk-eq" id="blk-bin-eq">= 00000000<sub>2</sub></div>
             </div>
             <!-- DECIMAL row -->
             <div class="blk-row">
               <div class="blk-sys-label">Decimal<small>base 10<br>10 blocks/col</small></div>
               <div class="blk-cols" id="blk-dec-cols"></div>
-              <div class="blk-eq" id="blk-dec-eq">= 00<sub>10</sub></div>
+              <div class="blk-eq" id="blk-dec-eq">= 000<sub>10</sub></div>
             </div>
             <!-- HEX row -->
             <div class="blk-row">
@@ -1256,12 +1256,12 @@
       /* ── Counting-by-Blocks widget ───────────────────── */
       (function(){
         var COUNT = 0;
-        var MAX   = 31;
+        var MAX   = 255;
 
         var SYS = [
-          { key:'bin', base:2,  places:[16,8,4,2,1], label:'blk-bin-eq', sub:'2',  pad:5 },
-          { key:'dec', base:10, places:[10,1],        label:'blk-dec-eq', sub:'10', pad:2 },
-          { key:'hex', base:16, places:[16,1],        label:'blk-hex-eq', sub:'16', pad:2 }
+          { key:'bin', base:2,  places:[128,64,32,16,8,4,2,1], label:'blk-bin-eq', sub:'2',  pad:8 },
+          { key:'dec', base:10, places:[100,10,1],              label:'blk-dec-eq', sub:'10', pad:3 },
+          { key:'hex', base:16, places:[16,1],                  label:'blk-hex-eq', sub:'16', pad:2 }
         ];
 
         function hexDigit(n){ return n<10?String(n):'ABCDEF'[n-10]; }
@@ -1364,15 +1364,27 @@
           } else if(curr===1){
             msg='Count 1: one block lands in each 1s column. No column is full yet — no exchange needed.';
           } else if(curr===2){
-            msg='<strong>Binary exchange!</strong> The binary 1s column held 2 blocks — it is now full. Those 2 blocks are exchanged for 1 block in the 2s column. The 1s column resets to zero. Decimal and hex are still filling.';
+            msg='<strong>Binary exchange!</strong> The 1s column held 2 blocks — it is now full. Those 2 blocks are exchanged for 1 block in the 2s column. The 1s column resets to zero. Decimal and hex are still filling.';
           } else if(curr===4){
             msg='<strong>Binary ripple exchange:</strong> the 2s column also filled (2 blocks) and exchanged into the 4s column. Two exchanges cascade in one step.';
           } else if(curr===8){
-            msg='The 4s column filled and exchanged into the 8s column. Binary has exchanged 4 times; decimal and hex have not exchanged once.';
+            msg='The 4s column exchanged into the 8s column. Binary has exchanged 4 times so far; decimal and hex have not exchanged once.';
           } else if(curr===10){
-            msg='<strong>Decimal exchange!</strong> The decimal 1s column finally held 10 blocks. Those 10 small blocks become 1 block in the 10s column. Binary has been exchanging since count 2.';
+            msg='<strong>Decimal exchange!</strong> The decimal 1s column finally held 10 blocks. Those 10 blocks become 1 block in the 10s column. Binary has been exchanging since count 2.';
           } else if(curr===16){
-            msg='<strong>Hex exchange!</strong> The hex 1s column held 16 blocks. Those 16 blocks become 1 block in the 16s column. Binary has exchanged 8 times by now.';
+            msg='<strong>Hex exchange!</strong> The hex 1s column held 16 blocks — they become 1 block in the 16s column. Binary has exchanged 8 times by now.';
+          } else if(curr===32){
+            msg='Binary\'s 16s column exchanged into the 32s column. That is 5 cascaded exchanges since count 1 — no other system has exchanged more than once.';
+          } else if(curr===64){
+            msg='Binary reaches the 64s column. Decimal\'s 10s column has 6 blocks; hex\'s 16s column has 4 blocks. Notice how much further ahead binary\'s higher places are filling.';
+          } else if(curr===100){
+            msg='<strong>Decimal 100s column!</strong> 10 blocks in the 10s column exchange for 1 block in the 100s column. Binary has been rippling through all eight columns for dozens of steps.';
+          } else if(curr===128){
+            msg='<strong>Binary fills the 128s column</strong> — its most significant bit. This is the halfway point of a full byte. In hex we are at 0x80.';
+          } else if(curr===200){
+            msg='0xC8 in hex, 11001000 in binary, 200 in decimal. Three representations of the same quantity — the same blocks counted three different ways.';
+          } else if(curr===255){
+            msg='<strong>0xFF — a full byte!</strong> Every binary column holds 1 block (11111111). Decimal reads 255. Hex reads FF. One more exchange from any column would overflow the byte entirely.';
           } else if(curr===MAX){
             msg='Display maximum reached. Click <strong>Reset</strong> to start over.';
           } else {
