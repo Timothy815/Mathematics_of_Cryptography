@@ -1495,33 +1495,37 @@
       (function(){
         var UNIT = 6, UGAP = 1;
 
+        /* Colors: amber = unit atom everywhere; denomination-specific above that.
+           Binary: dark-to-light navy gradient by magnitude.
+           Decimal: dark red = flat, green = rod (vertical), amber = unit.
+           Hex: deep purple = 16-block, amber = unit. */
         var SYSTEMS = [
           {
             key:'bin', base:2, sub:'2', pad:8,
             defs:[
-              {val:128, cols:16, rows:8},
-              {val:64,  cols:8,  rows:8},
-              {val:32,  cols:8,  rows:4},
-              {val:16,  cols:4,  rows:4},
-              {val:8,   cols:4,  rows:2},
-              {val:4,   cols:2,  rows:2},
-              {val:2,   cols:2,  rows:1},
-              {val:1,   cols:1,  rows:1}
+              {val:128, cols:16, rows:8, color:'#0d2347'},
+              {val:64,  cols:8,  rows:8, color:'#1a3260'},
+              {val:32,  cols:8,  rows:4, color:'#243f7a'},
+              {val:16,  cols:4,  rows:4, color:'#334e7d'},
+              {val:8,   cols:4,  rows:2, color:'#4a68a0'},
+              {val:4,   cols:2,  rows:2, color:'#6080b8'},
+              {val:2,   cols:2,  rows:1, color:'#7a9fd0'},
+              {val:1,   cols:1,  rows:1, color:'#c47a1a'}
             ]
           },
           {
             key:'dec', base:10, sub:'10', pad:0,
             defs:[
-              {val:100, cols:10, rows:10},
-              {val:10,  cols:10, rows:1 },
-              {val:1,   cols:1,  rows:1 }
+              {val:100, cols:10, rows:10, color:'#8b1a1a'},
+              {val:10,  cols:1,  rows:10, color:'#1a5c2a'},
+              {val:1,   cols:1,  rows:1,  color:'#c47a1a'}
             ]
           },
           {
             key:'hex', base:16, sub:'16', pad:2,
             defs:[
-              {val:16, cols:4, rows:4},
-              {val:1,  cols:1, rows:1}
+              {val:16, cols:4, rows:4, color:'#4a1a7a'},
+              {val:1,  cols:1, rows:1, color:'#c47a1a'}
             ]
           }
         ];
@@ -1531,7 +1535,7 @@
         function makeBlock(def){
           var cells = def.cols * def.rows;
           var gs = 'display:grid;grid-template-columns:repeat('+def.cols+','+UNIT+'px);gap:'+UGAP+'px;';
-          var cs = 'width:'+UNIT+'px;height:'+UNIT+'px;background:#334e7d;border-radius:0.5px;';
+          var cs = 'width:'+UNIT+'px;height:'+UNIT+'px;background:'+def.color+';border-radius:0.5px;';
           var h = '<div style="'+gs+'">';
           for(var i=0;i<cells;i++) h+='<div style="'+cs+'"></div>';
           return h+'</div>';
