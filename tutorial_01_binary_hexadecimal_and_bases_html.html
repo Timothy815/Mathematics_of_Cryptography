@@ -441,11 +441,17 @@
           <h2>Counting by Exchange</h2>
           <p>
             Each row below shows the same count in a different base. Each column is a <em>place</em> (1s, 2s, 4s, …).
-            Blocks stack upward from zero. When a column is <strong>full</strong> — meaning it holds exactly
-            <em>base</em> blocks — those blocks are <strong>exchanged</strong> for one block in the column to the left,
-            and the column resets to zero. That exchange is a <em>carry</em>.
-            Binary columns hold only 2 blocks, so they exchange constantly.
-            Decimal columns hold 10. Hex columns hold 16.
+            Blocks stack upward to show the digit value in that place.
+          </p>
+          <p>
+            <strong>Zero needs no blocks.</strong> An empty column already carries a value — zero.
+            Each slot represents one unit <em>above</em> zero, so the number of slots equals the
+            largest digit the column can show before exchanging.
+            Binary columns have <strong>1 slot</strong>: the digit is 0 (empty) or 1 (filled).
+            Decimal columns have <strong>9 slots</strong>: digits run 0–9.
+            Hex columns have <strong>15 slots</strong>: digits run 0–F.
+            When every slot is filled and a new block arrives, those blocks are
+            <strong>exchanged</strong> for one block in the column to the left — that exchange is a <em>carry</em>.
           </p>
 
           <div class="blk-controls">
@@ -457,19 +463,19 @@
           <div class="blk-arena">
             <!-- BINARY row -->
             <div class="blk-row">
-              <div class="blk-sys-label">Binary<small>base 2<br>2 blocks/col</small></div>
+              <div class="blk-sys-label">Binary<small>base 2<br>digits: 0–1</small></div>
               <div class="blk-cols" id="blk-bin-cols"></div>
               <div class="blk-eq" id="blk-bin-eq">= 00000000<sub>2</sub></div>
             </div>
             <!-- DECIMAL row -->
             <div class="blk-row">
-              <div class="blk-sys-label">Decimal<small>base 10<br>10 blocks/col</small></div>
+              <div class="blk-sys-label">Decimal<small>base 10<br>digits: 0–9</small></div>
               <div class="blk-cols" id="blk-dec-cols"></div>
               <div class="blk-eq" id="blk-dec-eq">= 000<sub>10</sub></div>
             </div>
             <!-- HEX row -->
             <div class="blk-row">
-              <div class="blk-sys-label">Hex<small>base 16<br>16 blocks/col</small></div>
+              <div class="blk-sys-label">Hex<small>base 16<br>digits: 0–F</small></div>
               <div class="blk-cols" id="blk-hex-cols"></div>
               <div class="blk-eq" id="blk-hex-eq">= 00<sub>16</sub></div>
             </div>
@@ -1290,8 +1296,9 @@
               var stack = document.createElement('div');
               stack.className = 'blk-stack';
               /* flex-direction:column-reverse — first DOM child sits at visual bottom.
-                 slot s=0 is at the bottom; filled slots count upward. */
-              for(var s=0; s<sys.base; s++){
+                 slot s=0 is at the bottom; filled slots count upward.
+                 We create base-1 slots because zero is empty — no slot needed. */
+              for(var s=0; s<sys.base-1; s++){
                 var slot = document.createElement('div');
                 slot.className = 'blk-slot';
                 slot.id = 'bc-'+sys.key+'-'+ci+'-'+s;
@@ -1318,8 +1325,8 @@
             var prevD = prevCount!=null ? getDigits(prevCount, sys.places) : null;
 
             currD.forEach(function(d, ci){
-              /* Update which slots are filled */
-              for(var s=0; s<sys.base; s++){
+              /* Update which slots are filled (base-1 slots exist) */
+              for(var s=0; s<sys.base-1; s++){
                 var slot = document.getElementById('bc-'+sys.key+'-'+ci+'-'+s);
                 if(s < d) slot.classList.add('filled');
                 else       slot.classList.remove('filled');
