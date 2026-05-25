@@ -553,6 +553,19 @@
         <p>
           If the same pattern were stored in a 4-bit nibble, only four bit positions exist, so NOT would
           produce a different bit pattern. In cryptography, always clarify the width before computing NOT.</p>
+
+        <div class="box definition-box">
+          <div class="box-title">Unary vs binary operations</div>
+          <p>
+            AND, OR, and XOR each require <strong>two inputs</strong> — the value being transformed and the mask or key being applied against it. Mathematicians call these <strong>binary operations</strong> (binary here means "two inputs," not binary numbers).
+          </p>
+          <p>
+            NOT requires only <strong>one input</strong>. It acts on a single value in isolation and cannot accept a second input such as a mask. This makes NOT a <strong>unary operation</strong>.
+          </p>
+          <p>
+            This distinction matters in practice: if the task is to force specific bit positions to a desired state while leaving others untouched, you need a two-input operation — AND, OR, or XOR — combined with a mask. NOT cannot do this job because it has no slot for a second input.
+          </p>
+        </div>
       </section>
 
       <section id="masks">
@@ -733,6 +746,16 @@
             </tr>
           </tbody>
         </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Reversibility of a chain</div>
+          <p>
+            When operations are applied in sequence, the chain is only as reversible as its least reversible step. A sequence of ten reversible operations is still fully reversible. But a single irreversible step — even one surrounded by reversible operations — makes the entire chain irreversible, because the data destroyed at that step cannot be recovered by any later operation.
+          </p>
+          <p>
+            This is why cryptographic ciphers are designed so that <em>every</em> internal operation is invertible, while hash functions deliberately include at least one non-invertible operation so that the whole pipeline becomes a one-way function.
+          </p>
+        </div>
       </section>
 
       <section id="cryptographic-example">
