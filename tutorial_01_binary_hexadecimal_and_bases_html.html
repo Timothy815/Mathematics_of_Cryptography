@@ -223,6 +223,13 @@
     .decomp-btn-primary:hover { background:#1f3763; }
     .decomp-btn-secondary { background:#f0f4fb; color:#334e7d; border:1.5px solid #c7d2ea; border-radius:8px; padding:9px 16px; font-weight:700; font-size:0.9rem; cursor:pointer; transition:background 0.15s; }
     .decomp-btn-secondary:hover { background:#e0e8f5; }
+    .decomp-presets { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 4px; }
+    .decomp-preset-btn { background:#f0f4fb; color:#334e7d; border:1.5px solid #c7d2ea; border-radius:6px; padding:4px 10px; font-size:0.8rem; font-weight:700; cursor:pointer; font-family:'Cascadia Code','Consolas',monospace; transition:background 0.15s; }
+    .decomp-preset-btn:hover { background:#334e7d; color:#fff; border-color:#334e7d; }
+    .decomp-group-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; }
+    .decomp-badge { font-size:0.65rem; font-weight:900; font-family:'Cascadia Code','Consolas',monospace; line-height:1; }
+    .decomp-count-bar { text-align:center; padding:10px 0 4px; font-size:0.88rem; color:#555; }
+    .decomp-count-bar strong { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; color:#1f3763; }
 
     /* ── Overflow counter ────────────────────────────────────── */
     .ov-wrap { margin: 16px 0; overflow-x: auto; }
@@ -531,6 +538,18 @@
             <button class="decomp-btn-secondary" onclick="decomp(0)">Reset</button>
           </div>
 
+          <div class="decomp-presets">
+            <span style="font-size:0.78rem;color:#888;align-self:center;margin-right:4px;">Notable&nbsp;values:</span>
+            <button class="decomp-preset-btn" onclick="decomp(1)"   title="First count — one unit in every base">1</button>
+            <button class="decomp-preset-btn" onclick="decomp(2)"   title="Binary carries for the first time">2</button>
+            <button class="decomp-preset-btn" onclick="decomp(10)"  title="Decimal carries for the first time">10</button>
+            <button class="decomp-preset-btn" onclick="decomp(16)"  title="Hex carries; binary lands on a clean denomination">16</button>
+            <button class="decomp-preset-btn" onclick="decomp(32)"  title="32 = 2⁵ — a clean binary denomination">32</button>
+            <button class="decomp-preset-btn" onclick="decomp(64)"  title="64 = 2⁶ — halfway to 128">64</button>
+            <button class="decomp-preset-btn" onclick="decomp(128)" title="128 = 2⁷ — the most significant bit of a byte">128</button>
+            <button class="decomp-preset-btn" onclick="decomp(255)" title="255 = 0xFF = 11111111₂ — a full byte, all slots filled">255</button>
+          </div>
+
           <div class="decomp-arena">
             <div class="decomp-row">
               <div class="decomp-sys-label">Binary<small>base 2</small></div>
@@ -553,6 +572,10 @@
                 <div class="decomp-eq"     id="decomp-hex-eq"></div>
               </div>
             </div>
+          </div>
+
+          <div class="decomp-count-bar" id="decomp-count-bar">
+            Every row contains exactly <strong id="decomp-unit-count">0</strong> unit squares — the same quantity, three different groupings.
           </div>
 
           <div class="decomp-note">
@@ -1503,29 +1526,29 @@
           {
             key:'bin', base:2, sub:'2', pad:8,
             defs:[
-              {val:128, cols:16, rows:8, color:'#9b2335'},
-              {val:64,  cols:8,  rows:8, color:'#b85c00'},
-              {val:32,  cols:8,  rows:4, color:'#7a6b00'},
-              {val:16,  cols:4,  rows:4, color:'#1a6b2e'},
-              {val:8,   cols:4,  rows:2, color:'#006b6b'},
-              {val:4,   cols:2,  rows:2, color:'#1a4080'},
-              {val:2,   cols:2,  rows:1, color:'#5a1a8b'},
-              {val:1,   cols:1,  rows:1, color:'#c47a1a'}
+              {val:128, cols:16, rows:8, color:'#9b2335', label:'128s'},
+              {val:64,  cols:8,  rows:8, color:'#b85c00', label:'64s'},
+              {val:32,  cols:8,  rows:4, color:'#7a6b00', label:'32s'},
+              {val:16,  cols:4,  rows:4, color:'#1a6b2e', label:'16s'},
+              {val:8,   cols:4,  rows:2, color:'#006b6b', label:'8s'},
+              {val:4,   cols:2,  rows:2, color:'#1a4080', label:'4s'},
+              {val:2,   cols:2,  rows:1, color:'#5a1a8b', label:'2s'},
+              {val:1,   cols:1,  rows:1, color:'#c47a1a', label:'1s'}
             ]
           },
           {
             key:'dec', base:10, sub:'10', pad:0,
             defs:[
-              {val:100, cols:10, rows:10, color:'#8b1a1a'},
-              {val:10,  cols:1,  rows:10, color:'#1a5c2a'},
-              {val:1,   cols:1,  rows:1,  color:'#c47a1a'}
+              {val:100, cols:10, rows:10, color:'#8b1a1a', label:'100s'},
+              {val:10,  cols:1,  rows:10, color:'#1a5c2a', label:'10s'},
+              {val:1,   cols:1,  rows:1,  color:'#c47a1a', label:'1s'}
             ]
           },
           {
             key:'hex', base:16, sub:'16', pad:2,
             defs:[
-              {val:16, cols:4, rows:4, color:'#4a1a7a'},
-              {val:1,  cols:1, rows:1, color:'#c47a1a'}
+              {val:16, cols:4, rows:4, color:'#4a1a7a', label:'16s'},
+              {val:1,  cols:1, rows:1, color:'#c47a1a', label:'1s'}
             ]
           }
         ];
@@ -1542,14 +1565,22 @@
         }
 
         /* Ghost: same outer dimensions as a real block, dashed border in the
-           denomination colour, no fill. Shows the place exists even when empty. */
+           denomination colour, no fill. Shows the place exists even when empty.
+           Label inside names the denomination so the student knows which place is empty. */
         function makeGhost(def){
           var w = def.cols * UNIT + (def.cols - 1) * UGAP;
           var h = def.rows * UNIT + (def.rows - 1) * UGAP;
-          var s = 'display:block;width:'+w+'px;height:'+h+'px;'
+          var s = 'display:flex;align-items:center;justify-content:center;'
+                + 'width:'+w+'px;height:'+h+'px;'
                 + 'border:1.5px dashed '+def.color+';border-radius:2px;'
-                + 'opacity:0.35;box-sizing:border-box;';
-          return '<div style="'+s+'"></div>';
+                + 'opacity:0.4;box-sizing:border-box;';
+          /* Only show label if ghost is tall enough to be readable */
+          var inner = h >= 10
+            ? '<span style="font-size:'+Math.min(h*0.28,8)+'px;font-weight:900;'
+              + 'font-family:monospace;color:'+def.color+';line-height:1;text-align:center;">'
+              + def.label+'</span>'
+            : '';
+          return '<div style="'+s+'">'+inner+'</div>';
         }
 
         function renderDecomp(n){
@@ -1565,13 +1596,20 @@
               var count = Math.floor(rem/def.val);
               rem = rem % def.val;
               if(count===0){
-                /* Empty place — show one ghost to keep the position visible */
+                /* Empty place — ghost shows position exists; label names it */
                 blocksHtml+='<div class="decomp-group">'+makeGhost(def)+'</div>';
                 return;
               }
               var group='';
               for(var c=0;c<count;c++) group+=makeBlock(def);
-              blocksHtml+='<div class="decomp-group">'+group+'</div>';
+              /* Badge above group when more than one block of this denomination */
+              var badge = count>1
+                ? '<div class="decomp-badge" style="color:'+def.color+';">&times;'+count+'</div>'
+                : '';
+              blocksHtml+='<div class="decomp-group-wrap">'
+                         +  badge
+                         +  '<div class="decomp-group">'+group+'</div>'
+                         +'</div>';
               var countLabel = sys.base===16 ? hexChar(count) : String(count);
               eqParts.push('<span style="color:'+def.color+';font-weight:700;">'+countLabel+'&times;'+def.val+'</span>');
             });
@@ -1594,10 +1632,12 @@
         }
 
         window.decomp = function(n){
-          renderDecomp(Math.max(0,Math.min(255,n)));
+          n = Math.max(0,Math.min(255,n));
+          renderDecomp(n);
+          document.getElementById('decomp-unit-count').textContent = n;
         };
 
-        renderDecomp(0);
+        window.decomp(0);
       })();
       </script>
 
