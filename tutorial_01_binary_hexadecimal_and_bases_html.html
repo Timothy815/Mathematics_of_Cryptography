@@ -195,6 +195,12 @@
     .spill-carry .spill-tank { animation:spillCarry 0.55s ease; }
     .spill-receive .spill-tank { animation:spillReceive 0.55s ease; }
     .spill-controls { display:flex; gap:12px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+    .spill-tank-wrap { display:flex; align-items:flex-end; gap:3px; }
+    .spill-notch { position:absolute; left:0; right:0; height:1px; background:rgba(0,0,0,0.13); z-index:2; pointer-events:none; }
+    .spill-notch.major { height:1.5px; background:rgba(0,0,0,0.25); }
+    .spill-ruler { position:relative; width:20px; flex-shrink:0; }
+    .spill-ruler-lbl { position:absolute; right:0; font-size:0.6rem; color:#555; font-family:'Cascadia Code','Consolas',monospace; transform:translateY(50%); line-height:1; text-align:right; }
+    .spill-ruler-lbl.top-lbl { color:#c0392b; font-weight:700; }
     .spill-inc-btn { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-weight:900; font-size:1rem; cursor:pointer; transition:background 0.15s; }
     .spill-inc-btn:hover:not(:disabled) { background:#1f3763; }
     .spill-inc-btn:disabled { background:#aaa; cursor:not-allowed; }
@@ -1274,16 +1280,49 @@
         function buildColumns(){
           SYS.forEach(function(sys){
             var container = document.getElementById('spill-'+sys.key+'-cols');
+            var hasGraduations = sys.base > 2;
+
             sys.places.forEach(function(place, i){
+              // ── notch lines (inside tank, on top of fill) ──
+              var notchHTML = '';
+              if(hasGraduations){
+                // major notch every 5 units for decimal, every 4 for hex
+                var majorInterval = sys.base===10 ? 5 : 4;
+                for(var n=1; n<sys.base; n++){
+                  var pct = (n/sys.base)*100;
+                  var isMajor = (n % majorInterval === 0);
+                  notchHTML += '<div class="spill-notch'+(isMajor?' major':'')+'" style="bottom:'+pct.toFixed(3)+'%"></div>';
+                }
+              }
+
+              // ── ruler labels (to the right of tank) ──
+              var rulerHTML = '';
+              if(hasGraduations){
+                for(var n=0; n<=sys.base; n++){
+                  var pct = (n/sys.base)*100;
+                  var lbl = sys.base===16 ? hexDigit(n) : String(n);
+                  var isTop = (n===sys.base);
+                  rulerHTML += '<div class="spill-ruler-lbl'+(isTop?' top-lbl':'')+'" style="bottom:'+pct.toFixed(3)+'%">'+lbl+'</div>';
+                }
+              }
+
+              var tankInner =
+                '<div class="spill-cap-line"></div>'
+                +'<div class="spill-fill" id="spill-'+sys.key+'-fill-'+i+'" style="height:0%"></div>'
+                +notchHTML;
+
+              var tankWrapInner =
+                '<div class="spill-tank" id="spill-'+sys.key+'-tank-'+i+'" style="height:'+sys.height+'px">'
+                  +tankInner
+                +'</div>'
+                +(hasGraduations ? '<div class="spill-ruler" style="height:'+sys.height+'px">'+rulerHTML+'</div>' : '');
+
               var col = document.createElement('div');
               col.className = 'spill-col';
               col.id = 'spill-'+sys.key+'-col-'+i;
               col.innerHTML =
                 '<div class="spill-place-lbl">'+placeLabel(place)+'</div>'
-                +'<div class="spill-tank" id="spill-'+sys.key+'-tank-'+i+'" style="height:'+sys.height+'px">'
-                  +'<div class="spill-cap-line"></div>'
-                  +'<div class="spill-fill" id="spill-'+sys.key+'-fill-'+i+'" style="height:0%"></div>'
-                +'</div>'
+                +'<div class="spill-tank-wrap">'+tankWrapInner+'</div>'
                 +'<div class="spill-digit" id="spill-'+sys.key+'-digit-'+i+'">0</div>'
                 +'<div class="spill-units" id="spill-'+sys.key+'-units-'+i+'">0&nbsp;/&nbsp;'+sys.base+'</div>';
               container.appendChild(col);
