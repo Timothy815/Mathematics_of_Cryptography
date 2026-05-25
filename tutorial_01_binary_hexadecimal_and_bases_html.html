@@ -199,6 +199,9 @@
     .blk-inc-btn { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-weight:900; font-size:1rem; cursor:pointer; transition:background 0.15s; }
     .blk-inc-btn:hover:not(:disabled) { background:#1f3763; }
     .blk-inc-btn:disabled { background:#aaa; cursor:not-allowed; }
+    .blk-dec-btn { background:#f0f4fb; color:#334e7d; border:1.5px solid #c7d2ea; border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.95rem; cursor:pointer; }
+    .blk-dec-btn:hover:not(:disabled) { background:#e0e8f5; }
+    .blk-dec-btn:disabled { background:#f7f7f7; color:#bbb; border-color:#ddd; cursor:not-allowed; }
     .blk-rst-btn { background:#f0f4fb; color:#334e7d; border:1.5px solid #c7d2ea; border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.95rem; cursor:pointer; }
     .blk-rst-btn:hover { background:#e0e8f5; }
     .blk-count-display { font-size:0.92rem; color:#555; }
@@ -482,6 +485,7 @@
 
           <div class="blk-controls">
             <button class="blk-inc-btn" id="blk-inc-btn" onclick="blkIncrement()">Count +1</button>
+            <button class="blk-dec-btn" id="blk-dec-btn" onclick="blkDecrement()">Count −1</button>
             <button class="blk-rst-btn" onclick="blkReset()">Reset</button>
             <span class="blk-count-display">Count: <strong id="blk-n">0</strong></span>
           </div>
@@ -1462,6 +1466,7 @@
 
           document.getElementById('blk-n').textContent = curr;
           document.getElementById('blk-inc-btn').disabled = (curr >= MAX);
+          document.getElementById('blk-dec-btn').disabled = (curr <= 0);
 
           /* Contextual note */
           var note = document.getElementById('blk-note');
@@ -1503,6 +1508,10 @@
         window.blkIncrement = function(){
           if(COUNT>=MAX) return;
           var prev=COUNT; COUNT++; renderAll(prev);
+        };
+        window.blkDecrement = function(){
+          if(COUNT<=0) return;
+          var prev=COUNT; COUNT--; renderAll(prev);
         };
         window.blkReset = function(){
           COUNT=0; renderAll(null);
