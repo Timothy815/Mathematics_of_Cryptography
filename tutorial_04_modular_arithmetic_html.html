@@ -1209,6 +1209,180 @@
         </div>
       </section>
 
+      <section id="orbit-explorer" class="no-print">
+        <div class="interactive">
+          <span class="interactive-label">Interactive</span>
+          <h2>Multiplication Orbit Explorer</h2>
+          <p>
+            Pick a modulus and a multiplier. The clock lights up every position reachable
+            from 0 by repeatedly adding the multiplier — the <em>orbit</em> of that multiplier.
+            A full orbit means the multiplier is coprime to the modulus and multiplication
+            is reversible. A partial orbit means a factor is shared and values get trapped
+            in a smaller cycle.
+          </p>
+          <div class="ce-wrap" id="oe-wrap">
+            <div>
+              <svg id="oe-svg" width="320" height="320" viewBox="0 0 320 320"
+                   role="img" aria-label="Multiplication orbit clock"></svg>
+            </div>
+            <div class="ce-panel">
+              <div class="ce-controls">
+                <div class="ce-row">
+                  <label class="ce-lbl" for="oe-n">Modulus <em>n</em></label>
+                  <input id="oe-n" type="number" value="12" min="2" max="24" class="ce-num" />
+                  <span class="ce-hint">(2&ndash;24)</span>
+                </div>
+                <div class="ce-row">
+                  <label class="ce-lbl" for="oe-k">Multiplier <em>k</em></label>
+                  <input id="oe-k" type="number" value="3" min="0" max="23" class="ce-num" />
+                </div>
+              </div>
+              <div id="oe-gcd" class="ce-status" style="margin-bottom:10px;"></div>
+              <div id="oe-orbit" class="ce-log" style="max-height:110px;word-break:break-all;"></div>
+              <div id="oe-verdict" style="margin-top:10px;padding:12px 14px;border-radius:8px;font-size:0.94rem;line-height:1.6;"></div>
+            </div>
+          </div>
+        </div>
+        <script>
+        (function () {
+          'use strict';
+          var CX = 160, CY = 160, RING = 130;
+
+          function svgEl(tag, attrs) {
+            var e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (var k in attrs) e.setAttribute(k, attrs[k]);
+            return e;
+          }
+          function slotAngle(k, n) { return -Math.PI / 2 + 2 * Math.PI * k / n; }
+          function slotXY(k, n) {
+            var a = slotAngle(k, n);
+            return { x: CX + RING * Math.cos(a), y: CY + RING * Math.sin(a) };
+          }
+
+          function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+
+          function computeOrbit(k, n) {
+            if (k === 0) return [0];
+            var orbit = [], pos = 0;
+            do { orbit.push(pos); pos = (pos + k) % n; } while (pos !== 0);
+            return orbit;
+          }
+
+          function getInputs() {
+            var n = Math.min(24, Math.max(2, parseInt(document.getElementById('oe-n').value) || 12));
+            var raw = parseInt(document.getElementById('oe-k').value);
+            var k = ((isNaN(raw) ? 0 : raw) % n + n) % n;
+            return { n: n, k: k };
+          }
+
+          function render() {
+            var inp = getInputs();
+            var n = inp.n, k = inp.k;
+            var orbit = computeOrbit(k, n);
+            var orbitSet = {};
+            for (var i = 0; i < orbit.length; i++) orbitSet[orbit[i]] = true;
+            var g = k === 0 ? n : gcd(k, n);
+
+            var svg = document.getElementById('oe-svg');
+            svg.innerHTML = '';
+            var r  = n <= 12 ? 19 : n <= 18 ? 16 : 13;
+            var fs = n <= 12 ? 13 : n <= 18 ? 11 : 9;
+
+            // Background rings
+            svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:148, fill:'#eef3ff', stroke:'#334e7d', 'stroke-width':'2.5' }));
+            svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:95,  fill:'white',   stroke:'#c7d2ea', 'stroke-width':'1'   }));
+
+            // Tick marks
+            for (var j = 0; j < n; j++) {
+              var a = slotAngle(j, n);
+              svg.appendChild(svgEl('line', {
+                x1: CX+(RING-10)*Math.cos(a), y1: CY+(RING-10)*Math.sin(a),
+                x2: CX+(RING+8 )*Math.cos(a), y2: CY+(RING+8 )*Math.sin(a),
+                stroke: '#c7d2ea', 'stroke-width': '1'
+              }));
+            }
+
+            // Chord lines connecting consecutive orbit positions
+            if (orbit.length > 1) {
+              for (var oi = 0; oi < orbit.length; oi++) {
+                var from = slotXY(orbit[oi], n);
+                var to   = slotXY(orbit[(oi + 1) % orbit.length], n);
+                svg.appendChild(svgEl('line', {
+                  x1: from.x, y1: from.y, x2: to.x, y2: to.y,
+                  stroke: '#c8960a', 'stroke-width': '2', opacity: '0.45'
+                }));
+              }
+            }
+
+            // Number circles and labels
+            for (var j = 0; j < n; j++) {
+              var p = slotXY(j, n);
+              var inOrbit = !!orbitSet[j];
+              svg.appendChild(svgEl('circle', {
+                cx: p.x, cy: p.y, r: r,
+                fill:   inOrbit ? '#ffd700' : '#ffffff',
+                stroke: inOrbit ? '#c8960a' : '#c7d2ea',
+                'stroke-width': '1.5'
+              }));
+              var t = svgEl('text', {
+                x: p.x, y: p.y, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+                'font-size': fs, 'font-weight': inOrbit ? '900' : '700',
+                'font-family': 'Cascadia Code, Consolas, monospace',
+                fill: inOrbit ? '#16243d' : '#aab8cc'
+              });
+              t.textContent = j;
+              svg.appendChild(t);
+            }
+            svg.appendChild(svgEl('circle', { cx:CX, cy:CY, r:6, fill:'#334e7d' }));
+
+            // GCD + count summary
+            document.getElementById('oe-gcd').innerHTML =
+              '<strong>gcd(' + k + ',\u2009' + n + ')\u2009=\u2009' + g + '</strong>' +
+              '&ensp;&middot;&ensp;Orbit visits <strong>' + orbit.length + ' of ' + n + '</strong> positions';
+
+            // Orbit sequence text
+            var seq;
+            if (orbit.length <= 12) {
+              seq = orbit.join(' \u2192 ') + ' \u2192 0\u2026';
+            } else {
+              seq = orbit.slice(0, 5).join(' \u2192 ') + ' \u2192 \u2026 \u2192 ' +
+                    orbit[orbit.length - 1] + ' \u2192 0\u2026  (' + orbit.length + ' positions total)';
+            }
+            document.getElementById('oe-orbit').textContent = seq;
+
+            // Verdict
+            var vEl = document.getElementById('oe-verdict');
+            if (k === 0) {
+              vEl.style.cssText = 'background:#f5f5f5;border:1px solid #ddd;color:#555;padding:12px 14px;border-radius:8px;font-size:0.94rem;line-height:1.6;margin-top:10px;';
+              vEl.innerHTML = '<em>k\u2009=\u20090:</em> multiplying by 0 collapses everything to 0. Not invertible.';
+            } else if (orbit.length === n) {
+              vEl.style.cssText = 'background:#eafff2;border:1px solid #a3d9b5;color:#1a5e34;padding:12px 14px;border-radius:8px;font-size:0.94rem;line-height:1.6;margin-top:10px;';
+              vEl.innerHTML = '<strong>Full orbit</strong> \u2014 every position is reachable. ' +
+                'gcd(' + k + ',\u2009' + n + ')\u2009=\u20091, so <strong>' + k + ' is coprime to ' + n + '</strong>. ' +
+                'Multiplication by ' + k + ' is reversible in \u2124<sub>' + n + '</sub>.';
+            } else {
+              vEl.style.cssText = 'background:#fff4f4;border:1px solid #f5c6c6;color:#7a1a1a;padding:12px 14px;border-radius:8px;font-size:0.94rem;line-height:1.6;margin-top:10px;';
+              vEl.innerHTML = '<strong>Partial orbit</strong> \u2014 only ' + orbit.length + ' of ' + n + ' positions are reached. ' +
+                'gcd(' + k + ',\u2009' + n + ')\u2009=\u2009' + g + '\u2009>\u20091, so <strong>' + k + ' shares a factor with ' + n + '</strong>. ' +
+                'Multiplication by ' + k + ' is <em>not</em> reversible in \u2124<sub>' + n + '</sub>.';
+            }
+          }
+
+          document.getElementById('oe-n').addEventListener('input', function () {
+            var n = Math.min(24, Math.max(2, parseInt(this.value) || 12));
+            var kEl = document.getElementById('oe-k');
+            kEl.max = n - 1;
+            var k = ((parseInt(kEl.value) || 0) % n + n) % n;
+            kEl.value = k;
+            render();
+          });
+          document.getElementById('oe-k').addEventListener('input', render);
+
+          render();
+        }());
+        </script>
+      </section>
+
       <section id="zn">
         <h2>The world of \(\mathbb{Z}_n\)</h2>
         <p>
