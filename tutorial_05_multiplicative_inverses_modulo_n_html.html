@@ -132,6 +132,33 @@
       font-family: "Cascadia Code","Consolas",monospace; min-height: 18px;
     }
 
+    /* ── Coprime Grid ────────────────────────────────────── */
+    .cgrid-wrap {
+      margin-top: 18px; background: #f4f7fd;
+      border: 1px solid #b0bed8; border-radius: 12px; padding: 16px 18px;
+    }
+    .cgrid-title {
+      font-weight: 700; font-size: 0.85rem; color: #1f3763;
+      text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+    }
+    .cgrid-subtitle { font-size: 0.82rem; color: #555; margin-bottom: 12px; }
+    .cgrid-cells { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cgrid-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .cgrid-dot {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 0.85rem;
+      font-family: 'Cascadia Code', monospace; transition: all 0.15s;
+    }
+    .cgrid-dot.has-inv { background: #ffd700; border: 2px solid #c8960a; color: #16243d; }
+    .cgrid-dot.no-inv  { background: #f0f0f4; border: 2px solid #c0c8d8; color: #aab8cc; }
+    .cgrid-dot.current { box-shadow: 0 0 0 3px #334e7d; }
+    .cgrid-gcd { font-size: 0.65rem; color: #888; font-family: 'Cascadia Code', monospace; }
+    .cgrid-verdict {
+      margin-top: 12px; padding: 9px 14px; border-radius: 8px;
+      font-size: 0.88rem; line-height: 1.55;
+    }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -546,7 +573,12 @@
                 <option value="6" selected>6</option><option value="7">7</option>
                 <option value="8">8</option><option value="9">9</option>
                 <option value="10">10</option><option value="11">11</option>
-                <option value="12">12</option>
+                <option value="12">12</option><option value="13">13</option>
+                <option value="14">14</option><option value="15">15</option>
+                <option value="16">16</option><option value="17">17</option>
+                <option value="18">18</option><option value="19">19</option>
+                <option value="20">20</option><option value="21">21</option>
+                <option value="22">22</option><option value="23">23</option>
               </select>
             </div>
             <div class="cmap-ctrl-group">
@@ -557,6 +589,9 @@
               <button class="cmap-btn" onclick="cmapStep()">Step →</button>
               <button class="cmap-btn outline" onclick="cmapRevealAll()">Reveal all</button>
               <button class="cmap-btn outline" onclick="cmapReset()">&#8635; Reset</button>
+            </div>
+            <div class="cmap-ctrl-group">
+              <span id="cmap-gcd-badge" style="font-size:0.85rem;font-family:'Cascadia Code',monospace;font-weight:700;padding:5px 11px;border-radius:6px;background:#eef3ff;border:1px solid #b0bed8;color:#1f3763;">&nbsp;</span>
             </div>
           </div>
           <div class="cmap-main">
@@ -590,6 +625,7 @@
           Position 1 stays dark — unreachable. Now try \(a=5\), \(n=6\): every position is reached exactly once.
           That permutation structure is precisely why an inverse must exist.
         </p>
+        <div class="cgrid-wrap no-print" id="cgrid-wrap"></div>
       </section>
 
       <section id="gcd-rule">
@@ -672,6 +708,16 @@
           Friendly version: \(a\) gets an undoing number modulo \(n\) only when \(a\) and \(n\) do not share any factor bigger than 1.
         </p>
 
+        <div class="box mistake-box">
+          <div class="box-title">What must be coprime with what?</div>
+          <p>
+            The coprimality condition applies to the <strong>multiplier</strong> (the encryption key) and the <strong>modulus</strong> —
+            not to the plaintext and the modulus. The message itself can be any value in \(\mathbb{Z}_n\);
+            it is the key \(a\) that must satisfy \(\gcd(a,n)=1\).
+            If the key and modulus share a factor, multiplication by that key cannot be undone regardless of what the message is.
+          </p>
+        </div>
+
         <table class="data-table">
           <thead>
             <tr>
@@ -730,7 +776,10 @@
         </div>
         <p>
           This is exactly the collision pattern we saw in the coverage map. Shared factors force the orbit of \(a\) to
-          skip entire residues — including 1.
+          skip entire residues — including 1. If you explored the Multiplication Orbit Explorer in Module 4,
+          you saw the same structure from a different angle: \(\gcd(k,n)=1\) produces a full orbit that visits every
+          position, while \(\gcd(k,n)>1\) traps the orbit in a smaller cycle. The two observations are the same fact —
+          full orbit and inverse existence are equivalent conditions.
         </p>
       </section>
 
@@ -1255,6 +1304,7 @@
     function ang(k,n){ return -Math.PI/2+k/n*2*Math.PI; }
     function pos(k,n){ var a=ang(k,n); return {x:CX+R*Math.cos(a),y:CY+R*Math.sin(a)}; }
     function ease(t){ return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2; }
+    function gcd(a,b){ return b===0?a:gcd(b,a%b); }
 
     function nodeColor(k){
       var v=cm.visits[k]||0, isTgt=(k===1);
@@ -1264,6 +1314,8 @@
     }
 
     function buildRing(){
+      NR = cm.n <= 12 ? 14 : cm.n <= 18 ? 11 : 9;
+      var NFS = cm.n <= 12 ? 12 : cm.n <= 18 ? 10 : 8;
       var n=cm.n, svg=document.getElementById('cmap-svg'); if(!svg)return;
       svg.innerHTML='';
       var d=ns('defs');
@@ -1279,7 +1331,7 @@
         var p=pos(k,n), c=nodeColor(k);
         svg.appendChild(ns('circle',{id:'cmap-nd-'+k,cx:p.x,cy:p.y,r:NR,
           fill:c.f,stroke:c.s,'stroke-width':k===1?'2.5':'1.5'}));
-        var t=ns('text',{x:p.x,y:p.y+4,'text-anchor':'middle','font-size':'12','font-weight':'700',
+        var t=ns('text',{x:p.x,y:p.y+4,'text-anchor':'middle','font-size':String(NFS),'font-weight':'700',
           fill:k===1?'#8b6914':'#333','pointer-events':'none','font-family':'monospace'});
         t.textContent=k; svg.appendChild(t);
       }
@@ -1324,8 +1376,7 @@
       var el=document.getElementById('cmap-counter'); if(!el)return;
       var n=cm.n,a=cm.a,s=cm.step;
       if(s===0) el.textContent='No steps yet — press Step → to begin.';
-      else if(s<n) el.textContent='Step '+s+' of '+(n-1)+': '+a+'·'+s+'='+
-        (a*s)+' ≡ '+(a*s)%n+' (mod '+n+')';
+      else if(s<n) el.textContent='Step '+s+' of '+(n-1)+': '+a+'\xb7'+s+'='+(a*s)+' \u2261 '+(a*s)%n+' (mod '+n+')';
       else el.textContent='All '+(n-1)+' multipliers shown.';
     }
 
@@ -1339,12 +1390,12 @@
           'background:#edf7ed;border:1px solid #66bb6a;color:#1b5e20;font-size:0.9rem;';
         el.innerHTML='<strong>Position 1 was reached.</strong> Multiplication by '+cm.a+
           ' modulo '+cm.n+' hits every position exactly once — it is a permutation. '+
-          'Since position 1 is reachable, <strong>'+cm.a+'⁻¹ exists (mod '+cm.n+')</strong>.';
+          'Since position 1 is reachable, <strong>'+cm.a+'\u207b\xb9 exists (mod '+cm.n+')</strong>.';
       } else {
         el.style.cssText='display:block;margin-top:14px;padding:12px 16px;border-radius:10px;'+
           'background:#fdeaea;border:1px solid #ef9a9a;color:#7f0000;font-size:0.9rem;';
         el.innerHTML='<strong>Position 1 was never reached.</strong> No matter which multiplier '+
-          'you use, '+cm.a+'·x (mod '+cm.n+') never equals 1. '+
+          'you use, '+cm.a+'\xb7x (mod '+cm.n+') never equals 1. '+
           '<strong>'+cm.a+' has no inverse mod '+cm.n+'.</strong>';
       }
     }
@@ -1380,13 +1431,47 @@
       cm.a=parseInt(sel.value);
     }
 
+    function updateGcdBadge(){
+      var el=document.getElementById('cmap-gcd-badge'); if(!el)return;
+      var g=gcd(cm.a,cm.n), inv=(g===1);
+      el.style.background=inv?'#eafff2':'#fff4f4';
+      el.style.border=inv?'1px solid #a3d9b5':'1px solid #f5c6c6';
+      el.style.color=inv?'#1a5e34':'#7a1a1a';
+      el.textContent='gcd('+cm.a+',\u2009'+cm.n+')\u2009=\u2009'+g+(inv?' \u2014 inverse exists':' \u2014 no inverse');
+    }
+
+    function buildCopGrid(){
+      var wrap=document.getElementById('cgrid-wrap'); if(!wrap)return;
+      var n=cm.n, a=cm.a, invertible=[];
+      var html='<div class="cgrid-title">Who has an inverse in \u2124<sub>'+n+'</sub>?</div>';
+      html+='<div class="cgrid-subtitle">Gold = coprime to '+n+' (inverse exists).\u2002Gray = shares a factor with '+n+' (no inverse).\u2002Blue ring = currently selected <em>a</em>.</div>';
+      html+='<div class="cgrid-cells">';
+      for(var k=1;k<n;k++){
+        var g=gcd(k,n),hasInv=(g===1),cur=(k===a);
+        if(hasInv)invertible.push(k);
+        html+='<div class="cgrid-cell"><div class="cgrid-dot '+(hasInv?'has-inv':'no-inv')+(cur?' current':'')+'">'+ k+'</div><div class="cgrid-gcd">gcd='+g+'</div></div>';
+      }
+      html+='</div>';
+      var count=invertible.length,isPrime=(count===n-1);
+      var vs,vh;
+      if(isPrime){
+        vs='background:#eafff2;border:1px solid #a3d9b5;color:#1a5e34;';
+        vh='<strong>'+n+' is prime</strong> \u2014 all '+(n-1)+' non-zero values are invertible. Every element of \u2124<sub>'+n+'</sub> except 0 has a multiplicative inverse. This is why prime moduli are preferred in cryptography.';
+      }else{
+        vs='background:#eef3ff;border:1px solid #b0bed8;color:#1f3763;';
+        vh='<strong>'+count+' of '+(n-1)+'</strong> values are invertible in \u2124<sub>'+n+'</sub>: '+invertible.join(', ')+'.';
+      }
+      html+='<div class="cgrid-verdict" style="'+vs+'">'+vh+'</div>';
+      wrap.innerHTML=html;
+    }
+
     window.cmapSetN=function(){
       var s=document.getElementById('cmap-n'); if(!s)return;
-      cm.n=parseInt(s.value); cmapPopA(); cmapReset();
+      cm.n=parseInt(s.value); cmapPopA(); cmapReset(); updateGcdBadge(); buildCopGrid();
     };
     window.cmapSetA=function(){
       var s=document.getElementById('cmap-a'); if(!s)return;
-      cm.a=parseInt(s.value); cmapReset();
+      cm.a=parseInt(s.value); cmapReset(); updateGcdBadge(); buildCopGrid();
     };
     window.cmapStep=function(){ doStep(); };
     window.cmapRevealAll=function(){ revealAll(); };
@@ -1397,7 +1482,7 @@
       var el=document.getElementById('cmap-result'); if(el)el.style.display='none';
     };
 
-    window.addEventListener('load',function(){ cmapPopA(); buildRing(); });
+    window.addEventListener('load',function(){ cmapPopA(); buildRing(); updateGcdBadge(); buildCopGrid(); });
   })();
   </script>
 </body>
