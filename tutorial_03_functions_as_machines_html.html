@@ -705,6 +705,7 @@
             <button class="pb-task-btn" data-task="collision">① Collision</button>
             <button class="pb-task-btn" data-task="oto">② One-to-One, Not Onto</button>
             <button class="pb-task-btn" data-task="bij">③ Bijection</button>
+            <button class="pb-task-btn" data-task="impossible">④ Onto, Not One-to-One</button>
           </div>
           <div class="pb-task-desc" id="pb1-task-desc">Wire inputs (left) to outputs (right) freely. Click a left node to select it, then click a right node to connect. Watch the properties update live.</div>
           <div style="display:flex;justify-content:space-between;padding:0 40px;margin-bottom:4px;">
@@ -758,7 +759,8 @@
             free:'Wire inputs (left) to outputs (right) freely. Click a left node to select it, then click a right node to connect. Watch the properties update live.',
             collision:'\u2460 Create a Collision \u2014 wire two different inputs to the same output. Given only that output, decryption cannot tell which input was the original. Information is lost.',
             oto:'\u2461 One-to-One, Not Onto \u2014 wire inputs so no two share an output, but leave at least one output with no wire reaching it. You do not need to wire every input.',
-            bij:'\u2462 Make a Bijection \u2014 wire all 5 inputs to all 5 distinct outputs. No collisions, no unreached outputs. Only then does a guaranteed inverse exist.'
+            bij:'\u2462 Make a Bijection \u2014 wire all 5 inputs to all 5 distinct outputs. No collisions, no unreached outputs. Only then does a guaranteed inverse exist.',
+            impossible:'\u2463 Onto but Not One-to-One \u2014 try to wire the function so every output is reached AND at least two inputs share an output. Is it possible with 5 inputs and 5 outputs?'
           };
           function isOTO(w){var s={};for(var i=0;i<N;i++){if(w[i]<0)continue;if(s[w[i]]!==undefined)return false;s[w[i]]=i;}return true;}
           function isOnto(w){var r={};for(var i=0;i<N;i++)if(w[i]>=0)r[w[i]]=true;for(var j=0;j<N;j++)if(!r[j])return false;return true;}
@@ -784,7 +786,9 @@
               col.appendChild(nd);}}
           function fwdL(idx){
             var ln=document.getElementById('pb1-left').children;
-            if(fs===idx){fs=-1;ln[idx].classList.remove('pb-selected');return;}
+            if(fs===idx){
+              if(fw[idx]>=0){fw[idx]=-1;redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);updateProps();}
+              fs=-1;ln[idx].classList.remove('pb-selected');return;}
             if(fs>=0)ln[fs].classList.remove('pb-selected');fs=idx;ln[idx].classList.add('pb-selected');}
           function fwdR(idx){
             if(fs<0)return;var ln=document.getElementById('pb1-left').children;
@@ -805,9 +809,20 @@
                 msg='\u25cb Output'+(miss.length>1?'s ':' ')+miss.join(', ')+(miss.length>1?' are':' is')+' unreached \u2014 no input maps there, so these values could never appear as ciphertext.';cls='pb-msg-info';
               }else{msg='\u2713 Bijection \u2014 every input has a unique output and every output is reached. An inverse exists.';cls='pb-msg-good';}
             }
+            if(task==='impossible'&&any&&!oto){msg+=' \u2014 A collision means one output receives two wires. With 5 inputs and 5 outputs that \u2018steals\u2019 a slot, leaving at least one output unreached. Reaching every output while having a collision is structurally impossible \u2014 this is the Pigeonhole Principle.';cls='pb-msg-bad';}
             var cEl=document.getElementById('pb1-msg');cEl.textContent=msg;cEl.className='pb-msg '+cls;
-            var gm=(task==='collision'&&!oto&&any)||(task==='oto'&&oto&&!onto&&any)||(task==='bij'&&bij);
-            document.getElementById('pb1-goal').style.display=gm?'inline':'none';
+            var goalEl=document.getElementById('pb1-goal');
+            if(task==='impossible'){
+              var discovered=any&&!oto;
+              goalEl.style.display=discovered?'inline':'none';
+              goalEl.style.background='#fff3cd';goalEl.style.color='#856404';goalEl.style.border='1px solid #ffc107';
+              goalEl.textContent='Discovered! Pigeonhole: onto + collision is impossible for equal-sized sets.';
+            }else{
+              goalEl.style.background='';goalEl.style.color='';goalEl.style.border='';
+              goalEl.textContent='\u2713 Challenge complete!';
+              var gm=(task==='collision'&&!oto&&any)||(task==='oto'&&oto&&!onto&&any)||(task==='bij'&&bij);
+              goalEl.style.display=gm?'inline':'none';
+            }
             if(bij&&!bijDone){
               bijDone=true;document.getElementById('pb1-success').style.display='block';
               ic=new Array(N).fill('#9ab');for(var ii=0;ii<N;ii++)if(fw[ii]>=0)ic[fw[ii]]=COLORS[ii];
@@ -816,7 +831,9 @@
           }
           function invL(idx){
             var ln=document.getElementById('pb1-inv-left').children;
-            if(isel===idx){isel=-1;ln[idx].classList.remove('pb-selected');return;}
+            if(isel===idx){
+              if(iw[idx]>=0){iw[idx]=-1;redraw('pb1-inv-board','pb1-inv-svg','pb1-inv-left','pb1-inv-right',iw,ic);checkInv();}
+              isel=-1;ln[idx].classList.remove('pb-selected');return;}
             if(isel>=0)ln[isel].classList.remove('pb-selected');isel=idx;ln[idx].classList.add('pb-selected');}
           function invR(idx){
             if(isel<0)return;var ln=document.getElementById('pb1-inv-left').children;
@@ -962,8 +979,8 @@
           </div>
           <div class="pb-inv-section" id="pb2-inv-sec">
             <h3>Wire the inverse of the composition</h3>
-            <p class="pb-section-note">g was applied <em>last</em>, so it must be undone <em>first</em>. Wire g&#8315;&#185; (C&#8594;B) on Step 1, then wire f&#8315;&#185; (B&#8594;A) on Step 2. Together they form (f&#8315;&#185;&#8728;g&#8315;&#185;), the decryption machine.</p>
-            <div style="font-weight:800;font-size:0.9rem;color:#1f3763;margin-bottom:6px;">Step 1 &#8212; Undo g last: wire g&#8315;&#185; &nbsp;(C&#8594;B)</div>
+            <p class="pb-section-note">Both bijections are confirmed. Build the inverse of the composition by wiring g&#8315;&#185; (C&#8594;B) and f&#8315;&#185; (B&#8594;A). Together they form the decryption machine (f&#8315;&#185;&#8728;g&#8315;&#185;). See if you can figure out the order on your own.</p>
+            <div style="font-weight:800;font-size:0.9rem;color:#1f3763;margin-bottom:6px;">Wire g&#8315;&#185; &nbsp;(C&#8594;B)</div>
             <div style="display:flex;justify-content:space-between;padding:0 40px;margin-bottom:4px;">
               <span class="pb-col-label">C inputs</span><span class="pb-col-label">B outputs</span>
             </div>
@@ -972,7 +989,7 @@
               <svg class="pb-svg" id="pb2-gi-svg"></svg>
               <div class="pb-col" id="pb2-gi-right"></div>
             </div>
-            <div style="font-weight:800;font-size:0.9rem;color:#1f3763;margin:18px 0 6px;">Step 2 &#8212; Undo f first: wire f&#8315;&#185; &nbsp;(B&#8594;A)</div>
+            <div style="font-weight:800;font-size:0.9rem;color:#1f3763;margin:18px 0 6px;">Wire f&#8315;&#185; &nbsp;(B&#8594;A)</div>
             <div style="display:flex;justify-content:space-between;padding:0 40px;margin-bottom:4px;">
               <span class="pb-col-label">B inputs</span><span class="pb-col-label">A outputs</span>
             </div>
@@ -982,7 +999,7 @@
               <div class="pb-col" id="pb2-fi-right"></div>
             </div>
             <div class="pb-msg pb-msg-empty" id="pb2-inv-msg"></div>
-            <div class="pb-success" id="pb2-inv-success">&#10003; Correct inverse chain! Applying g&#8315;&#185; then f&#8315;&#185; recovers every original input. The last function applied must always be the first undone.</div>
+            <div class="pb-success" id="pb2-inv-success">&#10003; Correct inverse chain! Notice what just happened: g was applied <em>last</em> in the forward direction, so g&#8315;&#185; had to come <em>first</em> in reverse. f was applied first, so f&#8315;&#185; came second. The last operation applied is always the first to be undone &mdash; the same reason you take your shoes off before your socks.</div>
           </div>
         </div>
         <script>
@@ -1012,6 +1029,14 @@
               nd.style.borderColor=colors[i];nd.style.color=colors[i];nd.textContent=labels[i];
               (function(idx){nd.addEventListener('click',function(){onClk(idx);});})(i);col.appendChild(nd);}}
           function gCols(){var gc=new Array(NC).fill('#aaa');for(var a=0;a<NC;a++)if(fW[a]>=0)gc[fW[a]]=C4[a];return gc;}
+          function updateThreadColors(){
+            var gc=gCols();
+            var bn=document.getElementById('pb2-b').children,cn=document.getElementById('pb2-c').children;
+            for(var i=0;i<NC;i++){bn[i].style.borderColor=gc[i];bn[i].style.color=gc[i];}
+            var cc=new Array(NC).fill('#888');
+            for(var b=0;b<NC;b++){if(gW[b]>=0)cc[gW[b]]=gc[b];}
+            for(var j=0;j<NC;j++){cn[j].style.borderColor=cc[j];cn[j].style.color=cc[j];}
+          }
           function redrawComp(){
             var board=document.getElementById('pb2-board'),svg=document.getElementById('pb2-svg');
             var an=document.getElementById('pb2-a').children,bn=document.getElementById('pb2-b').children,cn=document.getElementById('pb2-c').children;
@@ -1020,7 +1045,8 @@
             var gc=gCols();
             for(var a=0;a<NC;a++){if(fW[a]<0)continue;var lc=ctr4(an[a],board),rc=ctr4(bn[fW[a]],board);mkLine(svg,lc.x,lc.y,rc.x,rc.y,C4[a],3,null);}
             for(var b=0;b<NC;b++){if(gW[b]<0)continue;var lc2=ctr4(bn[b],board),rc2=ctr4(cn[gW[b]],board);mkLine(svg,lc2.x,lc2.y,rc2.x,rc2.y,gc[b],3,null);}
-            if(isBij4(fW)&&isBij4(gW)){for(var aa=0;aa<NC;aa++){var fb=fW[aa];if(fb<0)continue;var fc=gW[fb];if(fc<0)continue;var ac=ctr4(an[aa],board),cc=ctr4(cn[fc],board);mkLine(svg,ac.x,ac.y,cc.x,cc.y,C4[aa],1.5,'6 3');}}}
+            if(isBij4(fW)&&isBij4(gW)){for(var aa=0;aa<NC;aa++){var fb=fW[aa];if(fb<0)continue;var fc=gW[fb];if(fc<0)continue;var ac=ctr4(an[aa],board),cc2=ctr4(cn[fc],board);mkLine(svg,ac.x,ac.y,cc2.x,cc2.y,C4[aa],1.5,'6 3');}}
+            updateThreadColors();}
           function redrawSub(bId,sId,lId,rId,wires,cols){
             var board=document.getElementById(bId),svg=document.getElementById(sId);
             var ln=document.getElementById(lId).children,rn=document.getElementById(rId).children;
