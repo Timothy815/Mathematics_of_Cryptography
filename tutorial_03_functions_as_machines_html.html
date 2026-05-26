@@ -702,10 +702,11 @@
         <div class="pb-wrap" id="pb1-wrap">
           <div class="pb-task-bar">
             <button class="pb-task-btn pb-active" data-task="free">Explore Freely</button>
-            <button class="pb-task-btn" data-task="collision">① Collision</button>
-            <button class="pb-task-btn" data-task="oto">② One-to-One, Not Onto</button>
-            <button class="pb-task-btn" data-task="bij">③ Bijection</button>
-            <button class="pb-task-btn" data-task="impossible">④ Onto, Not One-to-One</button>
+            <button class="pb-task-btn" data-task="multivalue">① Multi-valued</button>
+            <button class="pb-task-btn" data-task="collision">② Collision</button>
+            <button class="pb-task-btn" data-task="oto">③ One-to-One, Not Onto</button>
+            <button class="pb-task-btn" data-task="bij">④ Bijection</button>
+            <button class="pb-task-btn" data-task="impossible">⑤ Onto, Not One-to-One</button>
           </div>
           <div class="pb-task-desc" id="pb1-task-desc">Wire inputs (left) to outputs (right) freely. Click a left node to select it, then click a right node to connect. Watch the properties update live.</div>
           <div style="display:flex;justify-content:space-between;padding:0 40px;margin-bottom:4px;">
@@ -718,6 +719,7 @@
             <div class="pb-col" id="pb1-right"></div>
           </div>
           <div class="pb-props">
+            <div class="pb-prop"><span class="pb-prop-label">Is a function</span><span class="pb-prop-val pb-prop-un" id="pb1-p0">—</span></div>
             <div class="pb-prop"><span class="pb-prop-label">One-to-one</span><span class="pb-prop-val pb-prop-un" id="pb1-p1">—</span></div>
             <div class="pb-prop"><span class="pb-prop-label">Onto</span><span class="pb-prop-val pb-prop-un" id="pb1-p2">—</span></div>
             <div class="pb-prop"><span class="pb-prop-label">Bijection</span><span class="pb-prop-val pb-prop-un" id="pb1-p3">—</span></div>
@@ -752,20 +754,39 @@
           'use strict';
           var N=5,COLORS=['#c0392b','#d35400','#27ae60','#2980b9','#8e44ad'];
           var INL=['0','1','2','3','4'],OUTL=['A','B','C','D','E'];
-          var fw=new Array(N).fill(-1),fs=-1;
+          var fw=new Array(N).fill(null).map(function(){return[];});
+          var fs=-1;
           var iw=new Array(N).fill(-1),isel=-1,ic=new Array(N).fill('#9ab');
           var bijDone=false,task='free';
           var TASKS={
-            free:'Wire inputs (left) to outputs (right) freely. Click a left node to select it, then click a right node to connect. Watch the properties update live.',
-            collision:'\u2460 Create a Collision \u2014 wire two different inputs to the same output. Given only that output, decryption cannot tell which input was the original. Information is lost.',
-            oto:'\u2461 One-to-One, Not Onto \u2014 wire inputs so no two share an output, but leave at least one output with no wire reaching it. You do not need to wire every input.',
-            bij:'\u2462 Make a Bijection \u2014 wire all 5 inputs to all 5 distinct outputs. No collisions, no unreached outputs. Only then does a guaranteed inverse exist.',
-            impossible:'\u2463 Onto but Not One-to-One \u2014 try to wire the function so every output is reached AND at least two inputs share an output. Is it possible with 5 inputs and 5 outputs?'
+            free:'Wire inputs (left) to outputs (right) freely. Click a left node to select it, then click right nodes to connect. Click the same left node again to clear all its wires.',
+            multivalue:'\u2460 Multi-valued \u2014 select one input and wire it to two or more outputs. The properties panel will tell you what that does to the definition of a function.',
+            collision:'\u2461 Create a Collision \u2014 wire two different inputs to the same output. Given only that output, decryption cannot tell which input was the original. Information is lost.',
+            oto:'\u2462 One-to-One, Not Onto \u2014 wire inputs so no two share an output, but leave at least one output with no wire reaching it. You do not need to wire every input.',
+            bij:'\u2463 Make a Bijection \u2014 wire all 5 inputs to all 5 distinct outputs. No collisions, no unreached outputs. Only then does a guaranteed inverse exist.',
+            impossible:'\u2464 Onto but Not One-to-One \u2014 try to wire the function so every output is reached AND at least two inputs share an output. Is it possible with 5 inputs and 5 outputs?'
           };
-          function isOTO(w){var s={};for(var i=0;i<N;i++){if(w[i]<0)continue;if(s[w[i]]!==undefined)return false;s[w[i]]=i;}return true;}
-          function isOnto(w){var r={};for(var i=0;i<N;i++)if(w[i]>=0)r[w[i]]=true;for(var j=0;j<N;j++)if(!r[j])return false;return true;}
-          function isBij(w){return isOTO(w)&&isOnto(w);}
+          function isFunc(w){for(var i=0;i<N;i++)if(w[i].length>1)return false;return true;}
+          function isMulti(w){for(var i=0;i<N;i++)if(w[i].length>1)return true;return false;}
+          function hasAny(w){for(var i=0;i<N;i++)if(w[i].length>0)return true;return false;}
+          function isOTO(w){var s={};for(var i=0;i<N;i++){if(w[i].length!==1)continue;var o=w[i][0];if(s[o]!==undefined)return false;s[o]=i;}return true;}
+          function isOnto(w){var r={};for(var i=0;i<N;i++)if(w[i].length===1)r[w[i][0]]=true;for(var j=0;j<N;j++)if(!r[j])return false;return true;}
+          function isBij(w){return isFunc(w)&&isOTO(w)&&isOnto(w);}
           function ctr(el,base){var e=el.getBoundingClientRect(),b=base.getBoundingClientRect();return{x:e.left+e.width/2-b.left,y:e.top+e.height/2-b.top};}
+          function redrawFwd(){
+            var board=document.getElementById('pb1-board'),svg=document.getElementById('pb1-svg');
+            var ln=document.getElementById('pb1-left').children,rn=document.getElementById('pb1-right').children;
+            svg.setAttribute('width',board.offsetWidth);svg.setAttribute('height',board.offsetHeight);
+            while(svg.firstChild)svg.removeChild(svg.firstChild);
+            for(var i=0;i<N;i++){
+              var multi=fw[i].length>1;
+              for(var j=0;j<fw[i].length;j++){
+                var lc=ctr(ln[i],board),rc=ctr(rn[fw[i][j]],board);
+                var l=document.createElementNS('http://www.w3.org/2000/svg','line');
+                l.setAttribute('x1',lc.x);l.setAttribute('y1',lc.y);l.setAttribute('x2',rc.x);l.setAttribute('y2',rc.y);
+                l.setAttribute('stroke',COLORS[i]);l.setAttribute('stroke-width','3');l.setAttribute('stroke-linecap','round');l.setAttribute('opacity','0.85');
+                if(multi)l.setAttribute('stroke-dasharray','6 3');
+                svg.appendChild(l);}}}
           function redraw(bId,sId,lId,rId,wires,cols){
             var board=document.getElementById(bId),svg=document.getElementById(sId);
             var ln=document.getElementById(lId).children,rn=document.getElementById(rId).children;
@@ -786,46 +807,56 @@
               col.appendChild(nd);}}
           function fwdL(idx){
             var ln=document.getElementById('pb1-left').children;
-            if(fs===idx){
-              if(fw[idx]>=0){fw[idx]=-1;redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);updateProps();}
-              fs=-1;ln[idx].classList.remove('pb-selected');return;}
+            if(fs===idx){fw[idx]=[];redrawFwd();updateProps();fs=-1;ln[idx].classList.remove('pb-selected');return;}
             if(fs>=0)ln[fs].classList.remove('pb-selected');fs=idx;ln[idx].classList.add('pb-selected');}
           function fwdR(idx){
-            if(fs<0)return;var ln=document.getElementById('pb1-left').children;
-            fw[fs]=idx;ln[fs].classList.remove('pb-selected');fs=-1;
-            redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);updateProps();}
+            if(fs<0)return;
+            var pos=fw[fs].indexOf(idx);
+            if(pos>=0){fw[fs].splice(pos,1);}else{fw[fs].push(idx);}
+            redrawFwd();updateProps();}
           function updateProps(){
-            var oto=isOTO(fw),onto=isOnto(fw),bij=isBij(fw),any=fw.some(function(w){return w>=0;});
+            var func=isFunc(fw),multi=isMulti(fw),any=hasAny(fw);
+            var oto=func?isOTO(fw):false,onto=func?isOnto(fw):false,bij=func&&oto&&onto;
             function sp(id,v,u){var el=document.getElementById(id);el.className='pb-prop-val '+(u?'pb-prop-un':v?'pb-prop-yes':'pb-prop-no');el.textContent=u?'\u2014':v?'Yes \u2713':'No \u2717';}
-            sp('pb1-p1',oto,!any);sp('pb1-p2',onto,!any);sp('pb1-p3',bij,!any);
+            sp('pb1-p0',func,!any);
+            sp('pb1-p1',oto,!any||!func);
+            sp('pb1-p2',onto,!any||!func);
+            sp('pb1-p3',bij,!any||!func);
             var msg='',cls='pb-msg-empty';
             if(any){
-              if(!oto){
+              if(multi){
+                var mi=-1;for(var i=0;i<N;i++)if(fw[i].length>1){mi=i;break;}
+                var targets=fw[mi].map(function(o){return OUTL[o];}).join(', ');
+                msg='\u26a1 Multi-valued: Input '+INL[mi]+' maps to outputs '+targets+'. A function must assign each input exactly one output \u2014 a mapping with multiple outputs per input is not a function at all.';cls='pb-msg-bad';
+              }else if(!oto){
                 var seen={},ca=-1,cb=-1,co=-1;
-                for(var i=0;i<N&&ca<0;i++){if(fw[i]<0)continue;var o=fw[i];if(seen[o]!==undefined){ca=seen[o];cb=i;co=o;}else seen[o]=i;}
+                for(var ii=0;ii<N&&ca<0;ii++){if(fw[ii].length===0)continue;var o=fw[ii][0];if(seen[o]!==undefined){ca=seen[o];cb=ii;co=o;}else seen[o]=ii;}
                 msg='\u26a1 Collision: Input '+INL[ca]+' and Input '+INL[cb]+' both map to Output '+OUTL[co]+'. Given Output '+OUTL[co]+', which input was the original? Decryption is impossible.';cls='pb-msg-bad';
               }else if(!onto){
-                var reached={},miss=[];for(var k=0;k<N;k++)if(fw[k]>=0)reached[fw[k]]=true;for(var m=0;m<N;m++)if(!reached[m])miss.push(OUTL[m]);
+                var reached={},miss=[];for(var k=0;k<N;k++)if(fw[k].length===1)reached[fw[k][0]]=true;for(var m=0;m<N;m++)if(!reached[m])miss.push(OUTL[m]);
                 msg='\u25cb Output'+(miss.length>1?'s ':' ')+miss.join(', ')+(miss.length>1?' are':' is')+' unreached \u2014 no input maps there, so these values could never appear as ciphertext.';cls='pb-msg-info';
               }else{msg='\u2713 Bijection \u2014 every input has a unique output and every output is reached. An inverse exists.';cls='pb-msg-good';}
             }
-            if(task==='impossible'&&any&&!oto){msg+=' \u2014 A collision means one output receives two wires. With 5 inputs and 5 outputs that \u2018steals\u2019 a slot, leaving at least one output unreached. Reaching every output while having a collision is structurally impossible \u2014 this is the Pigeonhole Principle.';cls='pb-msg-bad';}
+            if(task==='impossible'&&any&&!oto&&func){msg+=' \u2014 A collision means one output receives two wires. With 5 inputs and 5 outputs that \u2018steals\u2019 a slot, leaving at least one output unreached. Reaching every output while having a collision is structurally impossible \u2014 this is the Pigeonhole Principle.';cls='pb-msg-bad';}
             var cEl=document.getElementById('pb1-msg');cEl.textContent=msg;cEl.className='pb-msg '+cls;
             var goalEl=document.getElementById('pb1-goal');
-            if(task==='impossible'){
-              var discovered=any&&!oto;
-              goalEl.style.display=discovered?'inline':'none';
+            if(task==='multivalue'){
+              goalEl.style.display=(any&&multi)?'inline':'none';
+              goalEl.style.background='#fff3cd';goalEl.style.color='#856404';goalEl.style.border='1px solid #ffc107';
+              goalEl.textContent='Discovered! A mapping with multiple outputs per input is not a function \u2014 the definition requires exactly one output per input.';
+            }else if(task==='impossible'){
+              goalEl.style.display=(any&&!oto&&func)?'inline':'none';
               goalEl.style.background='#fff3cd';goalEl.style.color='#856404';goalEl.style.border='1px solid #ffc107';
               goalEl.textContent='Discovered! Pigeonhole: onto + collision is impossible for equal-sized sets.';
             }else{
               goalEl.style.background='';goalEl.style.color='';goalEl.style.border='';
               goalEl.textContent='\u2713 Challenge complete!';
-              var gm=(task==='collision'&&!oto&&any)||(task==='oto'&&oto&&!onto&&any)||(task==='bij'&&bij);
+              var gm=(task==='collision'&&!oto&&func&&any)||(task==='oto'&&oto&&!onto&&any)||(task==='bij'&&bij);
               goalEl.style.display=gm?'inline':'none';
             }
             if(bij&&!bijDone){
               bijDone=true;document.getElementById('pb1-success').style.display='block';
-              ic=new Array(N).fill('#9ab');for(var ii=0;ii<N;ii++)if(fw[ii]>=0)ic[fw[ii]]=COLORS[ii];
+              ic=new Array(N).fill('#9ab');for(var jj=0;jj<N;jj++)if(fw[jj].length===1)ic[fw[jj][0]]=COLORS[jj];
               setTimeout(function(){var sec=document.getElementById('pb1-inv');sec.style.display='block';buildInv();sec.scrollIntoView({behavior:'smooth',block:'nearest'});},500);
             }else if(!bij&&bijDone){bijDone=false;document.getElementById('pb1-success').style.display='none';}
           }
@@ -841,6 +872,7 @@
             redraw('pb1-inv-board','pb1-inv-svg','pb1-inv-left','pb1-inv-right',iw,ic);checkInv();}
           function buildInv(){
             iw=new Array(N).fill(-1);isel=-1;
+            ic=new Array(N).fill('#9ab');for(var i=0;i<N;i++)if(fw[i].length===1)ic[fw[i][0]]=COLORS[i];
             mkCol('pb1-inv-left',OUTL,ic,invL);
             mkCol('pb1-inv-right',INL,COLORS,invR);
             redraw('pb1-inv-board','pb1-inv-svg','pb1-inv-left','pb1-inv-right',iw,ic);}
@@ -849,14 +881,17 @@
             var mEl=document.getElementById('pb1-inv-msg'),sEl=document.getElementById('pb1-inv-success');
             if(!cnt){mEl.textContent='';mEl.className='pb-msg pb-msg-empty';sEl.style.display='none';return;}
             var errs=[];
-            for(var j=0;j<N;j++){if(iw[j]<0)continue;var exp=fw.indexOf(j);if(iw[j]!==exp)errs.push('Output '+OUTL[j]+' should map to Input '+INL[exp]+', not Input '+INL[iw[j]]);}
+            for(var j=0;j<N;j++){
+              if(iw[j]<0)continue;
+              var exp=-1;for(var k=0;k<N;k++)if(fw[k].length===1&&fw[k][0]===j){exp=k;break;}
+              if(iw[j]!==exp)errs.push('Output '+OUTL[j]+' should map to Input '+INL[exp]+', not Input '+INL[iw[j]]);}
             if(errs.length){mEl.textContent='\u2717 '+errs[0];mEl.className='pb-msg pb-msg-bad';sEl.style.display='none';}
             else if(cnt===N){mEl.textContent='';mEl.className='pb-msg pb-msg-empty';sEl.style.display='block';}
             else{mEl.textContent='\u2192 '+cnt+' of '+N+' correct. Keep going.';mEl.className='pb-msg pb-msg-info';sEl.style.display='none';}}
           function resetFwd(){
-            fw=new Array(N).fill(-1);fs=-1;bijDone=false;ic=new Array(N).fill('#9ab');
+            fw=new Array(N).fill(null).map(function(){return[];});fs=-1;bijDone=false;ic=new Array(N).fill('#9ab');
             var ln=document.getElementById('pb1-left').children;for(var i=0;i<N;i++)ln[i].classList.remove('pb-selected');
-            redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);updateProps();
+            redrawFwd();updateProps();
             document.getElementById('pb1-success').style.display='none';document.getElementById('pb1-inv').style.display='none';}
           document.querySelectorAll('#pb1-wrap .pb-task-btn').forEach(function(btn){
             btn.addEventListener('click',function(){
@@ -871,11 +906,11 @@
             var mEl=document.getElementById('pb1-inv-msg');mEl.textContent='';mEl.className='pb-msg pb-msg-empty';
             document.getElementById('pb1-inv-success').style.display='none';});
           window.addEventListener('resize',function(){
-            redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);
+            redrawFwd();
             if(bijDone)redraw('pb1-inv-board','pb1-inv-svg','pb1-inv-left','pb1-inv-right',iw,ic);});
           mkCol('pb1-left',INL,COLORS,fwdL);
           mkCol('pb1-right',OUTL,new Array(N).fill('#9ab'),fwdR);
-          redraw('pb1-board','pb1-svg','pb1-left','pb1-right',fw,COLORS);updateProps();
+          redrawFwd();updateProps();
         }());
         </script>
       </section>
