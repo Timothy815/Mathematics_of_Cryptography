@@ -501,10 +501,24 @@
 
         <div class="ea-widget no-print">
           <div class="ea-controls">
-            <select class="ea-select" id="ea-sel" aria-label="Choose a pair"></select>
+            <select class="ea-select" id="ea-sel" aria-label="Choose a preset pair"></select>
             <button class="ea-btn ea-btn-step"  id="ea-step">Step</button>
             <button class="ea-btn ea-btn-auto"  id="ea-auto">Auto</button>
             <button class="ea-btn ea-btn-reset" id="ea-reset">Reset</button>
+          </div>
+          <div class="ea-controls" style="margin-top:-4px;">
+            <span style="font-size:0.85rem;font-weight:700;color:#555;">Or enter your own:</span>
+            <label style="font-size:0.85rem;font-weight:700;color:#334e7d;display:flex;align-items:center;gap:4px;">
+              a&thinsp;=&thinsp;<input type="number" id="ea-custom-a" min="1" max="999" value="" placeholder="e.g. 144"
+                style="width:72px;padding:6px 8px;border:1px solid #c7d2ea;border-radius:7px;font-size:0.9rem;font-family:inherit;text-align:center;">
+            </label>
+            <label style="font-size:0.85rem;font-weight:700;color:#c9973a;display:flex;align-items:center;gap:4px;">
+              b&thinsp;=&thinsp;<input type="number" id="ea-custom-b" min="1" max="999" value="" placeholder="e.g. 89"
+                style="width:72px;padding:6px 8px;border:1px solid #c7d2ea;border-radius:7px;font-size:0.9rem;font-family:inherit;text-align:center;">
+            </label>
+            <button class="ea-btn" id="ea-custom-go"
+              style="background:#334e7d;color:#fff;">Go</button>
+            <span id="ea-custom-err" style="font-size:0.82rem;color:#c0392b;font-weight:700;display:none;"></span>
           </div>
           <div class="ea-blocks" id="ea-blocks">
             <div class="ea-block-row-wrap">
@@ -1171,6 +1185,53 @@
       });
       resetBtn.addEventListener('click', function () { loadExample(parseInt(selEl.value)); });
       selEl.addEventListener('change',   function () { loadExample(parseInt(selEl.value)); });
+
+      /* ── Custom input ── */
+      var customAEl  = document.getElementById('ea-custom-a');
+      var customBEl  = document.getElementById('ea-custom-b');
+      var customGoEl = document.getElementById('ea-custom-go');
+      var customErr  = document.getElementById('ea-custom-err');
+
+      function loadCustom() {
+        customErr.style.display = 'none';
+        var rawA = parseInt(customAEl.value, 10);
+        var rawB = parseInt(customBEl.value, 10);
+        if (!rawA || !rawB || rawA < 1 || rawB < 1) {
+          customErr.textContent = 'Enter two positive integers.';
+          customErr.style.display = 'inline'; return;
+        }
+        if (rawA > 999 || rawB > 999) {
+          customErr.textContent = 'Keep both values ≤ 999.';
+          customErr.style.display = 'inline'; return;
+        }
+        if (rawA === rawB) {
+          customErr.textContent = 'a and b must be different.';
+          customErr.style.display = 'inline'; return;
+        }
+        /* ensure a > b */
+        var ca = Math.max(rawA, rawB), cb = Math.min(rawA, rawB);
+        /* deselect preset dropdown */
+        selEl.selectedIndex = -1;
+        if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
+        ea.a = ca; ea.b = cb; ea.done = false;
+        ea.unit = getUnit(ca);
+        stepsEl.innerHTML = '';
+        resEl.style.display = 'none';
+        if (remNote) remNote.textContent = '';
+        if (scaleEl) scaleEl.textContent = ea.unit > 1
+          ? '1 block = ' + ea.unit + ' units'
+          : '1 block = 1 unit — count them!';
+        updateBlocks(ea.a, ea.b, false);
+        pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+        typeset(pairEl);
+        setBtns(false);
+      }
+
+      customGoEl.addEventListener('click', loadCustom);
+      [customAEl, customBEl].forEach(function (el) {
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') loadCustom(); });
+      });
+
       loadExample(0);
     })();
 
