@@ -169,7 +169,10 @@
     }
 
     /* ── Block visualization ── */
-    .ea-blocks { margin-bottom: 14px; display: grid; gap: 8px; }
+    .ea-blocks { margin-bottom: 6px; display: flex; flex-direction: column; }
+    .ea-step-blocks { padding: 10px 0; border-bottom: 1px dashed #d0d8ea; }
+    .ea-step-blocks:first-child { padding-top: 4px; }
+    .ea-step-blocks:last-child { border-bottom: none; }
     .ea-block-row-wrap { display: flex; align-items: flex-start; gap: 10px; min-height: 18px; }
     .ea-block-label { font-weight: 800; font-size: 0.82rem; color: #334e7d; width: 14px; flex-shrink: 0; padding-top: 2px; }
     .ea-block-row { display: flex; flex-wrap: wrap; gap: 2px; flex: 1; }
@@ -534,19 +537,9 @@
             <span id="ea-custom-err" style="font-size:0.82rem;color:#c0392b;font-weight:700;display:none;"></span>
           </div>
           <div class="ea-blocks" id="ea-blocks">
-            <div class="ea-block-row-wrap">
-              <span class="ea-block-label">a</span>
-              <div class="ea-block-row" id="ea-blocks-a"></div>
-              <span class="ea-block-val" id="ea-val-a"></span>
-            </div>
-            <div class="ea-block-row-wrap">
-              <span class="ea-block-label">b</span>
-              <div class="ea-block-row" id="ea-blocks-b"></div>
-              <span class="ea-block-val" id="ea-val-b"></span>
-            </div>
-            <div class="ea-scale-note" id="ea-scale"></div>
-            <div class="ea-rem-note" id="ea-rem-note"></div>
+            <!-- step-block pairs appended dynamically -->
           </div>
+          <div class="ea-scale-note" id="ea-scale"></div>
           <div class="ea-pair" id="ea-pair"></div>
           <div class="ea-steps" id="ea-steps"></div>
           <div class="ea-result" id="ea-result"></div>
@@ -1030,12 +1023,8 @@
       var stepBtn  = document.getElementById('ea-step');
       var autoBtn  = document.getElementById('ea-auto');
       var resetBtn = document.getElementById('ea-reset');
-      var blocksA  = document.getElementById('ea-blocks-a');
-      var blocksB  = document.getElementById('ea-blocks-b');
-      var valA     = document.getElementById('ea-val-a');
-      var valB     = document.getElementById('ea-val-b');
+      var blocksEl = document.getElementById('ea-blocks');
       var scaleEl  = document.getElementById('ea-scale');
-      var remNote  = document.getElementById('ea-rem-note');
 
       var ea = { a: 0, b: 0, done: false, timer: null, unit: 1 };
 
@@ -1107,12 +1096,37 @@
         }
       }
 
-      function updateBlocks(a, b, useGcd) {
-        if (!blocksA) return;
-        renderBlocks(blocksA, a, useGcd ? 'ea-block-gcd' : 'ea-block-a');
-        renderBlocks(blocksB, b, 'ea-block-b');
-        valA.textContent = a;
-        valB.textContent = b;
+      /* Append a fresh flat step-block pair and animate it in */
+      function appendStepBlock(a, b) {
+        var sb = document.createElement('div');
+        sb.className = 'ea-step-blocks';
+        sb.innerHTML =
+          '<div class="ea-block-row-wrap">' +
+            '<span class="ea-block-label">a</span>' +
+            '<div class="ea-block-row ea-sba"></div>' +
+            '<span class="ea-block-val ea-sva">' + a + '</span>' +
+          '</div>' +
+          '<div class="ea-block-row-wrap">' +
+            '<span class="ea-block-label">b</span>' +
+            '<div class="ea-block-row ea-sbb"></div>' +
+            '<span class="ea-block-val ea-svb">' + b + '</span>' +
+          '</div>' +
+          '<div class="ea-rem-note ea-srem"></div>';
+        sb.style.opacity = '0';
+        sb.style.transform = 'translateY(6px)';
+        blocksEl.appendChild(sb);
+        renderBlocks(sb.querySelector('.ea-sba'), a, 'ea-block-a');
+        renderBlocks(sb.querySelector('.ea-sbb'), b, 'ea-block-b');
+        requestAnimationFrame(function () {
+          sb.style.transition = 'opacity 0.35s, transform 0.35s';
+          sb.style.opacity = '1'; sb.style.transform = 'translateY(0)';
+        });
+        return sb;
+      }
+
+      function getLastSB() {
+        var all = blocksEl.querySelectorAll('.ea-step-blocks');
+        return all.length ? all[all.length - 1] : null;
       }
 
       function setBtns(done) {
@@ -1126,13 +1140,13 @@
         ea.a = ex.a; ea.b = ex.b; ea.done = false;
         ea.unit = getUnit(Math.max(ex.a, ex.b));
         stepsEl.innerHTML = '';
+        blocksEl.innerHTML = '';
         resEl.style.display = 'none';
-        if (remNote) remNote.textContent = '';
         if (scaleEl) scaleEl.textContent = ea.unit > 1
           ? '1 block = ' + ea.unit + ' units (scaled to fit)'
           : '1 block = 1 unit';
-        updateBlocks(ea.a, ea.b, false);
-        pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+        appendStepBlock(ea.a, ea.b);
+        pairEl.innerHTML = 'Dividing: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
         typeset(pairEl);
         setBtns(false);
       }
@@ -1143,51 +1157,57 @@
         var q = Math.floor(a / b);
         var r = a % b;
 
-        /* demote previous current card to past */
+        /* Step equation card */
         var prev = stepsEl.querySelector('.ea-step-current');
         if (prev) { prev.classList.remove('ea-step-current'); prev.classList.add('ea-step-past'); }
-
         var card = document.createElement('div');
         card.className = 'ea-step-card ea-step-current';
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(8px)';
+        card.style.opacity = '0'; card.style.transform = 'translateY(8px)';
         card.innerHTML = '\\(' + a + ' = ' + q + ' \\cdot ' + b + ' + ' + r + '\\)' +
-          ' &nbsp;→&nbsp; ' +
-          '\\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
+          ' &nbsp;\u2192&nbsp; \\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
         stepsEl.appendChild(card);
-
-        function fadeIn() {
-          card.style.transition = 'opacity 0.3s, transform 0.3s';
-          card.style.opacity = '1'; card.style.transform = 'translateY(0)';
-        }
+        function fadeCard() { card.style.transition = 'opacity 0.3s, transform 0.3s'; card.style.opacity = '1'; card.style.transform = 'translateY(0)'; }
         if (window.MathJax && MathJax.typesetPromise) {
-          MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeIn); });
-        } else { requestAnimationFrame(fadeIn); }
+          MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeCard); });
+        } else { requestAnimationFrame(fadeCard); }
+
+        /* Cartonize the current (last) step-block */
+        var last = getLastSB();
+        if (last) {
+          var sba = last.querySelector('.ea-sba');
+          var sbb = last.querySelector('.ea-sbb');
+          var srem = last.querySelector('.ea-srem');
+          renderBlocksCarton(sba, q, b, r);
+          srem.textContent = q + ' complete group' + (q === 1 ? '' : 's') + ' of ' + b +
+            (r > 0 ? ', ' + r + ' left over \u2192 becomes new b' : ' \u2014 divides perfectly');
+        }
 
         if (r === 0) {
           ea.done = true;
           setBtns(true);
           if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
-          /* final card: drop current highlight so the green result banner takes focus */
           var lastCur = stepsEl.querySelector('.ea-step-current');
           if (lastCur) { lastCur.classList.remove('ea-step-current'); lastCur.classList.add('ea-step-past'); }
-          updateBlocks(b, 0, true);   /* GCD in green, b-row clears */
-          if (remNote) remNote.textContent = 'GCD = ' + b + ' — green blocks above';
+          /* Turn the final step-block green */
+          if (last) {
+            var sba2 = last.querySelector('.ea-sba');
+            var ablks = sba2.querySelectorAll('.ea-block-a');
+            for (var i = 0; i < ablks.length; i++) { ablks[i].classList.remove('ea-block-a'); ablks[i].classList.add('ea-block-gcd'); }
+            var cartons = sba2.querySelectorAll('.ea-carton:not(.ea-carton-rem)');
+            for (var j = 0; j < cartons.length; j++) { cartons[j].style.borderColor = '#2e7d32'; cartons[j].style.background = 'rgba(46,125,50,0.07)'; }
+            var sbb2 = last.querySelector('.ea-sbb');
+            renderBlocks(sbb2, b, 'ea-block-gcd');
+            var srem2 = last.querySelector('.ea-srem');
+            if (srem2) { srem2.style.color = '#2e7d32'; srem2.textContent = 'GCD\u2009=\u2009' + b + ' \u2014 divides perfectly'; }
+          }
           resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
-            (b === 1 ? ' — the numbers are <strong>coprime</strong>.' : '.');
+            (b === 1 ? ' \u2014 the numbers are <strong>coprime</strong>.' : '.');
           resEl.style.display = 'block';
           typeset(resEl);
         } else {
-          /* Show egg-carton grouping: q full boxes of b + r orphans */
-          renderBlocksCarton(blocksA, q, b, r);
-          renderBlocks(blocksB, b, 'ea-block-b');
-          valA.textContent = a;
-          valB.textContent = b;
           ea.a = b; ea.b = r;
-          if (remNote) remNote.textContent =
-            q + ' complete group' + (q === 1 ? '' : 's') + ' of ' + b +
-            (r > 0 ? ',  ' + r + ' left over \u2192 becomes new b' : ' — no remainder');
-          pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+          appendStepBlock(ea.a, ea.b);
+          pairEl.innerHTML = 'Dividing: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
           typeset(pairEl);
         }
       }
@@ -1235,13 +1255,13 @@
         ea.a = ca; ea.b = cb; ea.done = false;
         ea.unit = getUnit(ca);
         stepsEl.innerHTML = '';
+        blocksEl.innerHTML = '';
         resEl.style.display = 'none';
-        if (remNote) remNote.textContent = '';
         if (scaleEl) scaleEl.textContent = ea.unit > 1
           ? '1 block = ' + ea.unit + ' units (scaled to fit)'
           : '1 block = 1 unit';
-        updateBlocks(ea.a, ea.b, false);
-        pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
+        appendStepBlock(ea.a, ea.b);
+        pairEl.innerHTML = 'Dividing: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
         typeset(pairEl);
         setBtns(false);
       }
