@@ -141,6 +141,19 @@
       padding: 10px 14px;
       font-size: 0.95rem;
       line-height: 1.6;
+      transition: opacity 0.4s, font-size 0.4s, padding 0.4s, box-shadow 0.4s, border-color 0.4s, background 0.4s;
+    }
+    .ea-step-card.ea-step-current {
+      border: 2px solid #334e7d;
+      background: #eef3ff;
+      box-shadow: 0 3px 12px rgba(51,78,125,0.18);
+      font-size: 1.02rem;
+    }
+    .ea-step-card.ea-step-past {
+      opacity: 0.45;
+      font-size: 0.88rem;
+      padding: 7px 14px;
+      box-shadow: none;
     }
     .ea-result {
       background: #eaf7ef;
@@ -1131,10 +1144,14 @@
         var q = Math.floor(a / b);
         var r = a % b;
 
+        /* demote previous current card to past */
+        var prev = stepsEl.querySelector('.ea-step-current');
+        if (prev) { prev.classList.remove('ea-step-current'); prev.classList.add('ea-step-past'); }
+
         var card = document.createElement('div');
-        card.className = 'ea-step-card';
+        card.className = 'ea-step-card ea-step-current';
         card.style.opacity = '0';
-        card.style.transform = 'translateY(6px)';
+        card.style.transform = 'translateY(8px)';
         card.innerHTML = '\\(' + a + ' = ' + q + ' \\cdot ' + b + ' + ' + r + '\\)' +
           ' &nbsp;→&nbsp; ' +
           '\\(\\gcd(' + a + ',\\,' + b + ') = \\gcd(' + b + ',\\,' + r + ')\\)';
@@ -1152,6 +1169,9 @@
           ea.done = true;
           setBtns(true);
           if (ea.timer) { clearInterval(ea.timer); ea.timer = null; }
+          /* final card: drop current highlight so the green result banner takes focus */
+          var lastCur = stepsEl.querySelector('.ea-step-current');
+          if (lastCur) { lastCur.classList.remove('ea-step-current'); lastCur.classList.add('ea-step-past'); }
           updateBlocks(b, 0, true);   /* GCD in green, b-row clears */
           if (remNote) remNote.textContent = 'GCD = ' + b + ' — green blocks above';
           resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
