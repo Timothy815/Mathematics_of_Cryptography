@@ -442,8 +442,11 @@
     .bs-step { background: #fff; border: 1.5px solid #d0d8ea; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
     .bs-step.bs-step-active { border-color: #334e7d; }
     .bs-step.bs-step-done { border-color: #b8dfc5; background: #f6fbf8; }
-    .bs-step-hint { font-size: 0.84rem; color: #555; margin-bottom: 8px; }
-    .bs-step-expanded { font-size: 0.9rem; font-family: monospace; color: #334e7d; background: #f0f3fb; border-radius: 5px; padding: 6px 10px; margin-bottom: 10px; }
+    .bs-step-hint { font-size: 0.84rem; color: #555; margin-bottom: 6px; }
+    .bs-expanded-label { font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+    .bs-step-expanded { font-size: 0.9rem; font-family: monospace; color: #334e7d; background: #f0f3fb; border-radius: 5px; padding: 6px 10px; margin-bottom: 4px; }
+    .bs-combine-arrow { font-size: 0.78rem; color: #999; margin: 3px 0 8px 2px; }
+    .bs-combine-label { font-size: 0.75rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
     .bs-step-input-row { display: flex; align-items: center; gap: 5px; font-size: 0.92rem; flex-wrap: wrap; }
     .bs-coeff-input { width: 54px; padding: 6px 8px; border: 1.5px solid #c7d2ea; border-radius: 7px; font-size: 0.92rem; font-family: inherit; text-align: center; }
     .bs-coeff-input.bs-correct { border-color: #2e7d32 !important; background: #eaf7ef; color: #1b5e20; }
@@ -2045,9 +2048,12 @@
     });
 
     var cur = null;
+    var wrongCount = [];
+    var GEM_URL = 'https://gemini.google.com/gem/1bITG0KZgo_vzLOHpWYvqTWk4ydtltSwP?usp=sharing';
 
     function load(idx) {
       cur = BS[idx];
+      wrongCount = [];
       /* Forward reference */
       fwdEl.innerHTML = '<div class="bs-forward-title">Forward pass — for reference</div>';
       cur.forward.forEach(function (s, i) {
@@ -2069,7 +2075,10 @@
         if (i > 0) div.style.display = 'none';
         div.innerHTML =
           '<div class="bs-step-hint">\u21b3 ' + step.hint + '</div>' +
+          '<div class="bs-expanded-label">After substituting</div>' +
           '<div class="bs-step-expanded">' + step.expanded + '</div>' +
+          '<div class="bs-combine-arrow">\u2193 collect like terms</div>' +
+          '<div class="bs-combine-label">Fill in the coefficients</div>' +
           '<div class="bs-step-input-row">' +
             step.fmt[0] +
             '<input type="number" class="bs-coeff-input" id="bs-c0-' + i + '" placeholder="?">' +
@@ -2100,6 +2109,7 @@
       i0.className = 'bs-coeff-input' + (ok0 ? ' bs-correct' : ' bs-wrong');
       i1.className = 'bs-coeff-input' + (ok1 ? ' bs-correct' : ' bs-wrong');
       if (ok0 && ok1) {
+        wrongCount[i] = 0;
         var sign1 = step.ans[1] >= 0 ? '+\u202f' : '\u2212\u202f';
         fb.className = 'bs-feedback ok';
         fb.textContent = '\u2713 Correct!\u2002 1\u202f=\u202f' + step.ans[0] + '(' + step.vars[0] +
@@ -2114,13 +2124,19 @@
           showResult();
         }
       } else {
+        wrongCount[i] = (wrongCount[i] || 0) + 1;
         fb.className = 'bs-feedback err';
         var msg = 'Not quite.\u2002';
         if (!ok0 && ok1)  msg += 'Check the first coefficient.';
         else if (ok0 && !ok1) msg += 'Check the second coefficient \u2014 watch the sign.';
         else if (v0 === -step.ans[0] || v1 === -step.ans[1]) msg += 'Sign error \u2014 distribute the negative carefully.';
         else msg += 'Try expanding ' + step.expanded + ' term by term.';
-        fb.textContent = msg;
+        if (wrongCount[i] >= 2) {
+          msg += ' <a href="' + GEM_URL + '" target="_blank" style="color:#4338ca;font-weight:700;white-space:nowrap;margin-left:6px;">Still stuck? Ask the AI Tutor \u2192</a>';
+          fb.innerHTML = msg;
+        } else {
+          fb.textContent = msg;
+        }
       }
     }
 
