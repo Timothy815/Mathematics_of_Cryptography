@@ -170,24 +170,28 @@
 
     /* ── Block visualization ── */
     .ea-blocks { margin-bottom: 6px; display: flex; flex-direction: column; }
-    .ea-step-blocks { padding: 10px 0; border-bottom: 1px dashed #d0d8ea; }
-    .ea-step-blocks:first-child { padding-top: 4px; }
+    .ea-step-blocks { padding: 14px 0 16px; border-bottom: 1px dashed #d0d8ea; }
+    .ea-step-blocks:first-child { padding-top: 6px; }
     .ea-step-blocks:last-child { border-bottom: none; }
-    .ea-block-row-wrap { display: flex; align-items: flex-start; gap: 10px; min-height: 18px; }
+    .ea-block-row-wrap { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
     .ea-block-label { font-weight: 800; font-size: 0.82rem; color: #334e7d; width: 14px; flex-shrink: 0; padding-top: 2px; }
-    .ea-block-row { display: flex; flex-wrap: wrap; gap: 2px; flex: 1; }
+    /* Strict grid so wrapped rows stay column-aligned */
+    .ea-block-row { display: grid; grid-template-columns: repeat(auto-fill, 9px); gap: 1px; flex: 1; align-content: start; }
     .ea-block { width: 9px; height: 9px; border-radius: 2px; transition: opacity 0.25s; }
-    .ea-block-decade { margin-left: 4px !important; }
     .ea-block-a { background: #334e7d; }
     .ea-block-b { background: #c9973a; }
     .ea-block-gcd { background: #2e7d32; }
     .ea-block-val { font-size: 0.82rem; font-weight: 700; color: #444; min-width: 34px; text-align: right; flex-shrink: 0; padding-top: 2px; }
-    .ea-scale-note { font-size: 0.75rem; color: #888; margin-top: 1px; }
-    .ea-rem-note { font-size: 0.8rem; color: #2e7d32; font-weight: 700; min-height: 1.3em; margin-top: 2px; }
+    .ea-scale-note { font-size: 0.75rem; color: #888; margin-top: 4px; }
+    .ea-rem-note { font-size: 0.8rem; color: #2e7d32; font-weight: 700; min-height: 1.3em; margin-top: 4px; }
     /* ── Egg-carton grouping ── */
-    .ea-carton-wrap { display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; flex: 1; }
-    .ea-carton      { display: flex; flex-wrap: wrap; gap: 2px; border: 2px solid #334e7d; border-radius: 6px; padding: 4px; background: rgba(51,78,125,0.07); }
-    .ea-carton-rem  { border: 2px dashed #c9973a; background: rgba(201,151,58,0.08); }
+    .ea-carton-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; flex: 1; }
+    /* grid columns set inline by JS so all cartons share the same column count */
+    .ea-carton     { display: grid; gap: 1px; border: 2px solid #334e7d; border-radius: 6px; padding: 5px; background: rgba(51,78,125,0.07); align-content: start; }
+    .ea-carton-rem { border: 2px dashed #c9973a; background: rgba(201,151,58,0.08); }
+    /* ── Per-step Next button ── */
+    .ea-step-next { display: inline-block; margin-top: 10px; padding: 7px 18px; background: #334e7d; color: #fff; border: none; border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: opacity 0.15s; }
+    .ea-step-next:hover { opacity: 0.85; }
 
     /* ── Inverse existence explorer ── */
     .inv-widget { border: 1px solid var(--border); border-radius: var(--radius); background: #f8f9fd; padding: 22px 26px; margin: 18px 0; }
@@ -1062,6 +1066,9 @@
         rowEl.innerHTML = '';
         var countPerCarton = Math.max(1, Math.round(b / ea.unit));
         var countRem       = Math.round(r / ea.unit);
+        /* Fixed column count so all cartons share the same grid — prevents misaligned wrapped rows */
+        var cols = Math.min(countPerCarton, 36);
+        var colStyle = 'repeat(' + cols + ', 9px)';
         var wrap = document.createElement('div');
         wrap.className = 'ea-carton-wrap';
         rowEl.appendChild(wrap);
@@ -1069,6 +1076,7 @@
         for (var ci = 0; ci < q; ci++) {
           var carton = document.createElement('div');
           carton.className = 'ea-carton';
+          carton.style.gridTemplateColumns = colStyle;
           carton.title = 'Complete group ' + (ci + 1) + ' of ' + q + ' (' + b + ' each)';
           for (var bi = 0; bi < countPerCarton; bi++) {
             var blk = document.createElement('span');
@@ -1083,6 +1091,8 @@
         if (countRem > 0) {
           var orphan = document.createElement('div');
           orphan.className = 'ea-carton ea-carton-rem';
+          /* orphan uses same column count so its width is comparable to a carton row */
+          orphan.style.gridTemplateColumns = 'repeat(' + Math.min(countRem, cols) + ', 9px)';
           orphan.title = r + ' left over — no complete carton';
           for (var ri = 0; ri < countRem; ri++) {
             var oblk = document.createElement('span');
@@ -1097,7 +1107,7 @@
       }
 
       /* Append a fresh flat step-block pair and animate it in */
-      function appendStepBlock(a, b) {
+      function appendStepBlock(a, b, isLast) {
         var sb = document.createElement('div');
         sb.className = 'ea-step-blocks';
         sb.innerHTML =
@@ -1112,6 +1122,13 @@
             '<span class="ea-block-val ea-svb">' + b + '</span>' +
           '</div>' +
           '<div class="ea-rem-note ea-srem"></div>';
+        if (!isLast) {
+          var btn = document.createElement('button');
+          btn.className = 'ea-step-next';
+          btn.textContent = 'Next Step \u2192';
+          btn.addEventListener('click', doStep);
+          sb.appendChild(btn);
+        }
         sb.style.opacity = '0';
         sb.style.transform = 'translateY(6px)';
         blocksEl.appendChild(sb);
@@ -1120,6 +1137,11 @@
         requestAnimationFrame(function () {
           sb.style.transition = 'opacity 0.35s, transform 0.35s';
           sb.style.opacity = '1'; sb.style.transform = 'translateY(0)';
+          /* scroll new button into view after it fades in */
+          setTimeout(function () {
+            var newBtn = sb.querySelector('.ea-step-next');
+            if (newBtn) newBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 380);
         });
         return sb;
       }
@@ -1171,11 +1193,16 @@
           MathJax.typesetPromise([card]).then(function () { requestAnimationFrame(fadeCard); });
         } else { requestAnimationFrame(fadeCard); }
 
-        /* Cartonize the current (last) step-block */
+        /* Remove the Next Step button from the current step-block before cartonizing */
         var last = getLastSB();
         if (last) {
+          var oldBtn = last.querySelector('.ea-step-next');
+          if (oldBtn) oldBtn.remove();
+        }
+
+        /* Cartonize the current (last) step-block */
+        if (last) {
           var sba = last.querySelector('.ea-sba');
-          var sbb = last.querySelector('.ea-sbb');
           var srem = last.querySelector('.ea-srem');
           renderBlocksCarton(sba, q, b, r);
           srem.textContent = q + ' complete group' + (q === 1 ? '' : 's') + ' of ' + b +
@@ -1199,6 +1226,8 @@
             renderBlocks(sbb2, b, 'ea-block-gcd');
             var srem2 = last.querySelector('.ea-srem');
             if (srem2) { srem2.style.color = '#2e7d32'; srem2.textContent = 'GCD\u2009=\u2009' + b + ' \u2014 divides perfectly'; }
+            /* scroll result into view */
+            setTimeout(function () { resEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 400);
           }
           resEl.innerHTML = '\\(\\gcd = ' + b + '\\)' +
             (b === 1 ? ' \u2014 the numbers are <strong>coprime</strong>.' : '.');
