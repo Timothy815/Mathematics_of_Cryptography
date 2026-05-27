@@ -168,6 +168,10 @@
     .ea-block-val { font-size: 0.82rem; font-weight: 700; color: #444; min-width: 34px; text-align: right; flex-shrink: 0; padding-top: 2px; }
     .ea-scale-note { font-size: 0.75rem; color: #888; margin-top: 1px; }
     .ea-rem-note { font-size: 0.8rem; color: #2e7d32; font-weight: 700; min-height: 1.3em; margin-top: 2px; }
+    /* ── Egg-carton grouping ── */
+    .ea-carton-wrap { display: flex; flex-wrap: wrap; gap: 5px; align-items: flex-start; flex: 1; }
+    .ea-carton      { display: flex; flex-wrap: wrap; gap: 2px; border: 2px solid #334e7d; border-radius: 6px; padding: 4px; background: rgba(51,78,125,0.07); }
+    .ea-carton-rem  { border: 2px dashed #c9973a; background: rgba(201,151,58,0.08); }
 
     /* ── Inverse existence explorer ── */
     .inv-widget { border: 1px solid var(--border); border-radius: var(--radius); background: #f8f9fd; padding: 22px 26px; margin: 18px 0; }
@@ -1038,6 +1042,45 @@
         }
       }
 
+      /* Render egg-carton grouping: q full cartons of b blocks + r orphan blocks */
+      function renderBlocksCarton(rowEl, q, b, r) {
+        rowEl.innerHTML = '';
+        var countPerCarton = Math.max(1, Math.round(b / ea.unit));
+        var countRem       = Math.round(r / ea.unit);
+        var wrap = document.createElement('div');
+        wrap.className = 'ea-carton-wrap';
+        rowEl.appendChild(wrap);
+        var delay = 0;
+        for (var ci = 0; ci < q; ci++) {
+          var carton = document.createElement('div');
+          carton.className = 'ea-carton';
+          carton.title = 'Complete group ' + (ci + 1) + ' of ' + q + ' (' + b + ' each)';
+          for (var bi = 0; bi < countPerCarton; bi++) {
+            var blk = document.createElement('span');
+            blk.className = 'ea-block ea-block-a';
+            blk.style.opacity = '0';
+            (function (el, d) { setTimeout(function () { el.style.opacity = '1'; }, d); })(blk, delay);
+            delay += 8;
+            carton.appendChild(blk);
+          }
+          wrap.appendChild(carton);
+        }
+        if (countRem > 0) {
+          var orphan = document.createElement('div');
+          orphan.className = 'ea-carton ea-carton-rem';
+          orphan.title = r + ' left over — no complete carton';
+          for (var ri = 0; ri < countRem; ri++) {
+            var oblk = document.createElement('span');
+            oblk.className = 'ea-block ea-block-b';
+            oblk.style.opacity = '0';
+            (function (el, d) { setTimeout(function () { el.style.opacity = '1'; }, d); })(oblk, delay);
+            delay += 8;
+            orphan.appendChild(oblk);
+          }
+          wrap.appendChild(orphan);
+        }
+      }
+
       function updateBlocks(a, b, useGcd) {
         if (!blocksA) return;
         renderBlocks(blocksA, a, useGcd ? 'ea-block-gcd' : 'ea-block-a');
@@ -1102,9 +1145,15 @@
           resEl.style.display = 'block';
           typeset(resEl);
         } else {
+          /* Show egg-carton grouping: q full boxes of b + r orphans */
+          renderBlocksCarton(blocksA, q, b, r);
+          renderBlocks(blocksB, b, 'ea-block-b');
+          valA.textContent = a;
+          valB.textContent = b;
           ea.a = b; ea.b = r;
-          updateBlocks(ea.a, ea.b, false);
-          if (remNote) remNote.textContent = 'Remainder ' + r + ' → becomes new b';
+          if (remNote) remNote.textContent =
+            q + ' complete group' + (q === 1 ? '' : 's') + ' of ' + b +
+            (r > 0 ? ',  ' + r + ' left over \u2192 becomes new b' : ' — no remainder');
           pairEl.innerHTML = 'Current pair: \\((' + ea.a + ',\\,' + ea.b + ')\\)';
           typeset(pairEl);
         }
