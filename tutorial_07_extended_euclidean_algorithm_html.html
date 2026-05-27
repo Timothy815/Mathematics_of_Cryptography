@@ -428,6 +428,39 @@
       .two-column { grid-template-columns: 1fr; }
     }
 
+    /* ── Back-substitution practice widget ── */
+    .bs-widget { border: 1px solid var(--border); border-radius: var(--radius); background: #f8f9fd; padding: 22px 26px; margin: 18px 0; }
+    .bs-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+    .bs-select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; background: #fff; font-family: inherit; color: var(--ink); }
+    .bs-reset-btn { padding: 7px 14px; background: #e8dbbf; color: #7d5a00; border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .bs-forward { margin-bottom: 16px; }
+    .bs-forward-title { font-size: 0.8rem; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 7px; }
+    .bs-fwd-row { display: flex; gap: 8px; align-items: baseline; font-size: 0.92rem; padding: 5px 10px; border-radius: 6px; margin-bottom: 3px; background: #fff; border: 1px solid #e0e6f0; }
+    .bs-fwd-row.bs-gcd-row { background: #eaf7ef; border-color: #b8dfc5; font-weight: 700; }
+    .bs-fwd-idx { font-size: 0.75rem; color: #999; width: 16px; flex-shrink: 0; }
+    .bs-start { font-size: 0.98rem; font-weight: 700; color: #334e7d; background: #eef3ff; border: 1.5px solid #c7d2ea; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; }
+    .bs-step { background: #fff; border: 1.5px solid #d0d8ea; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; }
+    .bs-step.bs-step-active { border-color: #334e7d; }
+    .bs-step.bs-step-done { border-color: #b8dfc5; background: #f6fbf8; }
+    .bs-step-hint { font-size: 0.84rem; color: #555; margin-bottom: 8px; }
+    .bs-step-expanded { font-size: 0.9rem; font-family: monospace; color: #334e7d; background: #f0f3fb; border-radius: 5px; padding: 6px 10px; margin-bottom: 10px; }
+    .bs-step-input-row { display: flex; align-items: center; gap: 5px; font-size: 0.92rem; flex-wrap: wrap; }
+    .bs-coeff-input { width: 54px; padding: 6px 8px; border: 1.5px solid #c7d2ea; border-radius: 7px; font-size: 0.92rem; font-family: inherit; text-align: center; }
+    .bs-coeff-input.bs-correct { border-color: #2e7d32 !important; background: #eaf7ef; color: #1b5e20; }
+    .bs-coeff-input.bs-wrong   { border-color: #e53935 !important; background: #fff0f0; }
+    .bs-check-btn { padding: 6px 14px; background: #334e7d; color: #fff; border: none; border-radius: 7px; font-size: 0.87rem; font-weight: 700; cursor: pointer; margin-left: 4px; }
+    .bs-check-btn:hover { opacity: 0.85; }
+    .bs-feedback { font-size: 0.83rem; font-weight: 700; margin-top: 7px; min-height: 1.2em; }
+    .bs-feedback.ok  { color: #2e7d32; }
+    .bs-feedback.err { color: #c0392b; }
+    .bs-result { background: #eaf7ef; border: 2px solid #2e7d32; border-radius: 10px; padding: 14px 18px; margin-top: 14px; display: none; }
+    .bs-result-title { font-weight: 800; color: #1b5e20; font-size: 0.95rem; margin-bottom: 10px; }
+    .bs-final-row { display: flex; align-items: center; gap: 8px; font-size: 0.93rem; flex-wrap: wrap; }
+    .bs-final-input { width: 58px; padding: 6px 8px; border: 1.5px solid #b8dfc5; border-radius: 7px; font-size: 0.93rem; text-align: center; font-family: inherit; }
+    .bs-final-input.bs-correct { border-color: #2e7d32; background: #eaf7ef; }
+    .bs-final-check { padding: 6px 14px; background: #2e7d32; color: #fff; border: none; border-radius: 7px; font-size: 0.87rem; font-weight: 700; cursor: pointer; }
+    .bs-final-fb { font-size: 0.83rem; font-weight: 700; margin-top: 8px; }
+
     @page { margin: 0.65in; }
     @media print {
       body { background: #ffffff; color: #000000; font-size: 11pt; line-height: 1.45; }
@@ -858,6 +891,26 @@
         </p>
       </section>
 
+      <section id="back-sub-interactive">
+        <h2>Practice: back-substitution step by step</h2>
+        <p class="no-print">
+          Work through a back-substitution yourself. At each step the substitution is shown — you fill in the two coefficients after combining like terms. All arithmetic is small enough to do in your head or on scratch paper.
+        </p>
+
+        <div class="bs-widget no-print">
+          <div class="bs-controls">
+            <label style="font-size:0.88rem;font-weight:700;color:#333;">
+              Example:&thinsp;<select class="bs-select" id="bs-sel"></select>
+            </label>
+            <button class="bs-reset-btn" id="bs-reset">↺ Reset</button>
+          </div>
+          <div id="bs-fwd" class="bs-forward"></div>
+          <div id="bs-start" class="bs-start"></div>
+          <div id="bs-steps"></div>
+          <div id="bs-result" class="bs-result"></div>
+        </div>
+      </section>
+
       <section id="table-method">
         <h2>The standard table method</h2>
         <p>
@@ -980,6 +1033,51 @@
             When \(t_3\) is negative, simply add the modulus \(n\) once to shift it into the standard
             range \(\{0, \ldots, n-1\}\). Adding \(n\) does not change the modular value
             (since \(n \equiv 0 \pmod n\)), so the inverse is unaffected.
+          </p>
+        </div>
+
+        <div class="box technical-box" style="margin-top:24px;">
+          <div class="box-title">Back-substitution vs. table method — when to use which</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.87rem;margin-top:10px;">
+              <thead>
+                <tr style="background:#eef3ff;">
+                  <th style="padding:8px 12px;border:1px solid #c7d2ea;text-align:left;">Criterion</th>
+                  <th style="padding:8px 12px;border:1px solid #c7d2ea;text-align:left;">Back-substitution</th>
+                  <th style="padding:8px 12px;border:1px solid #c7d2ea;text-align:left;">Table method</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;font-weight:700;">Conceptual clarity</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">High — you see exactly where each coefficient originates</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Lower — the recurrence is mechanical, not obviously intuitive at first</td>
+                </tr>
+                <tr style="background:#fafbff;">
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;font-weight:700;">Error rate by hand</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">High — one sign slip cascades through every subsequent step</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Low — each row is self-contained; a mistake affects only that row</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;font-weight:700;">Memory needed</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Must record every forward equation before you can start backward</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Only the last two \(t\)-values needed at any point</td>
+                </tr>
+                <tr style="background:#fafbff;">
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;font-weight:700;">In code</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Awkward — requires storing all steps, then reversing</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Natural — one forward loop, two extra variables</td>
+                </tr>
+                <tr>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;font-weight:700;">Best used for</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Learning — it makes the mechanism visible</td>
+                  <td style="padding:8px 12px;border:1px solid #c7d2ea;">Exams, practice problems, and all real implementations</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:10px;font-size:0.88rem;">
+            Every cryptographic library — OpenSSL, BoringSSL, Python's <code>pow(a,&thinsp;-1,&thinsp;n)</code> — uses a variant of the table method internally. Back-substitution is the explanation; the table method is the tool.
           </p>
         </div>
       </section>
@@ -1859,6 +1957,205 @@
 
     resetState();
 
+  })();
+
+  /* ── Back-Substitution Practice Widget ──────────────────── */
+  (function () {
+    var selEl = document.getElementById('bs-sel');
+    if (!selEl) return;
+
+    var fwdEl    = document.getElementById('bs-fwd');
+    var startEl  = document.getElementById('bs-start');
+    var stepsEl  = document.getElementById('bs-steps');
+    var resultEl = document.getElementById('bs-result');
+    var resetBtn = document.getElementById('bs-reset');
+
+    var BS = [
+      { label: '7\u207b\u00b9 mod 18',
+        a: 7, n: 18,
+        forward: [
+          { eq: '18\u202f=\u202f2\u00b77\u202f+\u202f4',  gcd: false },
+          { eq: '7\u202f=\u202f1\u00b74\u202f+\u202f3',   gcd: false },
+          { eq: '4\u202f=\u202f1\u00b73\u202f+\u202f1',   gcd: true  }
+        ],
+        start: '1 = 4 \u2212 1\u00b73',
+        steps: [
+          { hint: 'Replace 3 using equation\u202f2:\u2003 3\u202f=\u202f7\u202f\u2212\u202f1\u00b74',
+            expanded: '1 = 4 \u2212 1\u00b7(7 \u2212 1\u00b74)',
+            fmt: ['1\u202f=\u202f', '\u00b74\u202f+\u202f', '\u00b77'],
+            vars: ['4','7'], ans: [2, -1] },
+          { hint: 'Replace 4 using equation\u202f1:\u2003 4\u202f=\u202f18\u202f\u2212\u202f2\u00b77',
+            expanded: '1 = 2\u00b7(18 \u2212 2\u00b77) \u2212 1\u00b77',
+            fmt: ['1\u202f=\u202f', '\u00b718\u202f+\u202f', '\u00b77'],
+            vars: ['18','7'], ans: [2, -5] }
+        ],
+        finalCoeff: -5, inverse: 13
+      },
+      { label: '7\u207b\u00b9 mod 26  (affine cipher)',
+        a: 7, n: 26,
+        forward: [
+          { eq: '26\u202f=\u202f3\u00b77\u202f+\u202f5',  gcd: false },
+          { eq: '7\u202f=\u202f1\u00b75\u202f+\u202f2',   gcd: false },
+          { eq: '5\u202f=\u202f2\u00b72\u202f+\u202f1',   gcd: true  }
+        ],
+        start: '1 = 5 \u2212 2\u00b72',
+        steps: [
+          { hint: 'Replace 2 using equation\u202f2:\u2003 2\u202f=\u202f7\u202f\u2212\u202f1\u00b75',
+            expanded: '1 = 5 \u2212 2\u00b7(7 \u2212 1\u00b75)',
+            fmt: ['1\u202f=\u202f', '\u00b75\u202f+\u202f', '\u00b77'],
+            vars: ['5','7'], ans: [3, -2] },
+          { hint: 'Replace 5 using equation\u202f1:\u2003 5\u202f=\u202f26\u202f\u2212\u202f3\u00b77',
+            expanded: '1 = 3\u00b7(26 \u2212 3\u00b77) \u2212 2\u00b77',
+            fmt: ['1\u202f=\u202f', '\u00b726\u202f+\u202f', '\u00b77'],
+            vars: ['26','7'], ans: [3, -11] }
+        ],
+        finalCoeff: -11, inverse: 15
+      },
+      { label: '13\u207b\u00b9 mod 35',
+        a: 13, n: 35,
+        forward: [
+          { eq: '35\u202f=\u202f2\u00b713\u202f+\u202f9',  gcd: false },
+          { eq: '13\u202f=\u202f1\u00b79\u202f+\u202f4',   gcd: false },
+          { eq: '9\u202f=\u202f2\u00b74\u202f+\u202f1',    gcd: true  }
+        ],
+        start: '1 = 9 \u2212 2\u00b74',
+        steps: [
+          { hint: 'Replace 4 using equation\u202f2:\u2003 4\u202f=\u202f13\u202f\u2212\u202f1\u00b79',
+            expanded: '1 = 9 \u2212 2\u00b7(13 \u2212 1\u00b79)',
+            fmt: ['1\u202f=\u202f', '\u00b79\u202f+\u202f', '\u00b713'],
+            vars: ['9','13'], ans: [3, -2] },
+          { hint: 'Replace 9 using equation\u202f1:\u2003 9\u202f=\u202f35\u202f\u2212\u202f2\u00b713',
+            expanded: '1 = 3\u00b7(35 \u2212 2\u00b713) \u2212 2\u00b713',
+            fmt: ['1\u202f=\u202f', '\u00b735\u202f+\u202f', '\u00b713'],
+            vars: ['35','13'], ans: [3, -8] }
+        ],
+        finalCoeff: -8, inverse: 27
+      }
+    ];
+
+    BS.forEach(function (ex, i) {
+      var opt = document.createElement('option');
+      opt.value = i; opt.textContent = ex.label;
+      selEl.appendChild(opt);
+    });
+
+    var cur = null;
+
+    function load(idx) {
+      cur = BS[idx];
+      /* Forward reference */
+      fwdEl.innerHTML = '<div class="bs-forward-title">Forward pass — for reference</div>';
+      cur.forward.forEach(function (s, i) {
+        var row = document.createElement('div');
+        row.className = 'bs-fwd-row' + (s.gcd ? ' bs-gcd-row' : '');
+        row.innerHTML = '<span class="bs-fwd-idx">' + (i + 1) + '.</span><span>' +
+          s.eq + (s.gcd ? '\u2003\u2190 GCD step' : '') + '</span>';
+        fwdEl.appendChild(row);
+      });
+      /* Starting expression */
+      startEl.textContent = 'Start:\u2002' + cur.start;
+      /* Steps */
+      stepsEl.innerHTML = '';
+      resultEl.style.display = 'none';
+      cur.steps.forEach(function (step, i) {
+        var div = document.createElement('div');
+        div.className = 'bs-step' + (i === 0 ? ' bs-step-active' : '');
+        div.id = 'bs-step-' + i;
+        if (i > 0) div.style.display = 'none';
+        div.innerHTML =
+          '<div class="bs-step-hint">\u21b3 ' + step.hint + '</div>' +
+          '<div class="bs-step-expanded">' + step.expanded + '</div>' +
+          '<div class="bs-step-input-row">' +
+            step.fmt[0] +
+            '<input type="number" class="bs-coeff-input" id="bs-c0-' + i + '" placeholder="?">' +
+            step.fmt[1] +
+            '<input type="number" class="bs-coeff-input" id="bs-c1-' + i + '" placeholder="?">' +
+            step.fmt[2] +
+            '<button class="bs-check-btn" data-step="' + i + '">Check</button>' +
+          '</div>' +
+          '<div class="bs-feedback" id="bs-fb-' + i + '"></div>';
+        stepsEl.appendChild(div);
+        div.querySelector('.bs-check-btn').addEventListener('click', function () { checkStep(i); });
+      });
+    }
+
+    function checkStep(i) {
+      var step = cur.steps[i];
+      var v0 = parseInt(document.getElementById('bs-c0-' + i).value, 10);
+      var v1 = parseInt(document.getElementById('bs-c1-' + i).value, 10);
+      var fb  = document.getElementById('bs-fb-' + i);
+      var i0  = document.getElementById('bs-c0-' + i);
+      var i1  = document.getElementById('bs-c1-' + i);
+      if (isNaN(v0) || isNaN(v1)) {
+        fb.className = 'bs-feedback err'; fb.textContent = 'Enter both coefficients.'; return;
+      }
+      var ok0 = v0 === step.ans[0], ok1 = v1 === step.ans[1];
+      i0.className = 'bs-coeff-input' + (ok0 ? ' bs-correct' : ' bs-wrong');
+      i1.className = 'bs-coeff-input' + (ok1 ? ' bs-correct' : ' bs-wrong');
+      if (ok0 && ok1) {
+        var sign1 = step.ans[1] >= 0 ? '+\u202f' : '\u2212\u202f';
+        fb.className = 'bs-feedback ok';
+        fb.textContent = '\u2713 Correct!\u2002 1\u202f=\u202f' + step.ans[0] + '\u00b7' + step.vars[0] +
+          '\u202f' + sign1 + Math.abs(step.ans[1]) + '\u00b7' + step.vars[1];
+        document.getElementById('bs-step-' + i).classList.replace('bs-step-active', 'bs-step-done');
+        var next = document.getElementById('bs-step-' + (i + 1));
+        if (next) {
+          next.style.display = '';
+          next.classList.add('bs-step-active');
+          setTimeout(function () { next.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 300);
+        } else {
+          showResult();
+        }
+      } else {
+        fb.className = 'bs-feedback err';
+        var msg = 'Not quite.\u2002';
+        if (!ok0 && ok1)  msg += 'Check the first coefficient.';
+        else if (ok0 && !ok1) msg += 'Check the second coefficient \u2014 watch the sign.';
+        else if (v0 === -step.ans[0] || v1 === -step.ans[1]) msg += 'Sign error \u2014 distribute the negative carefully.';
+        else msg += 'Try expanding ' + step.expanded + ' term by term.';
+        fb.textContent = msg;
+      }
+    }
+
+    function showResult() {
+      var fc = cur.finalCoeff;
+      var lastStep = cur.steps[cur.steps.length - 1];
+      resultEl.style.display = 'block';
+      resultEl.innerHTML =
+        '<div class="bs-result-title">B\u00e9zout\u2019s identity complete:</div>' +
+        '<p style="font-size:0.94rem;margin:0 0 12px;">1\u202f=\u202f' + lastStep.ans[0] + '\u00b7' + cur.n +
+          '\u202f+\u202f(' + fc + ')\u00b7' + cur.a + '</p>' +
+        '<p style="font-size:0.9rem;margin:0 0 10px;">The coefficient of ' + cur.a + ' is <strong>' + fc +
+          '</strong>. Convert this to a positive inverse mod\u202f' + cur.n + ':</p>' +
+        '<div class="bs-final-row">' +
+          cur.a + '\u207b\u00b9\u202f\u2261\u202f' +
+          '<input type="number" class="bs-final-input" id="bs-fin" placeholder="?">' +
+          '\u202f(mod\u202f' + cur.n + ')' +
+          '<button class="bs-final-check" id="bs-fin-btn">Check</button>' +
+        '</div>' +
+        '<div class="bs-final-fb" id="bs-fin-fb"></div>';
+      document.getElementById('bs-fin-btn').addEventListener('click', function () {
+        var val = parseInt(document.getElementById('bs-fin').value, 10);
+        var fb2  = document.getElementById('bs-fin-fb');
+        var inp  = document.getElementById('bs-fin');
+        fb2.style.display = 'block';
+        if (val === cur.inverse) {
+          inp.className = 'bs-final-input bs-correct';
+          fb2.style.color = '#2e7d32';
+          fb2.textContent = '\u2713 Correct!\u2002' + cur.a + '\u202f\u00d7\u202f' + cur.inverse +
+            '\u202f\u2261\u202f1\u202f(mod\u202f' + cur.n + ')';
+        } else {
+          fb2.style.color = '#c0392b';
+          var hint = fc < 0 ? 'Add the modulus:\u2002' + fc + '\u202f+\u202f' + cur.n + '\u202f=\u202f?' : 'The coefficient is already positive.';
+          fb2.textContent = 'Not quite.\u2002' + hint;
+        }
+      });
+      setTimeout(function () { resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 200);
+    }
+
+    resetBtn.addEventListener('click', function () { load(parseInt(selEl.value, 10)); });
+    selEl.addEventListener('change', function () { load(parseInt(selEl.value, 10)); });
+    load(0);
   })();
   </script>
 </body>
