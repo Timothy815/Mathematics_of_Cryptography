@@ -903,6 +903,11 @@
               Example:&thinsp;<select class="bs-select" id="bs-sel"></select>
             </label>
             <button class="bs-reset-btn" id="bs-reset">↺ Reset</button>
+            <span style="font-size:0.82rem;color:#666;margin-left:6px;">or enter your own:</span>
+            <label style="font-size:0.88rem;">a&thinsp;=&thinsp;<input type="number" id="bs-custom-a" min="2" max="999" placeholder="e.g. 17" style="width:70px;padding:3px 6px;border:1px solid #bbb;border-radius:6px;font-size:0.88rem;"></label>
+            <label style="font-size:0.88rem;">n&thinsp;=&thinsp;<input type="number" id="bs-custom-n" min="2" max="999" placeholder="e.g. 43" style="width:70px;padding:3px 6px;border:1px solid #bbb;border-radius:6px;font-size:0.88rem;"></label>
+            <button class="bs-reset-btn" id="bs-custom-go" style="background:#334e7d;color:#fff;border-color:#334e7d;">Go</button>
+            <span id="bs-custom-err" style="display:none;color:#c0392b;font-size:0.82rem;"></span>
           </div>
           <div id="bs-fwd" class="bs-forward"></div>
           <div id="bs-start" class="bs-start"></div>
@@ -2077,6 +2082,8 @@
         stepsEl.appendChild(div);
         div.querySelector('.bs-check-btn').addEventListener('click', function () { checkStep(i); });
       });
+      /* If no substitution steps needed (one-step Euclidean), show result directly */
+      if (cur.steps.length === 0) { showResult(); }
     }
 
     function checkStep(i) {
@@ -2152,6 +2159,149 @@
       });
       setTimeout(function () { resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 200);
     }
+
+    function gcd(a, b) { while (b) { var t = b; b = a % b; a = t; } return a; }
+
+    function computeBS(a, n) {
+      /* Forward pass: collect {a, b, q, r} for each division */
+      var fwd = [];
+      var aa = n, bb = a;
+      while (bb > 0) {
+        var q = Math.floor(aa / bb);
+        var r = aa - q * bb;
+        fwd.push({ a: aa, b: bb, q: q, r: r });
+        aa = bb; bb = r;
+      }
+      if (aa !== 1) return null; /* gcd ≠ 1, no inverse */
+
+      /* Forward display rows */
+      var forward = fwd.map(function (s) {
+        return {
+          eq: s.a + '\u202f=\u202f' + s.q + '(' + s.b + ')\u202f+\u202f' + s.r,
+          gcd: s.r === 1
+        };
+      });
+
+      /* Find the step where r=1 (that is the gcd step) */
+      var gcdIdx = -1;
+      for (var i = fwd.length - 1; i >= 0; i--) {
+        if (fwd[i].r === 1) { gcdIdx = i; break; }
+      }
+      if (gcdIdx < 0) return null;
+
+      var startStep = fwd[gcdIdx];
+      /* 1 = startStep.a − startStep.q * startStep.b */
+      var start = '1 = ' + startStep.a + ' \u2212 ' + startStep.q + '(' + startStep.b + ')';
+
+      /*
+       * Maintain: 1 = alpha*(varA) + beta*(varB)
+       * At each back-sub step k we eliminate the fwd[k].r value by
+       * rewriting it from fwd[k]:  fwd[k].r = fwd[k].a − fwd[k].q * fwd[k].b
+       * fwd[k].b is always the variable that STAYS in the expression.
+       */
+      var alpha = 1, beta = -startStep.q;
+      var varA = startStep.a, varB = startStep.b; /* numeric */
+
+      var steps = [];
+      for (var k = gcdIdx - 1; k >= 0; k--) {
+        var step = fwd[k];
+        var new_alpha, new_beta, new_varA, new_varB;
+        var replaced, expandedStr;
+
+        if (step.b === varA) {
+          /* Substituting varB: varB = step.a − step.q * step.b (= step.a − step.q * varA)
+           * 1 = alpha*varA + beta*(step.a − step.q*varA)
+           *   = (alpha − beta*step.q)*varA + beta*step.a      */
+          new_alpha = alpha - beta * step.q;
+          new_beta  = beta;
+          new_varA  = varA;   /* stays */
+          new_varB  = step.a; /* introduced */
+          replaced  = varB;
+          var bSign = (beta >= 0 ? '+\u202f' : '\u2212\u202f');
+          expandedStr = '1 = ' + alpha + '(' + varA + ')\u202f' + bSign +
+            Math.abs(beta) + '(' + step.a + '\u202f\u2212\u202f' + step.q + '(' + step.b + '))';
+        } else {
+          /* Substituting varA: varA = step.a − step.q * step.b (= step.a − step.q * varB)
+           * 1 = alpha*(step.a − step.q*varB) + beta*varB
+           *   = alpha*step.a + (beta − alpha*step.q)*varB                              */
+          new_alpha = alpha;
+          new_beta  = beta - alpha * step.q;
+          new_varA  = step.a; /* introduced */
+          new_varB  = varB;   /* stays */
+          replaced  = varA;
+          var aSign = (alpha >= 0 ? '' : '\u2212');
+          expandedStr = '1 = ' + aSign + Math.abs(alpha) + '(' + step.a + '\u202f\u2212\u202f' +
+            step.q + '(' + step.b + '))\u202f' +
+            (beta >= 0 ? '+\u202f' : '\u2212\u202f') + Math.abs(beta) + '(' + varB + ')';
+        }
+
+        var sign1 = new_beta >= 0 ? '+\u202f' : '\u2212\u202f';
+        steps.push({
+          hint: 'Replace ' + replaced + ' using equation\u202f' + (k + 1) + ':\u2003' +
+                replaced + '\u202f=\u202f' + step.a + '\u202f\u2212\u202f' + step.q + '(' + step.b + ')',
+          expanded: expandedStr,
+          fmt: ['1\u202f=\u202f', '(' + new_varA + ')\u202f' + sign1, '(' + new_varB + ')'],
+          vars: [String(new_varA), String(new_varB)],
+          ans: [new_alpha, new_beta]
+        });
+
+        alpha = new_alpha; beta = new_beta;
+        varA  = new_varA;  varB  = new_varB;
+      }
+
+      /* After all substitutions varB === a (the original number) */
+      var finalCoeff = beta;
+      var inverse = ((finalCoeff % n) + n) % n;
+
+      return {
+        label: a + '\u207b\u00b9 mod ' + n + ' (custom)',
+        a: a, n: n,
+        forward: forward,
+        start: start,
+        steps: steps,
+        finalCoeff: finalCoeff,
+        inverse: inverse
+      };
+    }
+
+    var customGoBtn = document.getElementById('bs-custom-go');
+    var customErrEl = document.getElementById('bs-custom-err');
+    customGoBtn.addEventListener('click', function () {
+      customErrEl.style.display = 'none';
+      var aVal = parseInt(document.getElementById('bs-custom-a').value, 10);
+      var nVal = parseInt(document.getElementById('bs-custom-n').value, 10);
+      if (isNaN(aVal) || isNaN(nVal) || aVal < 2 || nVal < 2) {
+        customErrEl.textContent = 'Both values must be integers \u2265 2.';
+        customErrEl.style.display = '';
+        return;
+      }
+      if (aVal >= nVal) {
+        customErrEl.textContent = 'a must be less than n.';
+        customErrEl.style.display = '';
+        return;
+      }
+      if (gcd(aVal, nVal) !== 1) {
+        customErrEl.textContent = 'gcd(' + aVal + ', ' + nVal + ') \u2260 1 \u2014 no inverse exists.';
+        customErrEl.style.display = '';
+        return;
+      }
+      var computed = computeBS(aVal, nVal);
+      if (!computed) {
+        customErrEl.textContent = 'Could not compute \u2014 try different values.';
+        customErrEl.style.display = '';
+        return;
+      }
+      /* Add as a new option (or reuse last custom slot) */
+      var existing = selEl.querySelector('option[data-custom]');
+      if (existing) existing.remove();
+      var opt = document.createElement('option');
+      opt.value = BS.length; opt.textContent = computed.label;
+      opt.setAttribute('data-custom', '1');
+      selEl.appendChild(opt);
+      BS.push(computed);
+      selEl.value = BS.length - 1;
+      load(BS.length - 1);
+    });
 
     resetBtn.addEventListener('click', function () { load(parseInt(selEl.value, 10)); });
     selEl.addEventListener('change', function () { load(parseInt(selEl.value, 10)); });
