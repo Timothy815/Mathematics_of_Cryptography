@@ -442,6 +442,19 @@
             Addition over \(\mathrm{GF}(2)\) means add the coefficients and reduce the result modulo 2. For bits, this is exactly XOR.
           </p>
         </div>
+
+        <div class="box purpose-box">
+          <div class="box-title">Why hardware engineers love this rule</div>
+          <p>
+            In ordinary binary addition, a 1 in position 0 can produce a carry that ripples into position 1, which can carry into position 2, and so on. The processor must wait for each carry to resolve before the next position can be computed. This creates a chain that takes time proportional to the number of bits.
+          </p>
+          <p>
+            XOR has no carry. Each bit position is computed independently, in parallel, with no knowledge of its neighbours. For an 8-bit byte, all eight XOR operations fire simultaneously in a single gate delay — the hardware equivalent of instantaneous. For 128-bit AES blocks, the same principle holds: one clock cycle, all 128 bits at once.
+          </p>
+          <p>
+            This is not a mathematical curiosity. It is a deliberate engineering choice. The founders of AES selected GF(2) polynomial arithmetic in part because its addition operation maps directly onto the XOR instruction present in every processor and logic gate ever built, with no carry penalty whatsoever.
+          </p>
+        </div>
       </section>
 
       <!-- ── Interactive Explorer ──────────────────────────────────── -->
@@ -639,6 +652,16 @@
           <div class="box-title">Technical version</div>
           <p>
             In \(\mathrm{GF}(2)\), \(-1=1\), so subtracting a coefficient is the same as adding it. Therefore polynomial subtraction and polynomial addition are identical over \(\mathrm{GF}(2)\).</p>
+        </div>
+
+        <div class="box purpose-box">
+          <div class="box-title">Why this will matter in Module 11</div>
+          <p>
+            When you reach polynomial reduction in Module 11, expressions involving subtraction will appear — for example, writing a remainder as \(P - Q\) or XOR-ing a polynomial with the irreducible polynomial. Do not be alarmed by the minus sign. Because subtraction and addition are identical over \(\mathrm{GF}(2)\), you can replace every minus sign with a plus sign (or equivalently, XOR) without changing the result.
+          </p>
+          <p>
+            Keeping this in mind now will save confusion later. If you ever see a subtraction symbol in GF(2) polynomial work, read it as XOR and proceed.
+          </p>
         </div>
       </section>
 
