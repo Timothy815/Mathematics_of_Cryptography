@@ -884,8 +884,386 @@
         </div>
       </section>
 
+      <section id="algebraic-explorer" class="no-print">
+        <h2>Interactive: Algebraic view — expand A(x)×B(x), then reduce</h2>
+        <p>This is the paper-and-pencil approach. Enter two bytes. The explorer converts each to a polynomial, multiplies every term of A by every term of B, cancels pairs that land on the same degree (1⊕1=0 over GF(2)), then folds every surviving term above degree 7 back into the byte zone using the AES rule x⁸≡x⁴+x³+x+1.</p>
+
+        <style>
+          .ae-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
+          .ae-input-row { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; margin-bottom:14px; }
+          .ae-input-row label { display:block; font-weight:700; font-size:0.9rem; margin-bottom:5px; color:#1f3763; }
+          .ae-hex-field { font-family:'Cascadia Code','Consolas',monospace; font-size:1.05rem; padding:8px 12px; border:1.5px solid #b0bcd4; border-radius:8px; width:110px; }
+          .ae-btn { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+          .ae-btn-reset { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
+          .ae-presets { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
+          .ae-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
+          .ae-btn-preset:hover { background:#eef3ff; }
+
+          .ae-card { background:#fff; border:1px solid #c7d2ea; border-radius:12px; padding:18px 22px; margin-bottom:14px; }
+          .ae-card-heading { font-size:1rem; font-weight:800; color:#1f3763; margin:0 0 10px; }
+          .ae-narr { font-size:0.93rem; line-height:1.65; color:#2a2a2a; margin:0 0 10px; }
+
+          .ae-poly-pair { display:flex; flex-wrap:wrap; gap:16px; margin:10px 0; }
+          .ae-poly-block { background:#eef3ff; border:1px solid #c7d2ea; border-radius:8px; padding:10px 16px; flex:1; min-width:180px; }
+          .ae-poly-lbl { font-size:0.8rem; font-weight:700; color:#334e7d; margin-bottom:4px; }
+          .ae-poly-val { font-size:1rem; font-weight:600; color:#1f3763; }
+
+          .ae-mul-wrap { overflow-x:auto; margin:12px 0; }
+          .ae-mul-tbl { border-collapse:collapse; }
+          .ae-mul-tbl th, .ae-mul-tbl td { border:1px solid #c7d2ea; padding:7px 10px; text-align:center; font-size:0.88rem; min-width:64px; }
+          .ae-mul-tbl th { background:#eef3ff; color:#1f3763; font-weight:700; }
+          .ae-mul-corner { background:#f7f5ef; color:#888; font-size:0.78rem; }
+          .ae-cell-survive-lo { background:#eafaf0; color:#1a4030; font-weight:700; }
+          .ae-cell-survive-hi { background:#fff8e0; color:#6a4000; font-weight:700; }
+          .ae-cell-cancel     { background:#fdeaea; color:#c04040; font-weight:700; text-decoration:line-through; }
+
+          .ae-coll-wrap { overflow-x:auto; margin:12px 0; }
+          .ae-coll-tbl { border-collapse:collapse; width:100%; }
+          .ae-coll-tbl th, .ae-coll-tbl td { border:1px solid #c7d2ea; padding:8px 12px; font-size:0.88rem; vertical-align:middle; }
+          .ae-coll-tbl th { background:#eef3ff; color:#1f3763; font-weight:700; text-align:left; }
+          .ae-coll-survive { background:#eafaf0 !important; }
+          .ae-coll-cancel  { background:#fdeaea !important; }
+          .ae-badge-survive { background:#2a8a4a; color:#fff; padding:2px 8px; border-radius:8px; font-size:0.78rem; font-weight:700; display:inline-block; }
+          .ae-badge-cancel  { background:#fdeaea; color:#c04040; border:1px solid #e0a0a0; padding:2px 8px; border-radius:8px; font-size:0.78rem; font-weight:700; display:inline-block; }
+          .ae-badge-fold    { background:#fff8e0; color:#6a4000; border:1px solid #e0c060; padding:2px 8px; border-radius:8px; font-size:0.78rem; font-weight:700; display:inline-block; }
+
+          .ae-unreduced { background:#fff8e0; border:1.5px solid #e0c060; border-radius:10px; padding:14px 18px; margin:10px 0; }
+          .ae-unreduced-lbl { font-size:0.85rem; font-weight:700; color:#6a4000; margin-bottom:4px; }
+          .ae-unreduced-poly { font-size:1.05rem; font-weight:700; color:#3a2000; }
+
+          .ae-fold-card { background:#fff; border:1px solid #c7d2ea; border-radius:10px; padding:14px 18px; margin:10px 0; }
+          .ae-fold-heading { font-size:0.95rem; font-weight:800; color:#1f3763; margin:0 0 8px; }
+
+          .ae-grid-wrap { overflow-x:auto; margin:8px 0 10px; }
+          .ae-grid { border-collapse:collapse; min-width:540px; }
+          .ae-grid td, .ae-grid th { text-align:center; padding:0; min-width:32px; }
+          .ae-row-lbl { font-size:0.75rem; font-weight:700; color:#444; text-align:right !important; padding-right:8px !important; white-space:nowrap; min-width:100px; }
+          .ae-deg { font-size:0.68rem; color:#666; padding:2px 1px 3px; font-weight:600; }
+          .ae-gcell { width:32px; height:30px; border:1px solid #dde3ee; font-weight:800; font-size:0.9rem; line-height:30px; }
+          .aesc-elim   { background:#e05800; color:#fff; border-color:#b03000; }
+          .aesc-hi1    { background:#ffd0a0; color:#7a2a00; border-color:#e0a060; }
+          .aesc-hi0    { background:#fdf0e8; color:#caa080; }
+          .aesc-lo1    { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .aesc-lo0    { background:#f5f7fc; color:#bbb; }
+          .aesc-xor1   { background:#fff0a0; color:#5a4000; border-color:#d0c040; font-weight:900; }
+          .aesc-xor0   { background:#fafafa; color:#ccc; }
+          .aesc-added  { background:#2a8a4a; color:#fff; border-color:#1a6030; }
+          .aesc-cancel { background:#fdeaea; color:#c04040; border-color:#e0a0a0; }
+          .aesc-kept1  { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .aesc-kept0  { background:#f5f7fc; color:#bbb; }
+          .aesc-hi-gone{ background:#fdf0e8; color:#caa080; }
+          .ae-bdy { border-left:3px solid #334e7d !important; }
+
+          .ae-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:10px; }
+        </style>
+
+        <div class="ae-shell">
+          <div class="ae-input-row">
+            <div>
+              <label for="ae-a-in">Byte A (hex)</label>
+              <input class="ae-hex-field" id="ae-a-in" type="text" value="57" maxlength="4" autocomplete="off">
+            </div>
+            <div>
+              <label for="ae-b-in">Byte B (hex)</label>
+              <input class="ae-hex-field" id="ae-b-in" type="text" value="13" maxlength="4" autocomplete="off">
+            </div>
+            <div class="ae-presets">
+              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Presets:</span>
+              <button class="ae-btn-preset" onclick="aeLoad(0x57,0x13)">0x57 × 0x13</button>
+              <button class="ae-btn-preset" onclick="aeLoad(0x57,0x03)">0x57 × 0x03</button>
+              <button class="ae-btn-preset" onclick="aeLoad(0x83,0xCA)">0x83 × 0xCA</button>
+              <button class="ae-btn-preset" onclick="aeLoad(0x53,0xCA)">0x53 × 0xCA</button>
+            </div>
+            <button class="ae-btn" onclick="aeCompute()">Expand &amp; Reduce →</button>
+            <button class="ae-btn-reset" onclick="aeReset()">Reset</button>
+          </div>
+          <div id="ae-out"></div>
+        </div>
+
+        <script>
+        (function(){
+          var FOLD = 0x1B;
+
+          function dl(d){ return d===0?'1':d===1?'x':'x<sup>'+d+'</sup>'; }
+
+          function ph(v, maxD){
+            maxD = (maxD===undefined)?14:maxD;
+            if(v===0) return '<em>0</em>';
+            var t=[];
+            for(var d=maxD;d>=0;d--) if((v>>d)&1) t.push(dl(d));
+            return t.join(' + ');
+          }
+
+          function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+
+          function parseHex(s){
+            s=s.trim().replace(/^0x/i,'');
+            var v=parseInt(s,16);
+            return (isNaN(v)||v<0||v>255)?null:v;
+          }
+
+          function getTerms(v){
+            var t=[];
+            for(var d=7;d>=0;d--) if((v>>d)&1) t.push(d);
+            return t;
+          }
+
+          function mulPoly(a,b){
+            var ta=getTerms(a), tb=getTerms(b);
+            var pairs=[], coeffs=new Array(15).fill(0);
+            for(var i=0;i<ta.length;i++)
+              for(var j=0;j<tb.length;j++){
+                pairs.push({da:ta[i],db:tb[j],deg:ta[i]+tb[j]});
+                coeffs[ta[i]+tb[j]]^=1;
+              }
+            return {pairs:pairs, coeffs:coeffs};
+          }
+
+          function coeffsToVal(coeffs){
+            var v=0;
+            for(var d=0;d<15;d++) if(coeffs[d]) v|=(1<<d);
+            return v;
+          }
+
+          function computeReduceSteps(val){
+            var steps=[], cur=val;
+            for(var d=14;d>=8;d--){
+              if((cur>>d)&1){
+                var fs=FOLD<<(d-8), after=cur^(1<<d)^fs;
+                steps.push({d:d, before:cur, fs:fs, after:after});
+                cur=after;
+              }
+            }
+            return {steps:steps, result:cur&0xFF};
+          }
+
+          /* ── 15-column bit grid ── */
+          function buildGrid(rowDefs){
+            var h='<div class="ae-grid-wrap"><table class="ae-grid"><tbody>';
+            h+='<tr><td class="ae-row-lbl"></td>';
+            for(var d=14;d>=0;d--) h+='<th class="ae-deg'+(d===7?' ae-bdy':'')+'">'+dl(d)+'</th>';
+            h+='</tr>';
+            for(var ri=0;ri<rowDefs.length;ri++){
+              var row=rowDefs[ri];
+              h+='<tr><td class="ae-row-lbl">'+row.label+'</td>';
+              for(var d=14;d>=0;d--){
+                var bit=(row.val>>d)&1;
+                h+='<td class="ae-gcell '+row.cls(d,bit)+(d===7?' ae-bdy':'')+'">'+bit+'</td>';
+              }
+              h+='</tr>';
+            }
+            h+='</tbody></table></div>';
+            return h;
+          }
+
+          /* ── Phase 1 ── */
+          function renderPolyDisplay(a,b){
+            return '<div class="ae-card">'+
+              '<p class="ae-card-heading">Phase 1 — Convert bytes to polynomials</p>'+
+              '<div class="ae-poly-pair">'+
+                '<div class="ae-poly-block"><div class="ae-poly-lbl">A = '+hx(a)+'</div><div class="ae-poly-val">'+ph(a,7)+'</div></div>'+
+                '<div class="ae-poly-block"><div class="ae-poly-lbl">B = '+hx(b)+'</div><div class="ae-poly-val">'+ph(b,7)+'</div></div>'+
+              '</div>'+
+              '<p class="ae-narr" style="margin:0;">Each byte is a polynomial with 0/1 coefficients. Each set bit is one term.</p>'+
+            '</div>';
+          }
+
+          /* ── Phase 2: multiplication table ── */
+          function renderMulTable(a,b,pairs,coeffs){
+            var ta=getTerms(a), tb=getTerms(b);
+            if(ta.length===0||tb.length===0)
+              return '<div class="ae-card"><p class="ae-card-heading">Phase 2 — Multiply term by term</p>'+
+                '<p class="ae-narr">One byte is 0x00 — the product is 0x00.</p></div>';
+
+            var h='<div class="ae-card">'+
+              '<p class="ae-card-heading">Phase 2 — Multiply term by term</p>'+
+              '<p class="ae-narr">Each row is a term of A; each column is a term of B. Each cell is x<sup>a+b</sup> — just add the exponents. '+
+              '<span style="background:#eafaf0;border:1px solid #b8dfc5;padding:1px 6px;border-radius:4px;font-size:0.82rem;">Green</span> = this degree will survive into the product. '+
+              '<span style="background:#fff8e0;border:1px solid #e0c060;padding:1px 6px;border-radius:4px;font-size:0.82rem;">Yellow</span> = survives but above degree 7 (needs folding). '+
+              '<span style="background:#fdeaea;border:1px solid #e0a0a0;padding:1px 6px;border-radius:4px;font-size:0.82rem;text-decoration:line-through;">Pink</span> = this degree appears an even number of times — it cancels (1⊕1=0).</p>'+
+              '<div class="ae-mul-wrap"><table class="ae-mul-tbl">'+
+              '<thead><tr><th class="ae-mul-corner">A \\ B</th>';
+            for(var j=0;j<tb.length;j++) h+='<th>'+dl(tb[j])+'</th>';
+            h+='</tr></thead><tbody>';
+            for(var i=0;i<ta.length;i++){
+              h+='<tr><th>'+dl(ta[i])+'</th>';
+              for(var j=0;j<tb.length;j++){
+                var deg=ta[i]+tb[j];
+                var cls = coeffs[deg]===0 ? 'ae-cell-cancel' : (deg>=8?'ae-cell-survive-hi':'ae-cell-survive-lo');
+                h+='<td class="'+cls+'">'+dl(deg)+'</td>';
+              }
+              h+='</tr>';
+            }
+            h+='</tbody></table></div></div>';
+            return h;
+          }
+
+          /* ── Phase 3: collect terms ── */
+          function renderCollect(pairs,coeffs){
+            var byDeg={}, maxDeg=0;
+            for(var i=0;i<pairs.length;i++){
+              var d=pairs[i].deg;
+              if(!byDeg[d]) byDeg[d]=[];
+              byDeg[d].push(pairs[i]);
+              if(d>maxDeg) maxDeg=d;
+            }
+            var h='<div class="ae-card">'+
+              '<p class="ae-card-heading">Phase 3 — Collect like terms over GF(2)</p>'+
+              '<p class="ae-narr">In GF(2), 1+1=0. Any degree that appears an <strong>even</strong> number of times cancels completely. Any degree appearing an <strong>odd</strong> number of times survives with coefficient 1.</p>'+
+              '<div class="ae-coll-wrap"><table class="ae-coll-tbl">'+
+              '<thead><tr><th>Degree</th><th>Products contributing to this degree</th><th>Count</th><th>Outcome</th></tr></thead><tbody>';
+            for(var d=maxDeg;d>=0;d--){
+              if(!byDeg[d]) continue;
+              var grp=byDeg[d], survives=coeffs[d]===1;
+              var rowCls=survives?'ae-coll-survive':'ae-coll-cancel';
+              var terms=grp.map(function(p){ return dl(p.da)+'·'+dl(p.db); }).join(', ');
+              var badge=survives
+                ? (d>=8?'<span class="ae-badge-fold">survives — needs fold</span>':'<span class="ae-badge-survive">✓ survives</span>')
+                : '<span class="ae-badge-cancel">✗ cancels (even count)</span>';
+              h+='<tr class="'+rowCls+'"><td><strong>'+dl(d)+'</strong></td>'+
+                '<td>'+terms+'</td>'+
+                '<td style="text-align:center;">'+grp.length+'</td>'+
+                '<td>'+badge+'</td></tr>';
+            }
+            h+='</tbody></table></div></div>';
+            return h;
+          }
+
+          /* ── Phase 4: unreduced product ── */
+          function renderUnreduced(unreduced, numFolds){
+            var needsRed = unreduced > 0xFF;
+            var hexStr = unreduced ? '0x'+unreduced.toString(16).toUpperCase() : '0x00';
+            var h='<div class="ae-card">'+
+              '<p class="ae-card-heading">Phase 4 — Unreduced product</p>'+
+              '<div class="ae-unreduced">'+
+                '<div class="ae-unreduced-lbl">A(x) × B(x) before reduction:</div>'+
+                '<div class="ae-unreduced-poly">'+ph(unreduced)+'</div>'+
+                (unreduced?'<div style="font-size:0.85rem;color:#6a4000;margin-top:4px;">= '+hexStr+'</div>':'')+
+              '</div>';
+            if(!needsRed){
+              h+='<p class="ae-narr" style="background:#eafaf0;border:1px solid #b8dfc5;border-radius:8px;padding:10px 14px;color:#1a6030;margin:10px 0 0;">'+
+                '✓ All terms have degree ≤ 7 — already in the byte zone. No reduction needed.</p>';
+            } else {
+              h+='<p class="ae-narr" style="background:#fff8e0;border:1px solid #e0c060;border-radius:8px;padding:10px 14px;color:#6a4000;margin:10px 0 0;">'+
+                '⚠ There '+(numFolds===1?'is 1 high-degree term':'are '+numFolds+' high-degree terms')+
+                ' above degree 7. Each will be folded in the next phase using x⁸ ≡ x⁴+x³+x+1.</p>';
+            }
+            return h+'</div>';
+          }
+
+          /* ── Phase 5: reduction ── */
+          function renderReduction(steps, unreduced){
+            var h='<div class="ae-card">'+
+              '<p class="ae-card-heading">Phase 5 — Fold high-degree terms using the AES rule</p>'+
+              '<p class="ae-narr">For each term above degree 7 (highest first): write x<sup>d</sup> = x<sup>d−8</sup>·x⁸, substitute x⁸ ≡ x⁴+x³+x+1, distribute, then XOR the result into the running polynomial.</p>';
+
+            for(var si=0;si<steps.length;si++){
+              (function(step, stepNum, total){
+                var d=step.d, before=step.before, fs=step.fs, after=step.after;
+                var shift=d-8;
+                var fsHex='0x'+(fs>>>0).toString(16).toUpperCase();
+                var shiftedPoly = ph(fs);
+
+                function clsBefore(deg,bit){
+                  if(deg===d) return 'aesc-elim';
+                  return deg>=8?(bit?'aesc-hi1':'aesc-hi0'):(bit?'aesc-lo1':'aesc-lo0');
+                }
+                function clsXor(deg,bit){ return bit?'aesc-xor1':'aesc-xor0'; }
+                function clsAfter(deg,bit){
+                  if(deg===d) return 'aesc-hi-gone';
+                  var bb=(before>>deg)&1, ab=(after>>deg)&1;
+                  if(deg>=8) return ab?(bit?'aesc-hi1':'aesc-hi0'):'aesc-hi0';
+                  if(bb===0&&ab===1) return 'aesc-added';
+                  if(bb===1&&ab===0) return 'aesc-cancel';
+                  return bit?'aesc-kept1':'aesc-kept0';
+                }
+
+                h+='<div class="ae-fold-card">'+
+                  '<p class="ae-fold-heading">Fold step '+(stepNum+1)+' of '+total+' — eliminate '+dl(d)+'</p>'+
+                  '<p class="ae-narr">'+dl(d)+' = x<sup>'+shift+'</sup> · x⁸ ≡ x<sup>'+shift+'</sup> · (x⁴+x³+x+1) = '+shiftedPoly+(shift>0?' (= '+fsHex+')')+'<br>Remove '+dl(d)+' and XOR in '+shiftedPoly+':</p>'+
+                  buildGrid([
+                    {label:'Before', val:before, cls:clsBefore},
+                    {label:'XOR ⊕ '+shiftedPoly, val:fs, cls:clsXor},
+                    {label:'After',  val:after,  cls:clsAfter}
+                  ])+
+                  '<p class="ae-narr" style="margin:4px 0 0;font-size:0.88rem;color:#555;">After this step: '+ph(after&0x7FFF)+'</p>'+
+                '</div>';
+              })(steps[si], si, steps.length);
+            }
+            return h+'</div>';
+          }
+
+          /* ── Final result ── */
+          function renderResult(a,b,result){
+            return '<div class="ae-card" style="border-color:#2a8a4a;background:#eafaf0;">'+
+              '<p class="ae-card-heading" style="color:#1a6030;">✓ Result</p>'+
+              '<div class="ae-result-box">'+
+                '<div style="font-size:0.9rem;margin-bottom:5px;">GF(2⁸) product</div>'+
+                '<div style="font-size:1.2rem;font-weight:800;">'+hx(a)+' × '+hx(b)+
+                  ' = <code style="color:#fff;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px;">'+hx(result)+'</code></div>'+
+                '<div style="font-size:0.9rem;margin-top:5px;opacity:.85;">'+ph(result,7)+'</div>'+
+              '</div>'+
+              '<p class="ae-narr" style="margin:12px 0 0;font-size:0.88rem;color:#555;">All terms now have degree ≤ 7. Try the same pair of bytes in the computer algorithm explorer below — you will get the same answer.</p>'+
+            '</div>';
+          }
+
+          /* ── public API ── */
+          window.aeCompute = function(){
+            var a=parseHex(document.getElementById('ae-a-in').value);
+            var b=parseHex(document.getElementById('ae-b-in').value);
+            if(a===null||b===null){
+              document.getElementById('ae-out').innerHTML='<p style="color:#c00;font-weight:700;">Enter valid hex bytes (00–FF) for both A and B.</p>';
+              return;
+            }
+            var mp=mulPoly(a,b);
+            var unreduced=coeffsToVal(mp.coeffs);
+            var rr=computeReduceSteps(unreduced);
+
+            var html='';
+            html+=renderPolyDisplay(a,b);
+            html+=renderMulTable(a,b,mp.pairs,mp.coeffs);
+            html+=renderCollect(mp.pairs,mp.coeffs);
+            html+=renderUnreduced(unreduced,rr.steps.length);
+            if(rr.steps.length>0) html+=renderReduction(rr.steps,unreduced);
+            html+=renderResult(a,b,rr.result);
+
+            document.getElementById('ae-out').innerHTML=html;
+            setTimeout(function(){
+              document.getElementById('ae-out').scrollIntoView({behavior:'smooth',block:'start'});
+            },60);
+          };
+
+          window.aeReset = function(){
+            document.getElementById('ae-a-in').value='57';
+            document.getElementById('ae-b-in').value='13';
+            document.getElementById('ae-out').innerHTML='';
+          };
+
+          window.aeLoad = function(a,b){
+            document.getElementById('ae-a-in').value=a.toString(16).toUpperCase().padStart(2,'0');
+            document.getElementById('ae-b-in').value=b.toString(16).toUpperCase().padStart(2,'0');
+            document.getElementById('ae-out').innerHTML='';
+          };
+
+          ['ae-a-in','ae-b-in'].forEach(function(id){
+            document.getElementById(id).addEventListener('keydown',function(e){ if(e.key==='Enter') aeCompute(); });
+          });
+        })();
+        </script>
+      </section>
+
+      <div class="box purpose-box no-print" style="margin:0 0 24px;">
+        <div class="box-title">Two views, one answer</div>
+        <p>
+          The <strong>Algebraic View</strong> above shows the full polynomial expansion — every term of A multiplied by every term of B, cancellations visible, reduction step by step. This is how you reason on paper.
+        </p>
+        <p style="margin:0;">
+          The <strong>Computer Algorithm View</strong> below shows the same calculation as a processor executes it: build the xtime chain (repeated ×x with conditional XOR), then accumulate the entries selected by B's set bits. Same result, different vocabulary. Try the same pair of bytes in both.
+        </p>
+      </div>
+
       <section id="gf-explorer" class="no-print">
-        <h2>Interactive: GF(2⁸) step-through multiplier</h2>
+        <h2>Interactive: Computer algorithm view — xtime chain and accumulation</h2>
         <p>Enter bytes A and B and click <strong>Start</strong>. Step through the xtime chain one power of x at a time. At each step you will see whether B selects that power, and any fold is shown as a Before / XOR / After bit grid — the same visual used in the Module 11 reduction explorer.</p>
 
         <style>
