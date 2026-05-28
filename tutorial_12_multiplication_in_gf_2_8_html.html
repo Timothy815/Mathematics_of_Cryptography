@@ -753,6 +753,20 @@
             The table showed \(x^2\cdot A = \texttt{0x47}\) even though \(B\) did not select it. That value was needed only as an intermediate step to reach \(x^3\cdot A = \texttt{0x8E}\). You always build the chain from \(x^0\) upward one step at a time — each step is xtime of the previous — then simply pick the entries \(B\) calls for.
           </p>
         </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake: XORing inside the chain instead of after it</div>
+          <p>
+            The two phases of this procedure are strictly separate, and mixing them is the most common error.
+          </p>
+          <ul style="margin:0.5rem 0 0;padding-left:1.4rem;line-height:2;">
+            <li><strong>Chain phase (sequential, never XOR):</strong> each xtime feeds directly into the next. \(\operatorname{xtime}(\operatorname{xtime}(A))\) means the output of the first xtime becomes the input of the second. You are building powers of \(x\), not adding anything yet.</li>
+            <li><strong>Selection phase (XOR at the end):</strong> once the chain is complete, XOR together only the entries that \(B\) selected. This is where addition happens — nowhere else.</li>
+          </ul>
+          <p style="margin:0.8rem 0 0;">
+            Writing \(\operatorname{xtime}(\operatorname{xtime}(A)+\operatorname{xtime}(A))\) puts the XOR <em>inside</em> the outer xtime call. Since \(\operatorname{xtime}(A)\oplus\operatorname{xtime}(A)=0\), this cancels to zero — the entire contribution disappears. The correct form keeps the two phases separate: \(\operatorname{xtime}(\operatorname{xtime}(A))\oplus\operatorname{xtime}(A)\).
+          </p>
+        </div>
       </section>
 
       <section id="worked-example-57-13">
