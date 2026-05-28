@@ -1418,7 +1418,7 @@
 
       <section id="gf-explorer" class="no-print">
         <h2>Interactive: Computer algorithm view — xtime chain and accumulation</h2>
-        <p>Enter bytes A and B and click <strong>Start</strong>. Step through the xtime chain one power of x at a time. At each step you will see whether B selects that power, and any fold is shown as a Before / XOR / After bit grid — the same visual used in the Module 11 reduction explorer.</p>
+        <p>Enter bytes A and B and click <strong>Start</strong>. Step through the xtime chain one power of x at a time. The chain always builds all 8 steps (x⁰·A through x⁷·A) because B could have any bit set — <strong>greyed-out steps have bit = 0 in B and are computed but not selected for the final XOR</strong>. At each step you will see whether B selects that power, and any fold is shown as a Before / XOR / After bit grid — the same visual used in the Module 11 reduction explorer.</p>
 
         <style>
           .gm-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:24px 28px; margin:18px 0; }
@@ -1482,6 +1482,11 @@
 
           /* Result box */
           .gm-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:12px; }
+
+          /* Skipped (bit=0) step card */
+          .gm-step-card.gm-skipped { border-color:#ccc; background:#f5f5f5; }
+          .gm-step-card.gm-skipped .gm-step-heading { color:#999; }
+          .gm-skip-notice { background:#efefef; border:1.5px solid #ccc; border-radius:8px; padding:9px 14px; color:#777; font-weight:700; font-size:0.9rem; margin:8px 0 10px; }
 
           /* Controls */
           .gm-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
@@ -1592,8 +1597,13 @@
           function stepK(k){
             var prev=gfChain[k-1], curr=gfChain[k];
             var folds=!!(prev&0x80), s9=(prev<<1)&0x1FF, MOD9=0x11B;
-            var h='<div class="gm-step-card">';
-            h+='<p class="gm-step-heading">Step '+k+' — compute '+dl(k)+'·A = xtime('+dl(k-1)+'·A)</p>';
+            var bbit=(gfB>>k)&1;
+            var cardCls=bbit?'':'gm-skipped';
+            var h='<div class="gm-step-card '+cardCls+'">';
+            h+='<p class="gm-step-heading">Step '+k+' — compute '+dl(k)+'·A = xtime('+dl(k-1)+'·A)'+(bbit?'':' <span style="font-weight:400;font-size:0.88rem;">[B bit '+k+' = 0 — not selected]</span>')+'</p>';
+            if(!bbit){
+              h+='<div class="gm-skip-notice">⬜ B bit '+k+' = 0 — this chain entry is built but will <strong>not</strong> be XOR\'d into the result. The algorithm always builds all 8 entries; selection happens at the end.</div>';
+            }
             h+='<p class="gm-narr">Input: '+dl(k-1)+'·A = '+ph(prev)+' = <code>'+hx(prev)+'</code>. Multiply by x — shift every bit left.</p>';
             if(!folds){
               h+='<p class="gm-narr" style="background:#eafaf0;border:1px solid #b8dfc5;border-radius:8px;padding:8px 12px;color:#1a6030;margin-bottom:10px;">✓ Top bit is 0 — no x⁸ term created. Clean shift, no fold.</p>';
