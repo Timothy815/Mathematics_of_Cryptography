@@ -1727,6 +1727,13 @@
           .fm-btn-pr { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:5px 11px; font-size:0.82rem; cursor:pointer; }
           .fm-btn-pr:hover { background:#eef3ff; }
           .fm-btn-rst2 { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:5px 14px; font-size:0.82rem; cursor:pointer; }
+          .fm-input-row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:10px; }
+          .fm-input-row label { font-size:0.82rem; font-weight:700; color:#1f3763; }
+          .fm-hex-in { font-family:'Cascadia Code','Consolas',monospace; font-size:0.95rem; padding:5px 10px; border:1.5px solid #b0bcd4; border-radius:7px; width:80px; }
+          .fm-hex-in.invalid { border-color:#c04000; background:#fff4f0; }
+          .fm-btn-go { background:#334e7d; color:#fff; border:none; border-radius:7px; padding:6px 18px; font-size:0.9rem; font-weight:700; cursor:pointer; }
+          .fm-btn-go:hover { background:#2a3f6a; }
+          .fm-input-err { font-size:0.8rem; color:#c04000; font-weight:700; }
           .fm-leg { display:flex; flex-wrap:wrap; gap:12px; font-size:0.8rem; align-items:center; margin-bottom:10px; }
           .fm-ld { width:12px; height:12px; border-radius:2px; display:inline-block; vertical-align:middle; margin-right:3px; }
 
@@ -1764,6 +1771,14 @@
         </style>
 
         <div class="fm-shell">
+          <div class="fm-input-row">
+            <label for="fm-in-a">A (hex)</label>
+            <input id="fm-in-a" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+            <label for="fm-in-b">B (hex)</label>
+            <input id="fm-in-b" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+            <button class="fm-btn-go" onclick="fmFromInputs()">Compute →</button>
+            <span id="fm-in-err" class="fm-input-err"></span>
+          </div>
           <div class="fm-top">
             <span style="font-size:0.8rem;font-weight:700;color:#666;">Try:</span>
             <button class="fm-btn-pr" onclick="fmLoad(0x57,0x13)">0x57×0x13</button>
@@ -1834,6 +1849,7 @@
             if(fmA===-1){fmA=v;fmB=-1;}
             else if(fmB===-1){fmB=v;}
             else{fmA=v;fmB=-1;}
+            syncInputs(fmA,fmB);
             fmRender();
           }
 
@@ -1935,9 +1951,44 @@
             el.innerHTML=h;
           }
 
+          /* ── helpers for text inputs ── */
+          function pbFm(s){
+            s=s.trim().replace(/^0x/i,'');
+            if(s==='')return null;
+            var v=parseInt(s,16);
+            return(isNaN(v)||v<0||v>255)?null:v;
+          }
+          function syncInputs(a,b){
+            var ia=document.getElementById('fm-in-a');
+            var ib=document.getElementById('fm-in-b');
+            if(ia)ia.value=a>=0?a.toString(16).toUpperCase().padStart(2,'0'):'';
+            if(ib)ib.value=b>=0?b.toString(16).toUpperCase().padStart(2,'0'):'';
+          }
+
           /* ── public API ── */
-          window.fmLoad=function(a,b){fmA=a;fmB=b;fmRender();};
-          window.fmReset2=function(){fmA=-1;fmB=-1;fmRender();};
+          window.fmLoad=function(a,b){fmA=a;fmB=b;syncInputs(a,b);fmRender();};
+          window.fmReset2=function(){fmA=-1;fmB=-1;syncInputs(-1,-1);fmRender();};
+          window.fmFromInputs=function(){
+            var ia=document.getElementById('fm-in-a');
+            var ib=document.getElementById('fm-in-b');
+            var err=document.getElementById('fm-in-err');
+            var a=pbFm(ia.value), b=pbFm(ib.value);
+            ia.classList.toggle('invalid',a===null&&ia.value.trim()!=='');
+            ib.classList.toggle('invalid',b===null&&ib.value.trim()!=='');
+            if(a===null||b===null){
+              err.textContent='Enter valid hex bytes (00–FF) for both fields.';
+              return;
+            }
+            err.textContent='';
+            fmA=a;fmB=b;fmRender();
+          };
+
+          /* Enter key triggers compute */
+          ['fm-in-a','fm-in-b'].forEach(function(id){
+            document.getElementById(id).addEventListener('keydown',function(e){
+              if(e.key==='Enter')window.fmFromInputs();
+            });
+          });
 
           buildGrid();
           fmRender();
