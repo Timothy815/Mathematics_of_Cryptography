@@ -664,8 +664,26 @@
           </p>
         </div>
 
+        <div class="box mistake-box">
+          <div class="box-title">The self-defeating trap: why \(x=2\) destroys the byte</div>
+          <p>
+            Here is the deeper reason this matters. You might reason: <em>"The bit positions are powers of 2, so surely \(x\) just means 2."</em> But notice the contradiction:
+          </p>
+          <ul>
+            <li>Our underlying field only allows the values \(0\) and \(1\).</li>
+            <li>Under those field rules, \(2 \equiv 0 \pmod{2}\).</li>
+            <li>So if we plugged in \(x=2\), the field would immediately reduce it to \(x=0\).</li>
+          </ul>
+          <p>
+            Now every term with an \(x\) vanishes — \(x^6, x^4, x^2, x\) all become \(0^k = 0\). The entire byte \(01010111\) collapses to just the constant term: \(1\). Seven bits of information are destroyed in a single step.
+          </p>
+          <p>
+            This is exactly why \(x\) must remain an untouched placeholder. The moment you treat it as a number subject to field arithmetic, the structural scaffolding that keeps each bit in its own lane disappears.
+          </p>
+        </div>
+
         <p>
-          This is subtle, but important. The polynomial is a structured representation of the byte, not merely another way to evaluate the decimal number.
+          The polynomial is a structured representation of the byte, not merely another way to evaluate the decimal number.
         </p>
       </section>
 
@@ -703,6 +721,19 @@
           <div class="box-title">Bridge idea</div>
           <p>
             Integer modular arithmetic wrapped numbers around a clock. Finite-field byte arithmetic will wrap polynomials using a special polynomial rule. Before we learn the wrapping rule, we need to know how bytes become polynomials in the first place.
+          </p>
+        </div>
+
+        <div class="box intuition-box">
+          <div class="box-title">The Asteroids analogy</div>
+          <p>
+            Think of the finite field as the arcade game Asteroids. The screen has fixed boundaries — 8 bits, 256 possible values — and when a calculation flies off the edge, it wraps back in from the other side rather than disappearing into void.
+          </p>
+          <p>
+            The irreducible polynomial (which you will meet in Module 11) is the specific rule that determines <em>exactly where</em> on the opposite edge things reappear after an overflow. The space is not infinite — it is perfectly enclosed — and every journey out of bounds has a guaranteed landing point back inside.
+          </p>
+          <p>
+            This is the key property that makes encryption reversible: because nothing can escape the field, every transformation has a precise inverse path home.
           </p>
         </div>
 
@@ -839,8 +870,29 @@
       <section id="cryptography-connection">
         <h2>Why this matters for cryptography</h2>
         <p>
-          Bytes-as-polynomials is the doorway from ordinary bit operations into finite-field arithmetic.
+          Bytes-as-polynomials is the doorway from ordinary bit operations into finite-field arithmetic. But it is worth pausing to ask the deeper design question: <strong>why build this entire framework at all?</strong> Why not just add and multiply bytes as ordinary integers?
         </p>
+
+        <div class="box purpose-box">
+          <div class="box-title">Design reason 1: guaranteed reversibility</div>
+          <p>
+            Standard integer arithmetic is not closed at 8 bits. Multiply two integers and you can get a result larger than 255 — the data spills out of the byte container and is lost. You cannot decrypt what you cannot recover.
+          </p>
+          <p>
+            A finite field solves this by guaranteeing that every operation on an 8-bit byte produces exactly one other 8-bit byte. Nothing escapes the boundary. Because the system is perfectly closed, every operation has a precise inverse — encryption is always reversible, which is the non-negotiable requirement of any cipher.
+          </p>
+        </div>
+
+        <div class="box purpose-box">
+          <div class="box-title">Design reason 2: breaking linearity</div>
+          <p>
+            Linear operations are mathematically predictable. If an attacker can find a straight-line relationship between input and output — even a statistical one — they can reverse-engineer the key. Operations like plain XOR are actually linear in this sense and are not sufficient on their own.
+          </p>
+          <p>
+            Polynomial multiplication and inversion inside \(\mathrm{GF}(2^8)\) create highly non-linear mappings between inputs and outputs. The relationship between a plaintext byte and its encrypted form becomes computationally unpredictable. This non-linearity is what makes the AES S-box resistant to the algebraic attacks that would break a simpler cipher.
+          </p>
+        </div>
+
         <ul>
           <li>AES represents bytes as polynomials with binary coefficients.</li>
           <li>Polynomial addition over \(\mathrm{GF}(2)\) corresponds to XOR.</li>
