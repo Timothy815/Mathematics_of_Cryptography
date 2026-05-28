@@ -518,6 +518,18 @@
           <p>
             In AES, whenever a left shift creates an \(x^8\) term, that high term is folded back as \(x^4+x^3+x+1\), which corresponds to XORing with <code>0x1B</code> at the byte level.</p>
         </div>
+
+        <div class="box purpose-box">
+          <div class="box-title">Two ways to say the same thing</div>
+          <p>There are two equivalent descriptions of what happens when \(x^8\) appears:</p>
+          <ul>
+            <li><strong>Algebraic view (how you think about it):</strong> "Apply the swap rule — wherever \(x^8\) appears, write \(x^4+x^3+x+1\) instead, then cancel duplicate terms."</li>
+            <li><strong>Algorithmic view (how a computer does it):</strong> "Check bit 7 after a left shift. If it is set, the shift produced an \(x^8\) term — XOR the byte with <code>0x1B</code> to fold it back." The computer repeats this one step at a time for each bit of the multiplier.</li>
+          </ul>
+          <p>
+            The algebra and the algorithm are the <em>same rule expressed differently</em>. The algebraic view is cleaner for reasoning on paper. The algorithmic view is what a processor actually executes. Module 12 shows both views side by side in the context of full \(\mathrm{GF}(2^8)\) multiplication.
+          </p>
+        </div>
       </section>
 
       <section id="aes-example-1">
@@ -704,6 +716,19 @@
           <div class="box-title">Mistake 4: expecting reduction to mean decimal remainder</div>
           <p>
             This is polynomial remainder, not decimal integer remainder. We reduce powers of \(x\), not ordinary base-10 values.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: forgetting the constant term when distributing over a multiplier</div>
+          <p>
+            When you multiply a byte-polynomial \(A\) by a multi-term value such as \(x^3+1\) (hex <code>0x09</code>), you must distribute over <em>every</em> term — including the constant \(1\):
+          </p>
+          <div class="math-display">
+            \[A\cdot(x^3+1) = (A\cdot x^3)\oplus (A\cdot 1) = (A\cdot x^3)\oplus A\]
+          </div>
+          <p>
+            The "\(+1\)" term means "also XOR in the original \(A\) unchanged." It is easy to stop after computing \(A\cdot x^3\) and forget this last step. In binary, check which bits of the multiplier are set — each set bit contributes one term to the final XOR. For <code>0x09 = 00001001</code>, bits 3 and 0 are both set, so both \(A\cdot x^3\) and \(A\cdot 1 = A\) contribute.
+          </p>
         </div>
       </section>
 
