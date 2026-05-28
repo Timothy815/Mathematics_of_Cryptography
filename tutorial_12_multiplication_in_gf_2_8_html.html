@@ -1717,6 +1717,234 @@
         </script>
       </section>
 
+      <section id="field-map" class="no-print">
+        <h2>The field as a map: all 256 products at a glance</h2>
+        <p>Every cell in the 16×16 grid below is one element of GF(2⁸). Click any cell to pick <strong>Factor A</strong> (blue), then click a second cell for <strong>Factor B</strong> (green). Their GF(2⁸) product (gold) always lands somewhere on <em>this same grid</em> — the field is <em>closed</em>: multiplication never escapes its own boundary. The panel on the right shows the raw unreduced polynomial and exactly how overflow bits fold back in.</p>
+
+        <style>
+          .fm-shell { margin:18px 0; }
+          .fm-top { display:flex; flex-wrap:wrap; gap:7px; align-items:center; margin-bottom:10px; }
+          .fm-btn-pr { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:5px 11px; font-size:0.82rem; cursor:pointer; }
+          .fm-btn-pr:hover { background:#eef3ff; }
+          .fm-btn-rst2 { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:5px 14px; font-size:0.82rem; cursor:pointer; }
+          .fm-leg { display:flex; flex-wrap:wrap; gap:12px; font-size:0.8rem; align-items:center; margin-bottom:10px; }
+          .fm-ld { width:12px; height:12px; border-radius:2px; display:inline-block; vertical-align:middle; margin-right:3px; }
+
+          .fm-layout { display:flex; flex-wrap:wrap; gap:22px; }
+          .fm-grid-outer { overflow-x:auto; flex:0 0 auto; }
+          .fm-tbl { border-collapse:collapse; }
+          .fm-tbl th { font-size:0.67rem; font-weight:700; color:#334e7d; background:#f0f4f8; padding:3px 4px; text-align:center; min-width:29px; border:1px solid #ccd4e6; }
+          .fm-tbl td { width:29px; height:25px; border:1px solid #dde3ee; font-size:0.63rem; font-family:'Cascadia Code','Consolas',monospace; font-weight:600; text-align:center; vertical-align:middle; cursor:pointer; color:#444; background:#fff; transition:background 0.1s; }
+          .fm-tbl td:hover { outline:2px solid #334e7d; outline-offset:-1px; position:relative; z-index:1; }
+          .fm-ca  { background:#2a5ab0 !important; color:#fff !important; }
+          .fm-cb  { background:#2a8a4a !important; color:#fff !important; }
+          .fm-cp  { background:#b87000 !important; color:#fff !important; }
+          .fm-cab { background:#7a3ab0 !important; color:#fff !important; }
+
+          .fm-panel { flex:1 1 240px; min-width:220px; max-width:420px; }
+          .fm-pbox { background:#fff; border:1px solid #c7d2ea; border-radius:10px; padding:13px 16px; margin-bottom:10px; font-size:0.86rem; }
+          .fm-ptitle { font-size:0.74rem; font-weight:800; color:#1f3763; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
+          .fm-frow { display:flex; align-items:center; gap:7px; margin:4px 0; }
+          .fm-dot2 { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+
+          .fm-bstrip { overflow-x:auto; margin:7px 0; }
+          .fm-bits2 { display:inline-flex; gap:1px; align-items:flex-end; }
+          .fm-bcol { display:flex; flex-direction:column; align-items:center; gap:1px; }
+          .fm-bdeg { font-size:0.54rem; color:#888; line-height:1.1; text-align:center; }
+          .fm-bval { width:16px; height:18px; border:1px solid #ccc; font-size:0.7rem; font-weight:700; text-align:center; line-height:18px; border-radius:2px; }
+          .fm-bval.ov1 { background:#e05800; color:#fff; border-color:#b03000; }
+          .fm-bval.ov0 { background:#fdf0e8; color:#caa080; border-color:#e8c090; }
+          .fm-bval.fi1 { background:#2a5ab0; color:#fff; border-color:#1a3a80; }
+          .fm-bval.fi0 { background:#f5f7fc; color:#bbb; border-color:#d0d8ea; }
+          .fm-bbound { width:2px; background:#c00; align-self:stretch; margin:0 2px; border-radius:1px; flex-shrink:0; }
+
+          .fm-redbox { background:#fff8f0; border:1px solid #e0c090; border-radius:7px; padding:9px 12px; margin:7px 0; font-size:0.82rem; }
+          .fm-foldrow { color:#8a4000; margin:2px 0; line-height:1.55; }
+          .fm-pbox-result { background:#fff8e0; border:1.5px solid #c8860a; border-radius:10px; }
+        </style>
+
+        <div class="fm-shell">
+          <div class="fm-top">
+            <span style="font-size:0.8rem;font-weight:700;color:#666;">Try:</span>
+            <button class="fm-btn-pr" onclick="fmLoad(0x57,0x13)">0x57×0x13</button>
+            <button class="fm-btn-pr" onclick="fmLoad(0x02,0x80)">0x02×0x80 (overflow)</button>
+            <button class="fm-btn-pr" onclick="fmLoad(0x53,0xCA)">0x53×0xCA = 0x01 (inverses)</button>
+            <button class="fm-btn-pr" onclick="fmLoad(0xFF,0xFF)">0xFF×0xFF (max)</button>
+            <button class="fm-btn-rst2" onclick="fmReset2()">Reset</button>
+          </div>
+          <div class="fm-leg">
+            <span><span class="fm-ld" style="background:#2a5ab0;"></span>A</span>
+            <span><span class="fm-ld" style="background:#2a8a4a;"></span>B</span>
+            <span><span class="fm-ld" style="background:#b87000;"></span>A×B (product)</span>
+            <span style="color:#666;font-size:0.78rem;">Click A → click B → product highlights. Click again to reset.</span>
+          </div>
+          <div class="fm-layout">
+            <div class="fm-grid-outer">
+              <table id="fm-tbl" class="fm-tbl"></table>
+            </div>
+            <div id="fm-panel" class="fm-panel"></div>
+          </div>
+        </div>
+
+        <script>
+        (function(){
+          /* ── math ── */
+          function xt(a){var s=(a<<1)&0xFF;return(a&0x80)?(s^0x1B):s;}
+          function gfm(a,b){var r=0,aa=a;for(var i=0;i<8;i++){if((b>>i)&1)r^=aa;aa=xt(aa);}return r;}
+          function rawMul(a,b){var r=0;for(var i=0;i<8;i++)if((b>>i)&1)r^=(a<<i);return r;}
+          function hx(v,p){return'0x'+v.toString(16).toUpperCase().padStart(p||2,'0');}
+          function hxAuto(v){return v>0xFFF?hx(v,4):v>0xFF?hx(v,3):hx(v,2);}
+          function ph(v){
+            if(v===0)return'<em>0</em>';
+            var t=[];
+            for(var d=14;d>=0;d--)if((v>>d)&1)t.push(d===0?'1':d===1?'x':'x<sup>'+d+'</sup>');
+            return t.join('+');
+          }
+
+          /* ── state ── */
+          var fmA=-1,fmB=-1,fmCells=[];
+
+          /* ── build 16×16 grid ── */
+          function buildGrid(){
+            var tbl=document.getElementById('fm-tbl');
+            var hr='<tr><th title="row = high nibble, col = low nibble">hi\\lo</th>';
+            for(var c=0;c<16;c++)hr+='<th>'+c.toString(16).toUpperCase()+'</th>';
+            tbl.innerHTML=hr+'</tr>';
+            for(var r=0;r<16;r++){
+              var row=document.createElement('tr');
+              var rh=document.createElement('th');
+              rh.textContent=r.toString(16).toUpperCase();
+              row.appendChild(rh);
+              for(var c2=0;c2<16;c2++){
+                var v=(r<<4)|c2;
+                var td=document.createElement('td');
+                td.textContent=v.toString(16).toUpperCase().padStart(2,'0');
+                td.dataset.v=v;
+                td.addEventListener('click',fmClick);
+                fmCells[v]=td;
+                row.appendChild(td);
+              }
+              tbl.appendChild(row);
+            }
+          }
+
+          /* ── click ── */
+          function fmClick(e){
+            var v=+e.currentTarget.dataset.v;
+            if(fmA===-1){fmA=v;fmB=-1;}
+            else if(fmB===-1){fmB=v;}
+            else{fmA=v;fmB=-1;}
+            fmRender();
+          }
+
+          /* ── render grid colours ── */
+          function fmRender(){
+            var prod=(fmA>=0&&fmB>=0)?gfm(fmA,fmB):-1;
+            for(var i=0;i<256;i++)fmCells[i].className='';
+            if(fmA>=0)fmCells[fmA].className='fm-ca';
+            if(fmB>=0)fmCells[fmB].className=(fmB===fmA)?'fm-cab':'fm-cb';
+            if(prod>=0)fmCells[prod].className='fm-cp'; /* product colour wins */
+            fmPanel(prod);
+          }
+
+          /* ── bit strip ── */
+          function bitStrip(raw){
+            var hb=raw===0?0:Math.floor(Math.log2(raw));
+            var hasOv=hb>=8;
+            var h='<div class="fm-bstrip">';
+            if(!hasOv){
+              h+='<div style="font-size:0.74rem;color:#1a6030;margin-bottom:3px;">✓ Fits in 8 bits — no reduction needed</div>';
+              h+='<div class="fm-bits2">';
+              for(var d=7;d>=0;d--){
+                var b=(raw>>d)&1;
+                h+='<div class="fm-bcol"><div class="fm-bdeg">'+(d===0?'1':d===1?'x':'x<sup>'+d+'</sup>')+'</div><div class="fm-bval '+(b?'fi1':'fi0')+'">'+b+'</div></div>';
+              }
+              h+='</div>';
+            }else{
+              h+='<div style="font-size:0.74rem;color:#c04000;margin-bottom:3px;">Overflow — orange bits exceed x⁷ boundary:</div>';
+              h+='<div class="fm-bits2">';
+              for(var d2=hb;d2>=0;d2--){
+                var b2=(raw>>d2)&1;
+                var cls=d2>=8?(b2?'ov1':'ov0'):(b2?'fi1':'fi0');
+                h+='<div class="fm-bcol"><div class="fm-bdeg">'+(d2===0?'1':d2===1?'x':'x<sup>'+d2+'</sup>')+'</div><div class="fm-bval '+cls+'">'+b2+'</div></div>';
+                if(d2===8)h+='<div class="fm-bbound" title="field boundary: x⁷ is highest allowed degree"></div>';
+              }
+              h+='</div><div style="font-size:0.69rem;color:#888;margin-top:2px;"><span style="color:#e05800;font-weight:700;">■</span> overflow &nbsp;<span style="color:#2a5ab0;font-weight:700;">■</span> in-field</div>';
+            }
+            return h+'</div>';
+          }
+
+          /* ── reduction steps ── */
+          function reductionSteps(raw,result){
+            var h='<div class="fm-redbox">';
+            var cur=raw;
+            for(var d=14;d>=8;d--){
+              if((cur>>d)&1){
+                var sub=0x1B<<(d-8);
+                cur=cur^(1<<d)^sub;
+                h+='<div class="fm-foldrow">Fold x<sup>'+d+'</sup> → x<sup>'+(d-8)+'</sup>·(x⁴+x³+x+1), XOR <code>'+hxAuto(sub)+'</code> → <code>'+hxAuto(cur)+'</code></div>';
+              }
+            }
+            h+='<div style="font-weight:700;color:#1a6030;margin-top:7px;border-top:1px solid #d0c090;padding-top:7px;">→ <code>'+hx(result)+'</code> = '+ph(result)+'</div>';
+            return h+'</div>';
+          }
+
+          /* ── info panel ── */
+          function fmPanel(prod){
+            var el=document.getElementById('fm-panel');
+            if(fmA<0){
+              el.innerHTML='<div class="fm-pbox"><div class="fm-ptitle">How to use</div><p style="color:#555;margin:0;font-size:0.85rem;">Click any cell to set <strong>A</strong> (blue). Click a second cell for <strong>B</strong> (green). Their GF(2⁸) product lands in gold — always on this same grid. The field is closed: no product can escape it. This panel shows the raw polynomial multiplication and the reduction steps that fold overflow bits back inside.</p></div>';
+              return;
+            }
+            var h='<div class="fm-pbox"><div class="fm-ptitle">Factors</div>';
+            h+='<div class="fm-frow"><div class="fm-dot2" style="background:#2a5ab0;"></div><strong>A</strong> = '+hx(fmA)+' = '+ph(fmA)+'</div>';
+            if(fmB>=0){
+              h+='<div class="fm-frow"><div class="fm-dot2" style="background:#2a8a4a;"></div><strong>B</strong> = '+hx(fmB)+' = '+ph(fmB)+'</div>';
+            }else{
+              h+='<p style="color:#888;font-size:0.82rem;margin:6px 0 0;">Click a second cell to choose B.</p>';
+            }
+            h+='</div>';
+
+            if(fmB>=0&&prod>=0){
+              var raw=rawMul(fmA,fmB);
+              var hb=raw===0?0:Math.floor(Math.log2(raw));
+
+              h+='<div class="fm-pbox"><div class="fm-ptitle">Raw product (no reduction)</div>';
+              h+='<div style="font-family:monospace;font-size:0.88rem;margin-bottom:5px;">'+hxAuto(raw)+' = '+ph(raw)+'</div>';
+              h+=bitStrip(raw);
+              if(hb>=8){
+                var ovList=[];
+                for(var d=8;d<=14;d++)if((raw>>d)&1)ovList.push('x<sup>'+d+'</sup>');
+                h+='<div style="font-size:0.8rem;color:#c04000;margin-top:4px;">'+ovList.join(', ')+' overflow the 8-bit field. Reduction folds them back.</div>';
+              }
+              h+='</div>';
+
+              if(hb>=8){
+                h+='<div class="fm-pbox"><div class="fm-ptitle">Reduction mod x⁸+x⁴+x³+x+1</div>';
+                h+=reductionSteps(raw,prod);
+                h+='</div>';
+              }
+
+              h+='<div class="fm-pbox fm-pbox-result"><div class="fm-ptitle" style="color:#7a4a00;">GF(2⁸) product</div>';
+              h+='<div class="fm-frow"><div class="fm-dot2" style="background:#b87000;"></div><strong>A×B</strong> = '+hx(prod)+' = '+ph(prod)+'</div>';
+              if(prod===0x01)h+='<div style="font-size:0.82rem;color:#2a8a4a;font-weight:700;margin-top:4px;">★ A and B are multiplicative inverses!</div>';
+              if(prod===0)h+='<div style="font-size:0.82rem;color:#888;margin-top:4px;">One factor is 0 — any product with 0 is 0.</div>';
+              if(fmA===fmB)h+='<div style="font-size:0.82rem;color:#334e7d;margin-top:4px;">A = B — this is A².</div>';
+              h+='</div>';
+            }
+            el.innerHTML=h;
+          }
+
+          /* ── public API ── */
+          window.fmLoad=function(a,b){fmA=a;fmB=b;fmRender();};
+          window.fmReset2=function(){fmA=-1;fmB=-1;fmRender();};
+
+          buildGrid();
+          fmRender();
+        })();
+        </script>
+      </section>
+
       <section id="infographic">
         <h2>Module Infographic</h2>
         <p>This visual overview captures the key ideas from this module. Save it or print it as a reference sheet.</p>
