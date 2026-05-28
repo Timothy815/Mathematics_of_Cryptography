@@ -506,12 +506,50 @@
       </section>
 
       <section id="byte-level-xtime">
-        <h2>The byte-level xtime shortcut</h2>
-        <p>
-          The polynomial process becomes a compact byte rule:</p>
+        <h2>Why left-shifting is the same as multiplying by \(x\)</h2>
+
+        <div class="box intuition-box">
+          <div class="box-title">The key connection</div>
+          <p>
+            A byte stores a polynomial's coefficients as individual bits. <strong>Bit position \(k\) holds the coefficient of \(x^k\).</strong>
+          </p>
+          <p style="margin:0;">
+            When you multiply a polynomial by \(x\), every term \(x^k\) becomes \(x^{k+1}\). In bit terms, every bit at position \(k\) moves to position \(k+1\). That is exactly a <strong>left shift by one position</strong>. The two operations are identical.
+          </p>
+        </div>
+
+        <p>Here is what that shift does to <code>0x57</code>. Each column label is the power of \(x\) that bit position represents:</p>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>State</th><th>bit 7 = x⁷</th><th>bit 6 = x⁶</th><th>bit 5 = x⁵</th><th>bit 4 = x⁴</th><th>bit 3 = x³</th><th>bit 2 = x²</th><th>bit 1 = x¹</th><th>bit 0 = x⁰</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Before: <code>0x57</code></strong></td>
+              <td>0</td><td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td>
+            </tr>
+            <tr style="background:#eafaf0;">
+              <td><strong>After ×\(x\) shift: <code>0xAE</code></strong></td>
+              <td>1</td><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p>The <code>1</code> that was at bit 6 (representing \(x^6\)) has moved to bit 7 (representing \(x^7\)). The <code>1</code> at bit 4 moved to bit 5. Every term went up by one power. Bit 0 became 0 because there is no \(x^{-1}\) term. This is multiplication by \(x\), expressed entirely in bits.</p>
+
+        <div class="box mistake-box">
+          <div class="box-title">The one complication: bit 7 was already set</div>
+          <p>
+            If bit 7 (the \(x^7\) coefficient) is <strong>1</strong> before the shift, shifting it left creates an \(x^8\) term. But \(x^8\) is forbidden — it must be reduced using the AES folding rule \(x^8\equiv x^4+x^3+x+1\). In byte language, that means XOR with <code>0x1B</code> after the shift.
+          </p>
+        </div>
+
+        <h2>The byte-level xtime rule</h2>
+        <p>These two cases give a one-line rule for each situation:</p>
         <div class="conversion-stack">
           <div class="conversion-card">
-            If the top bit is 0:
+            <strong>If bit 7 of \(a\) is 0</strong> — no overflow, plain shift:
             <div class="math-display">
               \[
                 \operatorname{xtime}(a)=a\ll1
@@ -519,99 +557,201 @@
             </div>
           </div>
           <div class="conversion-card">
-            If the top bit is 1:
+            <strong>If bit 7 of \(a\) is 1</strong> — overflow creates \(x^8\), fold it:
             <div class="math-display">
               \[
                 \operatorname{xtime}(a)=(a\ll1)\oplus\texttt{0x1B}
               \]
             </div>
-            Keep only the low 8 bits after shifting.
+            Keep only the low 8 bits after shifting, then XOR with <code>0x1B</code> to fold the \(x^8\) term back into the byte zone.
           </div>
         </div>
 
-        <h3>Check with <code>0x83</code></h3>
-        <div class="math-display">
-          \[
-            \texttt{0x83}\ll1=\texttt{0x106}
-          \]
-        </div>
-        <p>
-          Keep the low byte:</p>
-        <div class="math-display">
-          \[
-            \texttt{0x06}
-          \]
-        </div>
-        <p>
-          XOR with <code>0x1B</code>:</p>
-        <div class="math-display">
-          \[
-            \texttt{0x06}\oplus\texttt{0x1B}=\texttt{0x1D}
-          \]
-        </div>
+        <h3>Checking <code>xtime(0x83)</code> bit by bit</h3>
+        <p><code>0x83 = 10000011</code>. Bit 7 is <strong>1</strong>, so overflow will occur when we shift.</p>
+        <table class="bit-table">
+          <thead>
+            <tr><th>Step</th><th>bit 7</th><th>bit 6</th><th>bit 5</th><th>bit 4</th><th>bit 3</th><th>bit 2</th><th>bit 1</th><th>bit 0</th><th>hex</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Before: <code>0x83</code></strong></td>
+              <td style="background:#fdeaea;color:#c04040;font-weight:900;">1</td>
+              <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td><code>0x83</code></td>
+            </tr>
+            <tr>
+              <td><strong>Shift left (low 8 bits)</strong></td>
+              <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td><code>0x06</code></td>
+            </tr>
+            <tr>
+              <td><strong>XOR <code>0x1B</code></strong></td>
+              <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td><td>1</td><td><code>0x1B</code></td>
+            </tr>
+            <tr style="background:#eafaf0;">
+              <td><strong>Result: <code>0x1D</code></strong></td>
+              <td>0</td><td>0</td><td>0</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td><code>0x1D</code></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>The red bit 7 in <code>0x83</code> was the \(x^7\) coefficient. Shifting it out created an \(x^8\) overflow. XORing the shifted result <code>0x06</code> with <code>0x1B</code> performs the reduction \(x^8\equiv x^4+x^3+x+1\). This matches worked example 3.</p>
       </section>
 
       <section id="multiplication-by-03">
+        <h2>From xtime to any multiplier: reading B in binary</h2>
+
+        <div class="box purpose-box">
+          <div class="box-title">The core idea</div>
+          <p>
+            Every byte \(B\) is stored as 8 bits. Each bit at position \(k\) represents a coefficient of \(x^k\). So every byte is a sum of powers of \(x\) — one power for each set bit.
+          </p>
+          <p>
+            To multiply \(A\) by \(B\), you distribute: for each set bit at position \(k\) in \(B\), compute \(x^k\cdot A\), then XOR all those contributions together. Nothing more.
+          </p>
+          <p style="margin:0;">
+            And \(x^k\cdot A\) is easy: it means applying xtime exactly \(k\) times. \(x^0\cdot A = A\). \(x^1\cdot A = \operatorname{xtime}(A)\). \(x^2\cdot A = \operatorname{xtime}(\operatorname{xtime}(A))\). And so on.
+          </p>
+        </div>
+
         <h2>Multiplication by <code>0x03</code></h2>
-        <p>
-          Since:</p>
+
+        <p>Write <code>0x03</code> in binary: <code>00000011</code>. Two bits are set — bit 1 and bit 0.</p>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit pos</th><th>Power of \(x\)</th><th>Bit in <code>0x03</code></th><th>Contribution to the product</th><th>Include?</th></tr>
+          </thead>
+          <tbody>
+            <tr style="color:#bbb;"><td>7</td><td>\(x^7\)</td><td>0</td><td>\(x^7\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="color:#bbb;"><td>6</td><td>\(x^6\)</td><td>0</td><td>\(x^6\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="color:#bbb;"><td>5</td><td>\(x^5\)</td><td>0</td><td>\(x^5\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="color:#bbb;"><td>4</td><td>\(x^4\)</td><td>0</td><td>\(x^4\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="color:#bbb;"><td>3</td><td>\(x^3\)</td><td>0</td><td>\(x^3\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="color:#bbb;"><td>2</td><td>\(x^2\)</td><td>0</td><td>\(x^2\cdot A\)</td><td>No — skip</td></tr>
+            <tr style="background:#eafaf0;font-weight:700;"><td>1</td><td>\(x^1\)</td><td>1</td><td>\(x^1\cdot A = \operatorname{xtime}(A)\)</td><td><strong>Yes</strong></td></tr>
+            <tr style="background:#eafaf0;font-weight:700;"><td>0</td><td>\(x^0\)</td><td>1</td><td>\(x^0\cdot A = A\) (unchanged)</td><td><strong>Yes</strong></td></tr>
+          </tbody>
+        </table>
+
+        <p>Two bits are set, so two contributions are XORed together:</p>
         <div class="math-display">
           \[
-            \texttt{0x03}=x+1
-          \]
-        </div>
-        <p>
-          multiplying by <code>0x03</code> means:</p>
-        <div class="math-display">
-          \[
-            a\cdot\texttt{0x03}=a\cdot(x+1)=a\cdot x+a
-          \]
-        </div>
-        <p>
-          In byte form:</p>
-        <div class="math-display">
-          \[
-            a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a
+            A\cdot\texttt{0x03}=\operatorname{xtime}(A)\oplus A
           \]
         </div>
 
-        <h3>Example with <code>0x57</code></h3>
+        <div class="box intuition-box">
+          <div class="box-title">Why \(x^0\cdot A = A\)</div>
+          <p>
+            \(x^0 = 1\), so multiplying by \(x^0\) means multiplying by 1 — which leaves \(A\) unchanged. Bit 0 being set in \(B\) contributes the original \(A\) to the XOR sum, unmodified. This is the "\(+A\)" that is easy to forget.
+          </p>
+        </div>
+
+        <h3>Worked out for \(A=\texttt{0x57}\)</h3>
+        <table class="xtime-table">
+          <thead>
+            <tr><th>Entry</th><th>Computation</th><th>Value</th><th>Selected by <code>0x03</code>?</th></tr>
+          </thead>
+          <tbody>
+            <tr style="background:#eafaf0;font-weight:700;">
+              <td>\(x^1\cdot A\)</td><td>\(\operatorname{xtime}(\texttt{0x57})\)</td><td><code>0xAE</code></td><td>Yes (bit 1)</td>
+            </tr>
+            <tr style="background:#eafaf0;font-weight:700;">
+              <td>\(x^0\cdot A\)</td><td>\(A\) unchanged</td><td><code>0x57</code></td><td>Yes (bit 0)</td>
+            </tr>
+          </tbody>
+        </table>
         <div class="math-display">
-          \[
-            \operatorname{xtime}(\texttt{0x57})=\texttt{0xAE}
-          \]
           \[
             \texttt{0xAE}\oplus\texttt{0x57}=\texttt{0xF9}
           \]
         </div>
-        <p>
-          This matches the polynomial result from worked example 1.</p>
+        <div class="box definition-box">
+          <div class="box-title">Result</div>
+          <div class="math-display">
+            \[
+              \texttt{0x57}\cdot\texttt{0x03}=\texttt{0xF9}
+            \]
+          </div>
+          <p style="margin:0;">This matches worked example 1, which computed the product by full polynomial multiplication.</p>
+        </div>
       </section>
 
       <section id="general-multiplication">
-        <h2>General multiplication by repeated xtime and XOR</h2>
-        <p>
-          To multiply by a byte with several 1 bits, split that byte into powers of \(x\). Then use repeated \(\operatorname{xtime}\) calls and XOR the needed pieces.</p>
+        <h2>General multiplication: the three-step procedure</h2>
 
-        <h3>Example: multiply by <code>0x0B</code></h3>
+        <div class="box definition-box">
+          <div class="box-title">Procedure: multiply \(A\) by any byte \(B\)</div>
+          <ol style="margin:0.4rem 0 0;padding-left:1.4rem;line-height:2;">
+            <li><strong>Write \(B\) in binary.</strong> Find which bit positions are set (equal to 1).</li>
+            <li><strong>Build the xtime chain.</strong> Start with \(A\). Apply xtime once to get \(x\cdot A\). Apply xtime again to get \(x^2\cdot A\). Continue until you have one entry for each bit position in \(B\).</li>
+            <li><strong>XOR the selected entries.</strong> Include only the chain entries where \(B\) has a 1 bit. XOR them all together. That is the product.</li>
+          </ol>
+        </div>
+
+        <h3>Example: \(\texttt{0x57}\cdot\texttt{0x0B}\)</h3>
+        <p><code>0x0B = 00001011</code> in binary. Bits set: positions 3, 1, and 0.</p>
+
+        <p><strong>Step 1 — build the xtime chain for \(A=\texttt{0x57}\).</strong> Build one entry per bit position, from \(x^0\) up to \(x^3\) (the highest set bit in \(B\)):</p>
+
+        <table class="xtime-table">
+          <thead>
+            <tr><th>Chain entry</th><th>Computation</th><th>Bit 7 before shift?</th><th>Value</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>\(x^0\cdot A\)</td><td>\(A\) unchanged</td><td>—</td><td><code>0x57</code></td>
+            </tr>
+            <tr>
+              <td>\(x^1\cdot A\)</td><td>\(\operatorname{xtime}(\texttt{0x57})\)</td><td>0 → no fold</td><td><code>0xAE</code></td>
+            </tr>
+            <tr>
+              <td>\(x^2\cdot A\)</td><td>\(\operatorname{xtime}(\texttt{0xAE})\)</td><td>1 → fold with <code>0x1B</code></td><td><code>0x47</code></td>
+            </tr>
+            <tr>
+              <td>\(x^3\cdot A\)</td><td>\(\operatorname{xtime}(\texttt{0x47})\)</td><td>0 → no fold</td><td><code>0x8E</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p><strong>Step 2 — use the bits of \(B\) to select which entries to XOR.</strong></p>
+
+        <table class="bit-table">
+          <thead>
+            <tr><th>Bit pos</th><th>Power</th><th>Bit in <code>0x0B</code></th><th>Chain entry value</th><th>Include?</th></tr>
+          </thead>
+          <tbody>
+            <tr style="color:#bbb;"><td>7</td><td>\(x^7\)</td><td>0</td><td>—</td><td>No</td></tr>
+            <tr style="color:#bbb;"><td>6</td><td>\(x^6\)</td><td>0</td><td>—</td><td>No</td></tr>
+            <tr style="color:#bbb;"><td>5</td><td>\(x^5\)</td><td>0</td><td>—</td><td>No</td></tr>
+            <tr style="color:#bbb;"><td>4</td><td>\(x^4\)</td><td>0</td><td>—</td><td>No</td></tr>
+            <tr style="background:#eafaf0;font-weight:700;"><td>3</td><td>\(x^3\)</td><td>1</td><td><code>0x8E</code></td><td>Yes</td></tr>
+            <tr style="color:#bbb;"><td>2</td><td>\(x^2\)</td><td>0</td><td><code>0x47</code></td><td>No</td></tr>
+            <tr style="background:#eafaf0;font-weight:700;"><td>1</td><td>\(x^1\)</td><td>1</td><td><code>0xAE</code></td><td>Yes</td></tr>
+            <tr style="background:#eafaf0;font-weight:700;"><td>0</td><td>\(x^0\)</td><td>1</td><td><code>0x57</code></td><td>Yes</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Step 3 — XOR the three selected values:</strong></p>
         <div class="math-display">
           \[
-            \texttt{0x0B}=00001011_2=x^3+x+1
+            \texttt{0x8E}\oplus\texttt{0xAE}\oplus\texttt{0x57}=\texttt{0x77}
           \]
         </div>
-        <p>
-          So:</p>
-        <div class="math-display">
-          \[
-            a\cdot\texttt{0x0B}=x^3a\oplus xa\oplus a
-          \]
+
+        <div class="box definition-box">
+          <div class="box-title">Result</div>
+          <div class="math-display">
+            \[
+              \texttt{0x57}\cdot\texttt{0x0B}=\texttt{0x77}\quad\text{in }\mathrm{GF}(2^8)
+            \]
+          </div>
         </div>
-        <p>
-          Byte-level version:</p>
-        <div class="math-display">
-          \[
-            a\cdot\texttt{0x0B}=\operatorname{xtime}(\operatorname{xtime}(\operatorname{xtime}(a)))\oplus\operatorname{xtime}(a)\oplus a
-          \]
+
+        <div class="box intuition-box">
+          <div class="box-title">What the chain entries you skipped mean</div>
+          <p>
+            The table showed \(x^2\cdot A = \texttt{0x47}\) even though \(B\) did not select it. That value was needed only as an intermediate step to reach \(x^3\cdot A = \texttt{0x8E}\). You always build the chain from \(x^0\) upward one step at a time — each step is xtime of the previous — then simply pick the entries \(B\) calls for.
+          </p>
         </div>
       </section>
 
