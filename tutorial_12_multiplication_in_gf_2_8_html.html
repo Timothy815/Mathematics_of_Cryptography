@@ -1734,6 +1734,10 @@
           .fm-btn-go { background:#334e7d; color:#fff; border:none; border-radius:7px; padding:6px 18px; font-size:0.9rem; font-weight:700; cursor:pointer; }
           .fm-btn-go:hover { background:#2a3f6a; }
           .fm-input-err { font-size:0.8rem; color:#c04000; font-weight:700; }
+          .fm-stepper { display:inline-flex; align-items:center; gap:4px; }
+          .fm-step-btn { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:6px; width:26px; height:32px; font-size:1rem; font-weight:700; cursor:pointer; line-height:1; padding:0; display:flex; align-items:center; justify-content:center; user-select:none; }
+          .fm-step-btn:hover { background:#d0d8ee; }
+          .fm-step-btn:active { background:#b8c4e0; }
           .fm-leg { display:flex; flex-wrap:wrap; gap:12px; font-size:0.8rem; align-items:center; margin-bottom:10px; }
           .fm-ld { width:12px; height:12px; border-radius:2px; display:inline-block; vertical-align:middle; margin-right:3px; }
 
@@ -1773,9 +1777,17 @@
         <div class="fm-shell">
           <div class="fm-input-row">
             <label for="fm-in-a">A (hex)</label>
-            <input id="fm-in-a" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+            <div class="fm-stepper">
+              <button class="fm-step-btn" id="fm-dec-a">−</button>
+              <input id="fm-in-a" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+              <button class="fm-step-btn" id="fm-inc-a">+</button>
+            </div>
             <label for="fm-in-b">B (hex)</label>
-            <input id="fm-in-b" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+            <div class="fm-stepper">
+              <button class="fm-step-btn" id="fm-dec-b">−</button>
+              <input id="fm-in-b" class="fm-hex-in" type="text" maxlength="4" placeholder="00–FF" autocomplete="off">
+              <button class="fm-step-btn" id="fm-inc-b">+</button>
+            </div>
             <button class="fm-btn-go" onclick="fmFromInputs()">Compute →</button>
             <span id="fm-in-err" class="fm-input-err"></span>
           </div>
@@ -1989,6 +2001,48 @@
               if(e.key==='Enter')window.fmFromInputs();
             });
           });
+
+          /* ── increment / decrement buttons with hold-to-repeat ── */
+          function fmStep(which, delta){
+            /* which: 'a' or 'b', delta: +1 or -1 */
+            var cur = which==='a' ? fmA : fmB;
+            if(cur < 0) cur = 0;
+            var next = (cur + delta + 256) & 0xFF; /* wrap 0xFF→0x00 and 0x00→0xFF */
+            if(which==='a') fmA=next; else fmB=next;
+            if(fmA<0) fmA=0;
+            if(fmB<0) fmB=0;
+            syncInputs(fmA, fmB);
+            document.getElementById('fm-in-err').textContent='';
+            fmRender();
+          }
+
+          (function(){
+            var holdTimer=null, repeatTimer=null;
+            function startHold(which, delta){
+              fmStep(which, delta);
+              holdTimer=setTimeout(function(){
+                repeatTimer=setInterval(function(){ fmStep(which, delta); }, 60);
+              }, 400);
+            }
+            function stopHold(){
+              clearTimeout(holdTimer);
+              clearInterval(repeatTimer);
+              holdTimer=null; repeatTimer=null;
+            }
+            [
+              ['fm-dec-a','a',-1],
+              ['fm-inc-a','a', 1],
+              ['fm-dec-b','b',-1],
+              ['fm-inc-b','b', 1]
+            ].forEach(function(cfg){
+              var btn=document.getElementById(cfg[0]);
+              btn.addEventListener('mousedown', function(e){ e.preventDefault(); startHold(cfg[1],cfg[2]); });
+              btn.addEventListener('touchstart',function(e){ e.preventDefault(); startHold(cfg[1],cfg[2]); },{passive:false});
+              ['mouseup','mouseleave','touchend','touchcancel'].forEach(function(ev){
+                btn.addEventListener(ev, stopHold);
+              });
+            });
+          })();
 
           buildGrid();
           fmRender();
