@@ -197,6 +197,15 @@
     .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
     .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     /* ── Print ───────────────────────────────────────────────── */
     @page { margin: 0.75in; }
     @media print {
@@ -292,7 +301,7 @@
     <!-- ══════════════════════════════════════════════════════════
          PART 1 — Core concepts (fixed)
     ═══════════════════════════════════════════════════════════ -->
-    <section class="ws-section">
+    <section class="ws-section" id="part-1" data-topic="core facts about bits, nibbles, bytes, and place values">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 1</span>
         <span class="ws-section-title">Core concepts</span>
@@ -351,7 +360,7 @@
     <!-- ══════════════════════════════════════════════════════════
          PART 2 — Binary to decimal  (randomised)
     ═══════════════════════════════════════════════════════════ -->
-    <section class="ws-section">
+    <section class="ws-section" id="part-2" data-topic="converting binary strings to decimal">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 2</span>
         <span class="ws-section-title">Binary &#8594; decimal</span>
@@ -394,7 +403,7 @@
     <!-- ══════════════════════════════════════════════════════════
          PART 3 — Decimal to binary  (randomised)
     ═══════════════════════════════════════════════════════════ -->
-    <section class="ws-section">
+    <section class="ws-section" id="part-3" data-topic="converting decimal numbers to 8-bit binary strings">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 3</span>
         <span class="ws-section-title">Decimal &#8594; 8-bit binary</span>
@@ -437,7 +446,7 @@
     <!-- ══════════════════════════════════════════════════════════
          PART 4 — Hex conversions  (randomised)
     ═══════════════════════════════════════════════════════════ -->
-    <section class="ws-section">
+    <section class="ws-section" id="part-4" data-topic="converting between hexadecimal, binary, and decimal">
       <div class="ws-section-head">
         <span class="ws-section-num">Part 4</span>
         <span class="ws-section-title">Hexadecimal conversions</span>
@@ -975,14 +984,16 @@
 
 // ── Universal check/score/regen engine ────────────────────────────────
 (function() {
+  var WS_GEM_URL = 'https://gemini.google.com/gem/1EbO8vKz7IXwQByc6DyR6faZY1RyvlB9X?usp=sharing';
+  var WS_MODULE = '01';
+  var WS_TITLE = 'Binary, Hexadecimal, and Bases';
+
   window.wsCheckAll = function() {
     var inputs = document.querySelectorAll('.ans-input[data-answer]');
     var correct = 0, total = 0;
     inputs.forEach(function(inp) {
-      var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
-      var answers = inp.dataset.answer.split('|').map(function(a){
-        return a.trim().toLowerCase().replace(/\s+/g,'');
-      });
+      var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+      var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
       total++;
       if (answers.indexOf(user) !== -1) {
         inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
@@ -995,6 +1006,42 @@
     var pct = Math.round(100*correct/total);
     disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
     disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+    /* Per-section AI Tutor escalation */
+    document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+      var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+      var existing = sec.querySelector('.ws-escalate');
+      if (wrongInSec.length > 0 && WS_GEM_URL) {
+        if (!existing) {
+          var topic = sec.dataset.topic;
+          var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+            + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+            + 'I\'ve checked my answers and some are wrong in this section. '
+            + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+            + 'Please ask me guiding questions.';
+          var uid = 'ws-esc-' + sec.id;
+          var card = document.createElement('div');
+          card.className = 'ws-escalate no-print';
+          card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+            + '<div class="ws-escalate-actions">'
+            + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+            + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+            + '</div>';
+          sec.appendChild(card);
+        }
+      } else {
+        if (existing) existing.remove();
+      }
+    });
+  };
+
+  window.wsEscCopy = function(id, btn) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+    }).catch(function(){ btn.textContent = 'Copy failed'; });
   };
 
   window.wsReset = function() {
@@ -1003,8 +1050,8 @@
       inp.classList.remove('ws-correct', 'ws-wrong');
     });
     document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
-    var disp = document.getElementById('ws-score-display');
-    if (disp) disp.textContent = '';
+    document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
+    var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
   };
 
   window.wsRegenerate = function() {

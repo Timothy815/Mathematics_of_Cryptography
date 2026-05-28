@@ -147,6 +147,13 @@
       .ans-input.ws-correct, .ans-input.ws-wrong { background: transparent !important; }
       .answer-key { page-break-before: always; }
     }
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
   </style>
 </head>
 <body>
@@ -205,7 +212,7 @@
       </details>
 
       <!-- Part A: Vocabulary -->
-      <section id="part-a">
+      <section id="part-a" data-topic="core vocabulary of polynomial reduction and irreducible polynomials">
         <h2>Part A — Vocabulary</h2>
 
         <div class="problem">
@@ -242,7 +249,7 @@
       </section>
 
       <!-- Part B: Integer analogy -->
-      <section id="part-b">
+      <section id="part-b" data-topic="completing the analogy table between integer modular arithmetic and polynomial modular arithmetic">
         <h2>Part B — Integer modulus analogy</h2>
         <p>Complete the comparison table.</p>
         <table class="ws-table">
@@ -275,7 +282,7 @@
       </section>
 
       <!-- Part C: Toy folding rules (randomisable) -->
-      <section id="part-c">
+      <section id="part-c" data-topic="deriving polynomial folding rules modulo a toy irreducible polynomial">
         <h2>Part C — Toy folding rules</h2>
         <p>Use the toy modulus \(m(x)=x^3+x+1\). Derive the folding rule for each power shown.</p>
 
@@ -299,7 +306,7 @@
       </section>
 
       <!-- Part D: Toy reductions (fixed) -->
-      <section id="part-d">
+      <section id="part-d" data-topic="reducing polynomials modulo a toy irreducible polynomial using folding rules">
         <h2>Part D — Toy polynomial reductions</h2>
         <p>Reduce each polynomial modulo \(x^3+x+1\). Show your work.</p>
 
@@ -329,7 +336,7 @@
       </section>
 
       <!-- Part E: AES modulus recognition (randomisable) -->
-      <section id="part-e">
+      <section id="part-e" data-topic="identifying the AES modulus polynomial and its hex representation">
         <h2>Part E — AES modulus recognition</h2>
 
         <div class="problem">
@@ -359,7 +366,7 @@
       </section>
 
       <!-- Part F: Derive AES folding rule -->
-      <section id="part-f">
+      <section id="part-f" data-topic="deriving the AES x^8 folding rule in polynomial and binary/hex form">
         <h2>Part F — Deriving the folding rule</h2>
 
         <div class="problem">
@@ -376,7 +383,7 @@
       </section>
 
       <!-- Part G: AES reductions -->
-      <section id="part-g">
+      <section id="part-g" data-topic="reducing degree-8 and higher polynomials using the AES folding rule">
         <h2>Part G — AES-style reductions</h2>
         <p>Use \(x^8\equiv x^4+x^3+x+1\). Reduce each expression to degree ≤ 7.</p>
 
@@ -406,7 +413,7 @@
       </section>
 
       <!-- Part H: Irreducibility -->
-      <section id="part-h">
+      <section id="part-h" data-topic="understanding irreducibility concepts and why AES requires an irreducible modulus polynomial">
         <h2>Part H — Irreducibility concepts</h2>
 
         <div class="problem">
@@ -556,6 +563,10 @@ function normalise(s) {
   return (s || '').trim().toLowerCase().replace(/\s+/g, '');
 }
 
+var WS_GEM_URL = 'https://gemini.google.com/gem/1dBLO5tG4kCGRARhpitQAylhmnX17XxNx?usp=sharing';
+var WS_MODULE  = '11';
+var WS_TITLE   = 'Polynomial Reduction and Irreducible Polynomials';
+
 function wsCheckAll() {
   let correct = 0, total = 0;
   document.querySelectorAll('[data-answer]').forEach(inp => {
@@ -572,6 +583,41 @@ function wsCheckAll() {
   });
   document.getElementById('ws-score-display').textContent =
     total ? `Score: ${correct} / ${total}` : '';
+  /* Per-section AI Tutor escalation */
+  document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+    var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+    var existing = sec.querySelector('.ws-escalate');
+    if (wrongInSec.length > 0 && WS_GEM_URL) {
+      if (!existing) {
+        var topic = sec.dataset.topic;
+        var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+          + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+          + 'I\'ve checked my answers and some are wrong in this section. '
+          + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+          + 'Please ask me guiding questions.';
+        var uid = 'ws-esc-' + sec.id;
+        var card = document.createElement('div');
+        card.className = 'ws-escalate no-print';
+        card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="ws-escalate-actions">'
+          + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+          + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div>';
+        sec.appendChild(card);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+function wsEscCopy(id, btn) {
+  var txt = document.getElementById(id);
+  if (!txt) return;
+  navigator.clipboard.writeText(txt.textContent).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+  }).catch(function(){ btn.textContent = 'Copy failed'; });
 }
 
 function wsReset() {
@@ -581,6 +627,7 @@ function wsReset() {
     inp.classList.remove('ws-correct', 'ws-wrong');
   });
   document.getElementById('ws-score-display').textContent = '';
+  document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
 }
 
 function wsRegenerate() {

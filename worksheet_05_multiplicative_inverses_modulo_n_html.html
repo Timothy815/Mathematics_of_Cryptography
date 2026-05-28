@@ -290,6 +290,15 @@
     .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
     @media print { .ws-score-bar { display: none !important; } }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     @media (max-width: 700px) {
       header.worksheet-header, main { padding: 20px; }
       .student-info { grid-template-columns: 1fr; }
@@ -402,6 +411,7 @@
       <!-- ══════════════════════════════════════════
            Part 1 — Verify the Claim (Q1–Q4, T/F)
       ══════════════════════════════════════════ -->
+      <section id="part-1" data-topic="verifying whether a given pair forms a multiplicative inverse modulo n">
       <div class="part-header">Part 1 — Verify the Claim (Q1–Q4) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">T/F — auto-checked</span></div>
       <div class="part-body">
         <p style="margin:0 0 12px;font-size:0.88rem;">For each claim, verify by computing the product and reducing modulo \(n\). Enter <strong>T</strong> (true) or <strong>F</strong> (false).</p>
@@ -416,15 +426,19 @@
           <tbody id="p1-tbody"></tbody>
         </table>
       </div>
+      </section>
 
       <!-- ══════════════════════════════════════════
            Part 2 — Find the Inverse (Q5–Q7)
       ══════════════════════════════════════════ -->
+
+      <section id="part-2" data-topic="finding multiplicative inverses modulo n by trial and error">
       <div class="part-header">Part 2 — Find the Inverse (Q5–Q7) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Number answer — auto-checked</span></div>
       <div class="part-body">
         <p style="margin:0 0 12px;font-size:0.88rem;">Find the multiplicative inverse. Give your answer as a number in \(\{1, \ldots, n-1\}\). Use trial-and-error: test \(x = 1, 2, 3, \ldots\) until \(a \cdot x \equiv 1 \pmod{n}\).</p>
         <div id="p2-container"></div>
       </div>
+      </section>
 
       <!-- ══════════════════════════════════════════
            Interactive: Trial-and-Error Inverse Finder
@@ -483,6 +497,7 @@
       <!-- ══════════════════════════════════════════
            Part 3 — Does the Inverse Exist? (Q8–Q12)
       ══════════════════════════════════════════ -->
+      <section id="part-3" data-topic="identifying which elements have multiplicative inverses modulo n">
       <div class="part-header">Part 3 — Does the Inverse Exist? (Q8–Q12) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Y/N — auto-checked</span></div>
       <div class="part-body">
         <p style="margin:0 0 12px;font-size:0.88rem;">For each pair \((a, n)\), decide whether \(a^{-1} \pmod{n}\) exists. Use trial-and-error: test \(a \cdot x \pmod{n}\) for \(x = 1, 2, \ldots, n-1\). If any result equals 1 the inverse exists (Y); if you exhaust all values without hitting 1 it does not (N). Enter <strong>Y</strong> or <strong>N</strong>.</p>
@@ -498,15 +513,19 @@
           <tbody id="p3-tbody"></tbody>
         </table>
       </div>
+      </section>
 
       <!-- ══════════════════════════════════════════
            Part 4 — Affine Cipher Decryption (Q13–Q14)
       ══════════════════════════════════════════ -->
+
+      <section id="part-4" data-topic="decrypting affine cipher messages using modular multiplicative inverses">
       <div class="part-header">Part 4 — Affine Cipher Decryption (Q13–Q14) &nbsp;<span style="font-weight:400;font-size:0.82rem;opacity:0.85;">Number answer — auto-checked</span></div>
       <div class="part-body">
         <p style="margin:0 0 12px;font-size:0.88rem;">The affine cipher encrypts as \(C \equiv aP + b \pmod{26}\). To decrypt: \(P \equiv a^{-1}(C - b) \pmod{26}\). Add 26 if the intermediate value is negative.</p>
         <div id="p4-container"></div>
       </div>
+      </section>
 
       <!-- ══════════════════════════════════════════
            Part 5 — Written Reflection (Q15–Q16)
@@ -1084,23 +1103,20 @@
 
     function rndW(lo, hi) { return lo + Math.floor(Math.random()*(hi-lo+1)); }
 
+    var WS_GEM_URL = 'https://gemini.google.com/gem/1fAf5GkBUpVMJyme1norIKN8Um3UxNOVj?usp=sharing';
+    var WS_MODULE = '05';
+    var WS_TITLE = 'Multiplicative Inverses Modulo n';
+
     window.wsCheckAll = function() {
       var inputs = document.querySelectorAll('.ans-input[data-answer]');
       var correct = 0, total = 0;
       inputs.forEach(function(inp) {
-        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
+        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
         var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
-        var nUser = parseFloat(user);
         total++;
-        var ok = false;
-        answers.forEach(function(ans) {
-          if (user === ans) { ok = true; return; }
-          var nAns = parseFloat(ans);
-          if (!isNaN(nUser) && !isNaN(nAns) && nUser === nAns) { ok = true; }
-        });
-        if (ok) {
+        if (answers.indexOf(user) !== -1) {
           inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
-        } else if (user !== '') {
+        } else {
           inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
         }
       });
@@ -1109,6 +1125,42 @@
       var pct = Math.round(100*correct/total);
       disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
       disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+      /* Per-section AI Tutor escalation */
+      document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+        var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+        var existing = sec.querySelector('.ws-escalate');
+        if (wrongInSec.length > 0 && WS_GEM_URL) {
+          if (!existing) {
+            var topic = sec.dataset.topic;
+            var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+              + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+              + 'I\'ve checked my answers and some are wrong in this section. '
+              + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+              + 'Please ask me guiding questions.';
+            var uid = 'ws-esc-' + sec.id;
+            var card = document.createElement('div');
+            card.className = 'ws-escalate no-print';
+            card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+              + '<div class="ws-escalate-actions">'
+              + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+              + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+              + '</div>';
+            sec.appendChild(card);
+          }
+        } else {
+          if (existing) existing.remove();
+        }
+      });
+    };
+
+    window.wsEscCopy = function(id, btn) {
+      var txt = document.getElementById(id);
+      if (!txt) return;
+      navigator.clipboard.writeText(txt.textContent).then(function() {
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+      }).catch(function(){ btn.textContent = 'Copy failed'; });
     };
 
     window.wsReset = function() {
@@ -1117,11 +1169,11 @@
         inp.className = 'ans-input';
       });
       document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
-      var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
+      document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
+      var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
     };
 
     window.wsRegenerate = function() {
-      /* Delegate to the existing newVersion which regenerates and rebuilds */
       if (window.newVersion) { window.newVersion(); }
       var disp = document.getElementById('ws-score-display'); if (disp) disp.textContent = '';
     };

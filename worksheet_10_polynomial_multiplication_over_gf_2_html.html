@@ -188,6 +188,13 @@
     .ans-input.ws-correct { border-color: #2e7d32 !important; background: #edf7ed !important; color: #1b5e20 !important; }
     .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
     @media print { .ws-score-bar { display: none !important; } }
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
 
     /* Multiplication grid styling */
     .grid-table th.row-header { background: #f0e8d4; color: #7d4a00; border-color: #d4b87a; }
@@ -316,7 +323,7 @@
       </section>
 
       <!-- PART A: Vocabulary -->
-      <section id="part-a">
+      <section id="part-a" data-topic="core vocabulary and rules for multiplying polynomials over GF(2)">
         <h2>Part A: Vocabulary</h2>
         <p>Fill in each blank with the correct word or expression.</p>
 
@@ -342,7 +349,7 @@
       </section>
 
       <!-- PART B: Single-term multiplication table -->
-      <section id="part-b">
+      <section id="part-b" data-topic="computing single-term polynomial products by adding exponents over GF(2)">
         <h2>Part B: Single-Term Multiplication Table</h2>
         <p>Fill in the <em>Exponent sum</em> and <em>Result</em> columns. Recall: \(x^i \cdot x^j = x^{i+j}\); treat \(1 = x^0\).</p>
 
@@ -390,7 +397,7 @@
       </section>
 
       <!-- PART C: Simplify like terms -->
-      <section id="part-c">
+      <section id="part-c" data-topic="simplifying polynomial expressions over GF(2) by cancelling duplicate terms">
         <h2>Part C: Simplify Like Terms over GF(2)</h2>
         <p>Reduce each expression by cancelling any term that appears an even number of times.</p>
 
@@ -416,7 +423,7 @@
       </section>
 
       <!-- PART D: Small polynomial products (REGENERATABLE) -->
-      <section id="part-d">
+      <section id="part-d" data-topic="multiplying small polynomials over GF(2) using distribution and like-term cancellation">
         <h2>Part D: Small Polynomial Products</h2>
         <p>Multiply the polynomials over GF(2). Use the work space, then enter the simplified (unreduced) result. Click <strong>Regenerate</strong> for new problems.</p>
 
@@ -426,7 +433,7 @@
       </section>
 
       <!-- PART E: Distribution grid (static) -->
-      <section id="part-e">
+      <section id="part-e" data-topic="using a distribution grid to multiply polynomials over GF(2) and collecting terms">
         <h2>Part E: Distribution Grid</h2>
         <p>Use the grid below to multiply \((x^2 + x + 1)(x^3 + x)\) over GF(2). Fill each cell with the product of its row and column headers. Then collect all results, cancel pairs, and write the final polynomial.</p>
 
@@ -466,7 +473,7 @@
       </section>
 
       <!-- PART F: Byte-polynomial products (REGENERATABLE) -->
-      <section id="part-f">
+      <section id="part-f" data-topic="multiplying byte-polynomials over GF(2) to find the unreduced product">
         <h2>Part F: Byte-Polynomial Products (Unreduced)</h2>
         <p>Each problem gives two bytes as hex values. Express each as a polynomial over GF(2), multiply them, cancel duplicate terms, and write the <strong>unreduced</strong> result. Do not reduce modulo any polynomial. Click <strong>Regenerate</strong> for new byte pairs.</p>
 
@@ -476,7 +483,7 @@
       </section>
 
       <!-- PART G: True/False -->
-      <section id="part-g">
+      <section id="part-g" data-topic="evaluating true/false statements about polynomial multiplication over GF(2)">
         <h2>Part G: True or False</h2>
         <p>Write <strong>true</strong> or <strong>false</strong> in each blank.</p>
 
@@ -781,6 +788,10 @@
   // -------------------------------------------------------
   // Public worksheet functions
   // -------------------------------------------------------
+  var WS_GEM_URL = 'https://gemini.google.com/gem/11A0OD4ATXppEKDMvwm9rLIFeBbjPZbtn?usp=sharing';
+  var WS_MODULE  = '10';
+  var WS_TITLE   = 'Polynomial Multiplication over GF(2)';
+
   window.wsCheckAll = function() {
     var inputs = document.querySelectorAll('.ans-input[data-answer]');
     var correct = 0, total = 0;
@@ -808,6 +819,41 @@
     var pct = Math.round(100 * correct / total);
     disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
     disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+    /* Per-section AI Tutor escalation */
+    document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+      var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+      var existing = sec.querySelector('.ws-escalate');
+      if (wrongInSec.length > 0 && WS_GEM_URL) {
+        if (!existing) {
+          var topic = sec.dataset.topic;
+          var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+            + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+            + 'I\'ve checked my answers and some are wrong in this section. '
+            + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+            + 'Please ask me guiding questions.';
+          var uid = 'ws-esc-' + sec.id;
+          var card = document.createElement('div');
+          card.className = 'ws-escalate no-print';
+          card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+            + '<div class="ws-escalate-actions">'
+            + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+            + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+            + '</div>';
+          sec.appendChild(card);
+        }
+      } else {
+        if (existing) existing.remove();
+      }
+    });
+  };
+
+  window.wsEscCopy = function(id, btn) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+    }).catch(function(){ btn.textContent = 'Copy failed'; });
   };
 
   window.wsReset = function() {
@@ -817,6 +863,7 @@
     document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
     var disp = document.getElementById('ws-score-display');
     if (disp) disp.textContent = '';
+    document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
   };
 
   window.wsRegenerate = function() { wsRegenerateImpl(); };

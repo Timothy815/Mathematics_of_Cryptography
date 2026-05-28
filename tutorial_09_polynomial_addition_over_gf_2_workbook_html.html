@@ -180,6 +180,12 @@
     }
     .drill-fb.ok  { color: #2e7d32; }
     .drill-fb.err { color: #c62828; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
     .drill-streak { font-size: 0.8rem; color: #7d5a00; margin-top: 10px; font-weight: 600; }
 
     /* Bottom nav */
@@ -401,9 +407,10 @@
     /* ── makeDrill ─────────────────────────────────────────────────── */
     function makeDrill(cfg) {
       var state;
-      var checked = false;
-      var correct = 0;
-      var total   = 0;
+      var checked    = false;
+      var correct    = 0;
+      var total      = 0;
+      var wrongStreak = 0;
 
       var qEl    = document.getElementById(cfg.id + '-q');
       var fb     = document.getElementById(cfg.id + '-fb');
@@ -411,6 +418,32 @@
       var btnNxt = document.getElementById(cfg.id + '-next');
       var inp    = document.getElementById(cfg.id + '-inp');
       var btnChk = document.getElementById(cfg.id + '-check');
+
+      window._copyEscPrompt = window._copyEscPrompt || function(id) {
+        var txt = document.getElementById(id);
+        if (!txt) return;
+        var btn = txt.parentElement.querySelector('.drill-esc-copy');
+        navigator.clipboard.writeText(txt.textContent).then(function() {
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+        }).catch(function() {
+          if (btn) { btn.textContent = 'Copy failed'; }
+        });
+      };
+
+      function buildEscalationCard() {
+        if (!cfg.gemUrl) return '';
+        var uid = cfg.id + '-fb-esc';
+        var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+          + 'I keep getting the wrong answer on this drill exercise. '
+          + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+          + 'Please ask me guiding questions to help me figure it out.';
+        return '<div class="drill-escalate">'
+          + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="drill-escalate-actions">'
+          + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+          + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div></div>';
+      }
 
       function typeset(el) {
         if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
@@ -422,8 +455,9 @@
       function load() {
         state   = cfg.gen();
         checked = false;
+        wrongStreak = 0;
         if (inp) { inp.value = ''; inp.className = 'drill-input'; }
-        fb.textContent = '';
+        fb.innerHTML = '';
         fb.className = 'drill-fb';
         qEl.innerHTML = state.q;
         typeset(qEl);
@@ -436,12 +470,15 @@
         total++;
         if (ok) {
           correct++;
+          wrongStreak = 0;
           if (inp) inp.className = 'drill-input correct';
           fb.innerHTML = '&#10003; ' + state.ok;
           fb.className = 'drill-fb ok';
         } else {
+          wrongStreak++;
           if (inp) inp.className = 'drill-input wrong';
-          fb.innerHTML = '&#10007; ' + state.err;
+          var msg = '&#10007; ' + state.err;
+          fb.innerHTML = wrongStreak >= 2 ? msg + buildEscalationCard() : msg;
           fb.className = 'drill-fb err';
         }
         updateStreak();
@@ -462,6 +499,8 @@
     /* ── Drill 1: Single Coefficient ───────────────────────────────── */
     makeDrill({
       id: 'd1',
+      gemUrl: 'https://gemini.google.com/gem/1ULr02x-0qYjRVlm3BIaVEQNvzfQ29XaM?usp=sharing',
+      topic: 'computing a single coefficient when adding polynomials over GF(2)',
       gen: function () {
         var a = rndByte();
         var b = rndByte();
@@ -484,6 +523,8 @@
     /* ── Drill 2: Full Sum in Hex ───────────────────────────────────── */
     makeDrill({
       id: 'd2',
+      gemUrl: 'https://gemini.google.com/gem/1ULr02x-0qYjRVlm3BIaVEQNvzfQ29XaM?usp=sharing',
+      topic: 'adding two byte polynomials over GF(2) and expressing the result in hex',
       gen: function () {
         var a = rndByte();
         var b = rndByte();
@@ -572,6 +613,8 @@
     /* ── Drill 4: Degree of Sum ─────────────────────────────────────── */
     makeDrill({
       id: 'd4',
+      gemUrl: 'https://gemini.google.com/gem/1ULr02x-0qYjRVlm3BIaVEQNvzfQ29XaM?usp=sharing',
+      topic: 'finding the degree of a polynomial sum over GF(2)',
       gen: function () {
         var a, b, sum;
         /* Ensure sum != 0 so degree is defined */

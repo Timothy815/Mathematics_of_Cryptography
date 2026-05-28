@@ -182,6 +182,13 @@
       .ans-input.ws-correct, .ans-input.ws-wrong { background: transparent !important; }
       .answer-key { page-break-before: always; }
     }
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
   </style>
 </head>
 <body>
@@ -238,7 +245,7 @@
       </details>
 
       <!-- Part A -->
-      <section id="part-a">
+      <section id="part-a" data-topic="computing xtime left-shift when no reduction is needed (top bit is 0)">
         <h2>Part A — xtime: no reduction needed</h2>
         <p>For each byte below, the top bit is 0. Compute \(\operatorname{xtime}(a)=a\ll1\). Show the left shift.</p>
 
@@ -251,7 +258,7 @@
       </section>
 
       <!-- Part B -->
-      <section id="part-b">
+      <section id="part-b" data-topic="computing xtime with reduction by XOR 0x1B when the top bit is 1">
         <h2>Part B — xtime: reduction needed</h2>
         <p>For each byte below, the top bit is 1. Compute \(\operatorname{xtime}(a)=(a\ll1)\oplus\texttt{0x1B}\). Show both the shift and the XOR.</p>
 
@@ -264,7 +271,7 @@
       </section>
 
       <!-- Part C -->
-      <section id="part-c">
+      <section id="part-c" data-topic="multiplying bytes by 0x03 in GF(2^8) using xtime and XOR">
         <h2>Part C — Multiply by \(\texttt{0x03}\)</h2>
         <p>Use the rule \(a\cdot\texttt{0x03}=\operatorname{xtime}(a)\oplus a\). Show your work.</p>
 
@@ -277,7 +284,7 @@
       </section>
 
       <!-- Part D -->
-      <section id="part-d">
+      <section id="part-d" data-topic="building the xtime chain by repeatedly applying the xtime operation">
         <h2>Part D — Build the xtime chain</h2>
         <p>Starting from \(a=\texttt{0x57}\), complete the xtime ladder by applying \(\operatorname{xtime}\) repeatedly.</p>
 
@@ -315,7 +322,7 @@
       </section>
 
       <!-- Part E -->
-      <section id="part-e">
+      <section id="part-e" data-topic="computing full GF(2^8) products by decomposing operands and XORing xtime chain values">
         <h2>Part E — Full GF(2⁸) products using the xtime chain</h2>
         <p>Use the chain from Part D. Decompose the second operand into powers of \(x\), then XOR the appropriate chain values.</p>
 
@@ -434,6 +441,10 @@ function normalise(s) {
   return (s || '').trim().toLowerCase().replace(/\s+/g, '');
 }
 
+var WS_GEM_URL = 'https://gemini.google.com/gem/1Ur_dV7C80ofA5F_IKfnbHyFAhe1YyQ1D?usp=sharing';
+var WS_MODULE  = '12';
+var WS_TITLE   = 'Multiplication in GF(2\u2078)';
+
 function wsCheckAll() {
   let correct = 0, total = 0;
   document.querySelectorAll('[data-answer]').forEach(inp => {
@@ -450,6 +461,41 @@ function wsCheckAll() {
   });
   document.getElementById('ws-score-display').textContent =
     total ? `Score: ${correct} / ${total}` : '';
+  /* Per-section AI Tutor escalation */
+  document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+    var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+    var existing = sec.querySelector('.ws-escalate');
+    if (wrongInSec.length > 0 && WS_GEM_URL) {
+      if (!existing) {
+        var topic = sec.dataset.topic;
+        var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+          + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+          + 'I\'ve checked my answers and some are wrong in this section. '
+          + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+          + 'Please ask me guiding questions.';
+        var uid = 'ws-esc-' + sec.id;
+        var card = document.createElement('div');
+        card.className = 'ws-escalate no-print';
+        card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="ws-escalate-actions">'
+          + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+          + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div>';
+        sec.appendChild(card);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+function wsEscCopy(id, btn) {
+  var txt = document.getElementById(id);
+  if (!txt) return;
+  navigator.clipboard.writeText(txt.textContent).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+  }).catch(function(){ btn.textContent = 'Copy failed'; });
 }
 
 function wsReset() {
@@ -459,6 +505,7 @@ function wsReset() {
     inp.classList.remove('ws-correct', 'ws-wrong');
   });
   document.getElementById('ws-score-display').textContent = '';
+  document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
 }
 
 // ── Random problem generator ─────────────────────────────────────────────────

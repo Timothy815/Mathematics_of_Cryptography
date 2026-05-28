@@ -108,6 +108,13 @@
       .ans-input.ws-correct, .ans-input.ws-wrong { background:transparent !important; }
       .answer-key { page-break-before:always; }
     }
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
   </style>
 </head>
 <body>
@@ -157,7 +164,7 @@
       </details>
 
       <!-- PART A: XOR warm-up -->
-      <section id="part-a">
+      <section id="part-a" data-topic="multiplying a vector by a matrix over GF(2) to produce an output vector">
         <h2>Part A — XOR Arithmetic</h2>
         <p>Compute each expression over \(\mathrm{GF}(2)\). Remember: count the 1s — odd count gives 1, even count gives 0.</p>
         <table class="ws-table">
@@ -178,7 +185,7 @@
       </section>
 
       <!-- PART B: Row recipes -->
-      <section id="part-b">
+      <section id="part-b" data-topic="writing the symbolic formula and computing the numeric result of a linear transformation over GF(2)">
         <h2>Part B — Reading Row Recipes</h2>
         <p>For each matrix row and input vector \(v\), write the recipe formula (e.g. <code>v0⊕v2</code>) then compute the output bit.</p>
         <table class="ws-table">
@@ -217,7 +224,7 @@
       </section>
 
       <!-- PART C: full matrix multiply -->
-      <section id="part-c">
+      <section id="part-c" data-topic="performing full matrix-vector multiplication over GF(2) row by row">
         <h2>Part C — Matrix-Vector Multiplication</h2>
         <p>Use the matrix and vector below. Apply each row recipe to fill in the computation table, then write the full output.</p>
         <div class="math-display">
@@ -262,7 +269,7 @@
       </section>
 
       <!-- PART D: random regenerating section -->
-      <section id="part-d">
+      <section id="part-d" data-topic="applying a random matrix transformation over GF(2) to a randomly generated vector">
         <h2>Part D — Practice Multiply <span style="font-weight:400;font-size:0.85rem;color:#888;">(click Regenerate for new values)</span></h2>
         <p>Compute \(y = Av\) for the matrix and vector shown. Use the work space to record your row-by-row steps.</p>
 
@@ -306,7 +313,7 @@
       </section>
 
       <!-- PART E: linear vs affine -->
-      <section id="part-e">
+      <section id="part-e" data-topic="distinguishing linear from affine transformations over GF(2)">
         <h2>Part E — Linear or Affine?</h2>
         <p>Classify each transformation. Write <strong>linear</strong> or <strong>affine</strong>, then briefly justify.</p>
         <table class="ws-table">
@@ -341,7 +348,7 @@
       </section>
 
       <!-- PART F: concept questions -->
-      <section id="part-f">
+      <section id="part-f" data-topic="applying linearity properties and understanding invertibility of matrices over GF(2)">
         <h2>Part F — Concept Questions</h2>
 
         <p><strong>F1.</strong> A matrix has two identical rows. Can it be invertible? Explain why or why not.</p>
@@ -459,6 +466,10 @@ function genPartD(){
 genPartD();
 
 /* ── Scoring ── */
+var WS_GEM_URL = '';
+var WS_MODULE  = '16';
+var WS_TITLE   = 'Linear Transformations and Matrices over GF(2)';
+
 function wsCheckAll(){
   var correct=0,total=0;
   document.querySelectorAll('[data-answer]').forEach(function(inp){
@@ -471,6 +482,41 @@ function wsCheckAll(){
     else inp.classList.add('ws-wrong');
   });
   document.getElementById('ws-score-display').textContent=total?'Score: '+correct+' / '+total:'';
+  /* Per-section AI Tutor escalation */
+  document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+    var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+    var existing = sec.querySelector('.ws-escalate');
+    if (wrongInSec.length > 0 && WS_GEM_URL) {
+      if (!existing) {
+        var topic = sec.dataset.topic;
+        var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+          + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+          + 'I\'ve checked my answers and some are wrong in this section. '
+          + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+          + 'Please ask me guiding questions.';
+        var uid = 'ws-esc-' + sec.id;
+        var card = document.createElement('div');
+        card.className = 'ws-escalate no-print';
+        card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="ws-escalate-actions">'
+          + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+          + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div>';
+        sec.appendChild(card);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+function wsEscCopy(id, btn) {
+  var txt = document.getElementById(id);
+  if (!txt) return;
+  navigator.clipboard.writeText(txt.textContent).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+  }).catch(function(){ btn.textContent = 'Copy failed'; });
 }
 
 function wsReset(){
@@ -479,6 +525,7 @@ function wsReset(){
     inp.value=''; inp.classList.remove('ws-correct','ws-wrong');
   });
   document.getElementById('ws-score-display').textContent='';
+  document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
 }
 
 function wsRegenerate(){

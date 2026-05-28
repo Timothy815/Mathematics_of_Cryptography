@@ -41,6 +41,11 @@ This file defines the required structure and quality bar for every module in the
 - [ ] At least one interactive exploration section where computationally appropriate (label with `class="no-print"` so it is hidden on print)
 - [ ] Widget uses only vanilla JS (no external libraries beyond MathJax)
 - [ ] Reset / preset buttons provided
+- [ ] **AI Tutor escalation:** After 2+ wrong attempts on any widget check, an inline escalation card appears containing:
+  - A dynamically-generated contextual prompt naming the module, topic, and specific step (include "without giving me the answer directly, ask me questions to help me figure it out")
+  - A **Copy prompt** button (uses `navigator.clipboard.writeText`)
+  - An **Ask AI Tutor →** link (indigo `#4338ca`) opening the module's Gemini gem in a new tab
+  - CSS classes: `.tutor-escalate`, `.tutor-escalate-prompt`, `.tutor-escalate-actions`, `.tutor-esc-copy`, `.tutor-esc-link`
 
 ### Footer
 - [ ] `<p class="footer-note">` attribution line
@@ -93,6 +98,14 @@ Each drill section must have:
 - [ ] Input turns green/red via `.correct` / `.wrong` class
 - [ ] Enter key triggers check
 - [ ] MathJax call uses `typeof` guard: `if (window.MathJax && typeof MathJax.typesetPromise === 'function')` — the config object is set before the library loads, so a bare `if (window.MathJax)` check will be truthy but `typesetPromise` won't exist, throwing a TypeError that stops all subsequent drill initialization
+- [ ] **AI Tutor escalation** wired into `makeDrill`:
+  - `cfg.gemUrl` — URL of the module's Gemini gem
+  - `cfg.topic` — plain-English description of what this drill practises (e.g. `"converting decimal numbers to 8-bit binary"`)
+  - `wrongStreak` counter inside the closure, reset to 0 on `next()` and on correct answer
+  - After 2 consecutive wrong answers: `buildEscalationCard()` appended to feedback innerHTML
+  - Escalation card prompt template: *"I'm working through [topic] in the Mathematics of Cryptography course. I keep getting the wrong answer on this drill. Can you help me understand where my thinking is going wrong, without giving me the direct answer? Please ask me questions to help me figure it out."*
+  - Global helper `window._copyEscPrompt(id)` handles clipboard copy + button label flash
+  - CSS: `.drill-escalate`, `.drill-escalate-prompt`, `.drill-escalate-actions`, `.drill-esc-copy`, `.drill-esc-link`
 
 ### Bottom Nav
 - [ ] Left bundle: `← Practice ##`, `🏠 Dashboard`, `Practice ## →`
@@ -134,9 +147,17 @@ Each drill section must have:
 - [ ] Every fill-in `<input class="ans-input">` carries `data-answer="val1|val2"` (pipe-separated for alternate formats)
 - [ ] `wsCheckAll()` function: reads all `[data-answer]` inputs, normalizes, marks `.ws-correct` / `.ws-wrong`, updates score display
 - [ ] `wsRegenerate()` function: generates new random values, updates question HTML, updates `data-answer` attributes
-- [ ] `wsReset()` function: clears inputs, removes `.ws-correct`/`.ws-wrong`, clears score display
+- [ ] `wsReset()` function: clears inputs, removes `.ws-correct`/`.ws-wrong`, clears score display, removes all `.ws-escalate` cards
 - [ ] Open-ended `<textarea class="written-area">` elements are NOT scored (excluded from `wsCheckAll`)
 - [ ] `.ws-score-bar` hidden on print via `@media print`
+- [ ] **AI Tutor escalation (per section):**
+  - Each scorable `<section>` in `<main>` carries `data-topic="..."` — a plain-English phrase describing what that section tests (e.g. `"running the Euclidean algorithm step by step"`)
+  - Script declares `var WS_GEM_URL = 'https://gemini.google.com/gem/...'` at top of the scoring IIFE
+  - After `wsCheckAll()` scores, for each section with ≥1 `.ws-wrong` input: append a `.ws-escalate` card (if not already present) at the bottom of that section
+  - Escalation card prompt template: *"I'm working on [section topic] in the [Module Title] worksheet (Module ##, Mathematics of Cryptography). I've checked my answers and some are wrong. Can you help me understand where my reasoning is breaking down, without giving me the answers directly? Please ask me guiding questions."*
+  - Card contains: prompt text div, Copy prompt button, Ask AI Tutor link to `WS_GEM_URL`
+  - `wsReset()` removes all `.ws-escalate` cards
+  - CSS: `.ws-escalate`, `.ws-escalate-prompt`, `.ws-escalate-actions`, `.ws-esc-copy`, `.ws-esc-link` — hidden on print
 
 ### Answer Key
 - [ ] `<section id="answer-key" class="answer-key">` at the bottom

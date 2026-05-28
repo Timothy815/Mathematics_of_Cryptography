@@ -192,6 +192,15 @@
     .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
     @media print { .ws-score-bar { display: none !important; } }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -363,7 +372,7 @@
       </section>
 
       <!-- PART B -->
-      <section id="forward-steps">
+      <section id="forward-steps" data-topic="carrying out the forward Euclidean algorithm steps to find GCD">
         <h2>Part B: Forward Euclidean steps</h2>
         <p>Run the Euclidean algorithm to find the greatest common divisor. Do not back-substitute yet.</p>
 
@@ -432,7 +441,7 @@
       </section>
 
       <!-- PART C -->
-      <section id="back-substitution">
+      <section id="back-substitution" data-topic="back-substituting through Euclidean steps to express GCD as a linear combination">
         <h2>Part C: Guided back-substitution</h2>
 
         <div class="problem">
@@ -469,7 +478,7 @@
       </section>
 
       <!-- PART D -->
-      <section id="full-inverses">
+      <section id="full-inverses" data-topic="finding modular inverses using the extended Euclidean algorithm">
         <h2>Part D: Find modular inverses</h2>
         <p>Use the full extended Euclidean algorithm. Show forward steps and back-substitution.</p>
 
@@ -493,7 +502,7 @@
       </section>
 
       <!-- PART E -->
-      <section id="negative-residues">
+      <section id="negative-residues" data-topic="converting negative Bézout coefficients to positive residues modulo n">
         <h2>Part E: Negative coefficient conversion</h2>
         <p>Convert each negative coefficient to its standard positive residue by adding the modulus.</p>
 
@@ -538,7 +547,7 @@
       </section>
 
       <!-- PART F -->
-      <section id="read-coefficients">
+      <section id="read-coefficients" data-topic="reading the modular inverse from a Bézout identity">
         <h2>Part F: Read the inverse from Bézout form</h2>
         <p>For each equation, identify which coefficient gives the modular inverse. Convert to a positive residue if needed.</p>
 
@@ -588,7 +597,7 @@
       </section>
 
       <!-- PART G -->
-      <section id="affine-decryption">
+      <section id="affine-decryption" data-topic="decrypting affine cipher text using extended Euclidean inverses">
         <h2>Part G: Affine cipher decryption</h2>
         <p>Use the decryption formula:</p>
         <div class="math-display">
@@ -619,7 +628,7 @@
       </section>
 
       <!-- PART H -->
-      <section id="challenge">
+      <section id="challenge" data-topic="applying the extended Euclidean algorithm to a multi-step challenge problem">
         <h2>Part H: Challenge problem</h2>
         <div class="box challenge-box">
           <div class="box-title">Stretch the concept</div>
@@ -782,6 +791,10 @@
 
   <script>
 (function() {
+  var WS_GEM_URL = 'https://gemini.google.com/gem/1bITG0KZgo_vzLOHpWYvqTWk4ydtltSwP?usp=sharing';
+  var WS_MODULE = '07';
+  var WS_TITLE = 'Extended Euclidean Algorithm';
+
   window.wsCheckAll = function() {
     var inputs = document.querySelectorAll('.ans-input[data-answer]');
     var correct = 0, total = 0;
@@ -800,10 +813,48 @@
     var pct = Math.round(100*correct/total);
     disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
     disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+    /* Per-section AI Tutor escalation */
+    document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+      var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+      var existing = sec.querySelector('.ws-escalate');
+      if (wrongInSec.length > 0 && WS_GEM_URL) {
+        if (!existing) {
+          var topic = sec.dataset.topic;
+          var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+            + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+            + 'I\'ve checked my answers and some are wrong in this section. '
+            + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+            + 'Please ask me guiding questions.';
+          var uid = 'ws-esc-' + sec.id;
+          var card = document.createElement('div');
+          card.className = 'ws-escalate no-print';
+          card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+            + '<div class="ws-escalate-actions">'
+            + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+            + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+            + '</div>';
+          sec.appendChild(card);
+        }
+      } else {
+        if (existing) existing.remove();
+      }
+    });
   };
+
+  window.wsEscCopy = function(id, btn) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+    }).catch(function(){ btn.textContent = 'Copy failed'; });
+  };
+
   window.wsReset = function() {
     document.querySelectorAll('.ans-input').forEach(function(inp){ inp.value=''; inp.classList.remove('ws-correct','ws-wrong'); });
     document.querySelectorAll('.written-area').forEach(function(ta){ ta.value=''; });
+    document.querySelectorAll('.ws-escalate').forEach(function(el){ el.remove(); });
     var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
   };
   window.wsRegenerate = function() { wsRegenerateImpl(); };

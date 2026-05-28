@@ -197,6 +197,15 @@
       header.worksheet-header, main { padding: 20px; }
     }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     @page { margin: 0.75in; }
     @media print {
       body { background: #fff; color: #000; font-size: 10.5pt; line-height: 1.4; }
@@ -305,7 +314,7 @@
       </div>
 
       <!-- ── Part 2: Evaluating Functions ───────────────────── -->
-      <div class="ws-part">
+      <section class="ws-part" id="part-2" data-topic="evaluating functions by substituting inputs and computing outputs">
         <h2>Part 2 — Evaluating Functions (Q6–12)</h2>
 
         <!--
@@ -385,8 +394,10 @@
         </div>
       </div>
 
+      </section>
+
       <!-- ── Part 3: Mapping Tables ──────────────────────────── -->
-      <div class="ws-part">
+      <section class="ws-part" id="part-3" data-topic="reading function values from mapping tables and identifying one-to-one functions">
         <h2>Part 3 — Mapping Tables (Q13–17)</h2>
 
         <div class="q">
@@ -467,8 +478,10 @@
         </div>
       </div>
 
+      </section>
+
       <!-- ── Part 4: Composition ─────────────────────────────── -->
-      <div class="ws-part">
+      <section class="ws-part" id="part-4" data-topic="computing composed functions by applying them in sequence">
         <h2>Part 4 — Function Composition (Q18–22)</h2>
 
         <div class="q">
@@ -515,8 +528,10 @@
         </div>
       </div>
 
+      </section>
+
       <!-- ── Part 5: Inverse Functions ──────────────────────── -->
-      <div class="ws-part">
+      <section class="ws-part" id="part-5" data-topic="finding inverse functions and verifying they undo the original function">
         <h2>Part 5 — Inverse Functions (Q23–27)</h2>
 
         <table class="ws-table">
@@ -566,8 +581,10 @@
         </div>
       </div>
 
+      </section>
+
       <!-- ── Part 6: Cryptography ──────────────────────────── -->
-      <div class="ws-part">
+      <section class="ws-part" id="part-6" data-topic="applying functions to XOR encryption and reasoning about cryptographic concepts">
         <h2>Part 6 — Cryptography Applications (Q28–31)</h2>
 
         <div class="q">
@@ -611,7 +628,7 @@
           </table>
           <span class="print-answer">F. F. F — range ⊆ codomain, not necessarily equal. T. T. T.</span>
         </div>
-      </div>
+      </section>
 
     </main>
 
@@ -824,21 +841,18 @@
 
   // ── Universal check/score/regen engine ────────────────────────────────
   (function() {
+    var WS_GEM_URL = 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing';
+    var WS_MODULE = '03';
+    var WS_TITLE = 'Functions as Machines';
+
     window.wsCheckAll = function() {
       var inputs = document.querySelectorAll('.ans-input[data-answer]');
       var correct = 0, total = 0;
       inputs.forEach(function(inp) {
-        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
-        if (user === '') { total++; inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct'); return; }
-        var answers = inp.dataset.answer.split('|').map(function(a){
-          return a.trim().toLowerCase().replace(/\s+/g,'');
-        });
+        var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+        var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
         total++;
-        // For hex: accept with/without 0x prefix
-        var ok = answers.some(function(a) {
-          return user === a || user === '0x' + a || user.replace(/^0x/,'') === a.replace(/^0x/,'');
-        });
-        if (ok) {
+        if (answers.indexOf(user) !== -1) {
           inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
         } else {
           inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
@@ -849,6 +863,42 @@
       var pct = Math.round(100*correct/total);
       disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
       disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+      /* Per-section AI Tutor escalation */
+      document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+        var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+        var existing = sec.querySelector('.ws-escalate');
+        if (wrongInSec.length > 0 && WS_GEM_URL) {
+          if (!existing) {
+            var topic = sec.dataset.topic;
+            var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+              + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+              + 'I\'ve checked my answers and some are wrong in this section. '
+              + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+              + 'Please ask me guiding questions.';
+            var uid = 'ws-esc-' + sec.id;
+            var card = document.createElement('div');
+            card.className = 'ws-escalate no-print';
+            card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+              + '<div class="ws-escalate-actions">'
+              + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+              + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+              + '</div>';
+            sec.appendChild(card);
+          }
+        } else {
+          if (existing) existing.remove();
+        }
+      });
+    };
+
+    window.wsEscCopy = function(id, btn) {
+      var txt = document.getElementById(id);
+      if (!txt) return;
+      navigator.clipboard.writeText(txt.textContent).then(function() {
+        btn.textContent = 'Copied!';
+        setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+      }).catch(function(){ btn.textContent = 'Copy failed'; });
     };
 
     window.wsReset = function() {
@@ -857,8 +907,8 @@
         inp.classList.remove('ws-correct', 'ws-wrong');
       });
       document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
-      var disp = document.getElementById('ws-score-display');
-      if (disp) disp.textContent = '';
+      document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
+      var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
     };
 
     window.wsRegenerate = function() {

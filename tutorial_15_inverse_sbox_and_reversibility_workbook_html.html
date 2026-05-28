@@ -100,6 +100,12 @@
     .drill-fb { min-height: 1.4em; font-weight: 700; font-size: 0.97rem; margin-top: 8px; }
     .drill-fb.ok  { color: #1a7a3a; }
     .drill-fb.err { color: #b0192a; font-weight: 400; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
     .drill-streak { font-size: 0.82rem; color: #7a8aaa; margin-top: 4px; }
 
     .quick-ref summary { font-weight: 800; font-size: 1rem; cursor: pointer; padding: 10px 0; color: var(--accent); }
@@ -262,7 +268,7 @@ function parseHexAnswer(s){ s=s.trim().replace(/^0x/i,''); if(!/^[0-9a-fA-F]{1,2
 
 // ── makeDrill engine ───────────────────────────────────────────────────────
 function makeDrill(cfg) {
-  let streak=0, total=0;
+  let streak=0, total=0, wrongStreak=0;
   const qEl    = document.getElementById(cfg.qId);
   const hintEl = document.getElementById(cfg.hintId);
   const inEl   = cfg.inId ? document.getElementById(cfg.inId) : null;
@@ -271,13 +277,40 @@ function makeDrill(cfg) {
 
   let currentData=null;
 
+  window._copyEscPrompt = window._copyEscPrompt || function(id) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    var btn = txt.parentElement.querySelector('.drill-esc-copy');
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+    }).catch(function() {
+      if (btn) { btn.textContent = 'Copy failed'; }
+    });
+  };
+
+  function buildEscalationCard() {
+    if (!cfg.gemUrl) return '';
+    var uid = cfg.fbId + '-esc';
+    var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+      + 'I keep getting the wrong answer on this drill exercise. '
+      + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+      + 'Please ask me guiding questions to help me figure it out.';
+    return '<div class="drill-escalate">'
+      + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+      + '<div class="drill-escalate-actions">'
+      + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+      + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+      + '</div></div>';
+  }
+
   function render(){
     currentData=cfg.gen();
     qEl.innerHTML=currentData.q;
     if(hintEl) hintEl.innerHTML=currentData.hint||'';
     if(window.MathJax && typeof MathJax.typesetPromise==='function')
-      MathJax.typesetPromise([qEl,hintEl].filter(Boolean)).catch(()=>{});
+      MathJax.typesetPromise([qEl,hintEl].filter(Boolean)).catch(function(){});
     fbEl.textContent=''; fbEl.className='drill-fb';
+    wrongStreak=0;
     if(inEl){ inEl.value=''; inEl.className='drill-input'; }
     if(cfg.renderExtra) cfg.renderExtra(currentData);
     updateStreak();
@@ -291,21 +324,24 @@ function makeDrill(cfg) {
     total++;
     if(result.correct){
       streak++;
-      fbEl.innerHTML='✓ '+(result.msg||'Correct!');
+      wrongStreak=0;
+      fbEl.innerHTML='\u2713 '+(result.msg||'Correct!');
       fbEl.className='drill-fb ok';
       if(inEl) inEl.className='drill-input correct';
     } else {
       streak=0;
-      fbEl.innerHTML='✗ '+(result.msg||'Not quite.');
+      wrongStreak++;
+      var msg='\u2717 '+(result.msg||'Not quite.');
+      fbEl.innerHTML=wrongStreak>=2?msg+buildEscalationCard():msg;
       fbEl.className='drill-fb err';
       if(inEl) inEl.className='drill-input wrong';
     }
     updateStreak();
     if(window.MathJax && typeof MathJax.typesetPromise==='function')
-      MathJax.typesetPromise([fbEl]).catch(()=>{});
+      MathJax.typesetPromise([fbEl]).catch(function(){});
   }
 
-  if(inEl) inEl.addEventListener('keydown',e=>{ if(e.key==='Enter') check(); });
+  if(inEl) inEl.addEventListener('keydown',function(e){ if(e.key==='Enter') check(); });
 
   render();
   return { check, next: render };
@@ -314,6 +350,8 @@ function makeDrill(cfg) {
 // ── Drill 1: Inverse lookup ─────────────────────────────────────────────────
 const d1 = makeDrill({
   qId:'d1-q', hintId:'d1-hint', inId:'d1-in', fbId:'d1-fb', stId:'d1-streak',
+  gemUrl: 'https://gemini.google.com/gem/1yYds2sv4a_oQnkIyOrxfVI2TDG3B5ioi?usp=sharing',
+  topic: 'applying the AES inverse S-box to recover the original byte from an S-box output',
   gen(){
     const x = Math.floor(Math.random()*256);
     const y = SBOX[x];
@@ -337,6 +375,8 @@ const d1 = makeDrill({
 // The intermediate is gfInv(x), same as in the forward direction.
 const d2 = makeDrill({
   qId:'d2-q', hintId:'d2-hint', inId:'d2-in', fbId:'d2-fb', stId:'d2-streak',
+  gemUrl: 'https://gemini.google.com/gem/1yYds2sv4a_oQnkIyOrxfVI2TDG3B5ioi?usp=sharing',
+  topic: 'tracing the intermediate value in the AES inverse S-box round-trip',
   gen(){
     const x = Math.floor(Math.random()*255)+1; // nonzero for interesting intermediate
     const inter = gfInv(x);

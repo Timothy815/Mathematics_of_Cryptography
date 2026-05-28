@@ -212,6 +212,15 @@
     .ans-input.ws-wrong   { border-color: #c62828 !important; background: #fdeaea !important; color: #7f0000 !important; }
     @media print { .ws-score-bar { display: none !important; } }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     @media (max-width: 760px) {
       body { font-size: 16px; }
       header.worksheet-header, main { padding: 24px; }
@@ -335,7 +344,7 @@
       </section>
 
       <!-- PART A -->
-      <section id="part-a">
+      <section id="part-a" data-topic="recalling vocabulary about GF(2) polynomial arithmetic">
         <h2>Part A: Vocabulary</h2>
         <p>Fill in each blank with the correct word or phrase.</p>
 
@@ -361,7 +370,7 @@
       </section>
 
       <!-- PART B -->
-      <section id="part-b">
+      <section id="part-b" data-topic="completing the GF(2) addition table">
         <h2>Part B: GF(2) Addition Table</h2>
         <p>Fill in the <em>Sum mod 2</em> and <em>XOR</em> columns. The first two columns are given.</p>
 
@@ -401,7 +410,7 @@
       </section>
 
       <!-- PART C -->
-      <section id="part-c">
+      <section id="part-c" data-topic="identifying which polynomial terms cancel when added over GF(2)">
         <h2>Part C: Identify Cancellations</h2>
         <p>For each problem: (a) list the terms that cancel, then (b) write the resulting polynomial.</p>
 
@@ -437,7 +446,7 @@
       </section>
 
       <!-- PART D -->
-      <section id="part-d">
+      <section id="part-d" data-topic="computing polynomial addition over GF(2)">
         <h2>Part D: Polynomial Addition</h2>
         <p>Add the polynomials over GF(2). Show your work in the space provided, then write the simplified result.</p>
 
@@ -473,7 +482,7 @@
       </section>
 
       <!-- PART E -->
-      <section id="part-e">
+      <section id="part-e" data-topic="computing XOR of bytes as polynomial addition over GF(2)">
         <h2>Part E: Byte XOR</h2>
         <p>For each row, convert both hex bytes to binary, compute the XOR bit by bit, then write the result in hex and polynomial form. Hex values A and B are given.</p>
 
@@ -546,7 +555,7 @@
       </section>
 
       <!-- PART F -->
-      <section id="part-f">
+      <section id="part-f" data-topic="understanding the self-XOR property of polynomial addition over GF(2)">
         <h2>Part F: Self-XOR Property</h2>
         <div class="box quick-reference-box">
           <div class="box-title">Key property</div>
@@ -567,7 +576,7 @@
       </section>
 
       <!-- PART G -->
-      <section id="part-g">
+      <section id="part-g" data-topic="demonstrating that subtraction equals addition in GF(2) polynomial arithmetic">
         <h2>Part G: Subtraction = Addition</h2>
 
         <div class="problem">
@@ -780,6 +789,10 @@
 
   <script>
 (function() {
+  var WS_GEM_URL = 'https://gemini.google.com/gem/1ULr02x-0qYjRVlm3BIaVEQNvzfQ29XaM?usp=sharing';
+  var WS_MODULE = '09';
+  var WS_TITLE = 'Polynomial Addition over GF(2)';
+
   window.wsCheckAll = function() {
     var inputs = document.querySelectorAll('.ans-input[data-answer]');
     var correct = 0, total = 0;
@@ -798,10 +811,48 @@
     var pct = Math.round(100*correct/total);
     disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
     disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+    /* Per-section AI Tutor escalation */
+    document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+      var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+      var existing = sec.querySelector('.ws-escalate');
+      if (wrongInSec.length > 0 && WS_GEM_URL) {
+        if (!existing) {
+          var topic = sec.dataset.topic;
+          var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+            + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+            + 'I\'ve checked my answers and some are wrong in this section. '
+            + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+            + 'Please ask me guiding questions.';
+          var uid = 'ws-esc-' + sec.id;
+          var card = document.createElement('div');
+          card.className = 'ws-escalate no-print';
+          card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+            + '<div class="ws-escalate-actions">'
+            + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+            + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+            + '</div>';
+          sec.appendChild(card);
+        }
+      } else {
+        if (existing) existing.remove();
+      }
+    });
   };
+
+  window.wsEscCopy = function(id, btn) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      btn.textContent = 'Copied!';
+      setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+    }).catch(function(){ btn.textContent = 'Copy failed'; });
+  };
+
   window.wsReset = function() {
     document.querySelectorAll('.ans-input').forEach(function(inp){ inp.value=''; inp.classList.remove('ws-correct','ws-wrong'); });
     document.querySelectorAll('.written-area').forEach(function(ta){ ta.value=''; });
+    document.querySelectorAll('.ws-escalate').forEach(function(el){ el.remove(); });
     var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
   };
   window.wsRegenerate = function() { wsRegenerateImpl(); };

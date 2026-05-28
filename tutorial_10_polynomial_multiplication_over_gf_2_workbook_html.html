@@ -71,6 +71,12 @@
     .drill-fb { font-size:0.95rem; font-weight:700; min-height:1.4em; padding:6px 10px; border-radius:8px; }
     .drill-fb.ok { background:#edf7ed; color:#1b5e20; }
     .drill-fb.err { background:#fdeaea; color:#7f0000; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
     .drill-streak { font-size:0.88rem; color:#e65100; font-weight:800; margin-top:6px; min-height:1.2em; }
 
     @media print {
@@ -205,52 +211,83 @@
   <script>
     // ─── makeDrill engine ───────────────────────────────────────────────────────
     function makeDrill(cfg) {
-      // cfg: { containerId, questionFn, checkFn, hintText, useYesNo }
+      // cfg: { containerId, questionFn, checkFn, hintText, useYesNo, gemUrl, topic }
       const sec = document.getElementById(cfg.containerId);
       const qDiv = sec.querySelector('.drill-q');
       const fbDiv = sec.querySelector('.drill-fb');
       const streakDiv = sec.querySelector('.drill-streak');
       let streak = 0;
+      let wrongStreak = 0;
+
+      window._copyEscPrompt = window._copyEscPrompt || function(id) {
+        var txt = document.getElementById(id);
+        if (!txt) return;
+        var btn = txt.parentElement.querySelector('.drill-esc-copy');
+        navigator.clipboard.writeText(txt.textContent).then(function() {
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+        }).catch(function() {
+          if (btn) { btn.textContent = 'Copy failed'; }
+        });
+      };
+
+      function buildEscalationCard() {
+        if (!cfg.gemUrl) return '';
+        var uid = cfg.containerId + '-esc';
+        var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+          + 'I keep getting the wrong answer on this drill exercise. '
+          + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+          + 'Please ask me guiding questions to help me figure it out.';
+        return '<div class="drill-escalate">'
+          + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="drill-escalate-actions">'
+          + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+          + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div></div>';
+      }
 
       function nextQ() {
         cfg.currentData = cfg.questionFn();
         qDiv.innerHTML = cfg.currentData.html;
         fbDiv.className = 'drill-fb'; fbDiv.textContent = '';
-        streakDiv.textContent = streak > 0 ? '🔥 Streak: ' + streak : '';
+        wrongStreak = 0;
+        streakDiv.textContent = streak > 0 ? '\uD83D\uDD25 Streak: ' + streak : '';
         if (!cfg.useYesNo) {
           const inp = sec.querySelector('.drill-inp');
           if (inp) { inp.value = ''; inp.className = 'drill-inp'; inp.focus(); }
         }
-        if (window.MathJax && typeof MathJax.typesetPromise === 'function') MathJax.typesetPromise([sec]).catch(()=>{});
+        if (window.MathJax && typeof MathJax.typesetPromise === 'function') MathJax.typesetPromise([sec]).catch(function(){});
       }
 
       function check(userAns) {
         const result = cfg.checkFn(userAns, cfg.currentData);
         if (result.correct) {
           streak++;
-          fbDiv.textContent = '✓ ' + result.msg;
+          wrongStreak = 0;
+          fbDiv.innerHTML = '\u2713 ' + result.msg;
           fbDiv.className = 'drill-fb ok';
           if (!cfg.useYesNo) { const inp = sec.querySelector('.drill-inp'); if(inp) inp.className='drill-inp correct'; }
         } else {
           streak = 0;
-          fbDiv.textContent = '✗ ' + result.msg;
+          wrongStreak++;
+          var msg = '\u2717 ' + result.msg;
+          fbDiv.innerHTML = wrongStreak >= 2 ? msg + buildEscalationCard() : msg;
           fbDiv.className = 'drill-fb err';
           if (!cfg.useYesNo) { const inp = sec.querySelector('.drill-inp'); if(inp) inp.className='drill-inp wrong'; }
         }
-        streakDiv.textContent = streak > 0 ? '🔥 Streak: ' + streak : '';
+        streakDiv.textContent = streak > 0 ? '\uD83D\uDD25 Streak: ' + streak : '';
       }
 
       sec.querySelector('.drill-next').addEventListener('click', nextQ);
       if (!cfg.useYesNo) {
-        sec.querySelector('.drill-check').addEventListener('click', () => {
+        sec.querySelector('.drill-check').addEventListener('click', function() {
           check(sec.querySelector('.drill-inp').value.trim());
         });
-        sec.querySelector('.drill-inp').addEventListener('keydown', e => {
+        sec.querySelector('.drill-inp').addEventListener('keydown', function(e) {
           if (e.key === 'Enter') check(sec.querySelector('.drill-inp').value.trim());
         });
       } else {
-        sec.querySelectorAll('.drill-yn').forEach(btn => {
-          btn.addEventListener('click', () => check(btn.dataset.val));
+        sec.querySelectorAll('.drill-yn').forEach(function(btn) {
+          btn.addEventListener('click', function() { check(btn.dataset.val); });
         });
       }
       nextQ();
@@ -302,6 +339,8 @@
     // ─── Drill 1: Single-term multiplication ────────────────────────────────────
     makeDrill({
       containerId: 'd1-sec',
+      gemUrl: 'https://gemini.google.com/gem/11A0OD4ATXppEKDMvwm9rLIFeBbjPZbtn?usp=sharing',
+      topic: 'multiplying single-term polynomials over GF(2) by adding exponents',
       questionFn() {
         const a = rnd(0, 7);
         const b = rnd(0, 7);
@@ -329,6 +368,8 @@
     // ─── Drill 2: Simplify — cancel duplicate terms ──────────────────────────────
     makeDrill({
       containerId: 'd2-sec',
+      gemUrl: 'https://gemini.google.com/gem/11A0OD4ATXppEKDMvwm9rLIFeBbjPZbtn?usp=sharing',
+      topic: 'simplifying polynomial expressions over GF(2) by cancelling duplicate terms',
       questionFn() {
         // Generate 3–5 terms from exponents 0–7, some may repeat
         const pool = [0,1,2,3,4,5,6,7];
@@ -368,6 +409,8 @@
     // ─── Drill 3: Multiply two small polynomials ─────────────────────────────────
     makeDrill({
       containerId: 'd3-sec',
+      gemUrl: 'https://gemini.google.com/gem/11A0OD4ATXppEKDMvwm9rLIFeBbjPZbtn?usp=sharing',
+      topic: 'multiplying two polynomials over GF(2) by distributing terms and cancelling',
       questionFn() {
         // Each polynomial: 2 distinct terms, exponents 0–5
         function randPoly2() {
@@ -403,6 +446,8 @@
     makeDrill({
       containerId: 'd4-sec',
       useYesNo: true,
+      gemUrl: 'https://gemini.google.com/gem/11A0OD4ATXppEKDMvwm9rLIFeBbjPZbtn?usp=sharing',
+      topic: 'deciding whether a polynomial product over GF(2) needs reduction mod the irreducible polynomial',
       questionFn() {
         // Pick two "byte polynomial" leading exponents (0–7)
         const a = rnd(0, 7);

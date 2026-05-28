@@ -163,6 +163,12 @@
     }
     .drill-fb.ok  { color: #2e7d32; }
     .drill-fb.err { color: #c62828; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
     .drill-streak { font-size: 0.8rem; color: #7d5a00; margin-top: 10px; font-weight: 600; }
 
     /* Bottom nav */
@@ -434,9 +440,10 @@
     /* ── makeDrill ─────────────────────────────────────────────────── */
     function makeDrill(cfg) {
       var state;
-      var checked = false;
-      var correct = 0;
-      var total   = 0;
+      var checked    = false;
+      var correct    = 0;
+      var total      = 0;
+      var wrongStreak = 0;
 
       var qEl    = document.getElementById(cfg.id + '-q');
       var inp    = document.getElementById(cfg.id + '-inp');
@@ -444,6 +451,32 @@
       var strk   = document.getElementById(cfg.id + '-streak');
       var btnChk = document.getElementById(cfg.id + '-check');
       var btnNxt = document.getElementById(cfg.id + '-next');
+
+      window._copyEscPrompt = window._copyEscPrompt || function(id) {
+        var txt = document.getElementById(id);
+        if (!txt) return;
+        var btn = txt.parentElement.querySelector('.drill-esc-copy');
+        navigator.clipboard.writeText(txt.textContent).then(function() {
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+        }).catch(function() {
+          if (btn) { btn.textContent = 'Copy failed'; }
+        });
+      };
+
+      function buildEscalationCard() {
+        if (!cfg.gemUrl) return '';
+        var uid = cfg.id + '-fb-esc';
+        var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+          + 'I keep getting the wrong answer on this drill exercise. '
+          + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+          + 'Please ask me guiding questions to help me figure it out.';
+        return '<div class="drill-escalate">'
+          + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="drill-escalate-actions">'
+          + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+          + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div></div>';
+      }
 
       function typeset(el) {
         if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
@@ -457,9 +490,10 @@
       function load() {
         state   = cfg.gen();
         checked = false;
+        wrongStreak = 0;
         inp.value = '';
         inp.className = 'drill-input';
-        fb.textContent = '';
+        fb.innerHTML = '';
         fb.className = 'drill-fb';
         qEl.innerHTML = state.q;
         typeset(qEl);
@@ -473,12 +507,15 @@
         total++;
         if (ok) {
           correct++;
+          wrongStreak = 0;
           inp.className = 'drill-input correct';
           fb.innerHTML = '&#10003; ' + state.ok;
           fb.className = 'drill-fb ok';
         } else {
+          wrongStreak++;
           inp.className = 'drill-input wrong';
-          fb.innerHTML = '&#10007; ' + state.err;
+          var msg = '&#10007; ' + state.err;
+          fb.innerHTML = wrongStreak >= 2 ? msg + buildEscalationCard() : msg;
           fb.className = 'drill-fb err';
         }
         updateStreak();
@@ -497,6 +534,8 @@
     /* ── Drill 1: Single Division Step ─────────────────────────────── */
     makeDrill({
       id: 'd1',
+      gemUrl: 'https://gemini.google.com/gem/1ztr2MLmWkWWjpsCKQFr1mbZIhB9vWUbk?usp=sharing',
+      topic: 'computing a single division step in the Euclidean algorithm',
       gen: function () {
         var p = pick(DIV_POOL);
         return {
@@ -512,6 +551,8 @@
     /* ── Drill 2: Find the GCD ──────────────────────────────────────── */
     makeDrill({
       id: 'd2',
+      gemUrl: 'https://gemini.google.com/gem/1ztr2MLmWkWWjpsCKQFr1mbZIhB9vWUbk?usp=sharing',
+      topic: 'finding the greatest common divisor using the Euclidean algorithm',
       gen: function () {
         var p = pick(GCD_POOL);
         return {
@@ -527,6 +568,8 @@
     /* ── Drill 3: Identify Next Pair ────────────────────────────────── */
     makeDrill({
       id: 'd3',
+      gemUrl: 'https://gemini.google.com/gem/1ztr2MLmWkWWjpsCKQFr1mbZIhB9vWUbk?usp=sharing',
+      topic: 'identifying the next pair of numbers in the Euclidean algorithm',
       gen: function () {
         var p = pick(DIV_POOL);
         /* After a=q*b+r, next pair is (b, r). Larger = b (since b > r always). */
@@ -543,6 +586,8 @@
     /* ── Drill 4: Coprime Check ─────────────────────────────────────── */
     makeDrill({
       id: 'd4',
+      gemUrl: 'https://gemini.google.com/gem/1ztr2MLmWkWWjpsCKQFr1mbZIhB9vWUbk?usp=sharing',
+      topic: 'checking whether two numbers are coprime using the Euclidean algorithm',
       gen: function () {
         var p = pick(COP_POOL);
         var ans = p.yes ? 'YES' : 'NO';

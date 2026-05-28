@@ -123,6 +123,12 @@
     }
     .drill-fb.ok  { color: #1a7a3a; }
     .drill-fb.err { color: #b0192a; font-weight: 400; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
 
     .drill-streak {
       font-size: 0.82rem;
@@ -367,18 +373,45 @@ function toyReduce(val) {
 
 // ── makeDrill engine ───────────────────────────────────────────────────────
 function makeDrill(cfg) {
-  let streak = 0, total = 0;
+  let streak = 0, total = 0, wrongStreak = 0;
   const qEl  = document.getElementById(cfg.qId);
   const inEl = document.getElementById(cfg.inId);
   const fbEl = document.getElementById(cfg.fbId);
   const stEl = document.getElementById(cfg.stId);
 
+  window._copyEscPrompt = window._copyEscPrompt || function(id) {
+    var txt = document.getElementById(id);
+    if (!txt) return;
+    var btn = txt.parentElement.querySelector('.drill-esc-copy');
+    navigator.clipboard.writeText(txt.textContent).then(function() {
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+    }).catch(function() {
+      if (btn) { btn.textContent = 'Copy failed'; }
+    });
+  };
+
+  function buildEscalationCard() {
+    if (!cfg.gemUrl) return '';
+    var uid = cfg.fbId + '-esc';
+    var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+      + 'I keep getting the wrong answer on this drill exercise. '
+      + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+      + 'Please ask me guiding questions to help me figure it out.';
+    return '<div class="drill-escalate">'
+      + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+      + '<div class="drill-escalate-actions">'
+      + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+      + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+      + '</div></div>';
+  }
+
   function render(q) {
     qEl.innerHTML = q;
     if (window.MathJax && typeof MathJax.typesetPromise === 'function')
-      MathJax.typesetPromise([qEl]).catch(() => {});
+      MathJax.typesetPromise([qEl]).catch(function() {});
     fbEl.textContent = '';
     fbEl.className = 'drill-fb';
+    wrongStreak = 0;
     if (inEl) { inEl.value = ''; inEl.className = 'drill-input'; }
     updateStreak();
   }
@@ -395,21 +428,24 @@ function makeDrill(cfg) {
     total++;
     if (result.correct) {
       streak++;
-      fbEl.textContent = '✓ ' + (result.msg || 'Correct!');
+      wrongStreak = 0;
+      fbEl.textContent = '\u2713 ' + (result.msg || 'Correct!');
       fbEl.className = 'drill-fb ok';
       if (inEl) inEl.className = 'drill-input correct';
     } else {
       streak = 0;
-      fbEl.innerHTML = '✗ ' + (result.msg || 'Not quite.');
+      wrongStreak++;
+      var msg = '\u2717 ' + (result.msg || 'Not quite.');
+      fbEl.innerHTML = wrongStreak >= 2 ? msg + buildEscalationCard() : msg;
       fbEl.className = 'drill-fb err';
       if (inEl) inEl.className = 'drill-input wrong';
     }
     updateStreak();
     if (window.MathJax && typeof MathJax.typesetPromise === 'function')
-      MathJax.typesetPromise([fbEl]).catch(() => {});
+      MathJax.typesetPromise([fbEl]).catch(function() {});
   }
 
-  if (inEl) inEl.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  if (inEl) inEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') check(); });
 
   let currentData = {};
   const origGen = cfg.gen;
@@ -442,6 +478,8 @@ let d1Deg = 3;
 
 const d1 = makeDrill({
   qId: 'd1-q', inId: 'd1-in', fbId: 'd1-fb', stId: 'd1-streak',
+  gemUrl: 'https://gemini.google.com/gem/1dBLO5tG4kCGRARhpitQAylhmnX17XxNx?usp=sharing',
+  topic: 'reducing high-degree monomials using the toy modulus x^3 + x + 1 over GF(2)',
   gen() {
     const degs = [3, 4, 5, 6];
     d1Deg = degs[Math.floor(Math.random() * degs.length)];
@@ -462,6 +500,8 @@ let d2Problem = 0;
 
 const d2 = makeDrill({
   qId: 'd2-q', inId: 'd2-in', fbId: 'd2-fb', stId: 'd2-streak',
+  gemUrl: 'https://gemini.google.com/gem/1dBLO5tG4kCGRARhpitQAylhmnX17XxNx?usp=sharing',
+  topic: 'reducing polynomials modulo the toy irreducible polynomial x^3 + x + 1',
   gen() {
     // random polynomial degree 3–6, at least one term >= degree 3
     let v = 0;
@@ -505,6 +545,8 @@ let d3Idx = -1;
 
 const d3 = makeDrill({
   qId: 'd3-q', inId: 'd3-in', fbId: 'd3-fb', stId: 'd3-streak',
+  gemUrl: 'https://gemini.google.com/gem/1dBLO5tG4kCGRARhpitQAylhmnX17XxNx?usp=sharing',
+  topic: 'recognising facts about the AES irreducible polynomial and GF(2) arithmetic',
   gen() {
     let idx;
     do { idx = Math.floor(Math.random() * D3_QS.length); } while (idx === d3Idx && D3_QS.length > 1);
@@ -527,6 +569,8 @@ let d4Problem = 0;
 
 const d4 = makeDrill({
   qId: 'd4-q', inId: 'd4-in', fbId: 'd4-fb', stId: 'd4-streak',
+  gemUrl: 'https://gemini.google.com/gem/1dBLO5tG4kCGRARhpitQAylhmnX17XxNx?usp=sharing',
+  topic: 'reducing polynomials using the AES modulus x^8 + x^4 + x^3 + x + 1',
   gen() {
     // random polynomial degree 8–10 with guaranteed x^8 term
     let v = 0;

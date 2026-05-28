@@ -209,6 +209,12 @@
 
     .drill-feedback.correct { background: #eafff2; color: #1a7a42; border: 1px solid #a3d9b5; }
     .drill-feedback.wrong   { background: #fff0f0; color: #a03030; border: 1px solid #f5b8b8; }
+    .drill-escalate { margin-top: 10px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 14px; }
+    .drill-escalate-prompt { font-size: 0.81rem; color: #3730a3; margin-bottom: 8px; line-height: 1.5; font-style: italic; }
+    .drill-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .drill-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .drill-esc-copy:hover { opacity: 0.85; }
+    .drill-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
 
     .drill-score {
       margin-top: 14px;
@@ -387,20 +393,48 @@
 
     // ── Generic drill engine ────────────────────────────────────────────────
     function makeDrill(cfg) {
-      var el      = document.getElementById(cfg.id);
-      var correct = 0;
-      var total   = 0;
-      var state   = {};
+      var el         = document.getElementById(cfg.id);
+      var correct    = 0;
+      var total      = 0;
+      var state      = {};
+      var wrongStreak = 0;
+
+      window._copyEscPrompt = window._copyEscPrompt || function(id) {
+        var txt = document.getElementById(id);
+        if (!txt) return;
+        var btn = txt.parentElement.querySelector('.drill-esc-copy');
+        navigator.clipboard.writeText(txt.textContent).then(function() {
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500); }
+        }).catch(function() {
+          if (btn) { btn.textContent = 'Copy failed'; }
+        });
+      };
+
+      function buildEscalationCard() {
+        if (!cfg.gemUrl) return '';
+        var uid = cfg.id + '-fb-esc';
+        var promptText = 'I\'m working through ' + cfg.topic + ' in the Mathematics of Cryptography course. '
+          + 'I keep getting the wrong answer on this drill exercise. '
+          + 'Can you help me understand where my thinking is going wrong, without giving me the direct answer? '
+          + 'Please ask me guiding questions to help me figure it out.';
+        return '<div class="drill-escalate">'
+          + '<div class="drill-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="drill-escalate-actions">'
+          + '<button class="drill-esc-copy" onclick="_copyEscPrompt(\'' + uid + '\')">Copy prompt</button>'
+          + '<a href="' + cfg.gemUrl + '" target="_blank" class="drill-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div></div>';
+      }
 
       function render() {
         state = cfg.gen();
+        wrongStreak = 0;
         el.innerHTML =
           '<div class="drill-question" id="'+cfg.id+'-q"></div>' +
           (state.table || '') +
           '<div class="drill-input-row">' +
             '<input class="drill-inp" id="'+cfg.id+'-inp" placeholder="'+( cfg.placeholder||'Answer')+'" />' +
             '<button class="drill-check-btn" id="'+cfg.id+'-chk">Check</button>' +
-            '<button class="drill-next-btn" id="'+cfg.id+'-nxt">Next →</button>' +
+            '<button class="drill-next-btn" id="'+cfg.id+'-nxt">Next \u2192</button>' +
           '</div>' +
           '<div class="drill-feedback" id="'+cfg.id+'-fb"></div>' +
           '<div class="drill-score" id="'+cfg.id+'-sc">Score: <span>'+correct+' / '+total+'</span></div>';
@@ -416,7 +450,7 @@
         inp.focus({ preventScroll: true });
 
         document.getElementById(cfg.id+'-chk').addEventListener('click', check);
-        document.getElementById(cfg.id+'-nxt').addEventListener('click', function(){ total = total; render(); });
+        document.getElementById(cfg.id+'-nxt').addEventListener('click', function(){ render(); });
         inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); });
       }
 
@@ -428,12 +462,20 @@
         if (!raw) return;
         total++;
         var ok = cfg.check(raw, state.a);
-        if (ok) correct++;
+        if (ok) {
+          correct++;
+          wrongStreak = 0;
+        } else {
+          wrongStreak++;
+        }
         fb.style.display = 'block';
         fb.className = 'drill-feedback ' + (ok ? 'correct' : 'wrong');
-        fb.innerHTML = ok
-          ? '&#10003; Correct! ' + (state.hint || '')
-          : '&#10007; Not quite. ' + (state.hint || 'Answer: ' + state.a);
+        if (ok) {
+          fb.innerHTML = '&#10003; Correct! ' + (state.hint || '');
+        } else {
+          var msg = '&#10007; Not quite. ' + (state.hint || 'Answer: ' + state.a);
+          fb.innerHTML = wrongStreak >= 2 ? msg + buildEscalationCard() : msg;
+        }
         sc.innerHTML = 'Score: <span>' + correct + ' / ' + total + '</span>';
         if (window.MathJax && MathJax.typesetPromise) {
           MathJax.typesetPromise([fb]);
@@ -450,6 +492,8 @@
     makeDrill({
       id: 'd1',
       placeholder: 'Number',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'evaluating linear functions of the form f(x) = ax + b',
       gen: function () {
         var a = rnd(2, 6), b = rnd(1, 9), x = rnd(2, 10);
         var ans = a * x + b;
@@ -466,6 +510,8 @@
     makeDrill({
       id: 'd2',
       placeholder: 'Number',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'finding the inverse of a simple function by undoing its operation',
       gen: function () {
         var a = rnd(2, 9), x = rnd(3, 12);
         var fx = x + a;
@@ -482,6 +528,8 @@
     makeDrill({
       id: 'd3',
       placeholder: 'Number',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'computing function composition (g∘f)(x) step by step',
       gen: function () {
         var a = rnd(1, 5), b = rnd(2, 5), x = rnd(2, 8);
         var fx  = x + a;
@@ -500,6 +548,8 @@
     makeDrill({
       id: 'd4',
       placeholder: 'YES or NO',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'determining whether a mapping table represents a one-to-one function',
       gen: function () {
         var isOTO = Math.random() < 0.5;
         var inputs  = [0, 1, 2, 3];
@@ -545,6 +595,8 @@
     makeDrill({
       id: 'd5',
       placeholder: '0xXX',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'computing XOR encryption using the one-time pad function E_K(P) = P ⊕ K',
       gen: function () {
         var P = rnd(0x10, 0xEF);
         var K = rnd(0x10, 0xEF);
@@ -567,6 +619,8 @@
     makeDrill({
       id: 'd6',
       placeholder: 'Number',
+      gemUrl: 'https://gemini.google.com/gem/1R21G2IyyFMVq_Zlzkykk5hJ7HuOITxZs?usp=sharing',
+      topic: 'composing a linear function with a squaring function (g∘f)(x) where g(x) = x²',
       gen: function () {
         var a = rnd(1, 4), x = rnd(2, 6);
         var fx  = x + a;

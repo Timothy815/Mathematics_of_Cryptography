@@ -200,6 +200,15 @@
       .wl { height: 1.9em; border-bottom: 1px solid #888; }
     }
 
+    /* ── AI Tutor escalation ─────────────────────────────────── */
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+
     /* ─── Print: with answers ─── */
     body.show-answers .print-answer {
       display: block !important;
@@ -309,6 +318,7 @@
       <!-- ─────────────────────────────────────────
            PART 2 — Truth Table Fill-In
       ───────────────────────────────────────────── -->
+      <section id="part-2" data-topic="completing XOR, AND, and OR truth tables bit by bit">
       <h2>Part 2: Truth Table Fill-In</h2>
       <p>Complete the Output column for each row.</p>
 
@@ -362,9 +372,12 @@
         </tbody>
       </table>
 
+      </section>
+
       <!-- ─────────────────────────────────────────
            PART 3 — XOR Byte Computations
       ───────────────────────────────────────────── -->
+      <section id="part-3" data-topic="computing XOR of byte pairs in binary and hexadecimal">
       <h2>Part 3: XOR Byte Computations</h2>
       <p>Compute each XOR column by column. Give the result in binary (8 digits) and in hex.</p>
 
@@ -395,9 +408,12 @@
           <span class="print-answer" id="q13-hex-ans"></span></div>
       </div>
 
+      </section>
+
       <!-- ─────────────────────────────────────────
            PART 4 — AND, OR, NOT
       ───────────────────────────────────────────── -->
+      <section id="part-4" data-topic="applying AND masks, OR masks, and NOT to binary bytes">
       <h2>Part 4: AND, OR, and NOT</h2>
 
       <div class="problem">
@@ -430,9 +446,12 @@
           <span class="print-answer" id="q17-hex-ans"></span></div>
       </div>
 
+      </section>
+
       <!-- ─────────────────────────────────────────
            PART 5 — Shifts and Rotations
       ───────────────────────────────────────────── -->
+      <section id="part-5" data-topic="computing left shifts, right shifts, and rotations on 8-bit values">
       <h2>Part 5: Shifts and Rotations</h2>
       <p>Give each answer as 8 binary digits.</p>
 
@@ -460,9 +479,12 @@
           <span class="print-answer" id="q21-print-ans"></span></div>
       </div>
 
+      </section>
+
       <!-- ─────────────────────────────────────────
            PART 6 — Reversibility True/False
       ───────────────────────────────────────────── -->
+      <section id="part-6" data-topic="identifying which bitwise operations are reversible">
       <h2>Part 6: Reversibility — True or False</h2>
 
       <table class="tf-table">
@@ -513,9 +535,12 @@
         </tbody>
       </table>
 
+      </section>
+
       <!-- ─────────────────────────────────────────
            PART 7 — Cryptographic Application
       ───────────────────────────────────────────── -->
+      <section id="part-7" data-topic="encrypting and decrypting a byte using XOR with a key">
       <h2>Part 7: Cryptographic Application</h2>
 
       <div class="problem">
@@ -545,6 +570,7 @@
         </div>
         <span class="print-answer">AND masking clears bits to 0, permanently destroying information. If bits are lost during encryption, decryption cannot recover the original value from the result alone. A cipher step must be reversible so the recipient can decrypt — AND masking violates that requirement.</span>
       </div>
+      </section>
     </main>
 
     <nav class="bottom-nav no-print" aria-label="Bottom navigation">
@@ -839,20 +865,18 @@
 
     // ── Universal check/score/regen engine ────────────────────────────────
     (function() {
+      var WS_GEM_URL = 'https://gemini.google.com/gem/1ewEqlkeYYp5NVkoC9qSB7xfH0b9tzHeU?usp=sharing';
+      var WS_MODULE = '02';
+      var WS_TITLE = 'Bitwise Operations as Algebra';
+
       window.wsCheckAll = function() {
         var inputs = document.querySelectorAll('.ans-input[data-answer]');
         var correct = 0, total = 0;
         inputs.forEach(function(inp) {
-          var user = inp.value.trim().toLowerCase().replace(/\s+/g,'');
-          var answers = inp.dataset.answer.split('|').map(function(a){
-            return a.trim().toLowerCase().replace(/\s+/g,'');
-          });
+          var user = inp.value.trim().toLowerCase().replace(/\s+/g,'').replace(/x\^/g,'x^');
+          var answers = inp.dataset.answer.split('|').map(function(a){ return a.trim().toLowerCase().replace(/\s+/g,''); });
           total++;
-          // Accept with or without 0x prefix for hex answers
-          var ok = answers.some(function(a) {
-            return user === a || user === '0x' + a || user.replace(/^0x/,'') === a.replace(/^0x/,'');
-          });
-          if (ok) {
+          if (answers.indexOf(user) !== -1) {
             inp.classList.add('ws-correct'); inp.classList.remove('ws-wrong'); correct++;
           } else {
             inp.classList.add('ws-wrong'); inp.classList.remove('ws-correct');
@@ -863,6 +887,42 @@
         var pct = Math.round(100*correct/total);
         disp.textContent = correct + ' / ' + total + ' (' + pct + '%)';
         disp.style.color = pct >= 80 ? '#2e7d32' : pct >= 60 ? '#e65100' : '#c62828';
+
+        /* Per-section AI Tutor escalation */
+        document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+          var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+          var existing = sec.querySelector('.ws-escalate');
+          if (wrongInSec.length > 0 && WS_GEM_URL) {
+            if (!existing) {
+              var topic = sec.dataset.topic;
+              var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+                + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+                + 'I\'ve checked my answers and some are wrong in this section. '
+                + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+                + 'Please ask me guiding questions.';
+              var uid = 'ws-esc-' + sec.id;
+              var card = document.createElement('div');
+              card.className = 'ws-escalate no-print';
+              card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+                + '<div class="ws-escalate-actions">'
+                + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+                + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+                + '</div>';
+              sec.appendChild(card);
+            }
+          } else {
+            if (existing) existing.remove();
+          }
+        });
+      };
+
+      window.wsEscCopy = function(id, btn) {
+        var txt = document.getElementById(id);
+        if (!txt) return;
+        navigator.clipboard.writeText(txt.textContent).then(function() {
+          btn.textContent = 'Copied!';
+          setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+        }).catch(function(){ btn.textContent = 'Copy failed'; });
       };
 
       window.wsReset = function() {
@@ -871,8 +931,8 @@
           inp.classList.remove('ws-correct', 'ws-wrong', 'correct', 'wrong');
         });
         document.querySelectorAll('.written-area').forEach(function(ta) { ta.value = ''; });
-        var disp = document.getElementById('ws-score-display');
-        if (disp) disp.textContent = '';
+        document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
+        var disp = document.getElementById('ws-score-display'); if(disp) disp.textContent='';
         var panel = document.getElementById('score-panel');
         if (panel) panel.classList.remove('visible');
       };
