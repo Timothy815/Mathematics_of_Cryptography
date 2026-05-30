@@ -1142,21 +1142,41 @@
             h+='<div class="bs-group">'+bsUnit('Dividend',row.r0,Math.max(wDiv,9))+bsUnit('Divisor',row.r1,Math.max(wDiv,9))+'</div>';
 
             var steps=divSubSteps(row.r0,row.r1);
+            var qTerms=[];
             for(var si=0;si<steps.length;si++){
               var st=steps[si];
               var wd=bw([st.rem,st.mask,st.next]);
+              var qTerm=1<<st.sh;
+              qTerms.push(qTerm);
               h+='<div class="eea-sub">';
               h+='<p class="eea-sub-title">Sub-step '+(si+1)+' of '+steps.length+': eliminate the degree-'+pdeg(st.rem)+' leading term</p>';
               h+='<p class="eea-narr">Goal: cancel the leading degree-'+pdeg(st.rem)+' term of the remainder. To cancel a bit by XOR we need another <strong>1 in the same position</strong>. The divisor\'s highest bit sits at degree '+pdeg(row.r1)+'. Shifting the divisor left by '+st.sh+' position'+(st.sh!==1?'s':'')+' (multiplying by x<sup>'+st.sh+'</sup>) moves that leading 1 up to degree '+(pdeg(row.r1)+st.sh)+', matching the remainder\'s leading term. Now both have a 1 at degree '+pdeg(st.rem)+', so XOR cancels it: 1&oplus;1=0.</p>';
               h+='<p class="eea-narr" style="font-size:0.82rem;">XOR mask = divisor &times; x<sup>'+st.sh+'</sup> = '+ph(st.mask)+' &nbsp;= <code>'+hxFull(st.mask)+'</code></p>';
               h+=xorGrid(st.rem,st.mask,Math.max(wd,9));
               h+='<p class="eea-narr" style="margin-top:5px;">Remainder after: '+ph(st.next)+(st.next>0?' &nbsp;= <code>'+hxFull(st.next)+'</code>':'&nbsp;<strong>= 1 — done!</strong>')+'</p>';
+              h+='<p class="eea-narr" style="margin-top:4px;color:#1a4a20;"><strong>Quotient gains one term: x<sup>'+st.sh+'</sup></strong> &nbsp;— the shift amount becomes a term of the quotient.</p>';
               h+='</div>';
             }
 
-            h+='<p class="eea-narr"><strong>Final quotient q</strong> = '+ph(row.q)+' &nbsp;= <code>'+hxFull(row.q)+'</code></p>';
+            /* ── quotient assembly ── */
+            h+='<div class="eea-sub" style="border-left-color:#2a8a4a;background:#f4fbf6;">';
+            h+='<p class="eea-sub-title" style="color:#1a6a30;">Quotient assembled — one term per sub-step</p>';
+            h+='<p class="eea-narr">Each sub-step contributed exactly one term (its shift amount). XOR them all together to get the full quotient:</p>';
+            var termParts=qTerms.map(function(t){return ph(t);});
+            h+='<p class="eea-narr" style="margin:6px 0 4px;">';
+            h+=termParts.join(' &oplus; ')+' = <strong>'+ph(row.q)+'</strong> &nbsp;= <code>'+hxFull(row.q)+'</code>';
+            h+='</p>';
+            var wq=bw([row.q]);
+            h+='<div class="bs-group">';
+            for(var ti=0;ti<qTerms.length;ti++){
+              h+=bsUnit('x<sup>'+pdeg(qTerms[ti])+'</sup> (sub-step '+(ti+1)+')',qTerms[ti],wq);
+            }
+            h+=bsUnit('Quotient q (XOR of all)',row.q,wq);
+            h+='</div>';
+            h+='</div>';
+
             h+='<p class="eea-narr"><strong>New remainder r<sub>'+idx+'</sub></strong> = '+ph(row.r)+(row.r>0?' &nbsp;= <code>'+hxFull(row.r)+'</code>':'&nbsp;= <strong>1</strong>')+'</p>';
-            h+='<div class="bs-group">'+bsUnit('Quotient q',row.q,bw([row.q]))+bsUnit('New remainder r<sub>'+idx+'</sub>',row.r,Math.max(8,bw([row.r])))+'</div>';
+            h+='<div class="bs-group">'+bsUnit('New remainder r<sub>'+idx+'</sub>',row.r,Math.max(8,bw([row.r])))+'</div>';
 
             /* ── PART 2: s update ── */
             h+='<hr class="eea-divider">';
