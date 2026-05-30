@@ -733,6 +733,29 @@
         <p>
           So \(s(x)\) <em>is</em> the inverse of \(a(x)\). The algorithm that builds \(s(x)\) runs as a table — each row produces a smaller remainder until the remainder hits 1, at which point the \(s\) value in that row is the answer.</p>
 
+        <div class="box mistake-box">
+          <div class="box-title">Warning: you cannot plug the hex values into the integer EEA</div>
+          <p>
+            A natural first instinct is: <em>"0x53 and 0x11B look like integers — why not just run gcd(83, 283) using regular integer arithmetic?"</em> The integer EEA does find an answer, but it is the <strong>wrong answer</strong> for a completely different algebraic problem.</p>
+          <p>
+            The integer EEA solves \(83 \cdot s \equiv 1 \pmod{283}\) in the ring \(\mathbb{Z}/283\mathbb{Z}\). It gives \(s = 208 = \texttt{0xD0}\).</p>
+          <p>
+            Verify: \(83 \times 208 = 17264 = 61 \times 283 + 1\). ✓ &nbsp;This is correct integer arithmetic.</p>
+          <p>
+            But try it in \(\mathrm{GF}(2^8)\): &nbsp;\(\texttt{0x53} \times \texttt{0xD0} = \texttt{0x4E} \neq \texttt{0x01}\). ✗</p>
+          <p>
+            The actual GF(2⁸) inverse is \(\texttt{0xCA}\).</p>
+          <p><strong>Why they differ:</strong> the bit pattern <code>0x11B</code> is shared by two completely different mathematical objects:</p>
+          <ul>
+            <li>As an <strong>integer</strong>: it is the number 283, a prime. The ring \(\mathbb{Z}/283\mathbb{Z}\) has integer multiplication with carries between bit positions.</li>
+            <li>As a <strong>GF(2⁸) modulus</strong>: it is the polynomial \(x^8+x^4+x^3+x+1\). The field has polynomial multiplication where every coefficient is reduced mod 2 — no carries, ever.</li>
+          </ul>
+          <p>
+            The simplest demonstration of the difference: &nbsp;\(\texttt{0x53}+\texttt{0x53}=\texttt{0xA6}\) in integer arithmetic (bits carry), but \(\texttt{0x53}\oplus\texttt{0x53}=\texttt{0x00}\) in \(\mathrm{GF}(2^8)\) (every element plus itself is zero). The arithmetic is fundamentally different, so the same algorithm run on the same bit patterns produces different — and incompatible — results.</p>
+          <p>
+            Always use the <strong>polynomial</strong> EEA, with polynomial division and XOR throughout.</p>
+        </div>
+
         <h3>The algorithm as a table</h3>
         <p>
           Maintain two columns — a remainder \(r\) and a coefficient \(s\) — and initialise them with \(m(x)\) and \(a(x)\):</p>
@@ -1286,6 +1309,14 @@
           <div class="box-title">Mistake 4: thinking the inverse alone is the AES S-box</div>
           <p>
             The inverse step is central, but AES also applies an affine transformation afterward.</p>
+        </div>
+
+        <div class="box mistake-box">
+          <div class="box-title">Mistake 5: running the integer EEA on 0x53 and 0x11B</div>
+          <p>
+            The hex values look like numbers, so it is tempting to treat them as integers and compute \(\gcd(83, 283)\) using ordinary integer arithmetic. The integer EEA does produce a result — \(s = 208 = \texttt{0xD0}\), which satisfies \(83 \times 208 \equiv 1\pmod{283}\) as integers. But that result belongs to the ring \(\mathbb{Z}/283\mathbb{Z}\), not to \(\mathrm{GF}(2^8)\).</p>
+          <p>
+            Check: \(\texttt{0x53}\times\texttt{0xD0}=\texttt{0x4E}\) in \(\mathrm{GF}(2^8)\). That is not \(\texttt{0x01}\). The integer approach gives the wrong answer because integer multiplication carries between bit positions, while GF(2⁸) polynomial multiplication does not — the two algebras are not the same even though they share a bit-pattern representation.</p>
         </div>
       </section>
 
