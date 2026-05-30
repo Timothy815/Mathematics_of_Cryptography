@@ -1188,11 +1188,12 @@
             /* ── PART 2: s update ── */
             h+='<hr class="eea-divider">';
             h+='<span class="eea-section-head">Part 2 — Update the inverse tracker s</span>';
-            h+='<p class="eea-narr">Remember: s answers "what polynomial times A equals the current remainder, mod M?" Every time we produce a new remainder by dividing, we need to update s to match the new remainder.</p>';
-            h+='<p class="eea-narr">The update formula is: &nbsp;<strong>s<sub>'+idx+'</sub> = s<sub>'+(idx-2)+'</sub> &oplus; (q &middot; s<sub>'+(idx-1)+'</sub>)</strong></p>';
-            h+='<p class="eea-narr">This is essentially polynomial back-substitution: we track how the new remainder was formed from the previous ones, and carry that bookkeeping into s.</p>';
+            h+='<p class="eea-narr">s answers: <em>"what polynomial times A gives the current remainder, mod M?"</em> Now that Part 1 produced a new remainder, we update s to match it.</p>';
+            h+='<p class="eea-narr">The quotient q = <code>'+hxFull(row.q)+'</code> found in Part 1 feeds directly into this formula:</p>';
+            h+='<p class="eea-narr">&nbsp;&nbsp;<strong>s<sub>'+idx+'</sub> = s<sub>'+(idx-2)+'</sub> &oplus; (q &middot; s<sub>'+(idx-1)+'</sub>)</strong></p>';
 
             var ws=bw([row.s0,row.s1,row.qs1,row.s]);
+            var isFirstStep=(row.s0===0);
 
             h+='<div class="eea-sub">';
             h+='<p class="eea-sub-title">2a. Multiply q &times; s<sub>'+(idx-1)+'</sub> (polynomial multiplication, no reduction)</p>';
@@ -1202,7 +1203,11 @@
 
             h+='<div class="eea-sub">';
             h+='<p class="eea-sub-title">2b. XOR the product with s<sub>'+(idx-2)+'</sub></p>';
-            h+='<p class="eea-narr">s<sub>'+(idx-2)+'</sub> = '+ph(row.s0)+' &nbsp;= <code>'+hx(row.s0)+'</code> &nbsp;&nbsp; product = '+ph(row.qs1)+' &nbsp;= <code>'+hxFull(row.qs1)+'</code></p>';
+            if(isFirstStep){
+              h+='<p class="eea-narr">s<sub>'+(idx-2)+'</sub> = <code>0x00</code> — this is the initialization value from row 0. XOR-ing with zero leaves the product unchanged, so the new s is simply the quotient q. The grid below confirms it: every "Before" bit is 0, so nothing cancels or flips.</p>';
+            } else {
+              h+='<p class="eea-narr">s<sub>'+(idx-2)+'</sub> = '+ph(row.s0)+' &nbsp;= <code>'+hx(row.s0)+'</code> &nbsp;&nbsp; product = '+ph(row.qs1)+' &nbsp;= <code>'+hxFull(row.qs1)+'</code></p>';
+            }
             h+=xorGrid(row.s0,row.qs1,Math.max(ws,bw([row.s0,row.qs1,row.s])));
             h+='</div>';
 
