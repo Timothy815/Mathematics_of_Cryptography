@@ -719,37 +719,349 @@
         </table>
       </section>
 
-      <section id="extended-euclidean-polynomial-preview">
-        <h2>Preview: polynomial extended Euclidean algorithm</h2>
+      <section id="extended-euclidean-polynomial">
+        <h2>Finding inverses: the polynomial extended Euclidean algorithm</h2>
         <p>
-          The integer extended Euclidean algorithm gave us equations like:</p>
-        <div class="math-display">
-          \[
-            1=sa+tn
-          \]
-        </div>
+          The integer extended Euclidean algorithm produces equations like:</p>
+        <div class="math-display">\[1=s\cdot a+t\cdot n\]</div>
         <p>
-          In the polynomial world, the same shape appears:</p>
-        <div class="math-display">
-          \[
-            1=s(x)a(x)+t(x)m(x)
-          \]
-        </div>
+          The polynomial version has exactly the same shape. Given \(a(x)\) and \(m(x)\), find \(s(x)\) and \(t(x)\) such that:</p>
+        <div class="math-display">\[1=s(x)\cdot a(x)+t(x)\cdot m(x)\]</div>
         <p>
-          When we reduce modulo \(m(x)\), the \(t(x)m(x)\) term disappears:</p>
-        <div class="math-display">
-          \[
-            1\equiv s(x)a(x)\pmod{m(x)}
-          \]
-        </div>
+          Reduce modulo \(m(x)\) — the \(t(x)m(x)\) term vanishes — and you have:</p>
+        <div class="math-display">\[1\equiv s(x)\cdot a(x)\pmod{m(x)}\]</div>
         <p>
-          So \(s(x)\) is the inverse of \(a(x)\) modulo \(m(x)\).</p>
+          So \(s(x)\) <em>is</em> the inverse of \(a(x)\). The algorithm that builds \(s(x)\) runs as a table — each row produces a smaller remainder until the remainder hits 1, at which point the \(s\) value in that row is the answer.</p>
 
-        <div class="box technical-box">
-          <div class="box-title">Important note</div>
-          <p>
-            We will practice the polynomial extended Euclidean algorithm later. In this tutorial, the main goal is to understand what inverses mean and how to verify them.</p>
+        <h3>The algorithm as a table</h3>
+        <p>
+          Maintain two columns — a remainder \(r\) and a coefficient \(s\) — and initialise them with \(m(x)\) and \(a(x)\):</p>
+
+        <table class="poly-table">
+          <thead><tr><th>Row</th><th>\(r\) (remainder)</th><th>\(s\) (coefficient of \(a(x)\))</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>\(m(x)\)</td><td>0</td></tr>
+            <tr><td>1</td><td>\(a(x)\)</td><td>1</td></tr>
+            <tr><td>2</td><td>\(r_0 \bmod r_1\)</td><td>\(s_0 \oplus q_1 \cdot s_1\)</td></tr>
+            <tr><td>⋮</td><td>⋮</td><td>⋮</td></tr>
+            <tr><td>k</td><td><strong>1</strong></td><td><strong>← this is \(a^{-1}\)</strong></td></tr>
+          </tbody>
+        </table>
+
+        <p>At each row: divide the previous two remainders to get quotient \(q\) and new remainder \(r\). Update \(s\) using \(s_{\text{new}} = s_{\text{two-back}} \oplus (q \cdot s_{\text{prev}})\). All arithmetic is polynomial arithmetic over \(\mathrm{GF}(2)\) — no reduction by \(m(x)\) during the algorithm itself, just XOR for addition and shift-XOR for multiplication.</p>
+      </section>
+
+      <section id="eea-worked-example">
+        <h2>Worked example: find the inverse of \(\texttt{0x53}\)</h2>
+        <p>
+          \(\texttt{0x53} = x^6+x^4+x+1\). We want \(s(x)\) such that \((x^6+x^4+x+1)\cdot s(x)\equiv 1\pmod{m(x)}\).</p>
+
+        <h3>Initialise</h3>
+        <table class="poly-table">
+          <thead><tr><th>Row</th><th>\(r\)</th><th>hex</th><th>\(s\)</th><th>hex</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>\(x^8+x^4+x^3+x+1\)</td><td><code>0x11B</code></td><td>\(0\)</td><td><code>0x00</code></td></tr>
+            <tr><td>1</td><td>\(x^6+x^4+x+1\)</td><td><code>0x53</code></td><td>\(1\)</td><td><code>0x01</code></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Step 1 — divide row 0 by row 1</h3>
+        <div class="box definition-box" style="font-size:0.92rem;">
+          <div class="box-title">Division: \((x^8+x^4+x^3+x+1)\div(x^6+x^4+x+1)\)</div>
+          <table class="reduction-table" style="font-size:0.87rem;">
+            <thead><tr><th>Quotient term</th><th>Subtract (XOR)</th><th>Remainder so far</th></tr></thead>
+            <tbody>
+              <tr><td>\(x^8\div x^6=x^2\)</td><td>\(x^2\cdot(x^6+x^4+x+1)=x^8+x^6+x^3+x^2\)</td><td>\(x^6+x^4+x^2+x+1\)</td></tr>
+              <tr><td>\(x^6\div x^6=1\)</td><td>\(1\cdot(x^6+x^4+x+1)=x^6+x^4+x+1\)</td><td>\(x^2\)</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;">\(q_1=x^2+1\) &nbsp;(<code>0x05</code>), &nbsp; \(r_2=x^2\) &nbsp;(<code>0x04</code>)</p>
         </div>
+        <p><strong>Update \(s\):</strong> \(s_2 = s_0\oplus(q_1\cdot s_1) = 0\oplus(x^2+1)\cdot 1 = x^2+1\) &nbsp;(<code>0x05</code>)</p>
+
+        <h3>Step 2 — divide row 1 by row 2</h3>
+        <div class="box definition-box" style="font-size:0.92rem;">
+          <div class="box-title">Division: \((x^6+x^4+x+1)\div x^2\)</div>
+          <table class="reduction-table" style="font-size:0.87rem;">
+            <thead><tr><th>Quotient term</th><th>Subtract (XOR)</th><th>Remainder so far</th></tr></thead>
+            <tbody>
+              <tr><td>\(x^6\div x^2=x^4\)</td><td>\(x^4\cdot x^2=x^6\)</td><td>\(x^4+x+1\)</td></tr>
+              <tr><td>\(x^4\div x^2=x^2\)</td><td>\(x^2\cdot x^2=x^4\)</td><td>\(x+1\)</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;">\(q_2=x^4+x^2\) &nbsp;(<code>0x14</code>), &nbsp; \(r_3=x+1\) &nbsp;(<code>0x03</code>)</p>
+        </div>
+        <p><strong>Update \(s\):</strong> \(s_3 = s_1\oplus(q_2\cdot s_2) = 1\oplus(x^4+x^2)\cdot(x^2+1)\)</p>
+        <p style="margin-left:1.5em;">\((x^4+x^2)(x^2+1)=x^6+x^4+x^4+x^2=x^6+x^2\) &nbsp;(<code>0x44</code>)</p>
+        <p style="margin-left:1.5em;">\(s_3 = 1\oplus(x^6+x^2) = x^6+x^2+1\) &nbsp;(<code>0x45</code>)</p>
+
+        <h3>Step 3 — divide row 2 by row 3</h3>
+        <div class="box definition-box" style="font-size:0.92rem;">
+          <div class="box-title">Division: \(x^2\div(x+1)\)</div>
+          <table class="reduction-table" style="font-size:0.87rem;">
+            <thead><tr><th>Quotient term</th><th>Subtract (XOR)</th><th>Remainder so far</th></tr></thead>
+            <tbody>
+              <tr><td>\(x^2\div x=x\)</td><td>\(x\cdot(x+1)=x^2+x\)</td><td>\(x\)</td></tr>
+              <tr><td>\(x\div x=1\)</td><td>\(1\cdot(x+1)=x+1\)</td><td>\(1\)</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;">\(q_3=x+1\) &nbsp;(<code>0x03</code>), &nbsp; \(r_4=1\) &nbsp;— <strong>algorithm stops here</strong></p>
+        </div>
+        <p><strong>Update \(s\):</strong> \(s_4 = s_2\oplus(q_3\cdot s_3) = (x^2+1)\oplus(x+1)\cdot(x^6+x^2+1)\)</p>
+        <p style="margin-left:1.5em;">\((x+1)(x^6+x^2+1)=x^7+x^6+x^3+x^2+x+1\) &nbsp;(<code>0xCF</code>)</p>
+        <p style="margin-left:1.5em;">\(s_4 = (x^2+1)\oplus(x^7+x^6+x^3+x^2+x+1) = x^7+x^6+x^3+x\) &nbsp;(<code>0xCA</code>)</p>
+
+        <div class="box purpose-box">
+          <div class="box-title">Result</div>
+          <p>The remainder reached 1 at row 4. The \(s\) value in that row is the inverse:<br>
+          \(\texttt{0x53}^{-1} = \texttt{0xCA}\)</p>
+          <p style="margin-top:6px;">Verify: \(\texttt{0x53}\times\texttt{0xCA}=\texttt{0x01}\) in \(\mathrm{GF}(2^8)\). ✓</p>
+        </div>
+      </section>
+
+      <section id="eea-interactive" class="no-print">
+        <h2>Interactive: Extended Euclidean Algorithm step by step</h2>
+        <p>Enter any nonzero byte and step through the EEA. Each step shows the polynomial division, the new remainder, and how the inverse coefficient is built up one row at a time.</p>
+
+        <style>
+          .eea-shell { background:#f7f5ef; border:1px solid #c7d2ea; border-radius:16px; padding:22px 26px; margin:18px 0; }
+          .eea-input-row { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:14px; }
+          .eea-input-row label { font-weight:700; font-size:0.88rem; color:#1f3763; display:block; margin-bottom:4px; }
+          .eea-hex { font-family:'Cascadia Code','Consolas',monospace; font-size:1rem; padding:7px 10px; border:1.5px solid #b0bcd4; border-radius:7px; width:90px; }
+          .eea-btn-go  { background:#334e7d; color:#fff; border:none; border-radius:8px; padding:9px 20px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+          .eea-btn-next{ background:#334e7d; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-size:0.95rem; font-weight:700; cursor:pointer; }
+          .eea-btn-rst { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:9px 16px; font-size:0.95rem; cursor:pointer; }
+          .eea-btn-pre { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:7px; padding:6px 12px; font-size:0.83rem; cursor:pointer; }
+          .eea-btn-pre:hover { background:#eef3ff; }
+
+          .eea-table-wrap { overflow-x:auto; margin:14px 0; }
+          .eea-tbl { border-collapse:collapse; width:100%; font-size:0.88rem; }
+          .eea-tbl th { background:#eef3ff; color:#1f3763; padding:8px 12px; text-align:left; border:1px solid #c7d2ea; }
+          .eea-tbl td { padding:8px 12px; border:1px solid #dde3ee; vertical-align:middle; font-family:'Cascadia Code','Consolas',monospace; }
+          .eea-tbl tr.eea-init { background:#f8fbff; }
+          .eea-tbl tr.eea-step { background:#fff; }
+          .eea-tbl tr.eea-done { background:#eafaf0; font-weight:700; }
+          .eea-tbl td.eea-poly { font-family:inherit; font-size:0.85rem; }
+
+          .eea-step-card { background:#fff; border:1px solid #c7d2ea; border-radius:11px; padding:16px 20px; margin-bottom:12px; }
+          .eea-step-card.eea-card-done { border-color:#2a8a4a; background:#eafaf0; }
+          .eea-step-heading { font-size:0.97rem; font-weight:800; color:#1f3763; margin:0 0 10px; }
+          .eea-card-done .eea-step-heading { color:#1a6a30; }
+          .eea-narr { font-size:0.88rem; line-height:1.65; color:#2a2a2a; margin:4px 0; }
+          .eea-narr code { background:#f0f0f0; border-radius:3px; padding:1px 5px; font-size:0.85rem; }
+          .eea-div-tbl { border-collapse:collapse; margin:8px 0; font-size:0.84rem; width:100%; }
+          .eea-div-tbl th { background:#f0f4f8; color:#334e7d; padding:5px 10px; border:1px solid #ccd4e6; text-align:left; }
+          .eea-div-tbl td { padding:5px 10px; border:1px solid #dde3ee; }
+          .eea-result-box { background:#1f3763; color:#fff; border-radius:9px; padding:14px 18px; margin-top:12px; }
+          .eea-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+        </style>
+
+        <div class="eea-shell">
+          <div class="eea-input-row">
+            <div>
+              <label for="eea-in">Byte A (hex)</label>
+              <input id="eea-in" class="eea-hex" type="text" value="53" maxlength="4" autocomplete="off">
+            </div>
+            <button class="eea-btn-go" onclick="eeaStart()">Find Inverse →</button>
+            <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:flex-end;">
+              <span style="font-size:0.8rem;font-weight:700;color:#666;align-self:center;">Presets:</span>
+              <button class="eea-btn-pre" onclick="eeaLoad('53')">0x53</button>
+              <button class="eea-btn-pre" onclick="eeaLoad('02')">0x02</button>
+              <button class="eea-btn-pre" onclick="eeaLoad('57')">0x57</button>
+              <button class="eea-btn-pre" onclick="eeaLoad('03')">0x03</button>
+            </div>
+          </div>
+
+          <div id="eea-table-area"></div>
+          <div id="eea-steps-area"></div>
+          <div id="eea-controls" class="eea-controls" style="display:none;">
+            <button class="eea-btn-next" id="eea-btn-next" onclick="eeaNext()">Next step →</button>
+            <button class="eea-btn-rst" onclick="eeaReset()">Reset</button>
+          </div>
+        </div>
+
+        <script>
+        (function(){
+          var M=0x11B;
+
+          /* ── polynomial ops over GF(2), no field reduction ── */
+          function pdeg(p){ return p===0?-1:Math.floor(Math.log2(p)); }
+          function pmul(a,b){ var r=0; while(b){if(b&1)r^=a; a<<=1; b>>>=1;} return r; }
+          function pdiv(a,b){
+            var q=0,r=a,db=pdeg(b);
+            while(pdeg(r)>=db){ var sh=pdeg(r)-db; q^=(1<<sh); r^=(b<<sh); }
+            return {q:q,r:r};
+          }
+
+          /* ── GF(2^8) multiply for verification ── */
+          function gfm(a,b){ var r=0,aa=a; for(var i=0;i<8;i++){if((b>>i)&1)r^=aa; var hi=aa&0x80; aa=(aa<<1)&0xFF; if(hi)aa^=0x1B;} return r; }
+
+          /* ── display helpers ── */
+          function hx(v){ return '0x'+v.toString(16).toUpperCase().padStart(2,'0'); }
+          function hxFull(v){ return v>0xFF?'0x'+v.toString(16).toUpperCase():hx(v); }
+          function ph(v){
+            if(v===0)return'<em>0</em>';
+            var t=[]; for(var d=14;d>=0;d--) if((v>>d)&1) t.push(d===0?'1':d===1?'x':'x<sup>'+d+'</sup>');
+            return t.join('+');
+          }
+          function pb(s){ s=s.trim().replace(/^0x/i,''); var v=parseInt(s,16); return(isNaN(v)||v<0||v>255)?null:v; }
+
+          /* ── compute all EEA rows upfront ── */
+          function computeEEA(a){
+            var rows=[{r:M,s:0},{r:a,s:1,init:true}];
+            for(var i=0;i<20;i++){
+              var r0=rows[rows.length-2].r, r1=rows[rows.length-1].r;
+              var s0=rows[rows.length-2].s, s1=rows[rows.length-1].s;
+              if(r1<=1) break;
+              var d=pdiv(r0,r1);
+              var r2=d.r, s2=s0^pmul(d.q,s1);
+              rows.push({r:r2,s:s2,q:d.q,r0:r0,r1:r1,s0:s0,s1:s1,qs1:pmul(d.q,s1)});
+            }
+            return rows;
+          }
+
+          /* ── show/hide polynomial long division for each step ── */
+          function divSteps(r0,r1,q){
+            var steps=[], rem=r0, b=r1, db=pdeg(b);
+            var curQ=0;
+            while(pdeg(rem)>=db){
+              var sh=pdeg(rem)-db;
+              var term=1<<sh;
+              var sub=b<<sh;
+              curQ^=term;
+              var nextRem=rem^sub;
+              steps.push({term:term,sub:sub,rem:nextRem});
+              rem=nextRem;
+            }
+            return steps;
+          }
+
+          function renderDivSteps(r0,r1,q){
+            var steps=divSteps(r0,r1,q);
+            if(steps.length===0) return '<p class="eea-narr">Dividend degree &lt; divisor degree — remainder = dividend.</p>';
+            var h='<table class="eea-div-tbl"><thead><tr><th>Quotient term</th><th>XOR out</th><th>Remainder after</th></tr></thead><tbody>';
+            for(var i=0;i<steps.length;i++){
+              var s=steps[i];
+              h+='<tr><td>'+ph(s.term)+'</td><td>'+ph(s.sub)+'</td><td>'+ph(s.rem)+' = <code>'+hxFull(s.rem)+'</code></td></tr>';
+            }
+            h+='</tbody></table>';
+            return h;
+          }
+
+          /* ── state ── */
+          var eeaRows=[], eeaVisible=0, eeaA=-1;
+
+          /* ── render table ── */
+          function renderTable(){
+            var h='<div class="eea-table-wrap"><table class="eea-tbl"><thead><tr>';
+            h+='<th>Row</th><th>r (remainder)</th><th>hex</th><th>s (inverse coeff.)</th><th>hex</th></tr></thead><tbody>';
+            for(var i=0;i<eeaVisible;i++){
+              var row=eeaRows[i];
+              var cls=i<2?'eea-init':(row.r===1?'eea-done':'eea-step');
+              h+='<tr class="'+cls+'">';
+              h+='<td>'+i+'</td>';
+              h+='<td class="eea-poly">'+ph(row.r)+'</td>';
+              h+='<td>'+hxFull(row.r)+'</td>';
+              h+='<td class="eea-poly">'+(row.r===1?'<strong>'+ph(row.s)+'</strong>':ph(row.s))+'</td>';
+              h+='<td>'+(row.r===1?'<strong>'+hx(row.s)+'</strong>':hxFull(row.s))+'</td>';
+              h+='</tr>';
+            }
+            h+='</tbody></table></div>';
+            document.getElementById('eea-table-area').innerHTML=h;
+          }
+
+          /* ── render step cards ── */
+          function renderStepCard(idx){
+            var row=eeaRows[idx];
+            var area=document.getElementById('eea-steps-area');
+            var h='';
+
+            if(row.r===1){
+              /* done card */
+              h='<div class="eea-step-card eea-card-done">';
+              h+='<p class="eea-step-heading">Remainder = 1 — algorithm complete</p>';
+              h+='<p class="eea-narr">The remainder reached 1 in row '+idx+'. The \u2018s\u2019 value in this row is the inverse.</p>';
+              h+='<div class="eea-result-box">';
+              h+='<div style="font-size:0.9rem;opacity:.8;margin-bottom:4px;">GF(2\u2078) inverse</div>';
+              h+='<div style="font-size:1.15rem;font-weight:800;">'+hx(eeaA)+'\u207b\u00b9 = <code style="background:rgba(255,255,255,.18);padding:2px 8px;border-radius:5px;">'+hx(row.s)+'</code></div>';
+              h+='<div style="font-size:0.88rem;margin-top:6px;opacity:.85;">Verify: '+hx(eeaA)+' \u00d7 '+hx(row.s)+' = '+hx(gfm(eeaA,row.s))+' '+(gfm(eeaA,row.s)===1?'\u2714\ufe0f':'&#x2717;')+'</div>';
+              h+='</div></div>';
+            } else {
+              /* step card */
+              h='<div class="eea-step-card">';
+              h+='<p class="eea-step-heading">Row '+(idx)+': divide row '+(idx-2)+' by row '+(idx-1)+'</p>';
+              h+='<p class="eea-narr"><strong>Dividend:</strong> r<sub>'+(idx-2)+'</sub> = '+ph(row.r0)+' = <code>'+hxFull(row.r0)+'</code></p>';
+              h+='<p class="eea-narr"><strong>Divisor:</strong> r<sub>'+(idx-1)+'</sub> = '+ph(row.r1)+' = <code>'+hxFull(row.r1)+'</code></p>';
+              h+=renderDivSteps(row.r0,row.r1,row.q);
+              h+='<p class="eea-narr" style="margin-top:6px;"><strong>Quotient q</strong> = '+ph(row.q)+' = <code>'+hxFull(row.q)+'</code> &nbsp;&nbsp; <strong>Remainder r<sub>'+idx+'</sub></strong> = '+ph(row.r)+' = <code>'+hxFull(row.r)+'</code></p>';
+              h+='<hr style="border:none;border-top:1px solid #e0e6f0;margin:10px 0;">';
+              h+='<p class="eea-narr"><strong>Update s:</strong> s<sub>'+idx+'</sub> = s<sub>'+(idx-2)+'</sub> \u2295 (q \u00b7 s<sub>'+(idx-1)+'</sub>)</p>';
+              h+='<p class="eea-narr" style="margin-left:1.2em;">= '+ph(row.s0)+' \u2295 ('+ph(row.q)+') \u00b7 ('+ph(row.s1)+')</p>';
+              h+='<p class="eea-narr" style="margin-left:1.2em;">= '+ph(row.s0)+' \u2295 '+ph(row.qs1)+' = <code>'+hx(row.s0)+'</code> \u2295 <code>'+hxFull(row.qs1)+'</code> = <code>'+hx(row.s)+'</code></p>';
+              h+='<p class="eea-narr"><strong>New s<sub>'+idx+'</sub></strong> = '+ph(row.s)+' = <code>'+hx(row.s)+'</code></p>';
+              h+='</div>';
+            }
+
+            area.innerHTML+=h;
+            setTimeout(function(){
+              var cards=document.querySelectorAll('.eea-step-card');
+              if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'nearest'});
+            },60);
+          }
+
+          /* ── controls ── */
+          function updateCtrl(){
+            var ctrl=document.getElementById('eea-controls');
+            var btn=document.getElementById('eea-btn-next');
+            ctrl.style.display='';
+            if(eeaVisible>=eeaRows.length){
+              btn.style.display='none';
+            } else {
+              btn.style.display='';
+              var nextRow=eeaRows[eeaVisible];
+              btn.innerHTML=nextRow&&nextRow.r===1?'Show result \u2192':'Next step \u2192';
+            }
+          }
+
+          /* ── public ── */
+          window.eeaStart=function(){
+            var v=pb(document.getElementById('eea-in').value);
+            if(v===null||v===0){
+              document.getElementById('eea-steps-area').innerHTML='<p style="color:#c00;font-weight:700;">'+(v===0?'0x00 has no multiplicative inverse.':'Enter a valid hex byte (01–FF).')+'</p>';
+              return;
+            }
+            eeaA=v; eeaRows=computeEEA(v); eeaVisible=2;
+            document.getElementById('eea-steps-area').innerHTML='';
+            renderTable();
+            updateCtrl();
+          };
+
+          window.eeaNext=function(){
+            if(eeaVisible>=eeaRows.length) return;
+            eeaVisible++;
+            renderTable();
+            renderStepCard(eeaVisible-1);
+            updateCtrl();
+          };
+
+          window.eeaReset=function(){
+            eeaA=-1; eeaRows=[]; eeaVisible=0;
+            document.getElementById('eea-table-area').innerHTML='';
+            document.getElementById('eea-steps-area').innerHTML='';
+            document.getElementById('eea-controls').style.display='none';
+          };
+
+          window.eeaLoad=function(hex){
+            document.getElementById('eea-in').value=hex;
+            eeaReset();
+          };
+
+          document.getElementById('eea-in').addEventListener('keydown',function(e){
+            if(e.key==='Enter') window.eeaStart();
+          });
+
+        })();
+        </script>
       </section>
 
       <section id="aes-sbox-connection">
