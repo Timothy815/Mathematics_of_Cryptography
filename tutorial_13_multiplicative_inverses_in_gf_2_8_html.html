@@ -1126,6 +1126,65 @@
             document.getElementById('eea-steps-area').innerHTML=h;
           }
 
+          /* ── step body (Part 1 + Part 2) — shared by regular and done cards ── */
+          function renderStepBody(idx){
+            var row=eeaRows[idx];
+            var h='';
+
+            h+='<p class="eea-narr">Goal: produce a smaller remainder. We divide the larger polynomial by the smaller one using <strong>polynomial long division over GF(2)</strong>, where every subtraction is a bitwise XOR. Each sub-step eliminates one leading term by XOR-ing a shifted copy of the divisor out of the remainder.</p>';
+
+            /* ── PART 1: division ── */
+            h+='<span class="eea-section-head">Part 1 — Polynomial long division</span>';
+
+            var wDiv=bw([row.r0,row.r1,row.r,row.r1<<(pdeg(row.r0)-pdeg(row.r1))]);
+            h+='<p class="eea-narr"><strong>Dividend r<sub>'+(idx-2)+'</sub></strong> = '+ph(row.r0)+' &nbsp;= <code>'+hxFull(row.r0)+'</code></p>';
+            h+='<p class="eea-narr"><strong>Divisor &nbsp;r<sub>'+(idx-1)+'</sub></strong> = '+ph(row.r1)+' &nbsp;= <code>'+hxFull(row.r1)+'</code></p>';
+            h+='<div class="bs-group">'+bsUnit('Dividend',row.r0,Math.max(wDiv,9))+bsUnit('Divisor',row.r1,Math.max(wDiv,9))+'</div>';
+
+            var steps=divSubSteps(row.r0,row.r1);
+            for(var si=0;si<steps.length;si++){
+              var st=steps[si];
+              var wd=bw([st.rem,st.mask,st.next]);
+              h+='<div class="eea-sub">';
+              h+='<p class="eea-sub-title">Sub-step '+(si+1)+' of '+steps.length+': eliminate the degree-'+pdeg(st.rem)+' leading term</p>';
+              h+='<p class="eea-narr">Goal: cancel the leading degree-'+pdeg(st.rem)+' term of the remainder. To cancel a bit by XOR we need another <strong>1 in the same position</strong>. The divisor\'s highest bit sits at degree '+pdeg(row.r1)+'. Shifting the divisor left by '+st.sh+' position'+(st.sh!==1?'s':'')+' (multiplying by x<sup>'+st.sh+'</sup>) moves that leading 1 up to degree '+(pdeg(row.r1)+st.sh)+', matching the remainder\'s leading term. Now both have a 1 at degree '+pdeg(st.rem)+', so XOR cancels it: 1&oplus;1=0.</p>';
+              h+='<p class="eea-narr" style="font-size:0.82rem;">XOR mask = divisor &times; x<sup>'+st.sh+'</sup> = '+ph(st.mask)+' &nbsp;= <code>'+hxFull(st.mask)+'</code></p>';
+              h+=xorGrid(st.rem,st.mask,Math.max(wd,9));
+              h+='<p class="eea-narr" style="margin-top:5px;">Remainder after: '+ph(st.next)+(st.next>0?' &nbsp;= <code>'+hxFull(st.next)+'</code>':'&nbsp;<strong>= 1 — done!</strong>')+'</p>';
+              h+='</div>';
+            }
+
+            h+='<p class="eea-narr"><strong>Final quotient q</strong> = '+ph(row.q)+' &nbsp;= <code>'+hxFull(row.q)+'</code></p>';
+            h+='<p class="eea-narr"><strong>New remainder r<sub>'+idx+'</sub></strong> = '+ph(row.r)+(row.r>0?' &nbsp;= <code>'+hxFull(row.r)+'</code>':'&nbsp;= <strong>1</strong>')+'</p>';
+            h+='<div class="bs-group">'+bsUnit('Quotient q',row.q,bw([row.q]))+bsUnit('New remainder r<sub>'+idx+'</sub>',row.r,Math.max(8,bw([row.r])))+'</div>';
+
+            /* ── PART 2: s update ── */
+            h+='<hr class="eea-divider">';
+            h+='<span class="eea-section-head">Part 2 — Update the inverse tracker s</span>';
+            h+='<p class="eea-narr">Remember: s answers "what polynomial times A equals the current remainder, mod M?" Every time we produce a new remainder by dividing, we need to update s to match the new remainder.</p>';
+            h+='<p class="eea-narr">The update formula is: &nbsp;<strong>s<sub>'+idx+'</sub> = s<sub>'+(idx-2)+'</sub> &oplus; (q &middot; s<sub>'+(idx-1)+'</sub>)</strong></p>';
+            h+='<p class="eea-narr">This is essentially polynomial back-substitution: we track how the new remainder was formed from the previous ones, and carry that bookkeeping into s.</p>';
+
+            var ws=bw([row.s0,row.s1,row.qs1,row.s]);
+
+            h+='<div class="eea-sub">';
+            h+='<p class="eea-sub-title">2a. Multiply q &times; s<sub>'+(idx-1)+'</sub> (polynomial multiplication, no reduction)</p>';
+            h+='<p class="eea-narr">q = '+ph(row.q)+' &nbsp;= <code>'+hxFull(row.q)+'</code> &nbsp;&nbsp; s<sub>'+(idx-1)+'</sub> = '+ph(row.s1)+' &nbsp;= <code>'+hx(row.s1)+'</code></p>';
+            h+=mulDetail(row.q,row.s1,row.qs1);
+            h+='</div>';
+
+            h+='<div class="eea-sub">';
+            h+='<p class="eea-sub-title">2b. XOR the product with s<sub>'+(idx-2)+'</sub></p>';
+            h+='<p class="eea-narr">s<sub>'+(idx-2)+'</sub> = '+ph(row.s0)+' &nbsp;= <code>'+hx(row.s0)+'</code> &nbsp;&nbsp; product = '+ph(row.qs1)+' &nbsp;= <code>'+hxFull(row.qs1)+'</code></p>';
+            h+=xorGrid(row.s0,row.qs1,Math.max(ws,bw([row.s0,row.qs1,row.s])));
+            h+='</div>';
+
+            h+='<p class="eea-narr"><strong>New s<sub>'+idx+'</sub></strong> = '+ph(row.s)+' &nbsp;= <code>'+hxFull(row.s)+'</code></p>';
+            h+='<div class="bs-group">'+bsUnit('New s<sub>'+idx+'</sub>',row.s,Math.max(8,bw([row.s])))+'</div>';
+
+            return h;
+          }
+
           /* ── step card ── */
           function renderStepCard(idx){
             var row=eeaRows[idx];
@@ -1133,13 +1192,12 @@
             var h='';
 
             if(row.r===1){
-              /* ── done ── */
+              /* ── done: show full step body first, then result box ── */
               h='<div class="eea-card eea-card-done">';
-              h+='<p class="eea-card-title">Remainder reached 1 — algorithm complete!</p>';
-              h+='<p class="eea-narr">The remainder in row '+idx+' is exactly <strong>1</strong>. The inverse-tracker s in this row is the answer, because:</p>';
-              h+='<p class="eea-narr" style="text-align:center;font-size:1.05rem;font-weight:800;margin:10px 0;">A &nbsp;·&nbsp; s<sub>'+idx+'</sub> &equiv; 1 &nbsp;(mod M)</p>';
-              h+='<p class="eea-narr">So <strong>s<sub>'+idx+'</sub> = '+ph(row.s)+' = <code>'+hx(row.s&0xFF)+'</code></strong> is the multiplicative inverse of A = <code>'+hx(eeaA)+'</code>.</p>';
-              h+='<div class="bs-group">'+bsUnit('Inverse = s<sub>'+idx+'</sub>',row.s&0xFF,8)+'</div>';
+              h+='<p class="eea-card-title">Step '+(idx-1)+' &rarr; Row '+idx+': final division — remainder reaches 1!</p>';
+              h+=renderStepBody(idx);
+              h+='<hr class="eea-divider">';
+              h+='<p class="eea-narr">The remainder is <strong>1</strong>. That means A &middot; s<sub>'+idx+'</sub> &equiv; 1 (mod M), so s<sub>'+idx+'</sub> is the inverse.</p>';
               h+='<div class="eea-result-box">';
               h+='<div style="font-size:0.9rem;opacity:.8;margin-bottom:6px;">GF(2⁸) inverse found</div>';
               h+='<div style="font-size:1.15rem;font-weight:800;">'+hx(eeaA)+'⁻¹ = <code>'+hx(row.s&0xFF)+'</code></div>';
@@ -1147,59 +1205,10 @@
               h+='</div></div>';
 
             } else {
-              /* ── step card ── */
+              /* ── intermediate step ── */
               h='<div class="eea-card">';
               h+='<p class="eea-card-title">Step '+(idx-1)+' &rarr; Row '+idx+': divide r<sub>'+(idx-2)+'</sub> by r<sub>'+(idx-1)+'</sub></p>';
-              h+='<p class="eea-narr">Goal: produce a smaller remainder. We divide the larger polynomial by the smaller one using <strong>polynomial long division over GF(2)</strong>, where every subtraction is a bitwise XOR. Each sub-step eliminates one leading term by XOR-ing a shifted copy of the divisor out of the remainder.</p>';
-
-              /* ── PART 1: division ── */
-              h+='<span class="eea-section-head">Part 1 — Polynomial long division</span>';
-
-              var wDiv=bw([row.r0,row.r1,row.r,row.r1<<(pdeg(row.r0)-pdeg(row.r1))]);
-              h+='<p class="eea-narr"><strong>Dividend r<sub>'+(idx-2)+'</sub></strong> = '+ph(row.r0)+' &nbsp;= <code>'+hxFull(row.r0)+'</code></p>';
-              h+='<p class="eea-narr"><strong>Divisor &nbsp;r<sub>'+(idx-1)+'</sub></strong> = '+ph(row.r1)+' &nbsp;= <code>'+hxFull(row.r1)+'</code></p>';
-              h+='<div class="bs-group">'+bsUnit('Dividend',row.r0,Math.max(wDiv,9))+bsUnit('Divisor',row.r1,Math.max(wDiv,9))+'</div>';
-
-              var steps=divSubSteps(row.r0,row.r1);
-              for(var si=0;si<steps.length;si++){
-                var st=steps[si];
-                var wd=bw([st.rem,st.mask,st.next]);
-                h+='<div class="eea-sub">';
-                h+='<p class="eea-sub-title">Sub-step '+(si+1)+' of '+steps.length+': eliminate the degree-'+pdeg(st.rem)+' leading term</p>';
-                h+='<p class="eea-narr">Goal: cancel the leading degree-'+pdeg(st.rem)+' term of the remainder. To cancel a bit by XOR we need another <strong>1 in the same position</strong>. The divisor\'s highest bit sits at degree '+pdeg(row.r1)+'. Shifting the divisor left by '+st.sh+' position'+(st.sh!==1?'s':'')+' (multiplying by x<sup>'+st.sh+'</sup>) moves that leading 1 up to degree '+(pdeg(row.r1)+st.sh)+', matching the remainder\'s leading term. Now both have a 1 at degree '+pdeg(st.rem)+', so XOR cancels it: 1&oplus;1=0.</p>';
-                h+='<p class="eea-narr" style="font-size:0.82rem;">XOR mask = divisor &times; x<sup>'+st.sh+'</sup> = '+ph(st.mask)+' &nbsp;= <code>'+hxFull(st.mask)+'</code></p>';
-                h+=xorGrid(st.rem,st.mask,Math.max(wd,9));
-                h+='<p class="eea-narr" style="margin-top:5px;">Remainder after: '+ph(st.next)+(st.next>0?' &nbsp;= <code>'+hxFull(st.next)+'</code>':'')+'</p>';
-                h+='</div>';
-              }
-
-              h+='<p class="eea-narr"><strong>Final quotient q</strong> = '+ph(row.q)+' &nbsp;= <code>'+hxFull(row.q)+'</code></p>';
-              h+='<p class="eea-narr"><strong>New remainder r<sub>'+idx+'</sub></strong> = '+ph(row.r)+(row.r>0?' &nbsp;= <code>'+hxFull(row.r)+'</code>':'')+'</p>';
-              h+='<div class="bs-group">'+bsUnit('Quotient q',row.q,bw([row.q]))+bsUnit('New remainder r<sub>'+idx+'</sub>',row.r,Math.max(8,bw([row.r])))+'</div>';
-
-              /* ── PART 2: s update ── */
-              h+='<hr class="eea-divider">';
-              h+='<span class="eea-section-head">Part 2 — Update the inverse tracker s</span>';
-              h+='<p class="eea-narr">Remember: s answers "what polynomial times A equals the current remainder, mod M?" Every time we produce a new remainder by dividing, we need to update s to match the new remainder.</p>';
-              h+='<p class="eea-narr">The update formula is: &nbsp;<strong>s<sub>'+idx+'</sub> = s<sub>'+(idx-2)+'</sub> &oplus; (q &middot; s<sub>'+(idx-1)+'</sub>)</strong></p>';
-              h+='<p class="eea-narr">This is essentially polynomial back-substitution: we track how the new remainder was formed from the previous ones, and carry that bookkeeping into s.</p>';
-
-              var ws=bw([row.s0,row.s1,row.qs1,row.s]);
-
-              h+='<div class="eea-sub">';
-              h+='<p class="eea-sub-title">2a. Multiply q &times; s<sub>'+(idx-1)+'</sub> (polynomial multiplication, no reduction)</p>';
-              h+='<p class="eea-narr">q = '+ph(row.q)+' &nbsp;= <code>'+hxFull(row.q)+'</code> &nbsp;&nbsp; s<sub>'+(idx-1)+'</sub> = '+ph(row.s1)+' &nbsp;= <code>'+hx(row.s1)+'</code></p>';
-              h+=mulDetail(row.q,row.s1,row.qs1);
-              h+='</div>';
-
-              h+='<div class="eea-sub">';
-              h+='<p class="eea-sub-title">2b. XOR the product with s<sub>'+(idx-2)+'</sub></p>';
-              h+='<p class="eea-narr">s<sub>'+(idx-2)+'</sub> = '+ph(row.s0)+' &nbsp;= <code>'+hx(row.s0)+'</code> &nbsp;&nbsp; product = '+ph(row.qs1)+' &nbsp;= <code>'+hxFull(row.qs1)+'</code></p>';
-              h+=xorGrid(row.s0,row.qs1,Math.max(ws,bw([row.s0,row.qs1,row.s])));
-              h+='</div>';
-
-              h+='<p class="eea-narr"><strong>New s<sub>'+idx+'</sub></strong> = '+ph(row.s)+' &nbsp;= <code>'+hxFull(row.s)+'</code></p>';
-              h+='<div class="bs-group">'+bsUnit('New s<sub>'+idx+'</sub>',row.s,Math.max(8,bw([row.s])))+'</div>';
+              h+=renderStepBody(idx);
               h+='</div>';
             }
 
