@@ -1143,18 +1143,25 @@
 
             var steps=divSubSteps(row.r0,row.r1);
             var qTerms=[];
+            var runningQ=0;
+            var wq=bw([row.q]);
             for(var si=0;si<steps.length;si++){
               var st=steps[si];
               var wd=bw([st.rem,st.mask,st.next]);
               var qTerm=1<<st.sh;
               qTerms.push(qTerm);
+              runningQ^=qTerm;
               h+='<div class="eea-sub">';
               h+='<p class="eea-sub-title">Sub-step '+(si+1)+' of '+steps.length+': eliminate the degree-'+pdeg(st.rem)+' leading term</p>';
               h+='<p class="eea-narr">Goal: cancel the leading degree-'+pdeg(st.rem)+' term of the remainder. To cancel a bit by XOR we need another <strong>1 in the same position</strong>. The divisor\'s highest bit sits at degree '+pdeg(row.r1)+'. Shifting the divisor left by '+st.sh+' position'+(st.sh!==1?'s':'')+' (multiplying by x<sup>'+st.sh+'</sup>) moves that leading 1 up to degree '+(pdeg(row.r1)+st.sh)+', matching the remainder\'s leading term. Now both have a 1 at degree '+pdeg(st.rem)+', so XOR cancels it: 1&oplus;1=0.</p>';
               h+='<p class="eea-narr" style="font-size:0.82rem;">XOR mask = divisor &times; x<sup>'+st.sh+'</sup> = '+ph(st.mask)+' &nbsp;= <code>'+hxFull(st.mask)+'</code></p>';
               h+=xorGrid(st.rem,st.mask,Math.max(wd,9));
               h+='<p class="eea-narr" style="margin-top:5px;">Remainder after: '+ph(st.next)+(st.next>0?' &nbsp;= <code>'+hxFull(st.next)+'</code>':'&nbsp;<strong>= 1 — done!</strong>')+'</p>';
-              h+='<p class="eea-narr" style="margin-top:4px;color:#1a4a20;"><strong>Quotient gains one term: x<sup>'+st.sh+'</sup></strong> &nbsp;— the shift amount becomes a term of the quotient.</p>';
+              h+='<div style="display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-top:8px;padding:8px 10px;background:#f0f7f0;border-radius:6px;">';
+              h+='<div class="bs-unit"><span class="bs-label" style="color:#1a6a30;">+ x<sup>'+st.sh+'</sup> &nbsp;(this sub-step)</span>'+bitStrip(qTerm,wq)+'</div>';
+              h+='<div style="font-size:1.3rem;font-weight:300;color:#666;padding-top:22px;">&rarr;</div>';
+              h+='<div class="bs-unit"><span class="bs-label" style="color:#1a6a30;">Quotient so far &nbsp;('+ph(runningQ)+')</span>'+bitStrip(runningQ,wq)+'</div>';
+              h+='</div>';
               h+='</div>';
             }
 
