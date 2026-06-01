@@ -868,13 +868,21 @@
           .eea-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
           /* ── summary table ── */
           .eea-table-wrap{overflow-x:auto;margin:14px 0;}
+          .eea-tbl-formula{font-size:0.82rem;color:#334e7d;font-weight:700;margin:0 0 6px;font-family:'Cascadia Code','Consolas',monospace;}
           .eea-tbl{border-collapse:collapse;width:100%;font-size:0.87rem;}
           .eea-tbl th{background:#eef3ff;color:#1f3763;padding:7px 12px;text-align:left;border:1px solid #c7d2ea;}
           .eea-tbl td{padding:7px 12px;border:1px solid #dde3ee;font-family:'Cascadia Code','Consolas',monospace;}
           .eea-tbl tr.eea-init{background:#f8fbff;}
           .eea-tbl tr.eea-step{background:#fff;}
           .eea-tbl tr.eea-done{background:#eafaf0;font-weight:700;}
+          .eea-tbl tr.eea-tbl-active{background:#eef3ff!important;}
           .eea-tbl td.eea-poly{font-family:inherit;font-size:0.82rem;}
+          .eea-tbl td.eea-tbl-src-s{background:#fff8dc!important;color:#6a4000;font-weight:700;}
+          .eea-tbl td.eea-tbl-active-q{background:#dce8ff!important;color:#1f3763;font-weight:700;}
+          .eea-tbl-legend{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+          .eea-tbl-leg{font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:4px;}
+          .eea-tbl-leg-q{background:#dce8ff;color:#1f3763;}
+          .eea-tbl-leg-s{background:#fff8dc;color:#6a4000;}
           /* ── step cards ── */
           .eea-card{background:#fff;border:1px solid #c7d2ea;border-radius:12px;padding:18px 22px;margin-bottom:14px;}
           .eea-card.eea-card-done{border-color:#2a8a4a;background:#eafaf0;}
@@ -1088,19 +1096,51 @@
 
           /* ── summary table ── */
           function renderTable(){
-            var h='<div class="eea-table-wrap"><table class="eea-tbl"><thead><tr>';
-            h+='<th>Row</th><th>r (remainder)</th><th>hex</th><th>s (inverse tracker)</th><th>hex</th></tr></thead><tbody>';
+            var cur=eeaVisible-1;
+            var h='<div class="eea-table-wrap">';
+            h+='<p class="eea-tbl-formula">s<sub>i</sub> = s<sub>i&minus;2</sub> &oplus; (q<sub>i</sub> &times; s<sub>i&minus;1</sub>)</p>';
+            h+='<table class="eea-tbl"><thead><tr>';
+            h+='<th>Row</th>';
+            h+='<th>r &nbsp;(remainder)</th><th>hex</th>';
+            h+='<th>q &nbsp;(quotient)</th><th>hex</th>';
+            h+='<th>s &nbsp;(inverse tracker)</th><th>hex</th>';
+            h+='</tr></thead><tbody>';
             for(var i=0;i<eeaVisible;i++){
               var row=eeaRows[i];
-              var cls=i<2?'eea-init':(row.r===1?'eea-done':'eea-step');
-              h+='<tr class="'+cls+'"><td>'+i+'</td>';
+              var isInit=(i<2);
+              var isDone=(row.r===1);
+              var isCur=(i===cur&&cur>=2);
+              var isSrc=(i===cur-1||i===cur-2)&&cur>=2;
+              var rowCls=isInit?'eea-init':(isDone?'eea-done':'eea-step');
+              if(isCur)rowCls+=' eea-tbl-active';
+              h+='<tr class="'+rowCls+'"><td>'+i+'</td>';
+              /* r */
               h+='<td class="eea-poly">'+ph(row.r)+'</td>';
               h+='<td>'+hxFull(row.r)+'</td>';
-              h+='<td class="eea-poly">'+(row.r===1?'<strong>'+ph(row.s)+'</strong>':ph(row.s))+'</td>';
-              h+='<td>'+(row.r===1?'<strong>'+hx(row.s&0xFF)+'</strong>':hxFull(row.s))+'</td>';
+              /* q */
+              if(isInit||row.q===undefined){
+                h+='<td style="color:#bbb;text-align:center;">—</td><td style="color:#bbb;text-align:center;">—</td>';
+              } else {
+                var qcls='eea-poly'+(isCur?' eea-tbl-active-q':'');
+                var qhcls=isCur?'eea-tbl-active-q':'';
+                h+='<td class="'+qcls+'">'+ph(row.q)+'</td>';
+                h+='<td class="'+qhcls+'">'+hxFull(row.q)+'</td>';
+              }
+              /* s */
+              var scls='eea-poly'+(isSrc?' eea-tbl-src-s':'');
+              var shcls=isSrc?'eea-tbl-src-s':'';
+              h+='<td class="'+scls+'">'+(isDone?'<strong>'+ph(row.s)+'</strong>':ph(row.s))+'</td>';
+              h+='<td class="'+shcls+'">'+(isDone?'<strong>'+hx(row.s&0xFF)+'</strong>':hxFull(row.s))+'</td>';
               h+='</tr>';
             }
-            h+='</tbody></table></div>';
+            h+='</tbody></table>';
+            if(cur>=2){
+              h+='<div class="eea-tbl-legend">';
+              h+='<span class="eea-tbl-leg eea-tbl-leg-q">q used in this step\'s s-update</span>';
+              h+='<span class="eea-tbl-leg eea-tbl-leg-s">s values feeding into this step</span>';
+              h+='</div>';
+            }
+            h+='</div>';
             document.getElementById('eea-table-area').innerHTML=h;
           }
 
