@@ -634,6 +634,15 @@
           /* Result box */
           .sb-result-box { background:#1f3763; color:#fff; border-radius:10px; padding:14px 20px; margin-top:12px; }
           .sb-controls { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+          @media print {
+            body.sb-printing .tutorial-header,
+            body.sb-printing .bottom-nav,
+            body.sb-printing main > section:not(#sbox-explorer) { display:none!important; }
+            body.sb-printing #sbox-explorer.no-print { display:block!important; }
+            body.sb-printing .sb-input-row,
+            body.sb-printing .sb-controls { display:none!important; }
+            body.sb-printing .sb-step-card { break-inside:avoid; }
+          }
         </style>
 
         <div class="sb-shell">
@@ -656,6 +665,7 @@
           <div class="sb-controls" id="sb-controls" style="display:none;">
             <button class="sb-btn-next" id="sb-btn-next" onclick="sbNext()">Next →</button>
             <button class="sb-btn-reset" onclick="sbReset()">Reset</button>
+            <button class="sb-btn-reset" onclick="sbPrint()" style="background:#fff3cc;color:#6a4000;border-color:#d4a030;">Print full example ↓</button>
           </div>
         </div>
 
@@ -817,6 +827,17 @@
           }
 
           // ── public ──
+          window.sbPrint=function(){
+            if(sbStep<0){alert('Start the computation first.');return;}
+            while(sbStep<9){window.sbNext();}
+            document.body.classList.add('sb-printing');
+            window.print();
+            window.addEventListener('afterprint',function h(){
+              document.body.classList.remove('sb-printing');
+              window.removeEventListener('afterprint',h);
+            });
+          };
+
           window.sbStart=function(){
             var a=pb(document.getElementById('sb-in').value);
             if(a===null){

@@ -1430,6 +1430,15 @@
           .gm-btn-reset { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:10px 18px; font-size:0.97rem; cursor:pointer; }
           .gm-presets { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; }
           .gm-btn-preset { background:#fff; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:7px 13px; font-size:0.85rem; cursor:pointer; }
+          @media print {
+            body.gm-printing .tutorial-header,
+            body.gm-printing .bottom-nav,
+            body.gm-printing main > section:not(#gf-explorer) { display:none!important; }
+            body.gm-printing #gf-explorer.no-print { display:block!important; }
+            body.gm-printing .gm-input-row,
+            body.gm-printing .gm-controls { display:none!important; }
+            body.gm-printing .gm-step-card { break-inside:avoid; }
+          }
           .gm-btn-preset:hover { background:#eef3ff; }
 
           /* B selector panel */
@@ -1517,6 +1526,7 @@
           <div class="gm-controls" id="gm-controls" style="display:none;">
             <button class="gm-btn-next" id="gm-btn-next" onclick="gmNext()">Next →</button>
             <button class="gm-btn-reset" onclick="gmReset()">Reset</button>
+            <button class="gm-btn-reset" onclick="gmPrint()" style="background:#fff3cc;color:#6a4000;border-color:#d4a030;">Print full example ↓</button>
           </div>
         </div>
 
@@ -1675,6 +1685,17 @@
           }
 
           /* ── public ── */
+          window.gmPrint=function(){
+            if(gfStep<0){alert('Start the computation first.');return;}
+            while(gfStep<8){window.gmNext();}
+            document.body.classList.add('gm-printing');
+            window.print();
+            window.addEventListener('afterprint',function h(){
+              document.body.classList.remove('gm-printing');
+              window.removeEventListener('afterprint',h);
+            });
+          };
+
           window.gmStart=function(){
             var a=pb(document.getElementById('gm-a-in').value);
             var b=pb(document.getElementById('gm-b-in').value);
