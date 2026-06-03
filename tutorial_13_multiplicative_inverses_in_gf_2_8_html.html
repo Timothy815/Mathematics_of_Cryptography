@@ -883,6 +883,20 @@
           .eea-tbl-leg{font-size:0.75rem;font-weight:700;padding:2px 8px;border-radius:4px;}
           .eea-tbl-leg-q{background:#dce8ff;color:#1f3763;}
           .eea-tbl-leg-s{background:#fff8dc;color:#6a4000;}
+          /* ── print mode (body.eea-printing) ── */
+          @media print {
+            body.eea-printing .tutorial-header,
+            body.eea-printing .bottom-nav,
+            body.eea-printing main > section:not(#eea-interactive) { display:none!important; }
+            body.eea-printing #eea-interactive.no-print { display:block!important; }
+            body.eea-printing .eea-input-row,
+            body.eea-printing .eea-controls,
+            body.eea-printing .intuition-box { display:none!important; }
+            body.eea-printing .eea-card { break-inside:avoid; }
+            body.eea-printing .eea-sub  { break-inside:avoid; }
+            body.eea-printing .xg-wrap  { overflow:visible; }
+            body.eea-printing .eea-tbl-legend { display:none; }
+          }
           /* ── step cards ── */
           .eea-card{background:#fff;border:1px solid #c7d2ea;border-radius:12px;padding:18px 22px;margin-bottom:14px;}
           .eea-card.eea-card-done{border-color:#2a8a4a;background:#eafaf0;}
@@ -958,6 +972,7 @@
           <div id="eea-controls" class="eea-controls" style="display:none;">
             <button class="eea-btn-next" id="eea-btn-next" onclick="eeaNext()">Next step →</button>
             <button class="eea-btn-rst" onclick="eeaReset()">Reset</button>
+            <button class="eea-btn-rst" onclick="eeaPrint()" style="background:#fff3cc;color:#6a4000;border-color:#d4a030;">Print full example ↓</button>
           </div>
         </div>
 
@@ -1306,6 +1321,18 @@
           }
 
           /* ── public API ── */
+          window.eeaPrint=function(){
+            if(eeaA===-1){alert('Start the algorithm first.');return;}
+            while(eeaVisible<eeaRows.length){eeaVisible++;renderTable();renderStepCard(eeaVisible-1);}
+            updateCtrl();
+            document.body.classList.add('eea-printing');
+            window.print();
+            window.addEventListener('afterprint',function h(){
+              document.body.classList.remove('eea-printing');
+              window.removeEventListener('afterprint',h);
+            });
+          };
+
           window.eeaStart=function(){
             var v=pb(document.getElementById('eea-in').value);
             if(v===null||v===0){
