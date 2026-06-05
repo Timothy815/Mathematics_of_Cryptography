@@ -119,6 +119,50 @@
 
     .round-value { font-family: "Cascadia Code", "Consolas", monospace; font-size: 1.35rem; font-weight: 900; margin-top: 6px; }
 
+    /* ── Branch Number Explorer widget ── */
+    .bn-explorer { background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 18px; padding: 28px 32px; margin: 24px 0; }
+    .bn-bit-row { display: flex; gap: 10px; margin: 14px 0; flex-wrap: wrap; }
+    .bn-bit {
+      width: 52px; height: 52px;
+      border: 2px solid #c7d2ea;
+      border-radius: 12px;
+      background: #ffffff;
+      font-family: "Cascadia Code","Consolas",monospace;
+      font-size: 1.4rem; font-weight: 900;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, border-color 0.12s;
+      user-select: none;
+    }
+    .bn-bit.active { background: #fdeaea; border-color: #e07070; color: #7b1a11; }
+    .bn-bit.output-active { background: #eaf7ef; border-color: #4a9960; color: #1a6030; }
+    .bn-bit.output-zero { background: #f7f5ef; border-color: #c7d2ea; color: #888; }
+    .bn-label { font-size: 0.82rem; font-weight: 700; color: #3730a3; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .bn-compute-btn {
+      padding: 10px 28px; background: #4338ca; color: #fff;
+      border: none; border-radius: 10px; font-weight: 900;
+      font-size: 0.97rem; cursor: pointer; margin-top: 10px;
+    }
+    .bn-compute-btn:hover { background: #3730a3; }
+    .bn-reset-btn {
+      padding: 10px 20px; background: #f0f4fb; color: #334e7d;
+      border: 1.5px solid #c7d2ea; border-radius: 10px;
+      font-weight: 900; font-size: 0.97rem; cursor: pointer; margin-top: 10px; margin-left: 10px;
+    }
+    .bn-stats { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
+    .bn-stat-card {
+      background: #fff; border: 1px solid #c7d2ea; border-radius: 12px;
+      padding: 12px 18px; text-align: center; min-width: 90px;
+    }
+    .bn-stat-label { font-size: 0.75rem; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.04em; }
+    .bn-stat-value { font-size: 1.5rem; font-weight: 900; color: #334e7d; font-family: "Cascadia Code","Consolas",monospace; margin-top: 4px; }
+    .bn-stat-card.total { background: #fffdf4; border-color: #d4a030; }
+    .bn-stat-card.total .bn-stat-value { color: #6a4000; }
+    .bn-stat-card.minimum { background: #eaf7ef; border-color: #4a9960; }
+    .bn-stat-card.minimum .bn-stat-value { color: #1a6030; }
+    .bn-msg { margin-top: 12px; font-weight: 700; font-size: 0.95rem; color: #1f3763; min-height: 1.4rem; }
+    .bn-history { margin-top: 14px; font-size: 0.86rem; color: #555; }
+
     @media (max-width: 780px) {
       body { font-size: 16px; }
       header.tutorial-header, main { padding: 24px; }
@@ -161,12 +205,29 @@
       </p>
 
       <nav class="tutorial-nav no-print" aria-label="Tutorial navigation">
+        <a class="nav-link" href="tutorial_16_linear_transformations_and_matrices_over_gf_2_html.html">← Tutorial 16</a>
         <a class="nav-link" href="index.html">🏠 Dashboard</a>
+        <a class="nav-link" href="tutorial_18_mixcolumns_as_matrix_multiplication_over_gf_2_8_html.html">Tutorial 18 →</a>
         <button class="print-button" onclick="window.print()">🖨️ Print / Save as PDF</button>
       </nav>
     </header>
 
     <main>
+      <section id="learning-objectives">
+        <h2>Learning objectives</h2>
+        <div class="box goal-box">
+          <div class="box-title">By the end of this tutorial you will be able to</div>
+          <ul>
+            <li>Define Hamming weight and compute it for any bit string.</li>
+            <li>Define Hamming distance and compute it by XORing two bit strings.</li>
+            <li>Explain what the avalanche effect means in cipher design.</li>
+            <li>Define branch number and compute it for a small linear layer.</li>
+            <li>Identify active components in a difference trail.</li>
+            <li>Distinguish diffusion from confusion and explain why ciphers need both.</li>
+          </ul>
+        </div>
+      </section>
+
       <section id="why-this-tutorial-exists">
         <h2>Why this tutorial exists</h2>
         <div class="box purpose-box">
@@ -466,6 +527,60 @@
         </div>
       </section>
 
+      <section id="branch-explorer">
+        <h2>Explore: branch number in action</h2>
+        <p>
+          Toggle the four input bits to set a difference \(x\). Press <strong>Compute</strong> to see how the layer \(L\) spreads it. Try every nonzero combination — the smallest total you can produce is the branch number.
+        </p>
+        <p style="font-size:0.92rem;color:#555;">
+          Recall: \(L(v_0,v_1,v_2,v_3)=(v_0\oplus v_1,\ v_1\oplus v_2,\ v_2\oplus v_3,\ v_0\oplus v_3)\).
+        </p>
+
+        <div class="bn-explorer">
+          <div class="bn-label">Input difference x (click a bit to flip it)</div>
+          <div class="bn-bit-row" id="bn-input-row">
+            <div class="bn-bit" id="bn-b0" onclick="bnFlip(0)">0</div>
+            <div class="bn-bit" id="bn-b1" onclick="bnFlip(1)">0</div>
+            <div class="bn-bit" id="bn-b2" onclick="bnFlip(2)">0</div>
+            <div class="bn-bit" id="bn-b3" onclick="bnFlip(3)">0</div>
+          </div>
+
+          <div class="bn-label" style="margin-top:12px;">Output L(x)</div>
+          <div class="bn-bit-row" id="bn-output-row">
+            <div class="bn-bit output-zero" id="bn-o0">—</div>
+            <div class="bn-bit output-zero" id="bn-o1">—</div>
+            <div class="bn-bit output-zero" id="bn-o2">—</div>
+            <div class="bn-bit output-zero" id="bn-o3">—</div>
+          </div>
+
+          <div>
+            <button class="bn-compute-btn" onclick="bnCompute()">Compute L(x)</button>
+            <button class="bn-reset-btn" onclick="bnReset()">Reset</button>
+          </div>
+
+          <div class="bn-stats" id="bn-stats" style="display:none;">
+            <div class="bn-stat-card">
+              <div class="bn-stat-label">wt(x)</div>
+              <div class="bn-stat-value" id="bn-wtx">—</div>
+            </div>
+            <div class="bn-stat-card">
+              <div class="bn-stat-label">wt(L(x))</div>
+              <div class="bn-stat-value" id="bn-wtlx">—</div>
+            </div>
+            <div class="bn-stat-card total">
+              <div class="bn-stat-label">Total</div>
+              <div class="bn-stat-value" id="bn-total">—</div>
+            </div>
+            <div class="bn-stat-card minimum" id="bn-min-card" style="display:none;">
+              <div class="bn-stat-label">Min so far</div>
+              <div class="bn-stat-value" id="bn-min">—</div>
+            </div>
+          </div>
+          <div class="bn-msg" id="bn-msg"></div>
+          <div class="bn-history" id="bn-history"></div>
+        </div>
+      </section>
+
       <section id="active-components">
         <h2>Active components</h2>
         <p>
@@ -698,5 +813,93 @@
     </nav>
     </main>
   </div>
+
+  <script>
+  /* ── Branch Number Explorer ── */
+  var bnBits=[0,0,0,0];
+  var bnMinSeen=Infinity;
+  var bnTrials=[];
+
+  function bnFlip(i){
+    bnBits[i]^=1;
+    var el=document.getElementById('bn-b'+i);
+    el.textContent=bnBits[i];
+    el.className='bn-bit'+(bnBits[i]?'active':'');
+    // clear previous output when input changes
+    for(var k=0;k<4;k++){
+      var o=document.getElementById('bn-o'+k);
+      o.textContent='—'; o.className='bn-bit output-zero';
+    }
+    document.getElementById('bn-stats').style.display='none';
+    document.getElementById('bn-msg').textContent='';
+  }
+
+  function bnCompute(){
+    var v=bnBits;
+    var allZero=v.every(function(b){return b===0;});
+    if(allZero){
+      document.getElementById('bn-msg').textContent='Please set at least one bit to 1 — x must be nonzero.';
+      return;
+    }
+    // L(v0,v1,v2,v3) = (v0⊕v1, v1⊕v2, v2⊕v3, v0⊕v3)
+    var Lx=[v[0]^v[1], v[1]^v[2], v[2]^v[3], v[0]^v[3]];
+    for(var k=0;k<4;k++){
+      var o=document.getElementById('bn-o'+k);
+      o.textContent=Lx[k];
+      o.className='bn-bit '+(Lx[k]?'output-active':'output-zero');
+    }
+    var wtx=v.reduce(function(s,b){return s+b;},0);
+    var wtlx=Lx.reduce(function(s,b){return s+b;},0);
+    var total=wtx+wtlx;
+    document.getElementById('bn-wtx').textContent=wtx;
+    document.getElementById('bn-wtlx').textContent=wtlx;
+    document.getElementById('bn-total').textContent=total;
+    document.getElementById('bn-stats').style.display='flex';
+
+    var xStr=v.join('');
+    var lxStr=Lx.join('');
+    bnTrials.push({x:xStr,Lx:lxStr,total:total});
+
+    if(total<bnMinSeen){
+      bnMinSeen=total;
+    }
+    document.getElementById('bn-min').textContent=bnMinSeen;
+    document.getElementById('bn-min-card').style.display='block';
+
+    var msg='';
+    if(bnTrials.length===1){
+      msg='x='+xStr+' → L(x)='+lxStr+'. Total active bits: '+total+'. Keep exploring — try all nonzero inputs.';
+    } else {
+      msg='x='+xStr+' → L(x)='+lxStr+'. Total: '+total+'. Smallest total seen: '+bnMinSeen+'.';
+      if(bnTrials.length>=15){
+        msg+=' You have tested '+bnTrials.length+' inputs — the branch number of this layer is 3.';
+      }
+    }
+    document.getElementById('bn-msg').textContent=msg;
+
+    // history of last 5
+    var last=bnTrials.slice(-5).map(function(t){
+      return 'x='+t.x+' L='+t.Lx+' total='+t.total;
+    });
+    document.getElementById('bn-history').textContent=
+      bnTrials.length>1?'Recent: '+last.join(' | '):'';
+  }
+
+  function bnReset(){
+    bnBits=[0,0,0,0];
+    bnMinSeen=Infinity;
+    bnTrials=[];
+    for(var i=0;i<4;i++){
+      var el=document.getElementById('bn-b'+i);
+      el.textContent='0'; el.className='bn-bit';
+      var o=document.getElementById('bn-o'+i);
+      o.textContent='—'; o.className='bn-bit output-zero';
+    }
+    document.getElementById('bn-stats').style.display='none';
+    document.getElementById('bn-min-card').style.display='none';
+    document.getElementById('bn-msg').textContent='';
+    document.getElementById('bn-history').textContent='';
+  }
+  </script>
 </body>
 </html>

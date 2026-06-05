@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Worksheet 17: Diffusion, Branch Number, and Avalanche | Mathematics of Cryptography</title>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    @page { margin: 0.75in; }
+
+    header.worksheet-header {
+      background: linear-gradient(135deg, #1a5c2a, #2a8a4a);
+      border: 1px solid #1a5c2a;
+      border-radius: var(--radius);
+      padding: 36px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      color: #ffffff;
+    }
+
+    header.worksheet-header .course-label,
+    header.worksheet-header .volume-label,
+    header.worksheet-header h1,
+    header.worksheet-header .subtitle { color: #ffffff; }
+
+    .workbook-nav { display:flex; flex-wrap:wrap; gap:10px; margin:22px 0 0; }
+    .workbook-nav .nav-link {
+      background: rgba(255,255,255,0.15); color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+      padding: 6px 14px; text-decoration: none; font-weight: 700; font-size: 0.9rem;
+    }
+    .workbook-nav .nav-link:hover { background: rgba(255,255,255,0.25); }
+    .workbook-nav .print-button {
+      background: rgba(255,255,255,0.15); color: #ffffff;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
+      padding: 6px 14px; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+    }
+
+    .student-info { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:20px 0 28px; }
+    .field-label { font-weight:700; display:block; margin-bottom:4px; }
+    .field-input { width:100%; border:none; border-bottom:1.5px solid #333; font-size:1rem; padding:4px 0; background:transparent; outline:none; }
+
+    .ans-input { border:none; border-bottom:1.5px solid #555; width:90px; font-size:1rem; padding:2px 4px; background:transparent; outline:none; font-family:'Cascadia Code',monospace; }
+    .ans-input.ws-correct { border-color:#1a7a3a; background:#eafaf0; border-radius:4px; }
+    .ans-input.ws-wrong   { border-color:#c0392b; background:#fdeaea; border-radius:4px; }
+    .ans-input.wide  { width:130px; }
+    .ans-input.wider { width:180px; }
+
+    .work-space { border:1px dashed #aaa; border-radius:8px; min-height:80px; padding:8px; margin:10px 0 6px; background:#fffefe; }
+    .work-space.lg { min-height:120px; }
+
+    .write-wrap { position:relative; margin:8px 0; }
+    .written-area { width:100%; min-height:80px; border:1px dashed #aaa; border-radius:8px; padding:8px; font-size:1rem; resize:vertical; }
+    .write-lines { display:none; }
+    .wl { display:block; height:1.9em; border-bottom:1px solid #888; }
+
+    .ws-score-bar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:#e8f6ec; border:1px solid #a8d8b8; border-radius:10px; padding:12px 18px; margin-bottom:24px; }
+    .ws-btn-check  { background:#1a5c2a; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+    .ws-btn-regen  { background:#2a8a4a; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:0.97rem; font-weight:700; cursor:pointer; }
+    .ws-btn-reset  { background:#e5e9f2; color:#334e7d; border:1px solid #c7d2ea; border-radius:8px; padding:8px 18px; font-size:0.97rem; cursor:pointer; }
+    #ws-score-display { font-weight:700; font-size:1rem; color:#1a5c2a; }
+
+    .answer-key { border-top:4px double #2a8a4a; padding-top:24px; margin-top:40px; }
+    .answer-step { margin:10px 0; padding-left:14px; border-left:4px solid #a8d8b8; }
+
+    .ws-table { width:100%; border-collapse:collapse; margin:14px 0; font-size:0.95rem; }
+    .ws-table th, .ws-table td { border:1px solid var(--border); padding:9px 11px; vertical-align:middle; }
+    .ws-table th { background:#e8f6ec; color:#1a5c2a; text-align:left; }
+    .ws-table td { text-align:center; }
+    .ws-table td:first-child { text-align:left; }
+    .ws-table td.left { text-align:left; }
+
+    .math-display { text-align:center; margin:12px 0; }
+    .mono { font-family:'Cascadia Code','Consolas',monospace; }
+
+    details.qr { background:#f7f5ef; border:1px solid #e8dbbf; border-radius:14px; margin-bottom:24px; }
+    details.qr summary { padding:12px 18px; font-weight:900; cursor:pointer; color:#1a5c2a; }
+    .qr-body { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; padding:0 18px 18px; }
+    .qr-item { background:#fff; border:1px solid #e0e5f0; border-radius:10px; padding:12px; font-size:0.88rem; }
+    .qr-item strong { display:block; color:#1a5c2a; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:4px; }
+
+    @media (max-width:760px) { .student-info { grid-template-columns:1fr; } }
+
+    @media print {
+      .no-print, .ws-score-bar, .workbook-nav { display:none !important; }
+      .written-area { display:none !important; }
+      .write-lines { display:block !important; }
+      header.worksheet-header { background:#1a5c2a !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .ans-input { border:none; border-bottom:1.5px solid #333 !important; background:transparent !important; border-radius:0 !important; }
+      .ans-input.ws-correct, .ans-input.ws-wrong { background:transparent !important; }
+      .answer-key { page-break-before:always; }
+    }
+    .ws-escalate { margin-top: 14px; background: #f0eeff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 11px 15px; }
+    .ws-escalate-prompt { font-size: 0.82rem; color: #3730a3; margin-bottom: 9px; line-height: 1.5; font-style: italic; }
+    .ws-escalate-actions { display: flex; gap: 10px; align-items: center; }
+    .ws-esc-copy { padding: 4px 11px; background: #4338ca; color: #fff; border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+    .ws-esc-copy:hover { opacity: 0.85; }
+    .ws-esc-link { color: #4338ca; font-weight: 700; font-size: 0.81rem; text-decoration: none; }
+    @media print { .ws-escalate { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="worksheet-header">
+      <div class="course-label">Mathematics of Cryptography · Worksheet 17</div>
+      <div class="volume-label">Volume 1: Foundations, Finite Fields, and AES</div>
+      <h1>Diffusion, Branch Number, and Avalanche</h1>
+      <p class="subtitle">Hamming weight · Hamming distance · linear layer spreading · branch number calculation</p>
+
+      <nav class="workbook-nav no-print" aria-label="Worksheet navigation">
+        <a class="nav-link" href="#part-a">Part A</a>
+        <a class="nav-link" href="#part-b">Part B</a>
+        <a class="nav-link" href="#part-c">Part C</a>
+        <a class="nav-link" href="#part-d">Part D</a>
+        <a class="nav-link" href="#part-e">Part E</a>
+        <a class="nav-link" href="#part-f">Part F</a>
+        <a class="nav-link" href="#answer-key">Answer Key</a>
+        <a class="nav-link" style="margin-left:auto;" href="index.html">&#127968; Dashboard</a>
+        <button class="print-button" onclick="window.print()">&#128424; Print</button>
+      </nav>
+    </header>
+
+    <main>
+      <div class="student-info">
+        <div><span class="field-label">Name:</span><input class="field-input" type="text" autocomplete="off"></div>
+        <div><span class="field-label">Date:</span><input class="field-input" type="text" autocomplete="off"></div>
+      </div>
+
+      <div class="ws-score-bar no-print" id="ws-score-bar">
+        <p style="margin:0;font-size:0.95rem;">Check your fill-in answers or regenerate Part D.</p>
+        <span id="ws-score-display"></span>
+        <button class="ws-btn-check" onclick="wsCheckAll()">Check Answers</button>
+        <button class="ws-btn-regen" onclick="wsRegenerate()">Regenerate</button>
+        <button class="ws-btn-reset" onclick="wsReset()">Reset</button>
+      </div>
+
+      <details class="qr">
+        <summary>Quick Reference</summary>
+        <div class="qr-body">
+          <div class="qr-item"><strong>Hamming weight</strong>wt(x) = number of 1s in x.<br><span class="mono">10110000</span> → weight 3.</div>
+          <div class="qr-item"><strong>Hamming distance</strong>dist(a,b) = wt(a⊕b). XOR the two strings, then count the 1s.</div>
+          <div class="qr-item"><strong>Layer L (4-bit)</strong>y₀=v₀⊕v₁ &nbsp; y₁=v₁⊕v₂<br>y₂=v₂⊕v₃ &nbsp; y₃=v₀⊕v₃</div>
+          <div class="qr-item"><strong>Branch number</strong>B = min over x≠0 of wt(x)+wt(L(x)). Smallest total active bits.</div>
+          <div class="qr-item"><strong>Active component</strong>A component is active if its difference is nonzero.</div>
+        </div>
+      </details>
+
+      <!-- PART A: Hamming weight -->
+      <section id="part-a" data-topic="computing Hamming weight by counting 1-bits in a binary string">
+        <h2>Part A — Hamming Weight</h2>
+        <p>Count the number of 1s in each bit string. Write the Hamming weight in the answer column.</p>
+        <table class="ws-table">
+          <thead><tr><th>#</th><th>Bit string</th><th>wt( )</th></tr></thead>
+          <tbody>
+            <tr><td>A1</td><td><span class="mono">00000000</span></td>
+              <td><input class="ans-input" id="wa1" data-answer="0" autocomplete="off"></td></tr>
+            <tr><td>A2</td><td><span class="mono">10000000</span></td>
+              <td><input class="ans-input" id="wa2" data-answer="1" autocomplete="off"></td></tr>
+            <tr><td>A3</td><td><span class="mono">10110100</span></td>
+              <td><input class="ans-input" id="wa3" data-answer="4" autocomplete="off"></td></tr>
+            <tr><td>A4</td><td><span class="mono">11111111</span></td>
+              <td><input class="ans-input" id="wa4" data-answer="8" autocomplete="off"></td></tr>
+            <tr><td>A5</td><td><span class="mono">1010</span></td>
+              <td><input class="ans-input" id="wa5" data-answer="2" autocomplete="off"></td></tr>
+            <tr><td>A6</td><td><span class="mono">1111</span></td>
+              <td><input class="ans-input" id="wa6" data-answer="4" autocomplete="off"></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART B: Hamming distance -->
+      <section id="part-b" data-topic="computing Hamming distance by XORing two binary strings and counting differing bits">
+        <h2>Part B — Hamming Distance</h2>
+        <p>XOR each pair of strings. Count the 1s in the result to find the Hamming distance. Show your XOR in the work column.</p>
+        <table class="ws-table">
+          <thead><tr><th>#</th><th>String a</th><th>String b</th><th>a ⊕ b (work)</th><th>dist(a,b)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>B1</td>
+              <td><span class="mono">10110010</span></td>
+              <td><span class="mono">10110111</span></td>
+              <td><input class="ans-input wider" id="wb1x" data-answer="00000101" autocomplete="off"></td>
+              <td><input class="ans-input" id="wb1" data-answer="2" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B2</td>
+              <td><span class="mono">11001100</span></td>
+              <td><span class="mono">00110011</span></td>
+              <td><input class="ans-input wider" id="wb2x" data-answer="11111111" autocomplete="off"></td>
+              <td><input class="ans-input" id="wb2" data-answer="8" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B3</td>
+              <td><span class="mono">1010</span></td>
+              <td><span class="mono">1100</span></td>
+              <td><input class="ans-input wider" id="wb3x" data-answer="0110" autocomplete="off"></td>
+              <td><input class="ans-input" id="wb3" data-answer="2" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>B4</td>
+              <td><span class="mono">1000</span></td>
+              <td><span class="mono">1000</span></td>
+              <td><input class="ans-input wider" id="wb4x" data-answer="0000" autocomplete="off"></td>
+              <td><input class="ans-input" id="wb4" data-answer="0" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART C: Layer L output -->
+      <section id="part-c" data-topic="applying the 4-bit linear layer L to compute L(x) for each nonzero input difference">
+        <h2>Part C — Layer L Output</h2>
+        <p>Use the layer definition \(L(v_0,v_1,v_2,v_3)=(v_0\oplus v_1,\ v_1\oplus v_2,\ v_2\oplus v_3,\ v_0\oplus v_3)\). Compute each output and fill in the table.</p>
+        <table class="ws-table">
+          <thead><tr><th>#</th><th>Input x</th><th>y₀=v₀⊕v₁</th><th>y₁=v₁⊕v₂</th><th>y₂=v₂⊕v₃</th><th>y₃=v₀⊕v₃</th><th>L(x)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>C1</td><td><span class="mono">1000</span></td>
+              <td><input class="ans-input" id="wc1a" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc1b" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc1c" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc1d" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input wider" id="wc1" data-answer="1001" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>C2</td><td><span class="mono">0100</span></td>
+              <td><input class="ans-input" id="wc2a" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc2b" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc2c" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc2d" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input wider" id="wc2" data-answer="1100" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>C3</td><td><span class="mono">0010</span></td>
+              <td><input class="ans-input" id="wc3a" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc3b" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc3c" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc3d" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input wider" id="wc3" data-answer="0110" autocomplete="off"></td>
+            </tr>
+            <tr>
+              <td>C4</td><td><span class="mono">0001</span></td>
+              <td><input class="ans-input" id="wc4a" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc4b" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc4c" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input" id="wc4d" data-answer="1" autocomplete="off"></td>
+              <td><input class="ans-input wider" id="wc4" data-answer="0011" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART D: random branch number problem -->
+      <section id="part-d" data-topic="computing wt(x) + wt(L(x)) to find the branch number total for a randomly generated nonzero input difference">
+        <h2>Part D — Branch Number Total <span style="font-weight:400;font-size:0.85rem;color:#888;">(click Regenerate for new values)</span></h2>
+        <p>A nonzero input difference \(x\) and its layer output \(L(x)\) are shown. Compute \(wt(x)\), \(wt(L(x))\), and their sum.</p>
+
+        <table class="ws-table">
+          <thead><tr><th>x</th><th>L(x)</th><th>wt(x)</th><th>wt(L(x))</th><th>wt(x)+wt(L(x))</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="mono" id="ddx">—</span></td>
+              <td><span class="mono" id="ddlx">—</span></td>
+              <td><input class="ans-input" id="dd1" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="dd2" data-answer="0" autocomplete="off"></td>
+              <td><input class="ans-input" id="dd3" data-answer="0" autocomplete="off"></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="work-space"></div>
+      </section>
+
+      <!-- PART E: active components -->
+      <section id="part-e" data-topic="identifying active components in a 4-nibble difference trail">
+        <h2>Part E — Active Components</h2>
+        <p>A component is active if its difference is nonzero. For each row, decide whether each nibble is active.</p>
+        <table class="ws-table">
+          <thead><tr><th>#</th><th>Nibble 0</th><th>Nibble 1</th><th>Nibble 2</th><th>Nibble 3</th><th>Active nibbles (list indices)</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>E1</td>
+              <td><span class="mono">0000</span></td><td><span class="mono">0100</span></td>
+              <td><span class="mono">1110</span></td><td><span class="mono">0000</span></td>
+              <td><input class="ans-input wider" id="we1" data-answer="1,2|1 and 2|1&amp;2" autocomplete="off" placeholder="e.g. 0,2"></td>
+            </tr>
+            <tr>
+              <td>E2</td>
+              <td><span class="mono">1001</span></td><td><span class="mono">0000</span></td>
+              <td><span class="mono">0000</span></td><td><span class="mono">1111</span></td>
+              <td><input class="ans-input wider" id="we2" data-answer="0,3|0 and 3|0&amp;3" autocomplete="off" placeholder="e.g. 0,3"></td>
+            </tr>
+            <tr>
+              <td>E3</td>
+              <td><span class="mono">0000</span></td><td><span class="mono">0000</span></td>
+              <td><span class="mono">0000</span></td><td><span class="mono">0000</span></td>
+              <td><input class="ans-input wider" id="we3" data-answer="none|0|no active nibbles" autocomplete="off" placeholder="none or indices"></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PART F: concept questions -->
+      <section id="part-f" data-topic="explaining diffusion, avalanche, and why ciphers combine linear and nonlinear layers">
+        <h2>Part F — Concept Questions</h2>
+
+        <p><strong>F1.</strong> Explain in your own words what the avalanche effect means. Why is it desirable in a cipher?</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"></div>
+        </div>
+
+        <p><strong>F2.</strong> Branch number measures worst-case spreading. The layer L in this worksheet has branch number 3.
+          What does this tell us about any nonzero input difference?</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"></div>
+        </div>
+
+        <p><strong>F3.</strong> Using results from Part C, find the minimum value of \(wt(x)+wt(L(x))\) across all four unit-vector inputs.
+          What is the branch number of L?</p>
+        <p>Answer: <input class="ans-input" id="wf3" data-answer="3" autocomplete="off" placeholder="B = ?"></p>
+
+        <p><strong>F4.</strong> Why does a cipher with only a diffusion layer (and no S-boxes) fail to be secure?</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"></div>
+        </div>
+
+        <p><strong>F5.</strong> Hamming weight versus Hamming distance: what is the key difference? Give one example of each.</p>
+        <div class="write-wrap">
+          <textarea class="written-area" rows="3"></textarea>
+          <div class="write-lines"></div>
+        </div>
+      </section>
+
+      <!-- ANSWER KEY -->
+      <section id="answer-key" class="answer-key">
+        <h2>Answer Key</h2>
+
+        <h3>Part A — Hamming Weight</h3>
+        <div class="answer-step">
+          <p>A1. wt(00000000) = <strong>0</strong></p>
+          <p>A2. wt(10000000) = <strong>1</strong></p>
+          <p>A3. wt(10110100) = <strong>4</strong> (four 1-bits)</p>
+          <p>A4. wt(11111111) = <strong>8</strong></p>
+          <p>A5. wt(1010) = <strong>2</strong></p>
+          <p>A6. wt(1111) = <strong>4</strong></p>
+        </div>
+
+        <h3>Part B — Hamming Distance</h3>
+        <div class="answer-step">
+          <p>B1. XOR = 00000101, distance = <strong>2</strong></p>
+          <p>B2. XOR = 11111111, distance = <strong>8</strong> (the strings are complements)</p>
+          <p>B3. XOR = 0110, distance = <strong>2</strong></p>
+          <p>B4. XOR = 0000, distance = <strong>0</strong> (identical strings)</p>
+        </div>
+
+        <h3>Part C — Layer L Output</h3>
+        <div class="answer-step">
+          <p>C1. x=1000: y₀=1, y₁=0, y₂=0, y₃=1 → L(x) = <strong>1001</strong></p>
+          <p>C2. x=0100: y₀=1, y₁=1, y₂=0, y₃=0 → L(x) = <strong>1100</strong></p>
+          <p>C3. x=0010: y₀=0, y₁=1, y₂=1, y₃=0 → L(x) = <strong>0110</strong></p>
+          <p>C4. x=0001: y₀=0, y₁=0, y₂=1, y₃=1 → L(x) = <strong>0011</strong></p>
+        </div>
+
+        <h3>Part D — Branch Number Total</h3>
+        <div class="answer-step"><p>Answers depend on the regenerated input. Apply each L formula, compute both weights, add them.</p></div>
+
+        <h3>Part E — Active Components</h3>
+        <div class="answer-step">
+          <p>E1. Active nibbles: <strong>1 and 2</strong> (nibble 0 = 0000 and nibble 3 = 0000 are zero)</p>
+          <p>E2. Active nibbles: <strong>0 and 3</strong></p>
+          <p>E3. Active nibbles: <strong>none</strong> (all differences are zero)</p>
+        </div>
+
+        <h3>Part F — Concept Questions</h3>
+        <div class="answer-step">
+          <p><strong>F1 sample answer.</strong> The avalanche effect means that flipping a single input bit causes many output bits to change. This is desirable because it prevents an attacker from making small, controlled changes to plaintext or ciphertext and predicting the effect; changes spread unpredictably.</p>
+          <p><strong>F2 sample answer.</strong> Branch number 3 means that for any nonzero input difference x, the combined count wt(x)+wt(L(x)) is at least 3. At minimum, one active input bit produces at least two active output bits. Differences cannot vanish or stay confined to one bit.</p>
+          <p><strong>F3.</strong> From Part C, every unit-vector input gives a total of 3 (wt=1 + wt(L)=2). The minimum is <strong>3</strong>, so the branch number is B = 3.</p>
+          <p><strong>F4 sample answer.</strong> A purely linear cipher can be represented as matrix multiplication. The attacker can collect plaintext-ciphertext pairs and solve a system of linear equations to recover the key. Nonlinear S-boxes make this algebraically infeasible.</p>
+          <p><strong>F5 sample answer.</strong> Hamming weight counts 1s in a single string; Hamming distance counts how many positions differ between two strings. Example: wt(10110) = 3. Example: dist(10110, 10010) = wt(10110 ⊕ 10010) = wt(00100) = 1.</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav no-print" aria-label="Worksheet navigation">
+      <div class="nav-bundle">
+        <a href="worksheet_16_linear_transformations_and_matrices_over_gf_2_html.html" class="nav-item">← Worksheet 16</a>
+        <a href="index.html" class="nav-item">&#127968; Dashboard</a>
+        <a href="worksheet_18_mixcolumns_as_matrix_multiplication_over_gf_2_8_html.html" class="nav-item">Worksheet 18 →</a>
+      </div>
+      <div class="nav-bundle">
+        <a href="tutorial_17_diffusion_branch_number_and_avalanche_html.html" class="nav-item nav-secondary">Tutorial 17</a>
+        <a href="tutorial_17_diffusion_branch_number_and_avalanche_workbook_html.html" class="nav-item nav-secondary">Practice 17</a>
+      </div>
+    </nav>
+  </div>
+
+<script>
+/* Write-lines generator */
+document.querySelectorAll('.write-lines').forEach(function(wl){
+  var ta = wl.parentElement && wl.parentElement.querySelector('textarea');
+  var n = ta ? Math.max(3, Math.round(ta.rows || 3)) : 3;
+  for(var i=0;i<n;i++){ var s=document.createElement('span'); s.className='wl'; wl.appendChild(s); }
+});
+
+/* ── L(v0,v1,v2,v3) = (v0^v1, v1^v2, v2^v3, v0^v3) ── */
+function applyL(v){return[v[0]^v[1],v[1]^v[2],v[2]^v[3],v[0]^v[3]];}
+function wt(arr){return arr.reduce(function(s,b){return s+b;},0);}
+function rb(){return Math.round(Math.random());}
+
+/* ── Part D: random branch-number problem ── */
+function genPartD(){
+  var v;
+  do { v=[rb(),rb(),rb(),rb()]; } while(v.every(function(b){return b===0;}));
+  var Lv=applyL(v);
+  document.getElementById('ddx').textContent=v.join('');
+  document.getElementById('ddlx').textContent=Lv.join('');
+  document.getElementById('dd1').dataset.answer=String(wt(v));
+  document.getElementById('dd2').dataset.answer=String(wt(Lv));
+  document.getElementById('dd3').dataset.answer=String(wt(v)+wt(Lv));
+}
+genPartD();
+
+/* ── Scoring ── */
+var WS_GEM_URL = '';
+var WS_MODULE  = '17';
+var WS_TITLE   = 'Diffusion, Branch Number, and Avalanche';
+
+function normalise(s){ return (s||'').trim().toLowerCase().replace(/\s+/g,''); }
+
+function wsCheckAll(){
+  var correct=0,total=0;
+  document.querySelectorAll('[data-answer]').forEach(function(inp){
+    if(inp.tagName!=='INPUT')return;
+    total++;
+    var accepted=inp.dataset.answer.split('|').map(function(a){return normalise(a);});
+    var val=normalise(inp.value);
+    inp.classList.remove('ws-correct','ws-wrong');
+    if(accepted.indexOf(val)>=0){inp.classList.add('ws-correct');correct++;}
+    else inp.classList.add('ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent=total?'Score: '+correct+' / '+total:'';
+  /* Per-section AI Tutor escalation */
+  document.querySelectorAll('main section[data-topic]').forEach(function(sec) {
+    var wrongInSec = sec.querySelectorAll('.ans-input.ws-wrong');
+    var existing = sec.querySelector('.ws-escalate');
+    if (wrongInSec.length > 0 && WS_GEM_URL) {
+      if (!existing) {
+        var topic = sec.dataset.topic;
+        var promptText = 'I\'m working on ' + topic + ' in the ' + WS_TITLE + ' worksheet '
+          + '(Module ' + WS_MODULE + ', Mathematics of Cryptography). '
+          + 'I\'ve checked my answers and some are wrong in this section. '
+          + 'Can you help me understand where my reasoning is breaking down, without giving me the answers directly? '
+          + 'Please ask me guiding questions.';
+        var uid = 'ws-esc-' + sec.id;
+        var card = document.createElement('div');
+        card.className = 'ws-escalate no-print';
+        card.innerHTML = '<div class="ws-escalate-prompt" id="' + uid + '">' + promptText + '</div>'
+          + '<div class="ws-escalate-actions">'
+          + '<button class="ws-esc-copy" onclick="wsEscCopy(\'' + uid + '\', this)">Copy prompt</button>'
+          + '<a href="' + WS_GEM_URL + '" target="_blank" class="ws-esc-link">Ask AI\u00a0Tutor \u2192</a>'
+          + '</div>';
+        sec.appendChild(card);
+      }
+    } else {
+      if (existing) existing.remove();
+    }
+  });
+}
+
+function wsEscCopy(id, btn) {
+  var txt = document.getElementById(id);
+  if (!txt) return;
+  navigator.clipboard.writeText(txt.textContent).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function(){ btn.textContent = 'Copy prompt'; }, 1500);
+  }).catch(function(){ btn.textContent = 'Copy failed'; });
+}
+
+function wsReset(){
+  document.querySelectorAll('[data-answer]').forEach(function(inp){
+    if(inp.tagName!=='INPUT')return;
+    inp.value=''; inp.classList.remove('ws-correct','ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent='';
+  document.querySelectorAll('.ws-escalate').forEach(function(el) { el.remove(); });
+}
+
+function wsRegenerate(){
+  genPartD();
+  ['dd1','dd2','dd3'].forEach(function(id){
+    var el=document.getElementById(id);
+    el.value=''; el.classList.remove('ws-correct','ws-wrong');
+  });
+  document.getElementById('ws-score-display').textContent='';
+}
+</script>
+</body>
+</html>
