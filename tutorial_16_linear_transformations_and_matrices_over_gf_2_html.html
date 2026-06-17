@@ -142,11 +142,30 @@
     .clog-res { font-weight: 900; margin-left: 4px; }
     .clog-res.rv1 { color: #334e7d; }
     .clog-res.rv0 { color: #9aaac5; }
-    .lin-demo { background: #f0f9f3; border: 1.5px solid #b8dfc5; border-radius: 14px; padding: 16px 20px; margin: 12px 0; }
-    .lin-demo-hd { color: #1a6030; font-weight: 900; font-size: 1rem; margin-bottom: 10px; }
-    .lin-row { font-family: "Cascadia Code","Consolas",monospace; font-size: 0.88rem; margin: 3px 0; }
-    .lin-confirm { font-weight: 900; color: #1a6030; font-size: 1rem; margin-top: 10px; }
+    .lin-demo { background: #f0f9f3; border: 1.5px solid #b8dfc5; border-radius: 14px; padding: 18px 22px; margin: 12px 0; }
+    .lin-demo-hd { color: #1a6030; font-weight: 900; font-size: 1rem; margin-bottom: 6px; }
+    .lin-intro { font-size: 0.9rem; color: #444; margin-bottom: 14px; line-height: 1.5; }
+    .lin-u-row, .lin-xorv-row { display: flex; align-items: center; gap: 6px; margin: 7px 0; flex-wrap: wrap; }
+    .lin-u-lbl { font-family: "Cascadia Code","Consolas",monospace; font-weight: 900; font-size: 0.88rem; color: #334e7d; min-width: 64px; }
+    .lin-u-bit { width: 34px; height: 34px; border: 1.5px solid #c7d2ea; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: "Cascadia Code","Consolas",monospace; font-weight: 900; font-size: 1rem; user-select: none; transition: background 0.12s; }
+    .lin-u-bit.clickable { cursor: pointer; }
+    .lin-u-bit.lu1 { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+    .lin-u-bit.lu0 { background: #f5f3ff; color: #9aaac5; border-color: #ddd8fe; }
+    .lin-u-bit.lu-xor1 { background: #f59e0b; color: #fff; border-color: #d97706; }
+    .lin-u-bit.lu-xor0 { background: #fef3c7; color: #bbb; border-color: #fde68a; }
+    .lin-u-reset { padding: 5px 12px; background: #f0f4fb; color: #334e7d; border: 1.5px solid #c7d2ea; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; margin-left: 8px; }
+    .lin-paths { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+    .lin-path { background: #fff; border: 1.5px solid #c7d2ea; border-radius: 12px; padding: 14px 16px; }
+    .lin-path-hd { font-weight: 900; color: #1f3763; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+    .lin-path-row { font-family: "Cascadia Code","Consolas",monospace; font-size: 0.85rem; margin: 5px 0; color: #444; }
+    .lin-path-result { font-family: "Cascadia Code","Consolas",monospace; font-weight: 900; font-size: 0.95rem; color: #1f3763; margin-top: 10px; padding-top: 8px; border-top: 1.5px solid #e0e5f0; }
+    .lin-bits { font-weight: 900; color: #334e7d; }
+    .lin-confirm { font-weight: 900; font-size: 0.97rem; border-radius: 10px; padding: 10px 14px; margin: 12px 0 8px; }
+    .lin-confirm.lc-match { background: #d1fae5; border: 1.5px solid #34d399; color: #064e3b; }
+    .lin-confirm.lc-mismatch { background: #fee2e2; border: 1.5px solid #f87171; color: #7f1d1d; }
+    .lin-security { background: #fffdf4; border: 1px solid #d4a030; border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; color: #444; margin-top: 8px; line-height: 1.5; }
     .aes-note { background: #eef3ff; border: 1px solid #c7d2ea; border-radius: 10px; padding: 10px 14px; margin-top: 10px; font-size: 0.88rem; color: #334e7d; }
+    @media (max-width: 700px) { .lin-paths { grid-template-columns: 1fr; } }
     .mlab-step-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #eef3ff; border-radius: 14px; margin-top: 12px; flex-wrap: wrap; }
     .mlab-step-btn { min-width: 210px; padding: 10px 18px; background: #334e7d; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 0.95rem; transition: background 0.15s; }
     .mlab-step-btn:hover { background: #253d66; }
@@ -395,19 +414,34 @@
         </div>
 
         <p>
-          To compute \(Av\), each row of \(A\) combines the input bits of \(v\).</p>
+          To compute \(Av\), work through each row one at a time. Here is the full process for Row 0 before we compress it into a table:</p>
+
+        <div class="box intuition-box">
+          <div class="box-title">Row 0 step by step</div>
+          <p><strong>Step 1 — Read the row:</strong> Row 0 is \([1\ 0\ 1\ 0]\). The 1s sit at positions 0 and 2.</p>
+          <p><strong>Step 2 — Select those vector positions:</strong> Look up \(v_0\) and \(v_2\) in the input vector. \(v_0=1\) and \(v_2=1\). The 0s in the row switch off positions 1 and 3 — ignore them entirely.</p>
+          <p><strong>Step 3 — XOR the selected values:</strong> \(1\oplus1=0\).</p>
+          <p><strong>Step 4 — Record the result:</strong> \(y_0=0\).</p>
+        </div>
+
+        <p>Apply the same four steps to every row. The "Values from v" column makes explicit which vector bits each row actually picks up:</p>
 
         <table class="matrix-table">
           <thead>
-            <tr><th>Output bit</th><th>Row recipe</th><th>Substitution</th><th>Result</th></tr>
+            <tr><th>Output bit</th><th>Row selects…</th><th>Values from v</th><th>XOR</th><th>Result</th></tr>
           </thead>
           <tbody>
-            <tr><td>\(y_0\)</td><td>\(v_0\oplus v_2\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
-            <tr><td>\(y_1\)</td><td>\(v_1\oplus v_2\)</td><td>\(0\oplus1\)</td><td>1</td></tr>
-            <tr><td>\(y_2\)</td><td>\(v_0\oplus v_1\oplus v_3\)</td><td>\(1\oplus0\oplus1\)</td><td>0</td></tr>
-            <tr><td>\(y_3\)</td><td>\(v_2\oplus v_3\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_0\)</td><td>\(v_0,\ v_2\)</td><td>\(v_0{=}1,\ v_2{=}1\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_1\)</td><td>\(v_1,\ v_2\)</td><td>\(v_1{=}0,\ v_2{=}1\)</td><td>\(0\oplus1\)</td><td>1</td></tr>
+            <tr><td>\(y_2\)</td><td>\(v_0,\ v_1,\ v_3\)</td><td>\(v_0{=}1,\ v_1{=}0,\ v_3{=}1\)</td><td>\(1\oplus0\oplus1\)</td><td>0</td></tr>
+            <tr><td>\(y_3\)</td><td>\(v_2,\ v_3\)</td><td>\(v_2{=}1,\ v_3{=}1\)</td><td>\(1\oplus1\)</td><td>0</td></tr>
           </tbody>
         </table>
+
+        <div class="box mistake-box">
+          <div class="box-title">Common mistake: counting the wrong 1s</div>
+          <p>Do not count all the 1s in a row, or all the 1s in the vector, or combine both counts. The only count that matters is: among the vector bits at the positions the row selects, how many are 1? Odd count gives output 1. Even count gives output 0. A selected bit that is 0 contributes nothing — it does not make the count odd or even.</p>
+        </div>
 
         <div class="math-display">
           \[
@@ -620,7 +654,13 @@
 
       <section id="matrix-lab" class="no-print">
         <h2>Interactive: Matrix-Vector Lab</h2>
-        <p>No wiring diagram left abstract. Every 1 in the matrix is a live wire; every 0 is a cut wire. Pick a preset, flip bits, then step through each output bit being computed one row at a time. After all rows, the lab proves the linearity property with a concrete example.</p>
+        <p>Every 1 in the matrix is a live wire; every 0 is a cut wire. Pick a preset, flip bits in A or v, then step through each output bit one row at a time.</p>
+        <p>After all rows are processed, the lab checks the defining property of linearity. Linearity means there are <strong>two routes</strong> to the same answer:</p>
+        <ul>
+          <li><strong>Route 1 — XOR first, then transform:</strong> XOR two input vectors u and v to get u⊕v, then apply L. Result: L(u⊕v).</li>
+          <li><strong>Route 2 — Transform separately, then XOR:</strong> Apply L to u and v independently, then XOR the two outputs. Result: L(u)⊕L(v).</li>
+        </ul>
+        <p>For any matrix transformation, these two routes always produce the same answer. Set your own u below and confirm it yourself.</p>
 
         <div class="mlab-presets">
           <button class="mlab-preset-btn active" id="mlpre-mixing"   onclick="mlPreset('mixing')">Mixing M (4×4)</button>
@@ -743,27 +783,56 @@
         }
 
         function renderLinDemo(){
-          var n=ML.n,mat=ML.mat,v=ML.vec;
-          var u=v.map(function(b){return 1-b;});
+          var n=ML.n, mat=ML.mat, v=ML.vec;
+          if(!ML.uvec||ML.uvec.length!==n) ML.uvec=v.map(function(b){return 1-b;});
+          var u=ML.uvec;
           var uv=v.map(function(b,i){return b^u[i];});
           var Lv=ML.out.slice();
           var Lu=mat.map(function(row){return computeRow(row,u);});
           var Luv=mat.map(function(row){return computeRow(row,uv);});
           var LuXLv=Lu.map(function(b,i){return b^Lv[i];});
           var match=Luv.every(function(b,i){return b===LuXLv[i];});
-          var bs=function(arr){return '['+arr.join('')+']';};
+          var bs=function(arr){return '<span class="lin-bits">['+arr.join('')+']</span>';};
           var h='<div class="lin-demo">';
-          h+='<div class="lin-demo-hd">Verifying: L(u &oplus; v) = L(u) &oplus; L(v)</div>';
-          h+='<div class="lin-row">v&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= '+bs(v)+'</div>';
-          h+='<div class="lin-row">u&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= '+bs(u)+'&nbsp;&nbsp;<em style="color:#888;font-size:0.82rem">(complement of v)</em></div>';
-          h+='<div class="lin-row">u &oplus; v&nbsp;&nbsp;&nbsp;= '+bs(uv)+'</div>';
-          h+='<div class="lin-row" style="margin-top:8px;">L(v)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= A&middot;'+bs(v)+' = '+bs(Lv)+'</div>';
-          h+='<div class="lin-row">L(u)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= A&middot;'+bs(u)+' = '+bs(Lu)+'</div>';
-          h+='<div class="lin-row">L(u&oplus;v)&nbsp;&nbsp;= A&middot;'+bs(uv)+' = '+bs(Luv)+'</div>';
-          h+='<div class="lin-row">L(u)&oplus;L(v) = '+bs(Lu)+' &oplus; '+bs(Lv)+' = '+bs(LuXLv)+'</div>';
-          h+='<div class="lin-confirm">'+(match?'&#x2713; L(u&oplus;v) = L(u)&oplus;L(v) &mdash; linearity verified!':'&#x2717; mismatch')+'</div>';
+          h+='<div class="lin-demo-hd">Verifying linearity: do both routes give the same answer?</div>';
+          h+='<div class="lin-intro">Set a second vector u below. Route 1 XORs u and v first, then applies L. Route 2 applies L to each separately, then XORs. For any matrix transformation, the two routes always agree &mdash; try any u you like.</div>';
+
+          // u selector
+          h+='<div class="lin-u-row"><span class="lin-u-lbl">v</span>';
+          for(var i=0;i<n;i++) h+='<div class="lin-u-bit lu'+v[i]+'">'+v[i]+'</div>';
+          h+='</div>';
+          h+='<div class="lin-u-row"><span class="lin-u-lbl">u</span>';
+          for(var i=0;i<n;i++){
+            var ck=n===8?'':' onclick="mlToggleU('+i+')"';
+            h+='<div class="lin-u-bit lu'+u[i]+(n===8?'':' clickable')+'"'+ck+'>'+u[i]+'</div>';
+          }
+          if(n!==8) h+='<button class="lin-u-reset" onclick="mlResetU()">Reset to complement</button>';
+          h+='</div>';
+          h+='<div class="lin-xorv-row"><span class="lin-u-lbl">u ⊕ v</span>';
+          for(var i=0;i<n;i++) h+='<div class="lin-u-bit lu-xor'+uv[i]+'">'+uv[i]+'</div>';
+          h+='</div>';
+
+          // Two paths side by side
+          h+='<div class="lin-paths">';
+          h+='<div class="lin-path">';
+          h+='<div class="lin-path-hd">Route 1 &mdash; XOR first, then apply L</div>';
+          h+='<div class="lin-path-row">u ⊕ v &nbsp;= '+bs(uv)+'</div>';
+          h+='<div class="lin-path-row">L(u ⊕ v) = A · '+bs(uv)+' = '+bs(Luv)+'</div>';
+          h+='<div class="lin-path-result">Route 1 result: '+bs(Luv)+'</div>';
+          h+='</div>';
+          h+='<div class="lin-path">';
+          h+='<div class="lin-path-hd">Route 2 &mdash; Apply L separately, then XOR</div>';
+          h+='<div class="lin-path-row">L(v) &nbsp;&nbsp;&nbsp;&nbsp;= A · '+bs(v)+' = '+bs(Lv)+'</div>';
+          h+='<div class="lin-path-row">L(u) &nbsp;&nbsp;&nbsp;&nbsp;= A · '+bs(u)+' = '+bs(Lu)+'</div>';
+          h+='<div class="lin-path-row">L(u) ⊕ L(v) = '+bs(Lu)+' ⊕ '+bs(Lv)+' = '+bs(LuXLv)+'</div>';
+          h+='<div class="lin-path-result">Route 2 result: '+bs(LuXLv)+'</div>';
+          h+='</div>';
+          h+='</div>';
+
+          h+='<div class="lin-confirm '+(match?'lc-match':'lc-mismatch')+'">'+(match?'✓ Both routes give '+bs(Luv)+' — linearity holds.':'✗ The two routes disagree — this transformation is not linear.')+'</div>';
+          h+='<div class="lin-security"><strong>Why this matters for security:</strong> Because L always satisfies L(u⊕v) = L(u)⊕L(v), an attacker who knows how any two inputs differ can predict exactly how their outputs will differ — without ever seeing those outputs. This predictability makes linear layers powerful for diffusion, but it is also why every real cipher wraps linear layers inside nonlinear S-boxes.</div>';
           if(n===8){
-            h+='<div class="aes-note"><strong>AES connection:</strong> This circulant matrix is the affine layer of the AES S-box. Each row encodes which input bits feed into that output bit via XOR. After this matrix multiply, AES adds the constant 0x63 to produce the final S-box output. You saw this formula as s&nbsp;=&nbsp;Ab&nbsp;&oplus;&nbsp;c in Module 14 &mdash; now you see the full 8&times;8 wiring behind it.</div>';
+            h+='<div class="aes-note"><strong>AES connection:</strong> This circulant matrix is the affine layer of the AES S-box. Each row encodes which input bits feed into that output bit via XOR. After this matrix multiply, AES adds the constant 0x63 to produce the final S-box output. You saw this formula as s = Ab ⊕ c in Module 14 — now you see the full 8×8 wiring behind it.</div>';
           }
           h+='</div>';
           $('mlab-lindemo').innerHTML=h;
@@ -780,6 +849,7 @@
         window.mlToggleVec=function(i){
           ML.vec[i]^=1;
           ML.phase=0;
+          ML.uvec=null;
           $('mlab-lindemo').innerHTML='';
           render();
         };
@@ -790,10 +860,22 @@
           ML.mat=p.mat.map(function(r){return r.slice();});
           ML.vec=p.vec.slice();
           ML.phase=0;
+          ML.uvec=null;
           document.querySelectorAll('.mlab-preset-btn').forEach(function(b){b.classList.remove('active');});
           $('mlpre-'+name).classList.add('active');
           $('mlab-lindemo').innerHTML='';
           render();
+        };
+
+        window.mlToggleU=function(i){
+          if(!ML.uvec||ML.uvec.length!==ML.n) ML.uvec=ML.vec.map(function(b){return 1-b;});
+          ML.uvec[i]^=1;
+          renderLinDemo();
+        };
+
+        window.mlResetU=function(){
+          ML.uvec=ML.vec.map(function(b){return 1-b;});
+          renderLinDemo();
         };
 
         window.mlStep=function(){
