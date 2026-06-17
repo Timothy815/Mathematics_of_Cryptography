@@ -471,8 +471,22 @@
             L(x)=\begin{bmatrix}1\\0\\0\\1\end{bmatrix}
           \]
         </div>
+
+        <p>Each output slot is computed separately. Plug in \(v_0=1,\ v_1=0,\ v_2=0,\ v_3=0\) row by row:</p>
+        <table class="branch-table">
+          <thead>
+            <tr><th>Output slot</th><th>Formula</th><th>Substituting values</th><th>Result</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Output 0</td><td>\(v_0\oplus v_1\)</td><td>\(1\oplus 0\)</td><td><strong>1</strong> — active</td></tr>
+            <tr><td>Output 1</td><td>\(v_1\oplus v_2\)</td><td>\(0\oplus 0\)</td><td>0 — inactive</td></tr>
+            <tr><td>Output 2</td><td>\(v_2\oplus v_3\)</td><td>\(0\oplus 0\)</td><td>0 — inactive</td></tr>
+            <tr><td>Output 3</td><td>\(v_0\oplus v_3\)</td><td>\(1\oplus 0\)</td><td><strong>1</strong> — active</td></tr>
+          </tbody>
+        </table>
+
         <p>
-          One active input bit became two active output bits. This is diffusion beginning to work.</p>
+          One active input bit produced two active output bits. The difference did not stay in one place — it spread to a second position. This is diffusion beginning to work.</p>
       </section>
 
       <section id="branch-number">
@@ -489,12 +503,18 @@
         </div>
 
         <p>
-          Friendly meaning: branch number measures the worst-case spreading. It asks, “What is the least amount of activity this layer can produce if the input difference is not zero?”</p>
+          Friendly meaning: branch number is a <em>guarantee about the worst case</em>. It says: no matter which nonzero difference an attacker starts with, the total number of active positions — input plus output combined — can never drop below \(B\).</p>
 
-        <div class="box technical-box">
-          <div class="box-title">Why worst-case matters</div>
+        <div class=”box intuition-box”>
+          <div class=”box-title”>Why this is a security guarantee</div>
           <p>
-            Attackers look for weak trails, not average trails. A strong diffusion layer should avoid letting a small difference remain small too easily.</p>
+            In differential cryptanalysis, an attacker traces a difference through the cipher round by round. They are searching for a <strong>differential trail</strong> — a path where a known difference at the input produces a predictable difference at the output. The cheaper that trail is to find and use, the weaker the cipher.</p>
+          <p>
+            The cost of a trail is driven by how many components along it are <strong>active</strong> — carrying a nonzero difference. In AES, those components are S-boxes. An active S-box is expensive for the attacker: they cannot predict its output without searching over many possibilities. Every additional active S-box roughly squares the number of plaintexts they need.</p>
+          <p>
+            This is where branch number becomes concrete. Every nonzero difference entering this linear layer must exit with enough total active positions to satisfy \(wt(x)+wt(L(x))\ge B\). Those active output positions feed directly into S-boxes in the next round. A layer with branch number 3 guarantees the attacker always picks up at least 2 active output positions — forcing at least 2 active S-boxes per round through this layer. Over four or more rounds, that compounds into an attack cost that exceeds any practical computation.</p>
+          <p>
+            AES MixColumns has branch number 5, measured in bytes. Any single nonzero byte difference entering a column produces at least 4 active output bytes, each of which hits a separate S-box in the next SubBytes step. After four AES rounds, a differential trail must pass through at least 25 active S-boxes — making the attack require more chosen plaintexts than any computer could ever process.</p>
         </div>
       </section>
 
