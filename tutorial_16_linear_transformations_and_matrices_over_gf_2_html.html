@@ -297,12 +297,12 @@
             </tr>
             <tr>
               <td>\(A\)</td>
-              <td>The matrix rule.</td>
+              <td>The fixed transformation rule — set once by the cipher designer, never changes per message. It is the wiring diagram.</td>
               <td>A matrix over \(\mathrm{GF}(2)\).</td>
             </tr>
             <tr>
               <td>\(v\)</td>
-              <td>The input bit vector.</td>
+              <td>The data being transformed — changes with every message or key. Short for "vector," the standard mathematical letter for an ordered list of values.</td>
               <td>A column vector over \(\mathrm{GF}(2)\).</td>
             </tr>
             <tr>
@@ -324,10 +324,17 @@
         </table>
       </section>
 
-      <section id="big-picture">
+      <section id=”big-picture”>
         <h2>The big idea</h2>
-        <div class="box intuition-box">
-          <div class="box-title">Intuition first</div>
+        <div class=”box definition-box”>
+          <div class=”box-title”>Two roles: A is the rule, v is the data</div>
+          <p>Every matrix operation involves two things playing completely different roles.</p>
+          <p><strong>A (the matrix)</strong> is permanent. It is the wiring diagram — baked into the cipher by the designer. It does not change when you encrypt a different message. It defines what the transformation does.</p>
+          <p><strong>v (the vector)</strong> is temporary. It holds the actual bits being processed right now — the message chunk, the key material, whatever is flowing through this layer at this moment. It changes with every input.</p>
+          <p>Same matrix, different vectors — that is how one fixed transformation handles every possible input.</p>
+        </div>
+        <div class=”box intuition-box”>
+          <div class=”box-title”>What the matrix does</div>
           <p>
             Each row of a matrix is a recipe for one output bit. A 1 means “include this input bit.” A 0 means “ignore this input bit.” The included bits are XORed together to produce the output bit.
           </p>
@@ -842,7 +849,7 @@
           var h='<div class="lin-demo">';
 
           h+='<div class="lin-demo-hd">Verify linearity: step through both routes yourself</div>';
-          h+='<div class="lin-intro">Pick a second vector u, then step through Route 1 and Route 2 the same way you stepped through L(v) above &mdash; one row at a time. Both routes will arrive at the same answer.</div>';
+          h+='<div class="lin-intro">To verify linearity we need a second vector to compare against v. Mathematicians conventionally call it <strong>u</strong> &mdash; just the letter before v, meaning &ldquo;another vector.&rdquo; Pick any u you like using the bit cells below, then step through Route 1 and Route 2 the same way you stepped through L(v) above.</div>';
 
           h+='<div class="lin-u-row"><span class="lin-u-lbl">v</span>';
           for(var i=0;i<n;i++) h+='<div class="lin-u-bit lu'+v[i]+'">'+v[i]+'</div>';
@@ -909,6 +916,7 @@
                 h+='<div class="lin-security"><strong>Why this matters for security:</strong> Because L(u&oplus;v) always equals L(u)&oplus;L(v), an attacker who knows how two inputs differ can predict exactly how their outputs will differ &mdash; without ever seeing those outputs. This is why ciphers cannot rely on linear layers alone: nonlinear S-boxes break this predictability.</div>';
                 if(n===8) h+='<div class="aes-note"><strong>AES connection:</strong> This circulant matrix is the affine layer of the AES S-box. Each row encodes which input bits XOR into that output bit. AES then adds the constant 0x63 &mdash; s&nbsp;=&nbsp;Ab&nbsp;&oplus;&nbsp;c from Module 14 &mdash; to make the overall S-box nonlinear.</div>';
                 h+='<div class="lin-step-bar"><button class="mlab-step-btn" onclick="mlLinReset()">&#x21BA; Try a different u</button></div>';
+                h+='<div class="lin-security" style="margin-top:10px;"><strong>Why try a different u?</strong> Seeing it work once could be a coincidence. But if you try u = 0001, then u = 1100, then u = 0111, it works every single time &mdash; for every possible pair of vectors. That is the point: linearity is not luck, it is a structural property of the matrix that holds universally. And universal means an attacker does not need a special pair of plaintexts to exploit it &mdash; any two messages they observe will have predictable output differences. That is why linear layers alone are not enough.</div>';
               }
             }
           }
