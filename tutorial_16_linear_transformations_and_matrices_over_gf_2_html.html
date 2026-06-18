@@ -1032,17 +1032,51 @@
         mlPreset('mixing');
 
         window.mlPrint=function(){
+          var n=ML.n;
           // Complete L(v) computation
-          ML.phase=ML.n+1;
+          ML.phase=n+1;
           render();
-          // Ensure uvec is set (default: complement of v)
-          if(!ML.uvec||ML.uvec.length!==ML.n) ML.uvec=ML.vec.map(function(b){return 1-b;});
+          // Ensure uvec set (default: complement of v)
+          if(!ML.uvec||ML.uvec.length!==n) ML.uvec=ML.vec.map(function(b){return 1-b;});
+          var uvec=ML.uvec;
+          var uv=ML.vec.map(function(b,i){return b^uvec[i];});
           // Complete full linearity verification to final comparison state
-          ML.linPhase=2*ML.n+2;
+          ML.linPhase=2*n+2;
           renderLinDemo();
           // Copy live widget HTML into print sheet (plain div — avoids style.css section rules)
           var sheet=document.getElementById('ml-print-sheet');
           sheet.innerHTML=document.getElementById('matrix-lab').innerHTML;
+          // Post-process: rebuild all output columns with correct n cells
+          // (workaround for llMiniOut occasionally producing 4 cells for 8x8 AES)
+          var r1full=ML.mat.map(function(row){return computeRow(row,uv);});
+          var r2full=ML.mat.map(function(row){return computeRow(row,uvec);});
+          var outputs=[ML.out,r1full,r2full];
+          var outCols=sheet.querySelectorAll('.mlab-acc-col');
+          outCols.forEach(function(col,idx){
+            var arr=outputs[Math.min(idx,outputs.length-1)];
+            col.innerHTML='';
+            for(var k=0;k<n;k++){
+              var v=arr[k];
+              var d=document.createElement('div');
+              d.className='mlab-ac'+(v!==undefined?' av'+v:'');
+              d.textContent=(v!==undefined?String(v):'?');
+              col.appendChild(d);
+            }
+          });
+          // Also rebuild vec-col columns (input vectors)
+          var vecs=[ML.vec,uv,uvec];
+          var vecCols=sheet.querySelectorAll('.vec-col');
+          vecCols.forEach(function(col,idx){
+            var vec=vecs[Math.min(idx,vecs.length-1)];
+            col.innerHTML='';
+            for(var k=0;k<n;k++){
+              var v=vec[k];
+              var d=document.createElement('div');
+              d.className='vbit vb'+v;
+              d.textContent=String(v);
+              col.appendChild(d);
+            }
+          });
           document.body.classList.add('ml-printing');
           window.print();
           window.addEventListener('afterprint',function h(){
