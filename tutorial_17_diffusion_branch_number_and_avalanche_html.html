@@ -201,6 +201,15 @@
       .box, .diagram, details.solution, .round-card, .bit-cell { background: #ffffff !important; border: 1px solid #999999; }
       .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .trail-table th, .compare-table th, .branch-table th { background: #eeeeee !important; }
       a { color: #000000; text-decoration: none; }
+      /* ── Branch explorer print mode ── */
+      body.dn-printing .tutorial-header,
+      body.dn-printing .bottom-nav,
+      body.dn-printing main > section:not(#branch-explorer) { display:none!important; }
+      body.dn-printing .dn-btn-row { display:none!important; }
+      body.dn-printing #dn-output-panel { display:block!important; }
+      body.dn-printing .dn-history-wrap { display:block!important; }
+      body.dn-printing .dn-explorer { border:1px solid #999; background:#fff; }
+      body.dn-printing .dn-bit { border:1px solid #999; }
     }
   </style>
 </head>
@@ -605,6 +614,7 @@
             <button class="dn-run-btn" onclick="dnRun()">Run both through L</button>
             <button class="dn-all-btn" onclick="dnTryAll()">Try all 15 differences</button>
             <button class="dn-reset-btn" onclick="dnReset()">Reset</button>
+            <button onclick="dnPrint()" style="padding:9px 22px;background:#fff3cc;color:#6a4000;border:1.5px solid #d4a030;border-radius:10px;font-weight:900;font-size:0.9rem;cursor:pointer;">Print full example ↓</button>
           </div>
 
           <!-- Output side (hidden until Run is clicked) -->
@@ -1057,6 +1067,20 @@
     conc.style.display = 'none';
     conc.textContent = '';
   }
-  </script>
+  function dnPrint() {
+    var allZero = dnBits.every(function(b){return b===0;});
+    if (allZero) {
+      dnTryAll();
+    } else {
+      dnRun();
+    }
+    document.body.classList.add('dn-printing');
+    window.print();
+    window.addEventListener('afterprint', function h(){
+      document.body.classList.remove('dn-printing');
+      window.removeEventListener('afterprint', h);
+    });
+  }
+    </script>
 </body>
 </html>

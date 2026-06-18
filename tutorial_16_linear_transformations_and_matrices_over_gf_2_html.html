@@ -207,6 +207,18 @@
       .box, .diagram, details.solution, .vector-card, .binary-cell { background: #ffffff !important; border: 1px solid #999999; }
       .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .truth-table th, .compare-table th { background: #eeeeee !important; }
       a { color: #000000; text-decoration: none; }
+      /* ── Matrix-Vector Lab print mode ── */
+      body.ml-printing .tutorial-header,
+      body.ml-printing .bottom-nav,
+      body.ml-printing main > section:not(#matrix-lab) { display:none!important; }
+      body.ml-printing #matrix-lab.no-print { display:block!important; }
+      body.ml-printing .mlab-presets,
+      body.ml-printing #mlab-preset-note,
+      body.ml-printing .mlab-step-bar,
+      body.ml-printing #mlab-lindemo,
+      body.ml-printing #matrix-lab > p { display:none!important; }
+      body.ml-printing .mlab-cell { pointer-events:none; }
+      body.ml-printing .mlab-grid { break-inside:avoid; }
     }
   </style>
 </head>
@@ -708,6 +720,9 @@
           <span class="mlab-hint" id="mlab-hint">Click cells in A or v to edit, then step through each output bit.</span>
           <span class="mlab-prog" id="mlab-prog">0 / 4 rows</span>
         </div>
+        <div class="no-print" style="margin-top:10px;">
+          <button onclick="mlPrint()" style="padding:9px 22px;background:#fff3cc;color:#6a4000;border:1.5px solid #d4a030;border-radius:10px;font-weight:900;font-size:0.9rem;cursor:pointer;">Print full example ↓</button>
+        </div>
       </section>
 
       <script>
@@ -1009,6 +1024,18 @@
         }
 
         mlPreset('mixing');
+
+        window.mlPrint=function(){
+          ML.phase=ML.n+1;
+          render();
+          $('mlab-lindemo').innerHTML='';
+          document.body.classList.add('ml-printing');
+          window.print();
+          window.addEventListener('afterprint',function h(){
+            document.body.classList.remove('ml-printing');
+            window.removeEventListener('afterprint',h);
+          });
+        };
       })();
       </script>
 
