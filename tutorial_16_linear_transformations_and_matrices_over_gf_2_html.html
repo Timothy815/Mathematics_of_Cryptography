@@ -207,14 +207,24 @@
       .box, .diagram, details.solution, .vector-card, .binary-cell { background: #ffffff !important; border: 1px solid #999999; }
       .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .truth-table th, .compare-table th { background: #eeeeee !important; }
       a { color: #000000; text-decoration: none; }
-      /* ── Matrix-Vector Lab print mode: hide everything, show only print sheet ── */
+      /* ── Matrix-Vector Lab print mode ── */
       #ml-print-sheet { display:none; }
       body.ml-printing header.tutorial-header,
       body.ml-printing nav.bottom-nav,
       body.ml-printing main { display:none!important; }
       body.ml-printing #ml-print-sheet { display:block!important; }
-      body.ml-printing #ml-print-sheet table { break-inside:auto; }
-      body.ml-printing #ml-print-sheet tr { break-inside:avoid; }
+      /* fix containers that clip multi-page content */
+      body.ml-printing #ml-print-sheet .comp-log { overflow:visible!important; border-radius:0!important; }
+      body.ml-printing #ml-print-sheet .mlab-top  { overflow:visible!important; display:flex!important; flex-wrap:wrap; gap:16px; align-items:flex-start; }
+      body.ml-printing #ml-print-sheet .lin-demo  { overflow:visible!important; border-radius:0!important; }
+      /* allow page breaks */
+      body.ml-printing #ml-print-sheet .clog-row,
+      body.ml-printing #ml-print-sheet .lin-u-row { break-inside:avoid; }
+      /* hide interactive-only elements */
+      body.ml-printing #ml-print-sheet button,
+      body.ml-printing #ml-print-sheet .mlab-step-bar,
+      body.ml-printing #ml-print-sheet .mlab-cell[onclick],
+      body.ml-printing #ml-print-sheet #mlab-size-note { display:none!important; }
     }
   </style>
 </head>
@@ -1022,65 +1032,23 @@
         mlPreset('mixing');
 
         window.mlPrint=function(){
+          // Complete L(v) computation
           ML.phase=ML.n+1;
           render();
-          var n=ML.n,mat=ML.mat,vec=ML.vec,out=ML.out;
-          var presetEl=document.querySelector('.mlab-preset-btn.active');
-          var pname=presetEl?presetEl.textContent:'Custom';
-          var h='<div style="font-family:Georgia,serif;max-width:7in;margin:0 auto;">';
-          h+='<h2 style="font-size:18pt;margin:0 0 4px;color:#1f3763;">Matrix-Vector Computation</h2>';
-          h+='<p style="margin:0 0 18px;color:#555;font-size:10pt;">'+pname+' &nbsp;&mdash;&nbsp; '+n+'&times;'+n+' matrix over GF(2) &nbsp;&mdash;&nbsp; Input v&nbsp;=&nbsp;['+vec.join('')+']</p>';
-          h+='<h3 style="font-size:12pt;margin:0 0 8px;color:#1f3763;">Matrix A</h3>';
-          h+='<table style="border-collapse:collapse;margin:0 0 20px;">';
-          for(var i=0;i<n;i++){
-            h+='<tr>';
-            for(var j=0;j<n;j++){
-              var v=mat[i][j];
-              h+='<td style="width:26px;height:26px;text-align:center;border:1px solid #aaa;'+(v?'background:#334e7d;color:#fff;':'background:#f0f4fb;color:#9aaac5;')+'font-family:monospace;font-weight:900;font-size:11pt;">'+v+'</td>';
-            }
-            h+='</tr>';
-          }
-          h+='</table>';
-          h+='<h3 style="font-size:12pt;margin:0 0 8px;color:#1f3763;">Row-by-row computation</h3>';
-          h+='<table style="border-collapse:collapse;width:100%;font-size:10pt;margin:0 0 20px;">';
-          h+='<thead><tr style="background:#eef3ff;">';
-          h+='<th style="border:1px solid #aaa;padding:5px 8px;text-align:center;">Output</th>';
-          h+='<th style="border:1px solid #aaa;padding:5px 8px;text-align:left;">Row selects these positions</th>';
-          h+='<th style="border:1px solid #aaa;padding:5px 8px;text-align:left;">Values from v</th>';
-          h+='<th style="border:1px solid #aaa;padding:5px 8px;text-align:left;">XOR</th>';
-          h+='<th style="border:1px solid #aaa;padding:5px 8px;text-align:center;">Result</th>';
-          h+='</tr></thead><tbody>';
-          for(var i=0;i<n;i++){
-            var row=mat[i],sel=[],vals=[],xterms=[];
-            for(var j=0;j<n;j++){
-              if(row[j]===1){sel.push('v'+j);vals.push('v'+j+'='+vec[j]);xterms.push(String(vec[j]));}
-            }
-            if(!sel.length){sel=['(zero row)'];vals=['—'];xterms=['0'];}
-            var bg=i%2?'#f7f9ff':'#fff';
-            var res=out[i];
-            h+='<tr style="background:'+bg+';">';
-            h+='<td style="border:1px solid #aaa;padding:5px 8px;text-align:center;font-family:monospace;font-weight:900;">y'+i+'</td>';
-            h+='<td style="border:1px solid #aaa;padding:5px 8px;font-family:monospace;">'+sel.join(', ')+'</td>';
-            h+='<td style="border:1px solid #aaa;padding:5px 8px;font-family:monospace;">'+vals.join(', ')+'</td>';
-            h+='<td style="border:1px solid #aaa;padding:5px 8px;font-family:monospace;">'+xterms.join(' ⊕ ')+'</td>';
-            h+='<td style="border:1px solid #aaa;padding:5px 8px;text-align:center;font-family:monospace;font-weight:900;'+(res?'background:#334e7d;color:#fff;':'')+'">'+(res===undefined?'?':res)+'</td>';
-            h+='</tr>';
-          }
-          h+='</tbody></table>';
-          h+='<h3 style="font-size:12pt;margin:0 0 8px;color:#1f3763;">Output vector Av&nbsp;=&nbsp;['+out.join('')+']</h3>';
-          h+='<div style="display:flex;gap:4px;flex-wrap:wrap;">';
-          for(var i=0;i<n;i++){
-            var res=out[i];
-            h+='<div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:monospace;font-weight:900;border:1px solid #aaa;border-radius:4px;'+(res?'background:#334e7d;color:#fff;':'background:#e5e9f2;color:#7a8bb5;')+'">'+res+'</div>';
-          }
-          h+='</div></div>';
-          document.getElementById('ml-print-sheet').innerHTML=h;
+          // Ensure uvec is set (default: complement of v)
+          if(!ML.uvec||ML.uvec.length!==ML.n) ML.uvec=ML.vec.map(function(b){return 1-b;});
+          // Complete full linearity verification to final comparison state
+          ML.linPhase=2*ML.n+2;
+          renderLinDemo();
+          // Copy live widget HTML into print sheet (plain div — avoids style.css section rules)
+          var sheet=document.getElementById('ml-print-sheet');
+          sheet.innerHTML=document.getElementById('matrix-lab').innerHTML;
           document.body.classList.add('ml-printing');
           window.print();
-          window.addEventListener('afterprint',function hp(){
+          window.addEventListener('afterprint',function h(){
             document.body.classList.remove('ml-printing');
-            document.getElementById('ml-print-sheet').innerHTML='';
-            window.removeEventListener('afterprint',hp);
+            sheet.innerHTML='';
+            window.removeEventListener('afterprint',h);
           });
         };
       })();
