@@ -798,34 +798,34 @@
           log.innerHTML=h;
         }
 
-        // ── linearity step-through helpers ──
-        function llMiniMatrix(activeRow,done){
-          var n=ML.n,mat=ML.mat,h='<div class="mlab-grid" style="grid-template-columns:repeat('+n+',34px)">';
+        // ── linearity step-through helpers — n passed explicitly to avoid stale ML.n ──
+        function llMiniMatrix(n,mat,activeRow,done){
+          var h='<div class="mlab-grid" style="grid-template-columns:repeat('+n+',34px)">';
           for(var i=0;i<n;i++) for(var j=0;j<n;j++){
             var v=mat[i][j],isAR=(!done&&i===activeRow);
             h+='<div class="mlab-cell '+(isAR&&v===1?'mc-sel':(isAR?'mc-hl':'mc'+v))+'">'+v+'</div>';
           }
           return h+'</div>';
         }
-        function llMiniVec(vec,activeRow,done){
-          var n=ML.n,mat=ML.mat,h='<div class="vec-col">';
+        function llMiniVec(n,mat,vec,activeRow,done){
+          var h='<div class="vec-col">';
           for(var i=0;i<n;i++){
             var sel=(!done&&mat[activeRow][i]===1);
             h+='<div class="vbit '+(sel?'vb-sel':'vb'+vec[i])+'">'+vec[i]+'</div>';
           }
           return h+'</div>';
         }
-        function llMiniOut(full,rowsDone){
-          var n=ML.n,h='<div class="mlab-acc-col">';
+        function llMiniOut(n,full,rowsDone){
+          var h='<div class="mlab-acc-col">';
           for(var i=0;i<n;i++){
             var f=(i<rowsDone);
             h+='<div class="mlab-ac'+(f?' av'+full[i]:'')+'>'+(f?full[i]:'?')+'</div>';
           }
           return h+'</div>';
         }
-        function llMiniLog(vec,rowsDone,full){
+        function llMiniLog(n,mat,vec,rowsDone,full){
           if(!rowsDone) return '';
-          var n=ML.n,mat=ML.mat,h='<div class="comp-log">';
+          var h='<div class="comp-log">';
           for(var i=0;i<rowsDone;i++){
             var terms=[];
             for(var j=0;j<n;j++) if(mat[i][j]===1) terms.push('v<sub style="font-size:0.7em">'+j+'</sub>('+vec[j]+')');
@@ -873,10 +873,10 @@
           } else {
             var r1done=Math.min(lp,n),r1fin=(lp>n),r1active=r1done-1;
             h+='<div class="mlab-top" style="gap:20px;margin:10px 0 6px;">';
-            h+='<div><div class="mlab-sec-lbl">Matrix A</div>'+llMiniMatrix(r1active,r1fin)+'</div>';
-            h+='<div><div class="mlab-sec-lbl">Input u&nbsp;&oplus;&nbsp;v</div>'+llMiniVec(uv,r1active,r1fin)+'</div>';
-            h+='<div><div class="mlab-sec-lbl">Output L(u&nbsp;&oplus;&nbsp;v)</div>'+llMiniOut(r1full,r1done)+'</div>';
-            h+='</div>'+llMiniLog(uv,r1done,r1full);
+            h+='<div><div class="mlab-sec-lbl">Matrix A</div>'+llMiniMatrix(n,mat,r1active,r1fin)+'</div>';
+            h+='<div><div class="mlab-sec-lbl">Input u&nbsp;&oplus;&nbsp;v</div>'+llMiniVec(n,mat,uv,r1active,r1fin)+'</div>';
+            h+='<div><div class="mlab-sec-lbl">Output L(u&nbsp;&oplus;&nbsp;v)</div>'+llMiniOut(n,r1full,r1done)+'</div>';
+            h+='</div>'+llMiniLog(n,mat,uv,r1done,r1full);
             if(lp<n){
               h+='<div class="lin-step-bar"><button class="mlab-step-btn" onclick="mlLinStep()">Process row y'+lp+' &rarr;</button><span class="mlab-hint">'+lp+' / '+n+' rows done.</span></div>';
             } else if(lp===n){
@@ -896,10 +896,10 @@
             } else {
               var r2offset=lp-n-1,r2done=Math.min(r2offset,n),r2fin=(r2offset>=n),r2active=r2done-1;
               h+='<div class="mlab-top" style="gap:20px;margin:10px 0 6px;">';
-              h+='<div><div class="mlab-sec-lbl">Matrix A</div>'+llMiniMatrix(r2active,r2fin)+'</div>';
-              h+='<div><div class="mlab-sec-lbl">Input u</div>'+llMiniVec(u,r2active,r2fin)+'</div>';
-              h+='<div><div class="mlab-sec-lbl">Output L(u)</div>'+llMiniOut(r2full,r2done)+'</div>';
-              h+='</div>'+llMiniLog(u,r2done,r2full);
+              h+='<div><div class="mlab-sec-lbl">Matrix A</div>'+llMiniMatrix(n,mat,r2active,r2fin)+'</div>';
+              h+='<div><div class="mlab-sec-lbl">Input u</div>'+llMiniVec(n,mat,u,r2active,r2fin)+'</div>';
+              h+='<div><div class="mlab-sec-lbl">Output L(u)</div>'+llMiniOut(n,r2full,r2done)+'</div>';
+              h+='</div>'+llMiniLog(n,mat,u,r2done,r2full);
               if(r2offset<n){
                 h+='<div class="lin-step-bar"><button class="mlab-step-btn" onclick="mlLinStep()">Process row y'+r2done+' &rarr;</button><span class="mlab-hint">'+r2done+' / '+n+' rows done.</span></div>';
               } else if(lp===2*n+1){
