@@ -816,8 +816,9 @@
           return h+'</div>';
         }
         function llMiniOut(n,full,rowsDone){
+          var total=full.length||n;
           var h='<div class="mlab-acc-col">';
-          for(var i=0;i<n;i++){
+          for(var i=0;i<total;i++){
             var f=(i<rowsDone);
             h+='<div class="mlab-ac'+(f?' av'+full[i]:'')+'>'+(f?full[i]:'?')+'</div>';
           }
@@ -826,7 +827,8 @@
         function llMiniLog(n,mat,vec,rowsDone,full){
           if(!rowsDone) return '';
           var h='<div class="comp-log">';
-          for(var i=0;i<rowsDone;i++){
+          var safeRows=Math.min(rowsDone,full.length);
+          for(var i=0;i<safeRows;i++){
             var terms=[];
             for(var j=0;j<n;j++) if(mat[i][j]===1) terms.push('v<sub style="font-size:0.7em">'+j+'</sub>('+vec[j]+')');
             if(!terms.length) terms=['0'];
