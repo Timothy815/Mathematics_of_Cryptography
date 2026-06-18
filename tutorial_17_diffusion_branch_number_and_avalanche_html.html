@@ -201,21 +201,14 @@
       .box, .diagram, details.solution, .round-card, .bit-cell { background: #ffffff !important; border: 1px solid #999999; }
       .symbol-table th, .data-table th, .bit-table th, .matrix-table th, .trail-table th, .compare-table th, .branch-table th { background: #eeeeee !important; }
       a { color: #000000; text-decoration: none; }
-      /* ── Branch explorer print mode ── */
-      body.dn-printing .tutorial-header,
-      body.dn-printing .bottom-nav,
-      body.dn-printing main > section:not(#branch-explorer) { display:none!important; }
-      body.dn-printing .dn-btn-row { display:none!important; }
-      body.dn-printing #dn-output-panel { display:block!important; }
-      body.dn-printing .dn-history-wrap { display:block!important; }
-      body.dn-printing .dn-explorer { border:1px solid #999; background:#fff; }
-      body.dn-printing .dn-bit { border:1px solid #999; }
-      /* allow multi-page flow — !important beats style.css section rule */
-      body.dn-printing #branch-explorer { break-inside:auto!important; overflow:visible!important; }
-      body.dn-printing .dn-explorer { break-inside:auto!important; overflow:visible!important;
-                                       border-radius:0!important; height:auto!important; }
-      body.dn-printing .dn-history-wrap { break-inside:auto!important; overflow:visible!important; }
-      body.dn-printing .dn-history-table tr { break-inside:avoid; }
+      /* ── Branch explorer print mode: hide everything, show only print sheet ── */
+      #dn-print-sheet { display:none; }
+      body.dn-printing header.tutorial-header,
+      body.dn-printing nav.bottom-nav,
+      body.dn-printing main { display:none!important; }
+      body.dn-printing #dn-print-sheet { display:block!important; }
+      body.dn-printing #dn-print-sheet table { break-inside:auto; }
+      body.dn-printing #dn-print-sheet tr { break-inside:avoid; }
     }
   </style>
 </head>
@@ -1075,18 +1068,60 @@
   }
   function dnPrint() {
     var allZero = dnBits.every(function(b){return b===0;});
-    if (allZero) {
-      dnTryAll();
-    } else {
-      dnRun();
+    if (allZero) { dnTryAll(); } else { dnRun(); }
+    // Build a clean print sheet
+    var h='<div style="font-family:Georgia,serif;max-width:7in;margin:0 auto;">';
+    h+='<h2 style="font-size:18pt;margin:0 0 4px;color:#1f3763;">Branch Number Explorer — Worked Example</h2>';
+    h+='<p style="margin:0 0 18px;color:#555;font-size:10pt;">Layer: L(v0,v1,v2,v3) = (v0&oplus;v1, v1&oplus;v2, v2&oplus;v3, v0&oplus;v3)</p>';
+    // Current example
+    var A=[0,0,0,0], B=dnBits.slice();
+    var x=B.slice();
+    var Lx=[B[0]^B[1],B[1]^B[2],B[2]^B[3],B[0]^B[3]];
+    var wtx=x.reduce(function(s,b){return s+b;},0);
+    var wtlx=Lx.reduce(function(s,b){return s+b;},0);
+    function brow(label,bits,color){
+      var r='<tr><td style="border:1px solid #aaa;padding:5px 10px;font-weight:700;white-space:nowrap;">'+label+'</td>';
+      bits.forEach(function(b){ r+='<td style="border:1px solid #aaa;padding:5px 10px;text-align:center;font-family:monospace;font-weight:900;width:32px;'+(b&&color?'background:'+color+';color:#fff;':'')+'">' +b+'</td>'; });
+      r+='<td style="border:1px solid #aaa;padding:5px 10px;text-align:center;">'+bits.reduce(function(s,b){return s+b;},0)+'</td></tr>';
+      return r;
     }
+    if(dnTrials.length>0){
+      h+='<h3 style="font-size:12pt;margin:16px 0 8px;color:#1f3763;">Current example</h3>';
+      h+='<table style="border-collapse:collapse;margin:0 0 20px;font-size:10pt;">';
+      h+='<thead><tr style="background:#eef3ff;"><th style="border:1px solid #aaa;padding:5px 10px;"> </th><th style="border:1px solid #aaa;padding:5px 10px;">Bit 0</th><th style="border:1px solid #aaa;padding:5px 10px;">Bit 1</th><th style="border:1px solid #aaa;padding:5px 10px;">Bit 2</th><th style="border:1px solid #aaa;padding:5px 10px;">Bit 3</th><th style="border:1px solid #aaa;padding:5px 10px;">Active count</th></tr></thead><tbody>';
+      h+=brow('Message A (fixed)', A, null);
+      h+=brow('Message B', B, '#7c3aed');
+      h+=brow('Difference x = A &oplus; B', x, '#e07070');
+      h+=brow('L(A)', [0,0,0,0], null);
+      h+=brow('L(B)', Lx, '#7c3aed');
+      h+=brow('Output diff L(x)', Lx, '#34d399');
+      h+='</tbody></table>';
+      h+='<p style="font-size:10pt;margin:0 0 20px;"><strong>Active at input wt(x) = '+wtx+'</strong> &nbsp;+&nbsp; <strong>Active at output wt(L(x)) = '+wtlx+'</strong> &nbsp;=&nbsp; <strong>Total tracked: '+(wtx+wtlx)+'</strong></p>';
+    }
+    if(dnTrials.length>0){
+      h+='<h3 style="font-size:12pt;margin:0 0 8px;color:#1f3763;">All trials (branch number search)</h3>';
+      h+='<table style="border-collapse:collapse;width:100%;font-size:10pt;margin:0 0 20px;">';
+      h+='<thead><tr style="background:#eef3ff;"><th style="border:1px solid #aaa;padding:5px 8px;">x (input diff)</th><th style="border:1px solid #aaa;padding:5px 8px;">wt(x)</th><th style="border:1px solid #aaa;padding:5px 8px;">L(x)</th><th style="border:1px solid #aaa;padding:5px 8px;">wt(L(x))</th><th style="border:1px solid #aaa;padding:5px 8px;">Total</th></tr></thead><tbody>';
+      var minTotal=Math.min.apply(null,dnTrials.map(function(t){return t.total;}));
+      dnTrials.forEach(function(t,idx){
+        var isMin=(t.total===minTotal);
+        var bg=isMin?'#fffdf4':(idx%2?'#f7f9ff':'#fff');
+        h+='<tr style="background:'+bg+';'+(isMin?'font-weight:700;':'')+'"><td style="border:1px solid #aaa;padding:5px 8px;font-family:monospace;">'+t.x+'</td><td style="border:1px solid #aaa;padding:5px 8px;text-align:center;">'+t.wtx+'</td><td style="border:1px solid #aaa;padding:5px 8px;font-family:monospace;">'+t.Lx+'</td><td style="border:1px solid #aaa;padding:5px 8px;text-align:center;">'+t.wtlx+'</td><td style="border:1px solid #aaa;padding:5px 8px;text-align:center;'+(isMin?'color:#7b4a00;':'')+'">'+(isMin?'&#9733; ':'')+t.total+'</td></tr>';
+      });
+      h+='</tbody></table>';
+      if(dnTrials.length>=15) h+='<p style="font-size:10pt;font-weight:700;color:#064e3b;background:#d1fae5;border:1px solid #34d399;border-radius:6px;padding:8px 12px;margin:0;">Branch number B = '+minTotal+' &mdash; starred rows show the minimum total.</p>';
+    }
+    h+='</div>';
+    document.getElementById('dn-print-sheet').innerHTML=h;
     document.body.classList.add('dn-printing');
     window.print();
-    window.addEventListener('afterprint', function h(){
+    window.addEventListener('afterprint', function hp(){
       document.body.classList.remove('dn-printing');
-      window.removeEventListener('afterprint', h);
+      document.getElementById('dn-print-sheet').innerHTML='';
+      window.removeEventListener('afterprint', hp);
     });
   }
     </script>
+<div id="dn-print-sheet" aria-hidden="true"></div>
 </body>
 </html>
