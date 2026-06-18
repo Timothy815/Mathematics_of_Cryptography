@@ -211,18 +211,19 @@
       body.ml-printing .tutorial-header,
       body.ml-printing .bottom-nav,
       body.ml-printing main > section:not(#matrix-lab) { display:none!important; }
-      body.ml-printing #matrix-lab.no-print { display:block!important; }
       body.ml-printing .mlab-presets,
       body.ml-printing #mlab-preset-note,
       body.ml-printing .mlab-step-bar,
       body.ml-printing #mlab-lindemo,
-      body.ml-printing #matrix-lab > p { display:none!important; }
+      body.ml-printing #matrix-lab > p,
+      body.ml-printing #matrix-lab > ul { display:none!important; }
       body.ml-printing .mlab-cell { pointer-events:none; }
-      /* allow multi-page flow */
-      body.ml-printing #matrix-lab,
-      body.ml-printing .mlab-top,
-      body.ml-printing .comp-log { break-inside:auto; overflow:visible; }
-      body.ml-printing .mlab-top { display:flex; flex-wrap:wrap; gap:24px; }
+      /* allow multi-page flow — !important needed to beat style.css section rule */
+      body.ml-printing #matrix-lab { break-inside:auto!important; overflow:visible!important; }
+      body.ml-printing .mlab-top { break-inside:auto!important; overflow:visible!important;
+                                    display:flex!important; flex-wrap:wrap; gap:24px; }
+      body.ml-printing .comp-log { break-inside:auto!important; overflow:visible!important;
+                                    border-radius:0!important; height:auto!important; }
       body.ml-printing .clog-row { break-inside:avoid; }
     }
   </style>
@@ -1034,10 +1035,13 @@
           ML.phase=ML.n+1;
           render();
           $('mlab-lindemo').innerHTML='';
+          var sec=document.getElementById('matrix-lab');
+          sec.classList.remove('no-print');
           document.body.classList.add('ml-printing');
           window.print();
           window.addEventListener('afterprint',function h(){
             document.body.classList.remove('ml-printing');
+            sec.classList.add('no-print');
             window.removeEventListener('afterprint',h);
           });
         };
