@@ -984,6 +984,29 @@
           }
           h+='</div>';
           $('mlab-lindemo').innerHTML=h;
+
+          // Post-process: guarantee every output column has exactly n cells.
+          // Mirrors the mlPrint workaround — belt-and-suspenders for the screen path.
+          if(lp>0){
+            var _r1done=Math.min(lp,n);
+            var _outCols=$('mlab-lindemo').querySelectorAll('.mlab-acc-col');
+            var _outData=[{arr:r1full,done:_r1done}];
+            if(lp>n+1) _outData.push({arr:r2full,done:Math.min(lp-n-1,n)});
+            for(var _ci=0;_ci<_outCols.length&&_ci<_outData.length;_ci++){
+              var _col=_outCols[_ci];
+              if(_col.children.length===n) continue;
+              var _od=_outData[_ci];
+              _col.innerHTML='';
+              for(var _ki=0;_ki<n;_ki++){
+                var _bv=(_ki<_od.arr.length)?_od.arr[_ki]:undefined;
+                var _bf=(_ki<_od.done)&&_bv!==undefined;
+                var _bd=document.createElement('div');
+                _bd.className='mlab-ac'+(_bf?' av'+_bv:'');
+                _bd.textContent=(_bf&&_bv!==undefined)?String(_bv):'?';
+                _col.appendChild(_bd);
+              }
+            }
+          }
         }
 
         window.mlToggleMat=function(r,c){
